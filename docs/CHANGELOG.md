@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-03-13
+
+### Architecture
+- **Frontend Refactor**: Migrated frontend to a Feature-based architecture (`src/features/*`).
+  - Separated UI/Theme logic from Page/Data logic.
+  - Created dedicated feature modules for `dashboard`, `assets`, `consumption`, `savings`, and `loans`.
+  - Implemented `DefaultTheme` components for all major pages to support future theming capabilities.
+
+### Added
+- **UI Components**: Integrated `shadcn/ui` component library.
+- **Charts**: Integrated `recharts` and `shadcn/charts` for professional data visualization.
+  - **Consumption**: Added Platform Distribution (Pie), Income/Expense Analysis (Donut), Merchant Ranking (Bar), Expense Trend (Line), Category Stacked Bar, Heatmap, and Pareto Analysis.
+  - **Assets**: Added Asset Valuation Cards.
+  - **Loans**: Added Repayment Schedule and Remaining Principal Analysis charts.
+  - **Savings**: Added Savings Progress Tracking and Goal Visualization.
+- **Mock Mode**: Added static mock data support for Consumption page visualization preview.
+
+### Changed
+- **Backend Port**: Changed default backend API port from `3001` to `3006` to avoid conflicts.
+- **Navigation**: Updated Sidebar and Header with modern design and Lucide icons.
+- **Theme**: Unified chart color palette using CSS variables (`--chart-1` to `--chart-5`).
+
 ## [Unreleased]
 
 ### Added

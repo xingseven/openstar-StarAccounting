@@ -2,53 +2,76 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-
-type SavingsGoal = {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline: string | null;
-  type: "MONTHLY" | "YEARLY" | "LONG_TERM";
-  status: "ACTIVE" | "COMPLETED" | "ARCHIVED";
-  createdAt: string;
-};
+import { 
+  SavingsDefaultTheme, 
+  SavingsGoal, 
+  TransactionItem 
+} from "@/features/savings/components/themes/DefaultSavings";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function SavingsPage() {
   const [items, setItems] = useState<SavingsGoal[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SavingsGoal | null>(null);
-
-  // Form states
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("0");
   const [deadline, setDeadline] = useState("");
   const [type, setType] = useState("LONG_TERM");
   const [status, setStatus] = useState("ACTIVE");
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadItems() {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    setLoading(true);
     try {
-      const data = await apiFetch<{ items: any[] }>("/api/savings");
-      // Map string amounts to numbers if needed, or backend sends numbers for memory mode?
-      // Prisma Decimal is string usually, memory mode is string in my backend code.
-      // Let's normalize.
-      const list = data.items.map((i) => ({
+      // 1. Load Goals
+      const goalsData = await apiFetch<{ items: any[] }>("/api/savings");
+      const list = goalsData.items.map((i) => ({
         ...i,
         targetAmount: Number(i.targetAmount),
         currentAmount: Number(i.currentAmount),
       }));
       setItems(list);
+
+      // 2. Load Savings Related Transactions
+      // Filter by common savings keywords
+      const qs = new URLSearchParams({
+        page: "1",
+        pageSize: "50",
+      });
+      // We can't filter by multiple categories easily in current API without loop or new API
+      // For now, let's fetch recent transactions and filter client side or use a broad search if available
+      // The current API supports 'category' param? No, it supports type, platform, date.
+      // Let's use the 'category' filter if I added it? I didn't add category filter to GET /api/transactions
+      // I will fetch recent 100 transactions and filter client side for now as a quick fix
+      // TODO: Add category filter to backend
+      const transData = await apiFetch<{ items: TransactionItem[] }>(`/api/transactions?pageSize=100`);
+      const savingsKeywords = ["储蓄", "存款", "理财", "基金", "股票", "定投", "Savings", "Deposit"];
+      const filtered = transData.items.filter(t => 
+        savingsKeywords.some(k => t.category.includes(k))
+      );
+      setTransactions(filtered);
+
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   }
-
-  useEffect(() => {
-    loadItems();
-  }, []);
 
   function openCreate() {
     setEditingItem(null);
@@ -76,7 +99,7 @@ export default function SavingsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
     setError(null);
 
     try {
@@ -101,11 +124,11 @@ export default function SavingsPage() {
         });
       }
       setIsModalOpen(false);
-      loadItems();
+      loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   }
 
@@ -113,194 +136,147 @@ export default function SavingsPage() {
     if (!confirm("确定要删除这个目标吗？")) return;
     try {
       await apiFetch(`/api/savings/${id}`, { method: "DELETE" });
-      loadItems();
+      loadData();
     } catch (e) {
       alert("删除失败");
     }
   }
 
+  const totalSaved = items.reduce((acc, item) => acc + item.currentAmount, 0);
+  const totalTarget = items.reduce((acc, item) => acc + item.targetAmount, 0);
+  const overallProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">储蓄目标</h1>
-          <p className="text-sm text-gray-600">设定并追踪你的存钱计划</p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="rounded bg-black px-4 py-2 text-sm text-white hover:opacity-90"
-        >
-          新建目标
-        </button>
-      </div>
+    <>
+      <SavingsDefaultTheme 
+        items={items}
+        transactions={transactions}
+        totalSaved={totalSaved}
+        totalTarget={totalTarget}
+        overallProgress={overallProgress}
+        onOpenCreate={openCreate}
+        onOpenEdit={openEdit}
+      />
 
-      {items.length === 0 ? (
-        <div className="rounded border p-8 text-center text-gray-500">
-          暂无储蓄目标，快去创建一个吧
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
-            const progress =
-              item.targetAmount > 0
-                ? Math.min(100, (item.currentAmount / item.targetAmount) * 100)
-                : 0;
-            return (
-              <div key={item.id} className="rounded border p-4 space-y-3 bg-white">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {item.type === "LONG_TERM"
-                        ? "长期"
-                        : item.type === "YEARLY"
-                        ? "年度"
-                        : "月度"}
-                      {item.deadline && ` · 截止 ${item.deadline.slice(0, 10)}`}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="text-xs text-gray-600 hover:text-black"
-                    >
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="text-xs text-red-600 hover:text-red-800"
-                    >
-                      删除
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">进度</span>
-                    <span className="font-medium">{progress.toFixed(1)}%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
-                    <div
-                      className="h-full bg-black transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 pt-1">
-                    <span>已存 {item.currentAmount}</span>
-                    <span>目标 {item.targetAmount}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
+      {/* Create/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-lg font-semibold">
-              {editingItem ? "编辑目标" : "新建目标"}
-            </h2>
-            {error && (
-              <div className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">
-                {error}
-              </div>
-            )}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <label className="block space-y-1">
-                <span className="text-sm font-medium">名称</span>
-                <input
-                  required
-                  className="w-full rounded border px-3 py-2 text-sm"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="例如：买房首付"
-                />
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">目标金额</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <Card className="w-full max-w-md shadow-xl">
+            <CardHeader>
+              <CardTitle>{editingItem ? "编辑目标" : "新建目标"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {error && (
+                <div className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">
+                  {error}
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">名称</label>
                   <input
                     required
-                    type="number"
-                    step="0.01"
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    value={targetAmount}
-                    onChange={(e) => setTargetAmount(e.target.value)}
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="例如：买房首付"
                   />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">当前已存</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    value={currentAmount}
-                    onChange={(e) => setCurrentAmount(e.target.value)}
-                  />
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">截止日期 (可选)</span>
-                  <input
-                    type="date"
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">类型</span>
-                  <select
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                  >
-                    <option value="LONG_TERM">长期</option>
-                    <option value="YEARLY">年度</option>
-                    <option value="MONTHLY">月度</option>
-                  </select>
-                </label>
-              </div>
-              
-              {editingItem && (
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">状态</span>
-                  <select
-                    className="w-full rounded border px-3 py-2 text-sm"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                  >
-                    <option value="ACTIVE">进行中</option>
-                    <option value="COMPLETED">已完成</option>
-                    <option value="ARCHIVED">已归档</option>
-                  </select>
-                </label>
-              )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">目标金额</label>
+                    <input
+                      required
+                      type="number"
+                      step="0.01"
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                      value={targetAmount}
+                      onChange={(e) => setTargetAmount(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">当前已存</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                      value={currentAmount}
+                      onChange={(e) => setCurrentAmount(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">截止日期</label>
+                    <input
+                      type="date"
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                      value={deadline}
+                      onChange={(e) => setDeadline(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">类型</label>
+                    <select
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                      value={type}
+                      onChange={(e) => setType(e.target.value)}
+                    >
+                      <option value="LONG_TERM">长期</option>
+                      <option value="YEARLY">年度</option>
+                      <option value="MONTHLY">月度</option>
+                    </select>
+                  </div>
+                </div>
+                
+                {editingItem && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">状态</label>
+                    <select
+                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                    >
+                      <option value="ACTIVE">进行中</option>
+                      <option value="COMPLETED">已完成</option>
+                      <option value="ARCHIVED">已归档</option>
+                    </select>
+                  </div>
+                )}
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded px-4 py-2 text-sm hover:bg-gray-100"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
-                >
-                  {loading ? "保存中..." : "保存"}
-                </button>
-              </div>
-            </form>
-          </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-sm font-medium hover:bg-gray-100 rounded-md"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={formLoading}
+                    className="bg-black text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    {formLoading ? "保存中..." : "保存"}
+                  </button>
+                </div>
+                {editingItem && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      handleDelete(editingItem.id);
+                    }}
+                    className="w-full text-center text-xs text-red-500 hover:underline pt-2"
+                  >
+                    删除此目标
+                  </button>
+                )}
+              </form>
+            </CardContent>
+          </Card>
         </div>
       )}
-    </div>
+    </>
   );
 }

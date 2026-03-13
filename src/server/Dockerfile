@@ -18,5 +18,5 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-EXPOSE 3004
+EXPOSE 3006
 CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]

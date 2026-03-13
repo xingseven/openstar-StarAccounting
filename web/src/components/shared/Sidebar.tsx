@@ -1,31 +1,73 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { 
+  LayoutDashboard, 
+  Wallet, 
+  CreditCard, 
+  PiggyBank, 
+  Landmark, 
+  Link as LinkIcon, 
+  Settings 
+} from "lucide-react";
+import { clsx } from "clsx";
 
 const items = [
-  { href: "/", label: "总览" },
-  { href: "/assets", label: "资产" },
-  { href: "/consumption", label: "消费" },
-  { href: "/savings", label: "储蓄" },
-  { href: "/loans", label: "贷款" },
-  { href: "/connections", label: "连接" },
-  { href: "/settings", label: "设置" },
+  { href: "/", label: "总览", icon: LayoutDashboard },
+  { href: "/assets", label: "资产", icon: Wallet },
+  { href: "/consumption", label: "消费", icon: CreditCard },
+  { href: "/savings", label: "储蓄", icon: PiggyBank },
+  { href: "/loans", label: "贷款", icon: Landmark },
+  { href: "/connections", label: "连接", icon: LinkIcon },
+  { href: "/settings", label: "设置", icon: Settings },
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
-    <aside className="w-60 border-r p-4 hidden md:block">
-      <div className="mb-4 text-sm font-semibold">导航</div>
-      <nav className="space-y-1">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="block rounded px-2 py-1 text-sm hover:bg-gray-100"
-          >
-            {item.label}
-          </Link>
-        ))}
+    <aside className="w-64 border-r bg-white flex-col hidden md:flex">
+      <div className="p-6 border-b flex items-center gap-2">
+        <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+          X
+        </div>
+        <span className="font-bold text-lg text-gray-900">XFDashboard</span>
+      </div>
+      
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <div className="text-xs font-semibold text-gray-400 mb-2 px-2 uppercase tracking-wider">
+          Menu
+        </div>
+        {items.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={clsx(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                isActive
+                  ? "bg-blue-50 text-blue-700 shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <Icon className={clsx("h-5 w-5", isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500")} />
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
+
+      <div className="p-4 border-t bg-gray-50/50">
+        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-4 text-white shadow-lg">
+          <h4 className="font-semibold text-sm mb-1">OpenStar</h4>
+          <p className="text-xs text-blue-100 opacity-90">
+            开源个人财务管理面板
+          </p>
+        </div>
+      </div>
     </aside>
   );
 }
-
