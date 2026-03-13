@@ -34,6 +34,11 @@ export default function LoansPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Schedule modal
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleItem, setScheduleItem] = useState<Loan | null>(null);
+  const [schedule, setSchedule] = useState<{ index: number; date: string; amount: number; remaining: number }[]>([]);
+
   async function loadItems() {
     try {
       const data = await apiFetch<{ items: any[] }>("/api/loans");
@@ -128,6 +133,58 @@ export default function LoansPage() {
     }
   }
 
+  function openSchedule(item: Loan) {
+    setScheduleItem(item);
+    
+    // Generate simple schedule
+    const list = [];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+    const currentDay = now.getDate();
+    
+    // Start from next payment date
+    // If today is before due date, next payment is this month
+    // If today is after due date, next payment is next month
+    let year = currentYear;
+    let month = currentDay <= item.dueDate ? currentMonth : currentMonth + 1;
+    
+    let remaining = item.remainingAmount;
+    const count = item.periods - item.paidPeriods;
+    
+    for (let i = 1; i <= count; i++) {
+      if (remaining <= 0) break;
+      
+      // Handle month overflow
+      if (month > 11) {
+        year += Math.floor(month / 12);
+        month = month % 12;
+      }
+      
+      // Construct date string YYYY-MM-DD
+      // Handle days that don't exist (e.g. Feb 30) -> auto corrected by Date object but we want clean string
+      const dateObj = new Date(year, month, item.dueDate);
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dateObj.getDate()).padStart(2, "0");
+      
+      const amount = Math.min(remaining, item.monthlyPayment);
+      remaining -= amount;
+      
+      list.push({
+        index: i,
+        date: `${y}-${m}-${d}`,
+        amount,
+        remaining: Math.max(0, remaining),
+      });
+      
+      month++;
+    }
+    
+    setSchedule(list);
+    setIsScheduleOpen(true);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -164,6 +221,12 @@ export default function LoansPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => openSchedule(item)}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      计划
+                    </button>
                     <button
                       onClick={() => openEdit(item)}
                       className="text-xs text-gray-600 hover:text-black"
@@ -326,6 +389,50 @@ export default function LoansPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isScheduleOpen && scheduleItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded bg-white p-6 shadow-lg max-h-[80vh] flex flex-col">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">还款计划 - {scheduleItem.platform}</h2>
+              <button onClick={() => setIsScheduleOpen(false)} className="text-gray-500 hover:text-black">
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto">
+              {schedule.length === 0 ? (
+                <div className="py-8 text-center text-gray-500">已全部还清，无剩余还款计划</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-white">
+                    <tr className="border-b text-left text-gray-600">
+                      <th className="py-2">期数</th>
+                      <th className="py-2">预计还款日</th>
+                      <th className="py-2 text-right">应还金额</th>
+                      <th className="py-2 text-right">剩余本金</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedule.map((row) => (
+                      <tr key={row.index} className="border-b last:border-0">
+                        <td className="py-2 text-gray-600">第 {row.index} 期</td>
+                        <td className="py-2">{row.date}</td>
+                        <td className="py-2 text-right font-medium">¥{row.amount.toFixed(2)}</td>
+                        <td className="py-2 text-right text-gray-500">¥{row.remaining.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            
+            <div className="mt-4 text-xs text-gray-400">
+              *此计划基于当前剩余金额与月供简单推算，不包含利息变动，仅供参考。
+            </div>
           </div>
         </div>
       )}

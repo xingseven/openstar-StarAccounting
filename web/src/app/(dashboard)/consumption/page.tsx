@@ -221,6 +221,51 @@ export default function ConsumptionPage() {
     }
   }
 
+  async function downloadCsv() {
+    const qs = new URLSearchParams({
+      page: "1",
+      pageSize: "10000", // Export max 10k for now
+      type,
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    });
+    if (platform !== "ALL") qs.append("platform", platform);
+
+    try {
+      const data = await apiFetch<{ items: TransactionItem[] }>(`/api/transactions?${qs.toString()}`);
+      
+      // Convert to CSV
+      const headers = ["时间", "类型", "金额", "分类", "平台", "商家", "描述", "支付方式", "状态"];
+      const rows = data.items.map(t => [
+        new Date(t.date).toLocaleString(),
+        t.type === "EXPENSE" ? "支出" : "收入",
+        t.amount,
+        t.category,
+        t.platform === "wechat" ? "微信" : "支付宝",
+        t.merchant || "",
+        t.description || "",
+        t.paymentMethod || "",
+        t.status || ""
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`)); // Escape quotes
+      
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(r => r.join(","))
+      ].join("\n");
+      
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      setError("导出失败");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -324,6 +369,13 @@ export default function ConsumptionPage() {
             type="button"
           >
             刷新汇总
+          </button>
+          <button
+            className="rounded border px-3 py-2 text-sm text-gray-600 hover:text-black"
+            onClick={downloadCsv}
+            type="button"
+          >
+            导出 CSV
           </button>
         </div>
 
