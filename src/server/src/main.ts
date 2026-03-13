@@ -63,6 +63,21 @@ type SavingsGoal = {
 };
 const savingsGoalsByUser = new Map<string, SavingsGoal[]>();
 
+type Loan = {
+  id: string;
+  userId: string;
+  platform: string;
+  totalAmount: string;
+  remainingAmount: string;
+  periods: number;
+  paidPeriods: number;
+  monthlyPayment: string;
+  dueDate: number;
+  status: string;
+  createdAt: string;
+};
+const loansByUser = new Map<string, Loan[]>();
+
 function jsonOk<T>(res: Response, data: T, message = "ok") {
   const body: ApiSuccess<T> = { code: 200, message, data };
   res.json(body);
@@ -1164,6 +1179,166 @@ app.delete("/api/savings/:id", async (req, res) => {
   const list = savingsGoalsByUser.get(userId) ?? [];
   const newList = list.filter((g) => g.id !== id);
   savingsGoalsByUser.set(userId, newList);
+  jsonOk(res, { deleted: true });
+});
+
+// Loan API
+app.get("/api/loans", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const loans = await prisma.loan.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      jsonOk(res, { items: loans });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const items = loansByUser.get(userId) ?? [];
+  jsonOk(res, { items });
+});
+
+app.post("/api/loans", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { platform, totalAmount, periods, monthlyPayment, dueDate } = req.body ?? {};
+  if (typeof platform !== "string" || !platform.trim()) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "platform 必填");
+    return;
+  }
+  if (!totalAmount || Number.isNaN(Number(totalAmount))) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "totalAmount 必填");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const loan = await prisma.loan.create({
+        data: {
+          userId,
+          platform,
+          totalAmount: Number(totalAmount),
+          remainingAmount: Number(totalAmount),
+          periods: Number(periods ?? 1),
+          paidPeriods: 0,
+          monthlyPayment: Number(monthlyPayment ?? 0),
+          dueDate: Number(dueDate ?? 1),
+          status: "ACTIVE",
+        },
+      });
+      jsonOk(res, { item: loan });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = loansByUser.get(userId) ?? [];
+  const loan: Loan = {
+    id: crypto.randomUUID(),
+    userId,
+    platform,
+    totalAmount: String(totalAmount),
+    remainingAmount: String(totalAmount),
+    periods: Number(periods ?? 1),
+    paidPeriods: 0,
+    monthlyPayment: String(monthlyPayment ?? 0),
+    dueDate: Number(dueDate ?? 1),
+    status: "ACTIVE",
+    createdAt: new Date().toISOString(),
+  };
+  list.unshift(loan);
+  loansByUser.set(userId, list);
+  jsonOk(res, { item: loan });
+});
+
+app.put("/api/loans/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+  const { platform, totalAmount, remainingAmount, periods, paidPeriods, monthlyPayment, dueDate, status } = req.body ?? {};
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const loan = await prisma.loan.update({
+        where: { id, userId },
+        data: {
+          ...(platform ? { platform } : {}),
+          ...(totalAmount !== undefined ? { totalAmount: Number(totalAmount) } : {}),
+          ...(remainingAmount !== undefined ? { remainingAmount: Number(remainingAmount) } : {}),
+          ...(periods !== undefined ? { periods: Number(periods) } : {}),
+          ...(paidPeriods !== undefined ? { paidPeriods: Number(paidPeriods) } : {}),
+          ...(monthlyPayment !== undefined ? { monthlyPayment: Number(monthlyPayment) } : {}),
+          ...(dueDate !== undefined ? { dueDate: Number(dueDate) } : {}),
+          ...(status ? { status } : {}),
+        },
+      });
+      jsonOk(res, { item: loan });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = loansByUser.get(userId) ?? [];
+  const idx = list.findIndex((l) => l.id === id);
+  if (idx < 0) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "贷款不存在");
+    return;
+  }
+  const old = list[idx];
+  const updated: Loan = {
+    ...old,
+    ...(platform ? { platform } : {}),
+    ...(totalAmount !== undefined ? { totalAmount: String(totalAmount) } : {}),
+    ...(remainingAmount !== undefined ? { remainingAmount: String(remainingAmount) } : {}),
+    ...(periods !== undefined ? { periods: Number(periods) } : {}),
+    ...(paidPeriods !== undefined ? { paidPeriods: Number(paidPeriods) } : {}),
+    ...(monthlyPayment !== undefined ? { monthlyPayment: String(monthlyPayment) } : {}),
+    ...(dueDate !== undefined ? { dueDate: Number(dueDate) } : {}),
+    ...(status ? { status } : {}),
+  };
+  list[idx] = updated;
+  jsonOk(res, { item: updated });
+});
+
+app.delete("/api/loans/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      await prisma.loan.delete({ where: { id, userId } });
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = loansByUser.get(userId) ?? [];
+  const newList = list.filter((l) => l.id !== id);
+  loansByUser.set(userId, newList);
   jsonOk(res, { deleted: true });
 });
 
