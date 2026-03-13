@@ -16,6 +16,7 @@ model User {
   loans        Loan[]
   savingsGoals SavingsGoal[]
   assets       Asset[]
+  budgets      Budget[]
   settings     ThemeConfig?
   connections  AppConnection[]
   createdAt    DateTime        @default(now())
@@ -131,6 +132,25 @@ model Asset {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, type])
+}
+
+model Budget {
+  id        String       @id @default(cuid())
+  userId    String
+  amount    Decimal
+  category  String       @default("ALL") // "ALL" for total budget, or specific category name
+  period    BudgetPeriod @default(MONTHLY)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category, period])
+}
+
+enum BudgetPeriod {
+  MONTHLY
+  YEARLY
 }
 
 enum AssetType {
