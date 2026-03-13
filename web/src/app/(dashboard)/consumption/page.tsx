@@ -60,6 +60,14 @@ export default function ConsumptionPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Filters
+  const [type, setType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
+  const [platform, setPlatform] = useState<"ALL" | "wechat" | "alipay">("ALL");
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
+    start: "",
+    end: "",
+  });
+
   const [items, setItems] = useState<TransactionItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -73,11 +81,18 @@ export default function ConsumptionPage() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
 
   async function loadMetrics() {
+    const qs = new URLSearchParams({
+      type,
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    });
+    const q = qs.toString();
+
     const [summary, platform, category, daily] = await Promise.all([
-      apiFetch<ConsumptionSummary>("/api/metrics/consumption/summary"),
-      apiFetch<{ items: PlatformItem[] }>("/api/metrics/consumption/by-platform"),
-      apiFetch<{ items: CategoryItem[] }>("/api/metrics/consumption/by-category"),
-      apiFetch<{ items: DailyItem[] }>("/api/metrics/consumption/daily"),
+      apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${q}`),
+      apiFetch<{ items: PlatformItem[] }>(`/api/metrics/consumption/by-platform?${q}`),
+      apiFetch<{ items: CategoryItem[] }>(`/api/metrics/consumption/by-category?${q}`),
+      apiFetch<{ items: DailyItem[] }>(`/api/metrics/consumption/daily?${q}`),
     ]);
     setSummary(summary);
     setByPlatform(platform.items);
@@ -118,8 +133,11 @@ export default function ConsumptionPage() {
     const qs = new URLSearchParams({
       page: String(nextPage),
       pageSize: String(pageSize),
-      type: "EXPENSE",
+      type,
+      startDate: dateRange.start,
+      endDate: dateRange.end,
     });
+    if (platform !== "ALL") qs.append("platform", platform);
 
     const data = await apiFetch<{
       page: number;
@@ -134,11 +152,45 @@ export default function ConsumptionPage() {
   }
 
   useEffect(() => {
-    loadTransactions().catch(() => {
-    });
-    loadMetrics().catch(() => {
-    });
-  }, []);
+    loadTransactions(1).catch(() => {});
+    loadMetrics().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, platform, dateRange]);
+
+  function setQuickDate(range: "7d" | "30d" | "thisMonth" | "lastMonth" | "all") {
+    if (range === "all") {
+      setDateRange({ start: "", end: "" });
+      return;
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let start: Date;
+    let end: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    if (range === "7d") {
+      start = new Date(today);
+      start.setDate(start.getDate() - 6);
+    } else if (range === "30d") {
+      start = new Date(today);
+      start.setDate(start.getDate() - 29);
+    } else if (range === "thisMonth") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else {
+      // lastMonth
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+    
+    // Format to YYYY-MM-DD
+    const fmt = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dd}`;
+    };
+
+    setDateRange({ start: fmt(start), end: fmt(end) });
+  }
 
   async function importCsv() {
     setError(null);
@@ -182,6 +234,86 @@ export default function ConsumptionPage() {
         </div>
       ) : null}
 
+      <section className="flex flex-col gap-4 rounded border p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center overflow-hidden rounded border">
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm ${
+                type === "EXPENSE" ? "bg-black text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setType("EXPENSE")}
+            >
+              支出
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm ${
+                type === "INCOME" ? "bg-black text-white" : "bg-white text-gray-700 hover:bg-gray-50"
+              }`}
+              onClick={() => setType("INCOME")}
+            >
+              收入
+            </button>
+          </div>
+
+          <select
+            className="rounded border px-2 py-1.5 text-sm"
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value as any)}
+          >
+            <option value="ALL">全部平台</option>
+            <option value="wechat">微信</option>
+            <option value="alipay">支付宝</option>
+          </select>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setQuickDate("all")}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+            >
+              全部
+            </button>
+            <button
+              onClick={() => setQuickDate("7d")}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+            >
+              近7天
+            </button>
+            <button
+              onClick={() => setQuickDate("thisMonth")}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+            >
+              本月
+            </button>
+            <button
+              onClick={() => setQuickDate("lastMonth")}
+              className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+            >
+              上月
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 text-sm">
+            <input
+              type="date"
+              className="rounded border px-2 py-1"
+              value={dateRange.start}
+              onChange={(e) => setDateRange((p) => ({ ...p, start: e.target.value }))}
+            />
+            <span className="text-gray-400">-</span>
+            <input
+              type="date"
+              className="rounded border px-2 py-1"
+              value={dateRange.end}
+              onChange={(e) => setDateRange((p) => ({ ...p, end: e.target.value }))}
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="rounded border p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="font-medium">汇总</div>
@@ -198,11 +330,15 @@ export default function ConsumptionPage() {
         {summary ? (
           <div className="grid gap-2 md:grid-cols-3 text-sm">
             <div className="rounded border p-3">
-              <div className="text-xs text-gray-600">总支出</div>
+              <div className="text-xs text-gray-600">
+                {type === "EXPENSE" ? "总支出" : "总收入"}
+              </div>
               <div className="font-medium mt-1">{summary.totalExpense}</div>
             </div>
             <div className="rounded border p-3">
-              <div className="text-xs text-gray-600">支出笔数</div>
+              <div className="text-xs text-gray-600">
+                {type === "EXPENSE" ? "支出笔数" : "收入笔数"}
+              </div>
               <div className="font-medium mt-1">{summary.expenseCount}</div>
             </div>
             <div className="rounded border p-3">
@@ -224,7 +360,9 @@ export default function ConsumptionPage() {
                 <thead>
                   <tr className="text-left text-gray-600 border-b">
                     <th className="py-2 pr-3">平台</th>
-                    <th className="py-2 pr-3">总支出</th>
+                    <th className="py-2 pr-3">
+                      {type === "EXPENSE" ? "总支出" : "总收入"}
+                    </th>
                     <th className="py-2 pr-3">笔数</th>
                   </tr>
                 </thead>
@@ -244,12 +382,18 @@ export default function ConsumptionPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <div className="text-sm font-medium">消费趋势（按日）</div>
+            <div className="text-sm font-medium">
+              {type === "EXPENSE" ? "消费趋势（按日）" : "收入趋势（按日）"}
+            </div>
             {daily.length === 0 ? (
               <div className="text-sm text-gray-600">暂无趋势数据</div>
             ) : (
               <div className="rounded border p-3">
-                <svg className="w-full h-[180px]" viewBox={dailyPoints.viewBox} preserveAspectRatio="none">
+                <svg
+                  className="w-full h-[180px]"
+                  viewBox={dailyPoints.viewBox}
+                  preserveAspectRatio="none"
+                >
                   <path d={dailyPoints.path} fill="none" stroke="black" strokeWidth="2" />
                 </svg>
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
@@ -356,7 +500,9 @@ export default function ConsumptionPage() {
 
       <section className="rounded border p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="font-medium">消费流水（仅支出）</div>
+          <div className="font-medium">
+            {type === "EXPENSE" ? "消费流水（支出）" : "收入流水"}
+          </div>
           <div className="flex items-center gap-2">
             <button
               className="rounded border px-3 py-2 text-sm disabled:opacity-60"

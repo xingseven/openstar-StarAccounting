@@ -263,28 +263,30 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 
-function parseDateRange(req: Request) {
+function parseQuery(req: Request) {
   const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
   const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
+  const type = typeof req.query.type === "string" ? req.query.type : "EXPENSE";
   const start = startDate ? new Date(startDate) : null;
   const end = endDate ? new Date(endDate) : null;
   return {
     startDate,
     endDate,
+    type,
     start: start && !Number.isNaN(start.getTime()) ? start : null,
     end: end && !Number.isNaN(end.getTime()) ? end : null,
   };
 }
 
 app.get("/api/metrics/consumption/summary", async (req, res) => {
-  const { start, end } = parseDateRange(req);
+  const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type: "EXPENSE" };
+      const where: Record<string, unknown> = { userId, type };
       if (start || end) {
         where.date = {
           ...(start ? { gte: start } : {}),
@@ -311,7 +313,7 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
 
   const all = transactionsByUser.get(userId) ?? [];
   const filtered = all.filter((t) => {
-    if (t.type !== "EXPENSE") return false;
+    if (t.type !== type) return false;
     const ts = new Date(t.date).getTime();
     if (start && ts < start.getTime()) return false;
     if (end && ts > end.getTime()) return false;
@@ -328,14 +330,14 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
 });
 
 app.get("/api/metrics/consumption/by-platform", async (req, res) => {
-  const { start, end } = parseDateRange(req);
+  const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type: "EXPENSE" };
+      const where: Record<string, unknown> = { userId, type };
       if (start || end) {
         where.date = {
           ...(start ? { gte: start } : {}),
@@ -375,7 +377,7 @@ app.get("/api/metrics/consumption/by-platform", async (req, res) => {
   const map = new Map<string, { total: number; count: number }>();
 
   for (const t of all) {
-    if (t.type !== "EXPENSE") continue;
+    if (t.type !== type) continue;
     const ts = new Date(t.date).getTime();
     if (start && ts < start.getTime()) continue;
     if (end && ts > end.getTime()) continue;
@@ -394,14 +396,14 @@ app.get("/api/metrics/consumption/by-platform", async (req, res) => {
 });
 
 app.get("/api/metrics/consumption/by-category", async (req, res) => {
-  const { start, end } = parseDateRange(req);
+  const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type: "EXPENSE" };
+      const where: Record<string, unknown> = { userId, type };
       if (start || end) {
         where.date = {
           ...(start ? { gte: start } : {}),
@@ -441,7 +443,7 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
   const map = new Map<string, { total: number; count: number }>();
 
   for (const t of all) {
-    if (t.type !== "EXPENSE") continue;
+    if (t.type !== type) continue;
     const ts = new Date(t.date).getTime();
     if (start && ts < start.getTime()) continue;
     if (end && ts > end.getTime()) continue;
@@ -460,7 +462,7 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
 });
 
 app.get("/api/metrics/consumption/daily", async (req, res) => {
-  const { start, end } = parseDateRange(req);
+  const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const prisma = getPrisma();
@@ -470,7 +472,7 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
       const rows = (await prisma.$queryRaw`SELECT date_trunc('day',"date") AS day, SUM(amount) AS total, COUNT(*)::int AS count
         FROM "Transaction"
         WHERE "userId"=${userId}
-          AND "type"='EXPENSE'
+          AND "type"=${type}
           AND (${start}::timestamptz IS NULL OR "date" >= ${start})
           AND (${end}::timestamptz IS NULL OR "date" <= ${end})
         GROUP BY day
@@ -495,7 +497,7 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
   const map = new Map<string, { total: number; count: number }>();
 
   for (const t of all) {
-    if (t.type !== "EXPENSE") continue;
+    if (t.type !== type) continue;
     const d = new Date(t.date);
     if (Number.isNaN(d.getTime())) continue;
     if (start && d.getTime() < start.getTime()) continue;
