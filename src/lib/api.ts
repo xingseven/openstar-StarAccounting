@@ -1,0 +1,33 @@
+import { getAccessToken } from "./auth";
+
+type ApiError = {
+  code: number;
+  message: string;
+  detail?: string;
+};
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+
+export async function apiFetch<T>(path: string, init?: RequestInit) {
+  const headers = new Headers(init?.headers);
+  const token = getAccessToken();
+  if (token) headers.set("authorization", `Bearer ${token}`);
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
+
+  const json = (await res.json()) as { data?: T } | ApiError;
+  if (!res.ok || !("data" in json)) {
+    const msg = "detail" in json && json.detail ? json.detail : "请求失败";
+    const err = new Error(msg);
+    (err as { status?: number; code?: number }).status = res.status;
+    if ("code" in json) (err as { code?: number }).code = json.code;
+    throw err;
+  }
+
+  return json.data as T;
+}
+
