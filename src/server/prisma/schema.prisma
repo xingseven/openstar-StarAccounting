@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -89,7 +89,7 @@ model Loan {
   monthlyPayment  Decimal
   dueDate         Int
   status          LoanStatus  @default(ACTIVE)
-  matchKeywords   String[]
+  matchKeywords   Json?
   transactions    Transaction[]
 
   user User @relation(fields: [userId], references: [id])
