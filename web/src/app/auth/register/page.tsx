@@ -2,20 +2,19 @@
 
 import { apiFetch } from "@/lib/api";
 import { setAccessToken } from "@/lib/auth";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-type LoginResponse = {
+type RegisterResponse = {
   accessToken: string;
   user: { id: string; email: string; name: string | null };
 };
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
 
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,15 +24,15 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const data = await apiFetch<LoginResponse>("/api/auth/login", {
+      const data = await apiFetch<RegisterResponse>("/api/auth/register", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, name }),
       });
       setAccessToken(data.accessToken);
-      router.replace(next);
+      router.replace("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "登录失败");
+      setError(err instanceof Error ? err.message : "注册失败");
     } finally {
       setLoading(false);
     }
@@ -42,7 +41,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-dvh flex items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-4 rounded border p-6">
-        <h1 className="text-lg font-semibold">登录</h1>
+        <h1 className="text-lg font-semibold">注册</h1>
         {error ? (
           <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
@@ -61,12 +60,22 @@ export default function LoginPage() {
             />
           </label>
           <label className="block space-y-1">
+            <div className="text-sm">昵称（可选）</div>
+            <input
+              className="w-full rounded border px-3 py-2 text-sm"
+              name="name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <label className="block space-y-1">
             <div className="text-sm">密码</div>
             <input
               className="w-full rounded border px-3 py-2 text-sm"
               name="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -76,12 +85,12 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
           >
-            {loading ? "登录中..." : "登录"}
+            {loading ? "注册中..." : "注册"}
           </button>
         </form>
         <div className="text-sm text-gray-600 flex items-center justify-between">
-          <a className="hover:underline" href="/auth/register">
-            去注册
+          <a className="hover:underline" href="/auth/login">
+            去登录
           </a>
           <a className="hover:underline" href="/">
             返回
