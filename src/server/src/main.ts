@@ -1,7 +1,10 @@
 import cors from "cors";
 import crypto from "crypto";
 import express, { type Request, type Response } from "express";
+import multer from "multer";
 import { getPrisma } from "./lib/prisma.js";
+import { importCsvBuffer } from "./etl/importCsv.js";
+import { mapRowToTransaction } from "./etl/mapTransaction.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -13,6 +16,20 @@ type ApiError = {
   code: number;
   message: string;
   detail?: string;
+};
+
+type TransactionRecord = {
+  id: string;
+  orderId: string | null;
+  date: string;
+  type: string;
+  amount: string;
+  category: string;
+  platform: string;
+  merchant: string | null;
+  description: string | null;
+  paymentMethod: string | null;
+  status: string | null;
 };
 
 type Connection = {
@@ -29,6 +46,7 @@ type Connection = {
 
 const connectionsById = new Map<string, Connection>();
 const connectionIdByOtp = new Map<string, string>();
+const transactionsByUser = new Map<string, TransactionRecord[]>();
 
 function jsonOk<T>(res: Response, data: T, message = "ok") {
   const body: ApiSuccess<T> = { code: 200, message, data };
@@ -96,12 +114,253 @@ async function ensureUserId(email: string) {
   return user.id;
 }
 
+function memoryUserId(email: string) {
+  return `mem-${email}`;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.get("/api/health", (_req, res) => {
   jsonOk(res, { status: "ok" });
+});
+
+app.get("/api/transactions", async (req, res) => {
+  const page = Number(req.query.page ?? 1);
+  const pageSize = Math.min(200, Number(req.query.pageSize ?? 20));
+  const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
+  const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
+  const type = typeof req.query.type === "string" ? req.query.type : "";
+  const platform = typeof req.query.platform === "string" ? req.query.platform : "";
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const userId = await ensureUserId(getUserEmail(req));
+      if (!userId) {
+        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+        return;
+      }
+
+      const where: Record<string, unknown> = { userId };
+      if (startDate || endDate) {
+        where.date = {
+          ...(startDate ? { gte: new Date(startDate) } : {}),
+          ...(endDate ? { lte: new Date(endDate) } : {}),
+        };
+      }
+      if (type) where.type = type;
+      if (platform) where.platform = platform;
+      if (search) {
+        where.OR = [
+          { merchant: { contains: search } },
+          { description: { contains: search } },
+          { category: { contains: search } },
+        ];
+      }
+
+      const [total, items] = await Promise.all([
+        prisma.transaction.count({ where }),
+        prisma.transaction.findMany({
+          where,
+          orderBy: { date: "desc" },
+          skip: (Math.max(1, page) - 1) * pageSize,
+          take: pageSize,
+          select: {
+            id: true,
+            orderId: true,
+            date: true,
+            type: true,
+            amount: true,
+            category: true,
+            platform: true,
+            merchant: true,
+            description: true,
+            paymentMethod: true,
+            status: true,
+          },
+        }),
+      ]);
+
+      jsonOk(res, { page, pageSize, total, items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const userId = memoryUserId(getUserEmail(req));
+  const all = transactionsByUser.get(userId) ?? [];
+  const filtered = all.filter((t) => {
+    if (type && t.type !== type) return false;
+    if (platform && t.platform !== platform) return false;
+    const ts = new Date(t.date).getTime();
+    if (startDate) {
+      const s = new Date(startDate).getTime();
+      if (Number.isFinite(s) && ts < s) return false;
+    }
+    if (endDate) {
+      const e = new Date(endDate).getTime();
+      if (Number.isFinite(e) && ts > e) return false;
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      const text = `${t.merchant ?? ""} ${t.description ?? ""} ${t.category}`.toLowerCase();
+      if (!text.includes(s)) return false;
+    }
+    return true;
+  });
+
+  const total = filtered.length;
+  const items = filtered.slice(
+    (Math.max(1, page) - 1) * pageSize,
+    Math.max(1, page) * pageSize
+  );
+  jsonOk(res, { page, pageSize, total, items });
+});
+
+app.post("/api/transactions/import", upload.single("file"), async (req, res) => {
+  const source = typeof req.body?.source === "string" ? req.body.source : "";
+  if (source !== "wechat" && source !== "alipay") {
+    jsonFail(res, 400, 50000, "INTERNAL_ERROR", "source 必须为 wechat 或 alipay");
+    return;
+  }
+
+  const file = req.file;
+  if (!file?.buffer || file.buffer.length === 0) {
+    jsonFail(res, 400, 50000, "INTERNAL_ERROR", "file 不能为空");
+    return;
+  }
+
+  let imported;
+  try {
+    imported = importCsvBuffer(file.buffer, source);
+  } catch (e: unknown) {
+    const code =
+      typeof e === "object" && e && "code" in e ? (e as { code?: unknown }).code : 50000;
+    if (code === 30001) {
+      jsonFail(res, 400, 30001, "IMPORT_HEADER_NOT_FOUND", "无法识别微信/支付宝列头，请检查文件格式");
+      return;
+    }
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "解析失败");
+    return;
+  }
+
+  const mapped = imported.rows.map((r) => mapRowToTransaction(r, source));
+  const valid = mapped
+    .filter((m) => m.ok)
+    .map((m) => (m as { ok: true; tx: unknown }).tx) as {
+    orderId: string | null;
+    date: Date;
+    type: string;
+    amount: string;
+    category: string;
+    platform: string;
+    merchant: string | null;
+    description: string | null;
+    paymentMethod: string | null;
+    status: string | null;
+  }[];
+  const invalidCount = mapped.length - valid.length;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const userId = await ensureUserId(getUserEmail(req));
+      if (!userId) {
+        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+        return;
+      }
+
+      const orderIds = valid.map((v) => v.orderId).filter((v): v is string => !!v);
+      const existing: Array<{ orderId: string | null }> =
+        orderIds.length > 0
+          ? await prisma.transaction.findMany({
+              where: { orderId: { in: orderIds } },
+              select: { orderId: true },
+            })
+          : [];
+      const existingSet = new Set(existing.map((e) => e.orderId).filter((v): v is string => !!v));
+      const duplicateCount = valid.filter((v) => v.orderId && existingSet.has(v.orderId)).length;
+
+      const toInsert = valid.filter((v) => !v.orderId || !existingSet.has(v.orderId));
+      const result =
+        toInsert.length > 0
+          ? await prisma.transaction.createMany({
+              data: toInsert.map((t) => ({
+                userId,
+                orderId: t.orderId,
+                date: t.date,
+                type: t.type as never,
+                amount: t.amount,
+                category: t.category,
+                platform: t.platform,
+                merchant: t.merchant,
+                description: t.description,
+                paymentMethod: t.paymentMethod,
+                status: t.status,
+              })),
+              skipDuplicates: true,
+            })
+          : { count: 0 };
+
+      jsonOk(res, {
+        totalRows: imported.rows.length,
+        insertedCount: result.count,
+        duplicateCount,
+        invalidCount,
+      });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const userId = memoryUserId(getUserEmail(req));
+  const list = transactionsByUser.get(userId) ?? [];
+  const existingSet = new Set(list.map((t) => t.orderId).filter((v): v is string => !!v));
+  let duplicateCount = 0;
+  let insertedCount = 0;
+
+  for (const t of valid) {
+    if (t.orderId && existingSet.has(t.orderId)) {
+      duplicateCount++;
+      continue;
+    }
+    const id = crypto.randomUUID();
+    list.push({
+      id,
+      orderId: t.orderId,
+      date: t.date.toISOString(),
+      type: t.type,
+      amount: t.amount,
+      category: t.category,
+      platform: t.platform,
+      merchant: t.merchant,
+      description: t.description,
+      paymentMethod: t.paymentMethod,
+      status: t.status,
+    });
+    if (t.orderId) existingSet.add(t.orderId);
+    insertedCount++;
+  }
+
+  list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  transactionsByUser.set(userId, list);
+
+  jsonOk(res, {
+    totalRows: imported.rows.length,
+    insertedCount,
+    duplicateCount,
+    invalidCount,
+  });
 });
 
 app.get("/api/connect/devices", async (req, res) => {

@@ -13,12 +13,17 @@
   "dependencies": {
     "@prisma/client": "^6.16.1",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "iconv-lite": "^0.7.0",
+    "multer": "^2.0.2",
+    "papaparse": "^5.5.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.3",
     "@types/node": "^22.18.1",
+    "@types/multer": "^2.0.0",
+    "@types/papaparse": "^5.3.16",
     "prisma": "^6.16.1",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
