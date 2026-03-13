@@ -2056,7 +2056,7 @@ app.put("/api/settings/password", async (req, res) => {
   jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持修改密码");
 });
 
-const port = Number(process.env.PORT ?? 3001);
+const port = Number(process.env.PORT ?? 3004);
 app.listen(port, () => {
   process.stdout.write(`server listening on http://localhost:${port}\n`);
 });

@@ -21,7 +21,7 @@
    ```
    该命令会自动构建前后端镜像并启动所有服务。
    - 数据库 (PostgreSQL): `5432`
-   - 后端 (API): `3001`
+   - 后端 (API): `3004`
    - 前端 (Web): `3000`
 
 3. **访问应用**
@@ -37,7 +37,7 @@
   - `ALLOW_DEV_HEADERS`: 是否允许开发调试头（生产环境建议设为 0）
 
 - **web**:
-  - `NEXT_PUBLIC_API_URL`: 前端访问后端的 API 地址（默认为 `http://localhost:3001`）
+  - `NEXT_PUBLIC_API_URL`: 前端访问后端的 API 地址（默认为 `http://localhost:3004`）
 
 ## 数据持久化
 

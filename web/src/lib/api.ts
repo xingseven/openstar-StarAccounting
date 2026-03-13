@@ -6,7 +6,7 @@ type ApiError = {
   detail?: string;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3004";
 
 export async function apiFetch<T>(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers);

@@ -26,4 +26,4 @@ npm install
 npm run dev
 ```
 
-默认后端地址为 `http://localhost:3001`，可在 `web/.env` 中配置 `NEXT_PUBLIC_API_BASE_URL`。
+默认后端地址为 `http://localhost:3004`，可在 `web/.env` 中配置 `NEXT_PUBLIC_API_BASE_URL`。
