@@ -48,5 +48,5 @@ services:
     restart: always
 
 volumes:
-  postgres_data:
+  mysql_data:
 

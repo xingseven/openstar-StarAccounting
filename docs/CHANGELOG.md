@@ -10,9 +10,12 @@ All notable changes to this project will be documented in this file.
 - **Infrastructure**: Added `docker-compose.yml` for PostgreSQL database setup.
 
 ### Changed
-- **Database**: Switched from PostgreSQL to MySQL.
+- **Database**: Switched from PostgreSQL to MySQL (8.0).
 - **Assets API**: Updated `GET /api/assets` to accept `?currency=XXX` query parameter and return `estimatedValue` field.
 - **Refactor**: Extracted business logic for Budget and Asset calculations into `src/logic/` directory.
+
+### Scripts
+- Added `npm run init:db` script for one-click database initialization (Schema push + Admin creation).
 
 ### Tests
 - Added `vitest` unit tests for `Currency`, `Budget`, and `Asset` logic.
