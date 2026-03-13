@@ -127,6 +127,277 @@ app.get("/api/health", (_req, res) => {
   jsonOk(res, { status: "ok" });
 });
 
+function parseDateRange(req: Request) {
+  const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
+  const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+  return {
+    startDate,
+    endDate,
+    start: start && !Number.isNaN(start.getTime()) ? start : null,
+    end: end && !Number.isNaN(end.getTime()) ? end : null,
+  };
+}
+
+app.get("/api/metrics/consumption/summary", async (req, res) => {
+  const { start, end } = parseDateRange(req);
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const userId = await ensureUserId(getUserEmail(req));
+      if (!userId) {
+        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+        return;
+      }
+
+      const where: Record<string, unknown> = { userId, type: "EXPENSE" };
+      if (start || end) {
+        where.date = {
+          ...(start ? { gte: start } : {}),
+          ...(end ? { lte: end } : {}),
+        };
+      }
+
+      const [count, sum] = await Promise.all([
+        prisma.transaction.count({ where }),
+        prisma.transaction.aggregate({ where, _sum: { amount: true } }),
+      ]);
+
+      const totalExpense = String(sum._sum.amount ?? 0);
+      const avgExpense = count > 0 ? String(Number(totalExpense) / count) : "0";
+
+      jsonOk(res, { totalExpense, expenseCount: count, avgExpense });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const userId = memoryUserId(getUserEmail(req));
+  const all = transactionsByUser.get(userId) ?? [];
+  const filtered = all.filter((t) => {
+    if (t.type !== "EXPENSE") return false;
+    const ts = new Date(t.date).getTime();
+    if (start && ts < start.getTime()) return false;
+    if (end && ts > end.getTime()) return false;
+    return true;
+  });
+
+  const total = filtered.reduce((acc, t) => acc + Number(t.amount), 0);
+  const count = filtered.length;
+  jsonOk(res, {
+    totalExpense: total.toFixed(2),
+    expenseCount: count,
+    avgExpense: count > 0 ? (total / count).toFixed(2) : "0",
+  });
+});
+
+app.get("/api/metrics/consumption/by-platform", async (req, res) => {
+  const { start, end } = parseDateRange(req);
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const userId = await ensureUserId(getUserEmail(req));
+      if (!userId) {
+        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+        return;
+      }
+
+      const where: Record<string, unknown> = { userId, type: "EXPENSE" };
+      if (start || end) {
+        where.date = {
+          ...(start ? { gte: start } : {}),
+          ...(end ? { lte: end } : {}),
+        };
+      }
+
+      const rows: Array<{
+        platform: string;
+        _sum: { amount: unknown };
+        _count: { _all: number };
+      }> = await prisma.transaction.groupBy({
+        by: ["platform"],
+        where,
+        _sum: { amount: true },
+        _count: { _all: true },
+      });
+
+      const items = rows
+        .map((r) => ({
+          platform: r.platform,
+          total: String(r._sum.amount ?? 0),
+          count: r._count._all,
+        }))
+        .sort((a: { total: string }, b: { total: string }) => Number(b.total) - Number(a.total));
+
+      jsonOk(res, { items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const userId = memoryUserId(getUserEmail(req));
+  const all = transactionsByUser.get(userId) ?? [];
+  const map = new Map<string, { total: number; count: number }>();
+
+  for (const t of all) {
+    if (t.type !== "EXPENSE") continue;
+    const ts = new Date(t.date).getTime();
+    if (start && ts < start.getTime()) continue;
+    if (end && ts > end.getTime()) continue;
+
+    const cur = map.get(t.platform) ?? { total: 0, count: 0 };
+    cur.total += Number(t.amount);
+    cur.count += 1;
+    map.set(t.platform, cur);
+  }
+
+  const items = Array.from(map.entries())
+    .map(([platform, v]) => ({ platform, total: v.total.toFixed(2), count: v.count }))
+    .sort((a, b) => Number(b.total) - Number(a.total));
+
+  jsonOk(res, { items });
+});
+
+app.get("/api/metrics/consumption/by-category", async (req, res) => {
+  const { start, end } = parseDateRange(req);
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const userId = await ensureUserId(getUserEmail(req));
+      if (!userId) {
+        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+        return;
+      }
+
+      const where: Record<string, unknown> = { userId, type: "EXPENSE" };
+      if (start || end) {
+        where.date = {
+          ...(start ? { gte: start } : {}),
+          ...(end ? { lte: end } : {}),
+        };
+      }
+
+      const rows: Array<{
+        category: string;
+        _sum: { amount: unknown };
+        _count: { _all: number };
+      }> = await prisma.transaction.groupBy({
+        by: ["category"],
+        where,
+        _sum: { amount: true },
+        _count: { _all: true },
+      });
+
+      const items = rows
+        .map((r) => ({
+          category: r.category,
+          total: String(r._sum.amount ?? 0),
+          count: r._count._all,
+        }))
+        .sort((a: { total: string }, b: { total: string }) => Number(b.total) - Number(a.total));
+
+      jsonOk(res, { items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const userId = memoryUserId(getUserEmail(req));
+  const all = transactionsByUser.get(userId) ?? [];
+  const map = new Map<string, { total: number; count: number }>();
+
+  for (const t of all) {
+    if (t.type !== "EXPENSE") continue;
+    const ts = new Date(t.date).getTime();
+    if (start && ts < start.getTime()) continue;
+    if (end && ts > end.getTime()) continue;
+
+    const cur = map.get(t.category) ?? { total: 0, count: 0 };
+    cur.total += Number(t.amount);
+    cur.count += 1;
+    map.set(t.category, cur);
+  }
+
+  const items = Array.from(map.entries())
+    .map(([category, v]) => ({ category, total: v.total.toFixed(2), count: v.count }))
+    .sort((a, b) => Number(b.total) - Number(a.total));
+
+  jsonOk(res, { items });
+});
+
+app.get("/api/metrics/consumption/daily", async (req, res) => {
+  const { start, end } = parseDateRange(req);
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const userId = await ensureUserId(getUserEmail(req));
+      if (!userId) {
+        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+        return;
+      }
+
+      const rows = (await prisma.$queryRaw`SELECT date_trunc('day',"date") AS day, SUM(amount) AS total, COUNT(*)::int AS count
+        FROM "Transaction"
+        WHERE "userId"=${userId}
+          AND "type"='EXPENSE'
+          AND (${start}::timestamptz IS NULL OR "date" >= ${start})
+          AND (${end}::timestamptz IS NULL OR "date" <= ${end})
+        GROUP BY day
+        ORDER BY day`) as Array<{ day: Date; total: unknown; count: number }>;
+
+      const items = rows.map((r) => ({
+        day: r.day.toISOString().slice(0, 10),
+        total: String(r.total ?? 0),
+        count: r.count,
+      }));
+
+      jsonOk(res, { items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const userId = memoryUserId(getUserEmail(req));
+  const all = transactionsByUser.get(userId) ?? [];
+  const map = new Map<string, { total: number; count: number }>();
+
+  for (const t of all) {
+    if (t.type !== "EXPENSE") continue;
+    const d = new Date(t.date);
+    if (Number.isNaN(d.getTime())) continue;
+    if (start && d.getTime() < start.getTime()) continue;
+    if (end && d.getTime() > end.getTime()) continue;
+    const key = d.toISOString().slice(0, 10);
+    const cur = map.get(key) ?? { total: 0, count: 0 };
+    cur.total += Number(t.amount);
+    cur.count += 1;
+    map.set(key, cur);
+  }
+
+  const items = Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, v]) => ({ day, total: v.total.toFixed(2), count: v.count }));
+
+  jsonOk(res, { items });
+});
+
 app.get("/api/transactions", async (req, res) => {
   const page = Number(req.query.page ?? 1);
   const pageSize = Math.min(200, Number(req.query.pageSize ?? 20));

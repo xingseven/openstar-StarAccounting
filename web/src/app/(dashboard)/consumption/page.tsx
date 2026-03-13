@@ -35,6 +35,18 @@ type ImportResult = {
   invalidCount: number;
 };
 
+type ConsumptionSummary = {
+  totalExpense: string;
+  expenseCount: number;
+  avgExpense: string;
+};
+
+type PlatformItem = {
+  platform: string;
+  total: string;
+  count: number;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 const DEV_USER_EMAIL = "dev@local";
 
@@ -50,7 +62,30 @@ export default function ConsumptionPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
+  const [summary, setSummary] = useState<ConsumptionSummary | null>(null);
+  const [byPlatform, setByPlatform] = useState<PlatformItem[]>([]);
+
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
+
+  async function loadMetrics() {
+    const [summaryRes, platformRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/api/metrics/consumption/summary`, {
+        headers: { "x-user-email": DEV_USER_EMAIL },
+        cache: "no-store",
+      }),
+      fetch(`${API_BASE_URL}/api/metrics/consumption/by-platform`, {
+        headers: { "x-user-email": DEV_USER_EMAIL },
+        cache: "no-store",
+      }),
+    ]);
+
+    const summaryJson = (await summaryRes.json()) as ApiSuccess<ConsumptionSummary> | ApiError;
+    if (summaryRes.ok && "data" in summaryJson) setSummary(summaryJson.data);
+
+    const platformJson =
+      (await platformRes.json()) as ApiSuccess<{ items: PlatformItem[] }> | ApiError;
+    if (platformRes.ok && "data" in platformJson) setByPlatform(platformJson.data.items);
+  }
 
   async function loadTransactions(nextPage = page) {
     const qs = new URLSearchParams({
@@ -82,6 +117,8 @@ export default function ConsumptionPage() {
   useEffect(() => {
     loadTransactions().catch(() => {
     });
+    loadMetrics().catch(() => {
+    });
   }, []);
 
   async function importCsv() {
@@ -112,6 +149,7 @@ export default function ConsumptionPage() {
 
       setImportResult(json.data);
       await loadTransactions(1);
+      await loadMetrics();
     } catch (e) {
       setError(e instanceof Error ? e.message : "导入失败");
     } finally {
@@ -131,6 +169,67 @@ export default function ConsumptionPage() {
           {error}
         </div>
       ) : null}
+
+      <section className="rounded border p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="font-medium">汇总</div>
+          <button
+            className="rounded border px-3 py-2 text-sm"
+            onClick={() => loadMetrics().catch(() => {
+            })}
+            type="button"
+          >
+            刷新汇总
+          </button>
+        </div>
+
+        {summary ? (
+          <div className="grid gap-2 md:grid-cols-3 text-sm">
+            <div className="rounded border p-3">
+              <div className="text-xs text-gray-600">总支出</div>
+              <div className="font-medium mt-1">{summary.totalExpense}</div>
+            </div>
+            <div className="rounded border p-3">
+              <div className="text-xs text-gray-600">支出笔数</div>
+              <div className="font-medium mt-1">{summary.expenseCount}</div>
+            </div>
+            <div className="rounded border p-3">
+              <div className="text-xs text-gray-600">平均每笔</div>
+              <div className="font-medium mt-1">{summary.avgExpense}</div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600">暂无汇总数据</div>
+        )}
+
+        <div className="space-y-2">
+          <div className="text-sm font-medium">按平台</div>
+          {byPlatform.length === 0 ? (
+            <div className="text-sm text-gray-600">暂无平台数据</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-600 border-b">
+                    <th className="py-2 pr-3">平台</th>
+                    <th className="py-2 pr-3">总支出</th>
+                    <th className="py-2 pr-3">笔数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byPlatform.map((p) => (
+                    <tr key={p.platform} className="border-b">
+                      <td className="py-2 pr-3">{p.platform}</td>
+                      <td className="py-2 pr-3 font-medium">{p.total}</td>
+                      <td className="py-2 pr-3">{p.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="rounded border p-4 space-y-3">
         <div className="font-medium">导入账单</div>
