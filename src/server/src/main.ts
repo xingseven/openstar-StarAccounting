@@ -7,6 +7,7 @@ import { importCsvBuffer } from "./etl/importCsv.js";
 import { mapRowToTransaction } from "./etl/mapTransaction.js";
 import { signAccessToken, verifyAccessToken } from "./auth/jwt.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
+import { convertCurrency, type ExchangeRate as CurrencyExchangeRate } from "./lib/currency.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -98,6 +99,33 @@ type Budget = {
   createdAt: string;
 };
 const budgetsByUser = new Map<string, Budget[]>();
+
+type ExchangeRate = {
+  id: string;
+  from: string;
+  to: string;
+  rate: string;
+  updatedAt: string;
+};
+const exchangeRates = new Map<string, ExchangeRate>();
+
+// Initialize some default rates
+const defaultRates = [
+  { from: "USD", to: "CNY", rate: "7.20" },
+  { from: "EUR", to: "CNY", rate: "7.80" },
+  { from: "HKD", to: "CNY", rate: "0.92" },
+  { from: "JPY", to: "CNY", rate: "0.048" },
+];
+for (const r of defaultRates) {
+  const key = `${r.from}-${r.to}`;
+  exchangeRates.set(key, {
+    id: crypto.randomUUID(),
+    from: r.from,
+    to: r.to,
+    rate: r.rate,
+    updatedAt: new Date().toISOString(),
+  });
+}
 
 function jsonOk<T>(res: Response, data: T, message = "ok") {
   const body: ApiSuccess<T> = { code: 200, message, data };
@@ -1449,23 +1477,62 @@ app.get("/api/assets", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
 
+  const targetCurrency = typeof req.query.currency === "string" ? req.query.currency : "CNY";
+
   const prisma = getPrisma();
+  let assets: any[] = [];
+  let rates: ExchangeRate[] = [];
+
   if (prisma) {
     try {
-      const assets = await prisma.asset.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-      });
-      jsonOk(res, { items: assets });
-      return;
+      const [assetsData, ratesData] = await Promise.all([
+        prisma.asset.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.exchangeRate.findMany(),
+      ]);
+      assets = assetsData;
+      rates = ratesData.map(r => ({
+        id: r.id,
+        from: r.from,
+        to: r.to,
+        rate: String(r.rate),
+        updatedAt: r.updatedAt.toISOString(),
+      }));
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
       jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
       return;
     }
+  } else {
+    assets = assetsByUser.get(userId) ?? [];
+    rates = Array.from(exchangeRates.values());
   }
 
-  const items = assetsByUser.get(userId) ?? [];
+  // Build rate map
+  const rateItems: CurrencyExchangeRate[] = rates.map(r => ({
+    from: r.from,
+    to: r.to,
+    rate: Number(r.rate)
+  }));
+
+  const items = assets.map((asset) => {
+    const balance = Number(asset.balance);
+    const currency = asset.currency || "CNY";
+    
+    let estimatedValue = balance;
+    if (currency !== targetCurrency) {
+      estimatedValue = convertCurrency(balance, currency, targetCurrency, rateItems);
+    }
+
+    return {
+      ...asset,
+      balance: String(balance), // Ensure string
+      estimatedValue: estimatedValue.toFixed(2),
+    };
+  });
+
   jsonOk(res, { items });
 });
 
@@ -1779,6 +1846,86 @@ app.delete("/api/budgets/:id", async (req, res) => {
   const newList = list.filter((b) => b.id !== id);
   budgetsByUser.set(userId, newList);
   jsonOk(res, { deleted: true });
+});
+
+// Exchange Rate API
+app.get("/api/exchange-rates", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const rates = await prisma.exchangeRate.findMany({
+        orderBy: { updatedAt: "desc" },
+      });
+      // Convert Decimal to string
+      const items = rates.map((r) => ({
+        ...r,
+        rate: String(r.rate),
+        updatedAt: r.updatedAt.toISOString(),
+      }));
+      jsonOk(res, { items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const items = Array.from(exchangeRates.values());
+  jsonOk(res, { items });
+});
+
+app.post("/api/exchange-rates", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { from, to, rate } = req.body ?? {};
+  if (typeof from !== "string" || !from) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "from 必填");
+    return;
+  }
+  if (typeof to !== "string" || !to) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "to 必填");
+    return;
+  }
+  if (!rate || Number.isNaN(Number(rate))) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "rate 必填");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const r = await prisma.exchangeRate.upsert({
+        where: { from_to: { from, to } },
+        update: { rate: Number(rate) },
+        create: { from, to, rate: Number(rate) },
+      });
+      jsonOk(res, { item: { ...r, rate: String(r.rate), updatedAt: r.updatedAt.toISOString() } });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const key = `${from}-${to}`;
+  const now = new Date().toISOString();
+  const existing = exchangeRates.get(key);
+  
+  const newItem: ExchangeRate = {
+    id: existing?.id ?? crypto.randomUUID(),
+    from,
+    to,
+    rate: String(rate),
+    updatedAt: now,
+  };
+  exchangeRates.set(key, newItem);
+  jsonOk(res, { item: newItem });
 });
 
 // Settings API

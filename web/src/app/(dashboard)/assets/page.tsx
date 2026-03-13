@@ -9,13 +9,19 @@ type Asset = {
   type: "CASH" | "BANK_CARD" | "ALIPAY" | "WECHAT" | "INVESTMENT" | "OTHER";
   balance: number;
   currency: string;
+  estimatedValue: number;
   createdAt: string;
 };
+
+const SUPPORTED_CURRENCIES = ["CNY", "USD", "EUR", "HKD", "JPY", "GBP"];
 
 export default function AssetsPage() {
   const [items, setItems] = useState<Asset[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Asset | null>(null);
+
+  // Display settings
+  const [displayCurrency, setDisplayCurrency] = useState("CNY");
 
   // Form states
   const [name, setName] = useState("");
@@ -28,10 +34,11 @@ export default function AssetsPage() {
 
   async function loadItems() {
     try {
-      const data = await apiFetch<{ items: any[] }>("/api/assets");
+      const data = await apiFetch<{ items: any[] }>(`/api/assets?currency=${displayCurrency}`);
       const list = data.items.map((i) => ({
         ...i,
         balance: Number(i.balance),
+        estimatedValue: Number(i.estimatedValue ?? i.balance),
       }));
       setItems(list);
     } catch (e) {
@@ -41,7 +48,7 @@ export default function AssetsPage() {
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [displayCurrency]);
 
   function openCreate() {
     setEditingItem(null);
@@ -106,7 +113,7 @@ export default function AssetsPage() {
     }
   }
 
-  const totalAssets = items.reduce((sum, item) => sum + item.balance, 0);
+  const totalAssets = items.reduce((sum, item) => sum + item.estimatedValue, 0);
 
   return (
     <div className="space-y-6">
@@ -115,17 +122,32 @@ export default function AssetsPage() {
           <h1 className="text-xl font-semibold">资产管理</h1>
           <p className="text-sm text-gray-600">管理你的现金、银行卡与投资账户</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="rounded bg-black px-4 py-2 text-sm text-white hover:opacity-90"
-        >
-          新增资产
-        </button>
+        <div className="flex gap-3">
+          <select
+            className="rounded border px-3 py-2 text-sm"
+            value={displayCurrency}
+            onChange={(e) => setDisplayCurrency(e.target.value)}
+          >
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                以 {c} 显示
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={openCreate}
+            className="rounded bg-black px-4 py-2 text-sm text-white hover:opacity-90"
+          >
+            新增资产
+          </button>
+        </div>
       </div>
 
       <div className="rounded border bg-black p-6 text-white">
-        <div className="text-sm opacity-80">总资产估值 (CNY)</div>
-        <div className="mt-2 text-3xl font-bold">¥ {totalAssets.toFixed(2)}</div>
+        <div className="text-sm opacity-80">总资产估值 ({displayCurrency})</div>
+        <div className="mt-2 text-3xl font-bold">
+          {displayCurrency === "CNY" ? "¥" : displayCurrency} {totalAssets.toFixed(2)}
+        </div>
       </div>
 
       {items.length === 0 ? (
@@ -173,6 +195,11 @@ export default function AssetsPage() {
                 <div className="text-lg font-medium">
                   {item.currency === "CNY" ? "¥" : item.currency} {item.balance.toFixed(2)}
                 </div>
+                {item.currency !== displayCurrency && (
+                  <div className="text-sm text-gray-500">
+                    ≈ {displayCurrency} {item.estimatedValue.toFixed(2)}
+                  </div>
+                )}
               </div>
             </div>
           ))}

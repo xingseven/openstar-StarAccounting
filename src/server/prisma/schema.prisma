@@ -23,6 +23,16 @@ model User {
   updatedAt    DateTime        @updatedAt
 }
 
+model ExchangeRate {
+  id        String   @id @default(cuid())
+  from      String
+  to        String
+  rate      Decimal
+  updatedAt DateTime @updatedAt
+
+  @@unique([from, to])
+}
+
 model AppConnection {
   id         String   @id @default(cuid())
   userId     String
