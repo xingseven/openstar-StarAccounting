@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - Added `Dockerfile` for Server and Web.
 - Updated `docker-compose.yml` to include full stack (Postgres + Server + Web).
 - Added `docs/DEPLOY.md` for deployment instructions.
+- Implemented `POST /api/exchange-rates/refresh` to fetch real-time exchange rates from `open.er-api.com`.
 
 ## [2026-03-13]
 

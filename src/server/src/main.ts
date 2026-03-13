@@ -10,6 +10,7 @@ import { hashPassword, verifyPassword } from "./auth/password.js";
 import { convertCurrency, type ExchangeRate as CurrencyExchangeRate } from "./lib/currency.js";
 import { calculateBudgetUsage } from "./logic/budget.js";
 import { calculateAssetValue } from "./logic/asset.js";
+import { fetchExchangeRates } from "./services/exchangeRate.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -1913,6 +1914,76 @@ app.post("/api/exchange-rates", async (req, res) => {
   };
   exchangeRates.set(key, newItem);
   jsonOk(res, { item: newItem });
+});
+
+app.post("/api/exchange-rates/refresh", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const rates = await fetchExchangeRates("CNY");
+  if (!rates) {
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "获取汇率失败");
+    return;
+  }
+
+  // Filter common currencies to avoid bloating DB
+  const common = ["USD", "EUR", "HKD", "JPY", "GBP", "AUD", "CAD", "SGD", "CHF"];
+  const updates: Array<{ from: string; to: string; rate: number }> = [];
+
+  for (const c of common) {
+    // API returns rates relative to base (CNY). 
+    // e.g. base=CNY, rates={USD: 0.14} means 1 CNY = 0.14 USD.
+    // We want to store pairs like USD -> CNY (how much CNY is 1 USD).
+    // So if 1 CNY = X USD, then 1 USD = 1/X CNY.
+    
+    // Direct rate: CNY -> c
+    const direct = rates[c];
+    if (direct) {
+      updates.push({ from: "CNY", to: c, rate: direct });
+      if (direct !== 0) {
+        updates.push({ from: c, to: "CNY", rate: 1 / direct });
+      }
+    }
+  }
+
+  const prisma = getPrisma();
+  let count = 0;
+
+  if (prisma) {
+    try {
+      await Promise.all(
+        updates.map((u) =>
+          prisma.exchangeRate.upsert({
+            where: { from_to: { from: u.from, to: u.to } },
+            update: { rate: u.rate },
+            create: { from: u.from, to: u.to, rate: u.rate },
+          })
+        )
+      );
+      count = updates.length;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  } else {
+    // Memory mode
+    for (const u of updates) {
+      const key = `${u.from}-${u.to}`;
+      const now = new Date().toISOString();
+      const existing = exchangeRates.get(key);
+      exchangeRates.set(key, {
+        id: existing?.id ?? crypto.randomUUID(),
+        from: u.from,
+        to: u.to,
+        rate: String(u.rate),
+        updatedAt: now,
+      });
+    }
+    count = updates.length;
+  }
+
+  jsonOk(res, { updated: count, source: "open.er-api.com" });
 });
 
 // Settings API
