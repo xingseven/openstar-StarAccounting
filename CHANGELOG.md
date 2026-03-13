@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 - 2026-03-13
+
+### Added
+
+- 后端新增 JWT 登录/注册与鉴权中间逻辑，并将核心数据接口纳入鉴权保护
+- 前端接入登录页与 Token 存储，Dashboard 路由组增加未登录跳转
+- 前端请求改为统一封装，自动携带 Authorization Bearer Token
+
 ## 0.4.0 - 2026-03-13
 
 ### Added

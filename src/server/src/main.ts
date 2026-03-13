@@ -5,6 +5,8 @@ import multer from "multer";
 import { getPrisma } from "./lib/prisma.js";
 import { importCsvBuffer } from "./etl/importCsv.js";
 import { mapRowToTransaction } from "./etl/mapTransaction.js";
+import { signAccessToken, verifyAccessToken } from "./auth/jwt.js";
+import { hashPassword, verifyPassword } from "./auth/password.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -118,6 +120,40 @@ function memoryUserId(email: string) {
   return `mem-${email}`;
 }
 
+function getAuthUserId(req: Request) {
+  const auth = req.headers.authorization;
+  if (typeof auth === "string" && auth.startsWith("Bearer ")) {
+    const token = auth.slice("Bearer ".length).trim();
+    const payload = verifyAccessToken(token);
+    if (payload) return payload.userId;
+  }
+  return null;
+}
+
+async function requireUserId(req: Request, res: Response) {
+  const tokenUserId = getAuthUserId(req);
+  if (tokenUserId) return tokenUserId;
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    return memoryUserId(getUserEmail(req));
+  }
+
+  const allowDevHeaders = process.env.ALLOW_DEV_HEADERS === "1";
+  if (!allowDevHeaders) {
+    jsonFail(res, 401, 10002, "TOKEN_EXPIRED", "请先登录");
+    return null;
+  }
+
+  const email = getUserEmail(req);
+  const userId = await ensureUserId(email);
+  if (!userId) {
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
+    return null;
+  }
+  return userId;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
@@ -125,6 +161,106 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 app.get("/api/health", (_req, res) => {
   jsonOk(res, { status: "ok" });
+});
+
+app.post("/api/auth/register", async (req, res) => {
+  const prisma = getPrisma();
+  if (!prisma) {
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "未配置数据库");
+    return;
+  }
+
+  const { email, password, name } = req.body ?? {};
+  if (typeof email !== "string" || !email.includes("@")) {
+    jsonFail(res, 400, 50000, "INTERNAL_ERROR", "email 不合法");
+    return;
+  }
+  if (typeof password !== "string" || password.length < 6) {
+    jsonFail(res, 400, 50000, "INTERNAL_ERROR", "password 至少 6 位");
+    return;
+  }
+
+  try {
+    const passwordHash = await hashPassword(password);
+    const user = await prisma.user.create({
+      data: { email, password: passwordHash, name: typeof name === "string" ? name : null },
+      select: { id: true, email: true, name: true },
+    });
+
+    const token = signAccessToken({ userId: user.id });
+    if (!token) {
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", "JWT_SECRET 未配置");
+      return;
+    }
+
+    jsonOk(res, { accessToken: token, user });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown";
+    jsonFail(res, 400, 50000, "INTERNAL_ERROR", message);
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  const prisma = getPrisma();
+  if (!prisma) {
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "未配置数据库");
+    return;
+  }
+
+  const { email, password } = req.body ?? {};
+  if (typeof email !== "string" || typeof password !== "string") {
+    jsonFail(res, 400, 10001, "INVALID_CREDENTIALS", "账号或密码错误");
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, email: true, name: true, password: true },
+  });
+  if (!user) {
+    jsonFail(res, 400, 10001, "INVALID_CREDENTIALS", "账号或密码错误");
+    return;
+  }
+
+  const ok = await verifyPassword(user.password, password);
+  if (!ok) {
+    jsonFail(res, 400, 10001, "INVALID_CREDENTIALS", "账号或密码错误");
+    return;
+  }
+
+  const token = signAccessToken({ userId: user.id });
+  if (!token) {
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "JWT_SECRET 未配置");
+    return;
+  }
+
+  jsonOk(res, { accessToken: token, user: { id: user.id, email: user.email, name: user.name } });
+});
+
+app.get("/api/auth/me", async (req, res) => {
+  const prisma = getPrisma();
+  if (!prisma) {
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "未配置数据库");
+    return;
+  }
+
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    });
+    if (!user) {
+      jsonFail(res, 401, 10002, "TOKEN_EXPIRED", "请重新登录");
+      return;
+    }
+    jsonOk(res, { user });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown";
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+  }
 });
 
 function parseDateRange(req: Request) {
@@ -142,16 +278,12 @@ function parseDateRange(req: Request) {
 
 app.get("/api/metrics/consumption/summary", async (req, res) => {
   const { start, end } = parseDateRange(req);
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const where: Record<string, unknown> = { userId, type: "EXPENSE" };
       if (start || end) {
         where.date = {
@@ -177,7 +309,6 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
     }
   }
 
-  const userId = memoryUserId(getUserEmail(req));
   const all = transactionsByUser.get(userId) ?? [];
   const filtered = all.filter((t) => {
     if (t.type !== "EXPENSE") return false;
@@ -198,16 +329,12 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
 
 app.get("/api/metrics/consumption/by-platform", async (req, res) => {
   const { start, end } = parseDateRange(req);
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const where: Record<string, unknown> = { userId, type: "EXPENSE" };
       if (start || end) {
         where.date = {
@@ -244,7 +371,6 @@ app.get("/api/metrics/consumption/by-platform", async (req, res) => {
     }
   }
 
-  const userId = memoryUserId(getUserEmail(req));
   const all = transactionsByUser.get(userId) ?? [];
   const map = new Map<string, { total: number; count: number }>();
 
@@ -269,16 +395,12 @@ app.get("/api/metrics/consumption/by-platform", async (req, res) => {
 
 app.get("/api/metrics/consumption/by-category", async (req, res) => {
   const { start, end } = parseDateRange(req);
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const where: Record<string, unknown> = { userId, type: "EXPENSE" };
       if (start || end) {
         where.date = {
@@ -315,7 +437,6 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
     }
   }
 
-  const userId = memoryUserId(getUserEmail(req));
   const all = transactionsByUser.get(userId) ?? [];
   const map = new Map<string, { total: number; count: number }>();
 
@@ -340,16 +461,12 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
 
 app.get("/api/metrics/consumption/daily", async (req, res) => {
   const { start, end } = parseDateRange(req);
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const rows = (await prisma.$queryRaw`SELECT date_trunc('day',"date") AS day, SUM(amount) AS total, COUNT(*)::int AS count
         FROM "Transaction"
         WHERE "userId"=${userId}
@@ -374,7 +491,6 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
     }
   }
 
-  const userId = memoryUserId(getUserEmail(req));
   const all = transactionsByUser.get(userId) ?? [];
   const map = new Map<string, { total: number; count: number }>();
 
@@ -399,6 +515,8 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
 });
 
 app.get("/api/transactions", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const page = Number(req.query.page ?? 1);
   const pageSize = Math.min(200, Number(req.query.pageSize ?? 20));
   const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
@@ -410,12 +528,6 @@ app.get("/api/transactions", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const where: Record<string, unknown> = { userId };
       if (startDate || endDate) {
         where.date = {
@@ -465,7 +577,6 @@ app.get("/api/transactions", async (req, res) => {
     }
   }
 
-  const userId = memoryUserId(getUserEmail(req));
   const all = transactionsByUser.get(userId) ?? [];
   const filtered = all.filter((t) => {
     if (type && t.type !== type) return false;
@@ -496,6 +607,8 @@ app.get("/api/transactions", async (req, res) => {
 });
 
 app.post("/api/transactions/import", upload.single("file"), async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const source = typeof req.body?.source === "string" ? req.body.source : "";
   if (source !== "wechat" && source !== "alipay") {
     jsonFail(res, 400, 50000, "INTERNAL_ERROR", "source 必须为 wechat 或 alipay");
@@ -542,12 +655,6 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const orderIds = valid.map((v) => v.orderId).filter((v): v is string => !!v);
       const existing: Array<{ orderId: string | null }> =
         orderIds.length > 0
@@ -594,7 +701,6 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
     }
   }
 
-  const userId = memoryUserId(getUserEmail(req));
   const list = transactionsByUser.get(userId) ?? [];
   const existingSet = new Set(list.map((t) => t.orderId).filter((v): v is string => !!v));
   let duplicateCount = 0;
@@ -635,15 +741,11 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
 });
 
 app.get("/api/connect/devices", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       const devices = await prisma.appConnection.findMany({
         where: { userId, isVerified: true },
         orderBy: [{ verifiedAt: "desc" }, { createdAt: "desc" }],
@@ -681,6 +783,8 @@ app.get("/api/connect/devices", async (req, res) => {
 });
 
 app.post("/api/connect/generate", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   try {
     await cleanupExpiredInDb();
   } catch {
@@ -689,12 +793,6 @@ app.post("/api/connect/generate", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const userId = await ensureUserId(getUserEmail(req));
-      if (!userId) {
-        jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
-        return;
-      }
-
       await prisma.appConnection.deleteMany({
         where: { userId, isVerified: false },
       });
@@ -874,12 +972,20 @@ app.post("/api/connect/verify", async (req, res) => {
 });
 
 app.delete("/api/connect/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
   const id = req.params.id;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      await prisma.appConnection.delete({ where: { id } });
+      const deleted = await prisma.appConnection.deleteMany({
+        where: { id, userId },
+      });
+      if (deleted.count === 0) {
+        jsonFail(res, 404, 50000, "INTERNAL_ERROR", "connection 不存在");
+        return;
+      }
       jsonOk(res, { revoked: true });
       return;
     } catch {

@@ -9,3 +9,4 @@ export function getPrisma() {
   return prisma;
 }
 
+export type PrismaOrNull = PrismaClient | null;

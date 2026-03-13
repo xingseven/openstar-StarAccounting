@@ -1,18 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
-
-type ApiSuccess<T> = {
-  code: 200;
-  message: string;
-  data: T;
-};
-
-type ApiError = {
-  code: number;
-  message: string;
-  detail?: string;
-};
 
 type GenerateData = {
   otpCode: string;
@@ -28,9 +17,6 @@ type Device = {
   verifiedAt: string | null;
   createdAt: string;
 };
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-const DEV_USER_EMAIL = "dev@local";
 
 function formatSeconds(totalSeconds: number) {
   const s = Math.max(0, Math.floor(totalSeconds));
@@ -58,20 +44,8 @@ export default function ConnectionsPage() {
   }, [generateData]);
 
   async function loadDevices() {
-    const res = await fetch(`${API_BASE_URL}/api/connect/devices`, {
-      method: "GET",
-      headers: {
-        "x-user-email": DEV_USER_EMAIL,
-      },
-      cache: "no-store",
-    });
-
-    const json = (await res.json()) as ApiSuccess<{ devices: Device[] }> | ApiError;
-    if (!res.ok || "data" in json === false) {
-      const msg = "detail" in json && json.detail ? json.detail : "加载设备列表失败";
-      throw new Error(msg);
-    }
-    setDevices(json.data.devices);
+    const data = await apiFetch<{ devices: Device[] }>("/api/connect/devices");
+    setDevices(data.devices);
   }
 
   useEffect(() => {
@@ -83,22 +57,13 @@ export default function ConnectionsPage() {
     setError(null);
     setIsGenerating(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/connect/generate`, {
+      const data = await apiFetch<GenerateData>("/api/connect/generate", {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-user-email": DEV_USER_EMAIL,
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       });
 
-      const json = (await res.json()) as ApiSuccess<GenerateData> | ApiError;
-      if (!res.ok || "data" in json === false) {
-        const msg = "detail" in json && json.detail ? json.detail : "生成连接码失败";
-        throw new Error(msg);
-      }
-
-      setGenerateData(json.data);
+      setGenerateData(data);
       setNow(Date.now());
       await loadDevices();
     } catch (e) {
@@ -111,19 +76,7 @@ export default function ConnectionsPage() {
   async function revokeDevice(id: string) {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/connect/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-user-email": DEV_USER_EMAIL,
-        },
-      });
-
-      const json = (await res.json()) as ApiSuccess<{ revoked: boolean }> | ApiError;
-      if (!res.ok || "data" in json === false) {
-        const msg = "detail" in json && json.detail ? json.detail : "撤销失败";
-        throw new Error(msg);
-      }
-
+      await apiFetch<{ revoked: boolean }>(`/api/connect/${id}`, { method: "DELETE" });
       await loadDevices();
     } catch (e) {
       setError(e instanceof Error ? e.message : "撤销失败");

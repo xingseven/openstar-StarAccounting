@@ -1,18 +1,7 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
-
-type ApiSuccess<T> = {
-  code: 200;
-  message: string;
-  data: T;
-};
-
-type ApiError = {
-  code: number;
-  message: string;
-  detail?: string;
-};
 
 type TransactionItem = {
   id: string;
@@ -47,9 +36,6 @@ type PlatformItem = {
   count: number;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-const DEV_USER_EMAIL = "dev@local";
-
 export default function ConsumptionPage() {
   const [source, setSource] = useState<"wechat" | "alipay">("wechat");
   const [file, setFile] = useState<File | null>(null);
@@ -68,23 +54,12 @@ export default function ConsumptionPage() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
 
   async function loadMetrics() {
-    const [summaryRes, platformRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/metrics/consumption/summary`, {
-        headers: { "x-user-email": DEV_USER_EMAIL },
-        cache: "no-store",
-      }),
-      fetch(`${API_BASE_URL}/api/metrics/consumption/by-platform`, {
-        headers: { "x-user-email": DEV_USER_EMAIL },
-        cache: "no-store",
-      }),
+    const [summary, platform] = await Promise.all([
+      apiFetch<ConsumptionSummary>("/api/metrics/consumption/summary"),
+      apiFetch<{ items: PlatformItem[] }>("/api/metrics/consumption/by-platform"),
     ]);
-
-    const summaryJson = (await summaryRes.json()) as ApiSuccess<ConsumptionSummary> | ApiError;
-    if (summaryRes.ok && "data" in summaryJson) setSummary(summaryJson.data);
-
-    const platformJson =
-      (await platformRes.json()) as ApiSuccess<{ items: PlatformItem[] }> | ApiError;
-    if (platformRes.ok && "data" in platformJson) setByPlatform(platformJson.data.items);
+    setSummary(summary);
+    setByPlatform(platform.items);
   }
 
   async function loadTransactions(nextPage = page) {
@@ -94,24 +69,16 @@ export default function ConsumptionPage() {
       type: "EXPENSE",
     });
 
-    const res = await fetch(`${API_BASE_URL}/api/transactions?${qs.toString()}`, {
-      headers: { "x-user-email": DEV_USER_EMAIL },
-      cache: "no-store",
-    });
+    const data = await apiFetch<{
+      page: number;
+      pageSize: number;
+      total: number;
+      items: TransactionItem[];
+    }>(`/api/transactions?${qs.toString()}`);
 
-    const json =
-      (await res.json()) as
-        | ApiSuccess<{ page: number; pageSize: number; total: number; items: TransactionItem[] }>
-        | ApiError;
-
-    if (!res.ok || "data" in json === false) {
-      const msg = "detail" in json && json.detail ? json.detail : "加载流水失败";
-      throw new Error(msg);
-    }
-
-    setItems(json.data.items);
-    setTotal(json.data.total);
-    setPage(json.data.page);
+    setItems(data.items);
+    setTotal(data.total);
+    setPage(data.page);
   }
 
   useEffect(() => {
@@ -135,19 +102,12 @@ export default function ConsumptionPage() {
       form.append("source", source);
       form.append("file", file, file.name);
 
-      const res = await fetch(`${API_BASE_URL}/api/transactions/import`, {
+      const data = await apiFetch<ImportResult>("/api/transactions/import", {
         method: "POST",
-        headers: { "x-user-email": DEV_USER_EMAIL },
         body: form,
       });
 
-      const json = (await res.json()) as ApiSuccess<ImportResult> | ApiError;
-      if (!res.ok || "data" in json === false) {
-        const msg = "detail" in json && json.detail ? json.detail : "导入失败";
-        throw new Error(msg);
-      }
-
-      setImportResult(json.data);
+      setImportResult(data);
       await loadTransactions(1);
       await loadMetrics();
     } catch (e) {
