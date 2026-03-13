@@ -8,6 +8,8 @@ import { mapRowToTransaction } from "./etl/mapTransaction.js";
 import { signAccessToken, verifyAccessToken } from "./auth/jwt.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 import { convertCurrency, type ExchangeRate as CurrencyExchangeRate } from "./lib/currency.js";
+import { calculateBudgetUsage } from "./logic/budget.js";
+import { calculateAssetValue } from "./logic/asset.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -1518,17 +1520,10 @@ app.get("/api/assets", async (req, res) => {
   }));
 
   const items = assets.map((asset) => {
-    const balance = Number(asset.balance);
-    const currency = asset.currency || "CNY";
-    
-    let estimatedValue = balance;
-    if (currency !== targetCurrency) {
-      estimatedValue = convertCurrency(balance, currency, targetCurrency, rateItems);
-    }
-
+    const estimatedValue = calculateAssetValue(asset, targetCurrency, rateItems);
     return {
       ...asset,
-      balance: String(balance), // Ensure string
+      balance: String(asset.balance), // Ensure string
       estimatedValue: estimatedValue.toFixed(2),
     };
   });
@@ -1708,19 +1703,11 @@ app.get("/api/budgets", async (req, res) => {
   const now = new Date();
   
   const items = budgets.map((b) => {
-    let used = 0;
-    for (const t of transactions) {
-      if (t.type !== "EXPENSE") continue;
-      if (b.category !== "ALL" && t.category !== b.category) continue;
-      
-      const d = new Date(t.date);
-      if (b.period === "MONTHLY") {
-        if (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) continue;
-      } else {
-        if (d.getFullYear() !== now.getFullYear()) continue;
-      }
-      used += Number(t.amount);
-    }
+    const used = calculateBudgetUsage(
+      { ...b, amount: Number(b.amount) },
+      transactions.map(t => ({ ...t, amount: Number(t.amount), date: new Date(t.date) })),
+      now
+    );
     return { ...b, used: used.toFixed(2) };
   });
 

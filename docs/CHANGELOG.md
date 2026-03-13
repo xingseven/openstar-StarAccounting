@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - **Assets API**: Updated `GET /api/assets` to accept `?currency=XXX` query parameter and return `estimatedValue` field.
+- **Refactor**: Extracted business logic for Budget and Asset calculations into `src/logic/` directory.
+
+### Tests
+- Added `vitest` unit tests for `Currency`, `Budget`, and `Asset` logic.
 
 ## [2026-03-13]
 
