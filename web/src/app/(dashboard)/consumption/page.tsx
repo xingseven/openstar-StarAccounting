@@ -36,6 +36,23 @@ type PlatformItem = {
   count: number;
 };
 
+type CategoryItem = {
+  category: string;
+  total: string;
+  count: number;
+};
+
+type DailyItem = {
+  day: string;
+  total: string;
+  count: number;
+};
+
+function asNumber(v: string) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export default function ConsumptionPage() {
   const [source, setSource] = useState<"wechat" | "alipay">("wechat");
   const [file, setFile] = useState<File | null>(null);
@@ -50,17 +67,52 @@ export default function ConsumptionPage() {
 
   const [summary, setSummary] = useState<ConsumptionSummary | null>(null);
   const [byPlatform, setByPlatform] = useState<PlatformItem[]>([]);
+  const [byCategory, setByCategory] = useState<CategoryItem[]>([]);
+  const [daily, setDaily] = useState<DailyItem[]>([]);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
 
   async function loadMetrics() {
-    const [summary, platform] = await Promise.all([
+    const [summary, platform, category, daily] = await Promise.all([
       apiFetch<ConsumptionSummary>("/api/metrics/consumption/summary"),
       apiFetch<{ items: PlatformItem[] }>("/api/metrics/consumption/by-platform"),
+      apiFetch<{ items: CategoryItem[] }>("/api/metrics/consumption/by-category"),
+      apiFetch<{ items: DailyItem[] }>("/api/metrics/consumption/daily"),
     ]);
     setSummary(summary);
     setByPlatform(platform.items);
+    setByCategory(category.items);
+    setDaily(daily.items);
   }
+
+  const topCategories = useMemo(() => byCategory.slice(0, 10), [byCategory]);
+  const dailyPoints = useMemo(() => {
+    const src = daily.slice(-60);
+    const values = src.map((d) => asNumber(d.total));
+    const max = Math.max(0, ...values);
+    const w = 640;
+    const h = 180;
+    const padX = 24;
+    const padY = 16;
+    const innerW = w - padX * 2;
+    const innerH = h - padY * 2;
+
+    if (src.length <= 1 || max <= 0) {
+      return { viewBox: `0 0 ${w} ${h}`, path: "" };
+    }
+
+    const points = src.map((d, i) => {
+      const x = padX + (i / (src.length - 1)) * innerW;
+      const y = padY + innerH - (asNumber(d.total) / max) * innerH;
+      return { x, y };
+    });
+
+    const path = points
+      .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`)
+      .join(" ");
+
+    return { viewBox: `0 0 ${w} ${h}`, path };
+  }, [daily]);
 
   async function loadTransactions(nextPage = page) {
     const qs = new URLSearchParams({
@@ -121,7 +173,7 @@ export default function ConsumptionPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-xl font-semibold">消费分析</h1>
-        <p className="text-sm text-gray-600">先完成账单导入与流水列表，后续再接图表与指标</p>
+        <p className="text-sm text-gray-600">支持账单导入、流水列表与基础汇总/趋势/分类分析</p>
       </div>
 
       {error ? (
@@ -188,6 +240,52 @@ export default function ConsumptionPage() {
               </table>
             </div>
           )}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <div className="text-sm font-medium">消费趋势（按日）</div>
+            {daily.length === 0 ? (
+              <div className="text-sm text-gray-600">暂无趋势数据</div>
+            ) : (
+              <div className="rounded border p-3">
+                <svg className="w-full h-[180px]" viewBox={dailyPoints.viewBox} preserveAspectRatio="none">
+                  <path d={dailyPoints.path} fill="none" stroke="black" strokeWidth="2" />
+                </svg>
+                <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+                  <div>{daily[daily.length - Math.min(daily.length, 60)]?.day ?? "-"}</div>
+                  <div>{daily[daily.length - 1]?.day ?? "-"}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">分类 Top10</div>
+            {topCategories.length === 0 ? (
+              <div className="text-sm text-gray-600">暂无分类数据</div>
+            ) : (
+              <div className="space-y-2">
+                {(() => {
+                  const max = Math.max(0, ...topCategories.map((c) => asNumber(c.total)));
+                  return topCategories.map((c) => {
+                    const w = max > 0 ? (asNumber(c.total) / max) * 100 : 0;
+                    return (
+                      <div key={c.category} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs text-gray-600">
+                          <div className="truncate pr-3">{c.category}</div>
+                          <div className="shrink-0">{c.total}</div>
+                        </div>
+                        <div className="h-2 rounded bg-gray-100">
+                          <div className="h-2 rounded bg-black" style={{ width: `${w}%` }} />
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
