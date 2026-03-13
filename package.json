@@ -1,0 +1,31 @@
+{
+  "name": "openstar-xfdashboard",
+  "version": "1.0.0",
+  "description": "## 目录",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
+    "dev:server": "cd src/server && npm run dev",
+    "dev:web": "cd web && npm run dev",
+    "build": "npm run build:server && npm run build:web",
+    "build:server": "cd src/server && npm run build",
+    "build:web": "cd web && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xingseven/openstar-xfdashborad.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xingseven/openstar-xfdashborad/issues"
+  },
+  "homepage": "https://github.com/xingseven/openstar-xfdashborad#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

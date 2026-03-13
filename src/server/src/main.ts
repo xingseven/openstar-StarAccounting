@@ -1497,6 +1497,76 @@ app.delete("/api/assets/:id", async (req, res) => {
   jsonOk(res, { deleted: true });
 });
 
+// Settings API
+app.put("/api/settings/profile", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const { name } = req.body ?? {};
+  
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { name: typeof name === "string" ? name : undefined },
+        select: { id: true, email: true, name: true },
+      });
+      jsonOk(res, { user });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  // Memory mode: user info not editable
+  jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持修改用户信息");
+});
+
+app.put("/api/settings/password", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const { oldPassword, newPassword } = req.body ?? {};
+
+  if (typeof newPassword !== "string" || newPassword.length < 6) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "新密码至少 6 位");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "用户不存在");
+        return;
+      }
+
+      const ok = await verifyPassword(user.password, oldPassword);
+      if (!ok) {
+        jsonFail(res, 400, 50000, "INVALID_CREDENTIALS", "旧密码错误");
+        return;
+      }
+
+      const hash = await hashPassword(newPassword);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { password: hash },
+      });
+
+      jsonOk(res, { updated: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持修改密码");
+});
+
 const port = Number(process.env.PORT ?? 3001);
 app.listen(port, () => {
   process.stdout.write(`server listening on http://localhost:${port}\n`);
