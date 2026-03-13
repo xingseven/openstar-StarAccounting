@@ -55,8 +55,13 @@ export const MOCK_PARETO = [
 ];
 
 export const MOCK_WEEKDAY_WEEKEND = [
-  { name: "工作日", value: 350, fill: "var(--color-chart-1)" },
-  { name: "周末", value: 850, fill: "var(--color-chart-2)" },
+  { name: "周一", value: 320, fill: "var(--color-chart-1)" },
+  { name: "周二", value: 280, fill: "var(--color-chart-1)" },
+  { name: "周三", value: 350, fill: "var(--color-chart-1)" },
+  { name: "周四", value: 300, fill: "var(--color-chart-1)" },
+  { name: "周五", value: 450, fill: "var(--color-chart-1)" },
+  { name: "周六", value: 850, fill: "var(--color-chart-2)" },
+  { name: "周日", value: 780, fill: "var(--color-chart-2)" },
 ];
 
 export const MOCK_CALENDAR = Array.from({ length: 35 }, (_, i) => ({

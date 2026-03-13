@@ -6,7 +6,10 @@ import {
   TrendingUp,
   MoreHorizontal,
   Calendar,
-  Plus
+  Plus,
+  Coins,
+  Landmark,
+  Smartphone
 } from "lucide-react";
 import { clsx } from "clsx";
 import {
@@ -16,6 +19,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export type Asset = {
   id: string;
@@ -47,6 +58,30 @@ export function AssetsDefaultTheme({
   onOpenEdit,
   onDelete,
 }: AssetsViewProps) {
+  
+  const getIcon = (type: string) => {
+    switch(type) {
+      case 'CASH': return <Coins className="h-5 w-5 text-orange-500" />;
+      case 'BANK_CARD': return <CreditCard className="h-5 w-5 text-blue-500" />;
+      case 'ALIPAY': return <Smartphone className="h-5 w-5 text-cyan-500" />;
+      case 'WECHAT': return <Smartphone className="h-5 w-5 text-green-500" />;
+      case 'INVESTMENT': return <TrendingUp className="h-5 w-5 text-purple-500" />;
+      default: return <Wallet className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  const getLabel = (type: string) => {
+     const map: Record<string, string> = {
+       'CASH': '现金',
+       'BANK_CARD': '银行卡',
+       'ALIPAY': '支付宝',
+       'WECHAT': '微信',
+       'INVESTMENT': '投资',
+       'OTHER': '其他'
+     };
+     return map[type] || type;
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -55,30 +90,32 @@ export function AssetsDefaultTheme({
           <p className="text-gray-500 mt-1">管理你的现金、银行卡与投资账户</p>
         </div>
         <div className="flex gap-3">
-          <select
-            className="h-10 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-            value={displayCurrency}
-            onChange={(e) => onCurrencyChange(e.target.value)}
-          >
-            {supportedCurrencies.map((c) => (
-              <option key={c} value={c}>
-                以 {c} 显示
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={onOpenCreate}
-            className="flex items-center gap-2 h-10 rounded-md bg-black px-4 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
+          <Select value={displayCurrency} onValueChange={onCurrencyChange}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="选择币种" />
+            </SelectTrigger>
+            <SelectContent>
+              {supportedCurrencies.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c} 显示
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white">
+            <Plus className="h-4 w-4 mr-2" />
             新增资产
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="rounded-xl border bg-black p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <div className="text-sm text-gray-400 font-medium mb-2">总资产估值 ({displayCurrency})</div>
+          <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mb-2">
+            <Wallet className="h-4 w-4" />
+            总资产估值 ({displayCurrency})
+          </div>
           <div className="text-4xl font-bold tracking-tight">
             {displayCurrency === "CNY" ? "¥" : displayCurrency} {totalAssets.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
           </div>
@@ -88,8 +125,8 @@ export function AssetsDefaultTheme({
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-12 text-center text-gray-500">
-          <div className="mx-auto h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+        <div className="rounded-xl border border-dashed p-12 text-center text-gray-500 bg-gray-50/50">
+          <div className="mx-auto h-12 w-12 rounded-full bg-white border shadow-sm flex items-center justify-center mb-3">
             <Wallet className="h-6 w-6 text-gray-400" />
           </div>
           <p>暂无资产记录，开始添加你的第一笔资产吧</p>
@@ -97,28 +134,22 @@ export function AssetsDefaultTheme({
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <Card key={item.id} className="group hover:shadow-md transition-shadow">
+            <Card key={item.id} className="group hover:shadow-md transition-shadow relative overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">{item.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <span className={clsx(
-                        "px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider",
-                        item.type === "CASH" ? "bg-green-50 text-green-700" :
-                        item.type === "ALIPAY" ? "bg-blue-50 text-blue-700" :
-                        item.type === "WECHAT" ? "bg-green-50 text-green-700" :
-                        item.type === "INVESTMENT" ? "bg-purple-50 text-purple-700" :
-                        "bg-gray-100 text-gray-700"
-                      )}>
-                        {item.type}
-                      </span>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gray-50 flex items-center justify-center border">
+                      {getIcon(item.type)}
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-semibold">{item.name}</CardTitle>
+                      <div className="text-xs text-gray-500 mt-0.5">{getLabel(item.type)}</div>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onOpenEdit(item)}
-                      className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-black"
+                      className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </button>
@@ -126,17 +157,26 @@ export function AssetsDefaultTheme({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex justify-between items-end">
-                  <div className="text-xl font-bold text-gray-900">
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold text-gray-900">
                     {item.currency === "CNY" ? "¥" : item.currency} {item.balance.toLocaleString()}
                   </div>
                   {item.currency !== displayCurrency && (
-                    <div className="text-xs text-gray-500">
-                      ≈ {displayCurrency} {item.estimatedValue.toLocaleString()}
+                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                      <span>≈ {displayCurrency} {item.estimatedValue.toLocaleString()}</span>
                     </div>
                   )}
                 </div>
               </CardContent>
+              {/* Decorative gradient bar */}
+              <div className={clsx(
+                "absolute bottom-0 left-0 w-full h-1 opacity-50",
+                item.type === "CASH" ? "bg-orange-500" :
+                item.type === "BANK_CARD" ? "bg-blue-500" :
+                item.type === "ALIPAY" ? "bg-cyan-500" :
+                item.type === "WECHAT" ? "bg-green-500" :
+                "bg-gray-500"
+              )} />
             </Card>
           ))}
         </div>

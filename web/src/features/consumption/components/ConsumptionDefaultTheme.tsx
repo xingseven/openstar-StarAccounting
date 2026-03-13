@@ -30,12 +30,25 @@ import {
 } from "@/components/ui/card";
 import { clsx } from "clsx";
 import { 
-  ArrowDownIcon, 
-  ArrowUpIcon, 
-} from "lucide-react";
+    ArrowDownIcon, 
+    ArrowUpIcon, 
+    CreditCard, 
+    Wallet,
+    ShoppingBag,
+    Coins,
+    Search
+  } from "lucide-react";
+  import { Input } from "@/components/ui/input";
+  import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select";
 
-// Types
-export type ConsumptionData = {
+  // Types
+  export type ConsumptionData = {
   // ... (Keep existing types)
   summary: {
     totalExpense: number;
@@ -107,8 +120,17 @@ function DelayedRender({ children, delay, lazy = false }: { children: React.Reac
 
   if (!shouldRender) {
     return (
-      <div ref={ref} className="h-[250px] w-full flex items-center justify-center bg-gray-50/50 rounded-lg animate-pulse">
-        <div className="h-8 w-8 rounded-full border-2 border-gray-200 border-t-gray-400 animate-spin" />
+      <div ref={ref} className="h-[250px] w-full flex flex-col items-center justify-center bg-white border rounded-xl animate-pulse space-y-4 p-6">
+        <div className="w-full flex justify-between items-center">
+          <div className="h-5 w-32 bg-gray-200 rounded"></div>
+          <div className="h-5 w-5 bg-gray-200 rounded-full"></div>
+        </div>
+        <div className="flex-1 w-full flex items-end justify-between gap-2">
+           {[...Array(7)].map((_, i) => (
+             <div key={i} className="bg-gray-200 rounded-t w-full" style={{ height: `${Math.random() * 60 + 20}%` }}></div>
+           ))}
+        </div>
+        <div className="h-4 w-full bg-gray-100 rounded"></div>
       </div>
     );
   }
@@ -117,11 +139,26 @@ function DelayedRender({ children, delay, lazy = false }: { children: React.Reac
 }
 
 export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionViewProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("month");
+
   // Configs
   const commonConfig = {
     expense: { label: "支出", color: "var(--color-chart-1)" },
     income: { label: "收入", color: "var(--color-chart-2)" },
   } satisfies ChartConfig;
+
+  // Filtered transactions
+  const filteredTransactions = data.transactions.filter(t => {
+    const matchesSearch = searchTerm === "" || 
+      t.merchant.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPlatform = platformFilter === "all" || t.platform === platformFilter;
+    // Date filter would typically need backend support or more complex client logic, 
+    // for now we just show the selector UI as requested
+    return matchesSearch && matchesPlatform;
+  });
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto p-6">
@@ -130,18 +167,52 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
           <p className="text-gray-500 mt-1">全方位洞察您的收支状况</p>
         </div>
-        <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
-          <button className="px-3 py-1 text-sm bg-gray-100 rounded font-medium">本月</button>
-          <div className="h-4 w-px bg-gray-200 mx-1" />
-          <span className="text-sm text-gray-500 px-2">{dateRangeLabel}</span>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="搜索消费明细..."
+              className="pl-9 w-[200px] bg-white"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Platform Filter */}
+          <Select value={platformFilter} onValueChange={setPlatformFilter}>
+            <SelectTrigger className="w-[140px] bg-white">
+              <SelectValue placeholder="所有平台" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有平台</SelectItem>
+              <SelectItem value="wechat">微信</SelectItem>
+              <SelectItem value="alipay">支付宝</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date Filter */}
+          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
+            <button 
+              onClick={() => setDateFilter("month")}
+              className={clsx("px-3 py-1 text-sm rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
+            >
+              本月
+            </button>
+            <div className="h-4 w-px bg-gray-200 mx-1" />
+            <span className="text-sm text-gray-500 px-2 cursor-pointer hover:text-gray-900">{dateRangeLabel}</span>
+          </div>
         </div>
       </div>
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">总消费金额</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">¥{data.summary.totalExpense.toLocaleString()}</div>
@@ -150,8 +221,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">本月收支</CardTitle>
+            <Wallet className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             <div>
@@ -166,8 +238,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">微信收支</CardTitle>
+            <div className="h-4 w-4 text-green-600 font-bold flex items-center justify-center rounded-full bg-green-100 text-[10px]">
+              微
+            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             <div>
@@ -182,8 +257,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">支付宝收支</CardTitle>
+            <div className="h-4 w-4 text-blue-600 font-bold flex items-center justify-center rounded-full bg-blue-100 text-[10px]">
+              支
+            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             <div>
@@ -214,12 +292,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     dataKey="value"
                     nameKey="name"
                     innerRadius={0}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
                   >
                     {data.platformDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" />
+                  <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" verticalAlign="bottom" align="right" />
                 </PieChart>
               </ChartContainer>
             </CardContent>
@@ -239,12 +319,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     nameKey="name"
                     innerRadius={40}
                     strokeWidth={5}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
                   >
                     {data.incomeExpense.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" />
+                  <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" verticalAlign="bottom" align="right" />
                 </PieChart>
               </ChartContainer>
             </CardContent>
@@ -387,12 +469,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </CardHeader>
             <CardContent>
               <div className="h-[250px] overflow-y-auto">
-                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                <div className="grid grid-cols-7 gap-2 text-center text-sm mb-2">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-medium text-gray-400">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-2">
                   {/* Offset for first day of month (visual placeholder) */}
                   <div /> <div /> <div /> <div />
                   
@@ -408,11 +490,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("aspect-square rounded flex flex-col items-center justify-center text-[10px]", bg, text)}
+                        className={clsx("aspect-square rounded flex flex-col items-center justify-center text-xs p-1 transition-transform hover:scale-105", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
-                        <span className="font-medium">{d.day}</span>
-                        {d.value > 0 && <span>¥{Math.round(d.value)}</span>}
+                        <span className="font-bold text-sm mb-1">{d.day}</span>
+                        {d.value > 0 && <span className="scale-75 origin-center">¥{Math.round(d.value)}</span>}
                       </div>
                     );
                   })}
@@ -475,7 +557,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">工作日 vs 周末 (日均消费)</CardTitle>
+              <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
             </CardHeader>
             <CardContent>
               <ChartContainer config={commonConfig} className="h-[250px] w-full">
@@ -483,11 +565,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="name" tickLine={false} axisLine={false} />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="var(--color-chart-1)">
                     <LabelList dataKey="value" position="top" formatter={(v: number) => `¥${v.toFixed(0)}`} fontSize={12} />
-                    {data.weekdayWeekend.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
                   </Bar>
                 </BarChart>
               </ChartContainer>
