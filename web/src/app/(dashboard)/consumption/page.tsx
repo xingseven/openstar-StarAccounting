@@ -278,6 +278,57 @@ export default function ConsumptionPage() {
     }
   }
 
+  const [editingItem, setEditingItem] = useState<TransactionItem | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    amount: "",
+    category: "",
+    merchant: "",
+    description: "",
+    date: "",
+  });
+
+  async function handleEdit(item: TransactionItem) {
+    setEditingItem(item);
+    setEditForm({
+      amount: item.amount,
+      category: item.category,
+      merchant: item.merchant || "",
+      description: item.description || "",
+      date: new Date(item.date).toISOString().slice(0, 16), // YYYY-MM-DDTHH:mm
+    });
+    setIsEditModalOpen(true);
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("确定要删除这条记录吗？")) return;
+    try {
+      await apiFetch(`/api/transactions/${id}`, { method: "DELETE" });
+      await loadTransactions();
+      await loadMetrics();
+    } catch (e) {
+      alert("删除失败");
+    }
+  }
+
+  async function submitEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingItem) return;
+    
+    try {
+      await apiFetch(`/api/transactions/${editingItem.id}`, {
+        method: "PUT",
+        body: JSON.stringify(editForm),
+      });
+      setIsEditModalOpen(false);
+      setEditingItem(null);
+      await loadTransactions();
+      await loadMetrics();
+    } catch (e) {
+      alert("更新失败");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -634,27 +685,115 @@ export default function ConsumptionPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((t) => (
-                  <tr key={t.id} className="border-b">
-                    <td className="py-2 pr-3 whitespace-nowrap">
-                      {new Date(t.date).toLocaleString()}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="font-medium">{t.merchant ?? "-"}</div>
-                      <div className="text-xs text-gray-600 truncate max-w-[420px]">
-                        {t.description ?? ""}
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3">{t.category}</td>
-                    <td className="py-2 pr-3 font-medium">{t.amount}</td>
-                    <td className="py-2 pr-3">{t.platform}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  {items.map((t) => (
+                    <tr key={t.id} className="border-b hover:bg-gray-50 group">
+                      <td className="py-2 pr-3 whitespace-nowrap text-xs text-gray-500">
+                        {new Date(t.date).toLocaleString()}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <div className="font-medium">{t.merchant ?? "-"}</div>
+                        <div className="text-xs text-gray-500 truncate max-w-[200px]">
+                          {t.description ?? ""}
+                        </div>
+                      </td>
+                      <td className="py-2 pr-3">{t.category}</td>
+                      <td className={`py-2 pr-3 font-medium ${t.type === "INCOME" ? "text-green-600" : ""}`}>
+                        {t.type === "EXPENSE" ? "-" : "+"}
+                        {t.amount}
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-gray-500">{t.platform}</td>
+                      <td className="py-2 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEdit(t)}
+                          className="mr-2 text-xs text-blue-600 hover:underline"
+                        >
+                          编辑
+                        </button>
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
       </section>
+
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded bg-white p-6 shadow-lg">
+            <h2 className="mb-4 text-lg font-semibold">编辑交易</h2>
+            <form onSubmit={submitEdit} className="space-y-4">
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">金额</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={editForm.amount}
+                  onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">分类</span>
+                <input
+                  required
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">商家</span>
+                <input
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={editForm.merchant}
+                  onChange={(e) => setEditForm({ ...editForm, merchant: e.target.value })}
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">描述</span>
+                <input
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">时间</span>
+                <input
+                  type="datetime-local"
+                  required
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  value={editForm.date}
+                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                />
+              </label>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="rounded px-4 py-2 text-sm hover:bg-gray-100"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="rounded bg-black px-4 py-2 text-sm text-white"
+                >
+                  保存
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -653,6 +653,81 @@ app.get("/api/transactions", async (req, res) => {
   jsonOk(res, { page, pageSize, total, items });
 });
 
+app.put("/api/transactions/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+  const { amount, category, merchant, description, type, platform, date } = req.body ?? {};
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const tx = await prisma.transaction.update({
+        where: { id, userId },
+        data: {
+          ...(amount ? { amount: String(amount) } : {}),
+          ...(category ? { category } : {}),
+          ...(merchant ? { merchant } : {}),
+          ...(description ? { description } : {}),
+          ...(type ? { type } : {}),
+          ...(platform ? { platform } : {}),
+          ...(date ? { date: new Date(date) } : {}),
+        },
+      });
+      jsonOk(res, { item: tx });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = transactionsByUser.get(userId) ?? [];
+  const idx = list.findIndex((t) => t.id === id);
+  if (idx < 0) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "交易不存在");
+    return;
+  }
+  const old = list[idx];
+  const updated: TransactionRecord = {
+    ...old,
+    ...(amount ? { amount: String(amount) } : {}),
+    ...(category ? { category } : {}),
+    ...(merchant ? { merchant } : {}),
+    ...(description ? { description } : {}),
+    ...(type ? { type } : {}),
+    ...(platform ? { platform } : {}),
+    ...(date ? { date: String(date) } : {}),
+  };
+  list[idx] = updated;
+  jsonOk(res, { item: updated });
+});
+
+app.delete("/api/transactions/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      await prisma.transaction.delete({ where: { id, userId } });
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = transactionsByUser.get(userId) ?? [];
+  const newList = list.filter((t) => t.id !== id);
+  transactionsByUser.set(userId, newList);
+  jsonOk(res, { deleted: true });
+});
+
 app.post("/api/transactions/import", upload.single("file"), async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
