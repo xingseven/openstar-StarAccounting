@@ -78,6 +78,10 @@ export default function ConsumptionPage() {
   const [byCategory, setByCategory] = useState<CategoryItem[]>([]);
   const [daily, setDaily] = useState<DailyItem[]>([]);
 
+  // Chart controls
+  const [trendGranularity, setTrendGranularity] = useState<"day" | "month">("day");
+  const [topN, setTopN] = useState<number>(10);
+
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
 
   async function loadMetrics() {
@@ -88,11 +92,19 @@ export default function ConsumptionPage() {
     });
     const q = qs.toString();
 
+    // daily with groupBy
+    const dailyQs = new URLSearchParams(qs);
+    dailyQs.append("groupBy", trendGranularity);
+
+    // category with limit
+    const categoryQs = new URLSearchParams(qs);
+    categoryQs.append("limit", String(topN));
+
     const [summary, platform, category, daily] = await Promise.all([
       apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${q}`),
       apiFetch<{ items: PlatformItem[] }>(`/api/metrics/consumption/by-platform?${q}`),
-      apiFetch<{ items: CategoryItem[] }>(`/api/metrics/consumption/by-category?${q}`),
-      apiFetch<{ items: DailyItem[] }>(`/api/metrics/consumption/daily?${q}`),
+      apiFetch<{ items: CategoryItem[] }>(`/api/metrics/consumption/by-category?${categoryQs}`),
+      apiFetch<{ items: DailyItem[] }>(`/api/metrics/consumption/daily?${dailyQs}`),
     ]);
     setSummary(summary);
     setByPlatform(platform.items);
@@ -100,9 +112,9 @@ export default function ConsumptionPage() {
     setDaily(daily.items);
   }
 
-  const topCategories = useMemo(() => byCategory.slice(0, 10), [byCategory]);
+  const topCategories = useMemo(() => byCategory, [byCategory]);
   const dailyPoints = useMemo(() => {
-    const src = daily.slice(-60);
+    const src = daily.slice(trendGranularity === "day" ? -60 : -24); // Show last 60 days or 24 months
     const values = src.map((d) => asNumber(d.total));
     const max = Math.max(0, ...values);
     const w = 640;
@@ -127,7 +139,7 @@ export default function ConsumptionPage() {
       .join(" ");
 
     return { viewBox: `0 0 ${w} ${h}`, path };
-  }, [daily]);
+  }, [daily, trendGranularity]);
 
   async function loadTransactions(nextPage = page) {
     const qs = new URLSearchParams({
@@ -155,7 +167,7 @@ export default function ConsumptionPage() {
     loadTransactions(1).catch(() => {});
     loadMetrics().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, platform, dateRange]);
+  }, [type, platform, dateRange, trendGranularity, topN]);
 
   function setQuickDate(range: "7d" | "30d" | "thisMonth" | "lastMonth" | "all") {
     if (range === "all") {
@@ -434,8 +446,24 @@ export default function ConsumptionPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <div className="text-sm font-medium">
-              {type === "EXPENSE" ? "消费趋势（按日）" : "收入趋势（按日）"}
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium">
+                {type === "EXPENSE" ? "消费趋势" : "收入趋势"}
+              </div>
+              <div className="flex items-center overflow-hidden rounded border text-xs">
+                <button
+                  className={`px-2 py-1 ${trendGranularity === "day" ? "bg-black text-white" : "hover:bg-gray-50"}`}
+                  onClick={() => setTrendGranularity("day")}
+                >
+                  按日
+                </button>
+                <button
+                  className={`px-2 py-1 ${trendGranularity === "month" ? "bg-black text-white" : "hover:bg-gray-50"}`}
+                  onClick={() => setTrendGranularity("month")}
+                >
+                  按月
+                </button>
+              </div>
             </div>
             {daily.length === 0 ? (
               <div className="text-sm text-gray-600">暂无趋势数据</div>
@@ -449,7 +477,7 @@ export default function ConsumptionPage() {
                   <path d={dailyPoints.path} fill="none" stroke="black" strokeWidth="2" />
                 </svg>
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
-                  <div>{daily[daily.length - Math.min(daily.length, 60)]?.day ?? "-"}</div>
+                  <div>{daily[daily.length - Math.min(daily.length, trendGranularity === "day" ? 60 : 24)]?.day ?? "-"}</div>
                   <div>{daily[daily.length - 1]?.day ?? "-"}</div>
                 </div>
               </div>
@@ -457,7 +485,18 @@ export default function ConsumptionPage() {
           </div>
 
           <div className="space-y-2">
-            <div className="text-sm font-medium">分类 Top10</div>
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium">分类排行</div>
+              <select
+                className="rounded border px-1 py-0.5 text-xs"
+                value={topN}
+                onChange={(e) => setTopN(Number(e.target.value))}
+              >
+                <option value="5">Top 5</option>
+                <option value="10">Top 10</option>
+                <option value="20">Top 20</option>
+              </select>
+            </div>
             {topCategories.length === 0 ? (
               <div className="text-sm text-gray-600">暂无分类数据</div>
             ) : (

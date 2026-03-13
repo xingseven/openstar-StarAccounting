@@ -438,6 +438,7 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
   const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
   if (!userId) return;
+  const limit = Math.max(1, Math.min(100, Number(req.query.limit ?? 10)));
   const prisma = getPrisma();
 
   if (prisma) {
@@ -467,7 +468,8 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
           total: String(r._sum.amount ?? 0),
           count: r._count._all,
         }))
-        .sort((a: { total: string }, b: { total: string }) => Number(b.total) - Number(a.total));
+        .sort((a: { total: string }, b: { total: string }) => Number(b.total) - Number(a.total))
+        .slice(0, limit);
 
       jsonOk(res, { items });
       return;
@@ -495,7 +497,8 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
 
   const items = Array.from(map.entries())
     .map(([category, v]) => ({ category, total: v.total.toFixed(2), count: v.count }))
-    .sort((a, b) => Number(b.total) - Number(a.total));
+    .sort((a, b) => Number(b.total) - Number(a.total))
+    .slice(0, limit);
 
   jsonOk(res, { items });
 });
@@ -504,21 +507,23 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
   const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
   if (!userId) return;
+  const groupBy = req.query.groupBy === "month" ? "month" : "day";
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const rows = (await prisma.$queryRaw`SELECT date_trunc('day',"date") AS day, SUM(amount) AS total, COUNT(*)::int AS count
+      const trunc = groupBy === "month" ? "month" : "day";
+      const rows = (await prisma.$queryRawUnsafe(`SELECT date_trunc('${trunc}',"date") AS d, SUM(amount) AS total, COUNT(*)::int AS count
         FROM "Transaction"
-        WHERE "userId"=${userId}
-          AND "type"=${type}
-          AND (${start}::timestamptz IS NULL OR "date" >= ${start})
-          AND (${end}::timestamptz IS NULL OR "date" <= ${end})
-        GROUP BY day
-        ORDER BY day`) as Array<{ day: Date; total: unknown; count: number }>;
+        WHERE "userId"='${userId}'
+          AND "type"='${type}'
+          AND (${start ? `'${start.toISOString()}'::timestamptz` : "NULL"} IS NULL OR "date" >= '${start ? start.toISOString() : ""}')
+          AND (${end ? `'${end.toISOString()}'::timestamptz` : "NULL"} IS NULL OR "date" <= '${end ? end.toISOString() : ""}')
+        GROUP BY d
+        ORDER BY d`)) as Array<{ d: Date; total: unknown; count: number }>;
 
       const items = rows.map((r) => ({
-        day: r.day.toISOString().slice(0, 10),
+        day: r.d.toISOString().slice(0, groupBy === "month" ? 7 : 10),
         total: String(r.total ?? 0),
         count: r.count,
       }));
@@ -541,7 +546,8 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
     if (Number.isNaN(d.getTime())) continue;
     if (start && d.getTime() < start.getTime()) continue;
     if (end && d.getTime() > end.getTime()) continue;
-    const key = d.toISOString().slice(0, 10);
+    
+    const key = d.toISOString().slice(0, groupBy === "month" ? 7 : 10);
     const cur = map.get(key) ?? { total: 0, count: 0 };
     cur.total += Number(t.amount);
     cur.count += 1;
