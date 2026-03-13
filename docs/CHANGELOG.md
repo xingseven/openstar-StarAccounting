@@ -16,6 +16,11 @@ All notable changes to this project will be documented in this file.
 ### Tests
 - Added `vitest` unit tests for `Currency`, `Budget`, and `Asset` logic.
 
+### Deployment
+- Added `Dockerfile` for Server and Web.
+- Updated `docker-compose.yml` to include full stack (Postgres + Server + Web).
+- Added `docs/DEPLOY.md` for deployment instructions.
+
 ## [2026-03-13]
 
 ### Added

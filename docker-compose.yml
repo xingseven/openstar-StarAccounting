@@ -13,6 +13,41 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xfdashboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./src/server
+    container_name: xfdashboard-server
+    environment:
+      DATABASE_URL: "postgresql://xfdashboard:password@postgres:5432/xfdashboard?schema=public"
+      PORT: 3001
+      PUBLIC_IP: "0.0.0.0"
+      JWT_SECRET: "dev-secret"
+      ALLOW_DEV_HEADERS: 1
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  web:
+    build:
+      context: ./web
+    container_name: xfdashboard-web
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    restart: always
 
 volumes:
   postgres_data:
+
