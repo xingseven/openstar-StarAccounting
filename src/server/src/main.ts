@@ -50,6 +50,19 @@ const connectionsById = new Map<string, Connection>();
 const connectionIdByOtp = new Map<string, string>();
 const transactionsByUser = new Map<string, TransactionRecord[]>();
 
+type SavingsGoal = {
+  id: string;
+  userId: string;
+  name: string;
+  targetAmount: string;
+  currentAmount: string;
+  deadline: string | null;
+  type: string;
+  status: string;
+  createdAt: string;
+};
+const savingsGoalsByUser = new Map<string, SavingsGoal[]>();
+
 function jsonOk<T>(res: Response, data: T, message = "ok") {
   const body: ApiSuccess<T> = { code: 200, message, data };
   res.json(body);
@@ -1004,6 +1017,154 @@ app.delete("/api/connect/:id", async (req, res) => {
   connectionsById.delete(id);
   connectionIdByOtp.delete(conn.otpCode);
   jsonOk(res, { revoked: true });
+});
+
+// Savings Goal API
+app.get("/api/savings", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const goals = await prisma.savingsGoal.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      jsonOk(res, { items: goals });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const items = savingsGoalsByUser.get(userId) ?? [];
+  jsonOk(res, { items });
+});
+
+app.post("/api/savings", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { name, targetAmount, deadline, type } = req.body ?? {};
+  if (typeof name !== "string" || !name.trim()) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "name 必填");
+    return;
+  }
+  if (!targetAmount || Number.isNaN(Number(targetAmount))) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "targetAmount 必填");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const goal = await prisma.savingsGoal.create({
+        data: {
+          userId,
+          name,
+          targetAmount: Number(targetAmount),
+          deadline: deadline ? new Date(deadline) : null,
+          type: type || "LONG_TERM",
+        },
+      });
+      jsonOk(res, { item: goal });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = savingsGoalsByUser.get(userId) ?? [];
+  const goal: SavingsGoal = {
+    id: crypto.randomUUID(),
+    userId,
+    name,
+    targetAmount: String(targetAmount),
+    currentAmount: "0",
+    deadline: deadline || null,
+    type: type || "LONG_TERM",
+    status: "ACTIVE",
+    createdAt: new Date().toISOString(),
+  };
+  list.unshift(goal);
+  savingsGoalsByUser.set(userId, list);
+  jsonOk(res, { item: goal });
+});
+
+app.put("/api/savings/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+  const { name, targetAmount, currentAmount, deadline, status } = req.body ?? {};
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const goal = await prisma.savingsGoal.update({
+        where: { id, userId },
+        data: {
+          ...(name ? { name } : {}),
+          ...(targetAmount ? { targetAmount: Number(targetAmount) } : {}),
+          ...(currentAmount !== undefined ? { currentAmount: Number(currentAmount) } : {}),
+          ...(deadline ? { deadline: new Date(deadline) } : {}),
+          ...(status ? { status } : {}),
+        },
+      });
+      jsonOk(res, { item: goal });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = savingsGoalsByUser.get(userId) ?? [];
+  const idx = list.findIndex((g) => g.id === id);
+  if (idx < 0) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "目标不存在");
+    return;
+  }
+  const old = list[idx];
+  const updated: SavingsGoal = {
+    ...old,
+    ...(name ? { name } : {}),
+    ...(targetAmount ? { targetAmount: String(targetAmount) } : {}),
+    ...(currentAmount !== undefined ? { currentAmount: String(currentAmount) } : {}),
+    ...(deadline ? { deadline } : {}),
+    ...(status ? { status } : {}),
+  };
+  list[idx] = updated;
+  jsonOk(res, { item: updated });
+});
+
+app.delete("/api/savings/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      await prisma.savingsGoal.delete({ where: { id, userId } });
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = savingsGoalsByUser.get(userId) ?? [];
+  const newList = list.filter((g) => g.id !== id);
+  savingsGoalsByUser.set(userId, newList);
+  jsonOk(res, { deleted: true });
 });
 
 const port = Number(process.env.PORT ?? 3001);

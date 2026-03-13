@@ -14,6 +14,7 @@ model User {
   name         String?
   transactions Transaction[]
   loans        Loan[]
+  savingsGoals SavingsGoal[]
   settings     ThemeConfig?
   connections  AppConnection[]
   createdAt    DateTime        @default(now())
@@ -93,11 +94,13 @@ model SavingsGoal {
   name          String
   targetAmount  Decimal
   currentAmount Decimal    @default(0)
-  deadline      DateTime
-  type          GoalType
-  status        GoalStatus
+  deadline      DateTime?
+  type          GoalType   @default(LONG_TERM)
+  status        GoalStatus @default(ACTIVE)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model ThemeConfig {
