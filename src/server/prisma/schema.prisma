@@ -15,6 +15,7 @@ model User {
   transactions Transaction[]
   loans        Loan[]
   savingsGoals SavingsGoal[]
+  assets       Asset[]
   settings     ThemeConfig?
   connections  AppConnection[]
   createdAt    DateTime        @default(now())
@@ -115,6 +116,30 @@ model ThemeConfig {
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
+}
+
+model Asset {
+  id        String      @id @default(cuid())
+  userId    String
+  name      String
+  type      AssetType
+  balance   Decimal     @default(0)
+  currency  String      @default("CNY")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, type])
+}
+
+enum AssetType {
+  CASH
+  BANK_CARD
+  ALIPAY
+  WECHAT
+  INVESTMENT
+  OTHER
 }
 
 enum TransactionType {

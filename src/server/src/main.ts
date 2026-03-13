@@ -78,6 +78,17 @@ type Loan = {
 };
 const loansByUser = new Map<string, Loan[]>();
 
+type Asset = {
+  id: string;
+  userId: string;
+  name: string;
+  type: string;
+  balance: string;
+  currency: string;
+  createdAt: string;
+};
+const assetsByUser = new Map<string, Asset[]>();
+
 function jsonOk<T>(res: Response, data: T, message = "ok") {
   const body: ApiSuccess<T> = { code: 200, message, data };
   res.json(body);
@@ -1339,6 +1350,150 @@ app.delete("/api/loans/:id", async (req, res) => {
   const list = loansByUser.get(userId) ?? [];
   const newList = list.filter((l) => l.id !== id);
   loansByUser.set(userId, newList);
+  jsonOk(res, { deleted: true });
+});
+
+// Asset API
+app.get("/api/assets", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const assets = await prisma.asset.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      jsonOk(res, { items: assets });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const items = assetsByUser.get(userId) ?? [];
+  jsonOk(res, { items });
+});
+
+app.post("/api/assets", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { name, type, balance, currency } = req.body ?? {};
+  if (typeof name !== "string" || !name.trim()) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "name 必填");
+    return;
+  }
+  if (!type || typeof type !== "string") {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "type 必填");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const asset = await prisma.asset.create({
+        data: {
+          userId,
+          name,
+          type: type as "CASH", // Simplified type casting for now
+          balance: Number(balance ?? 0),
+          currency: currency || "CNY",
+        },
+      });
+      jsonOk(res, { item: asset });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = assetsByUser.get(userId) ?? [];
+  const asset: Asset = {
+    id: crypto.randomUUID(),
+    userId,
+    name,
+    type,
+    balance: String(balance ?? 0),
+    currency: currency || "CNY",
+    createdAt: new Date().toISOString(),
+  };
+  list.unshift(asset);
+  assetsByUser.set(userId, list);
+  jsonOk(res, { item: asset });
+});
+
+app.put("/api/assets/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+  const { name, type, balance, currency } = req.body ?? {};
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const asset = await prisma.asset.update({
+        where: { id, userId },
+        data: {
+          ...(name ? { name } : {}),
+          ...(type ? { type: type as "CASH" } : {}),
+          ...(balance !== undefined ? { balance: Number(balance) } : {}),
+          ...(currency ? { currency } : {}),
+        },
+      });
+      jsonOk(res, { item: asset });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = assetsByUser.get(userId) ?? [];
+  const idx = list.findIndex((a) => a.id === id);
+  if (idx < 0) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "资产不存在");
+    return;
+  }
+  const old = list[idx];
+  const updated: Asset = {
+    ...old,
+    ...(name ? { name } : {}),
+    ...(type ? { type } : {}),
+    ...(balance !== undefined ? { balance: String(balance) } : {}),
+    ...(currency ? { currency } : {}),
+  };
+  list[idx] = updated;
+  jsonOk(res, { item: updated });
+});
+
+app.delete("/api/assets/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      await prisma.asset.delete({ where: { id, userId } });
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = assetsByUser.get(userId) ?? [];
+  const newList = list.filter((a) => a.id !== id);
+  assetsByUser.set(userId, newList);
   jsonOk(res, { deleted: true });
 });
 
