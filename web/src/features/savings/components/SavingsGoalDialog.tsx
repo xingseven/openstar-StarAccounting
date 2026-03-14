@@ -197,7 +197,6 @@ export function SavingsGoalDialog({
     const totalAmount = finalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalSalary = finalRows.reduce((sum, row) => sum + Number(row.salary || 0), 0);
     const totalBalance = finalRows.reduce((sum, row) => sum + Number(row.balance || 0), 0);
-    const totalCarryOver = finalRows.reduce((sum, row) => sum + Number((row as any).prevCarryOver ?? row.carryOver ?? 0), 0);
     const totalAvailable = finalRows.reduce((sum, row) => sum + Number(row.totalAvailable || 0), 0);
     const endingBalance = finalRows.length > 0 ? Number(finalRows[finalRows.length - 1].finalBalance || 0) : 0;
     const expenseTotals = expenseColumns.reduce<Record<string, number>>((acc, col) => {
@@ -208,7 +207,6 @@ export function SavingsGoalDialog({
       totalAmount,
       totalSalary,
       totalBalance,
-      totalCarryOver,
       totalAvailable,
       endingBalance,
       expenseTotals,
@@ -383,7 +381,6 @@ export function SavingsGoalDialog({
                           </th>
                         ))}
                         <th className="p-3 min-w-[120px] w-[120px] text-gray-500 whitespace-nowrap">本月结余</th>
-                        <th className="p-3 min-w-[120px] w-[120px] text-gray-500 whitespace-nowrap">上月结余</th>
                         <th className="p-3 min-w-[120px] w-[120px] text-blue-600 font-bold whitespace-nowrap">可存金额</th>
                       </>
                     )}
@@ -421,7 +418,6 @@ export function SavingsGoalDialog({
                             </td>
                           ))}
                           <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-500">¥{row.balance?.toLocaleString()}</td>
-                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-500">¥{row.prevCarryOver?.toLocaleString()}</td>
                           <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
                         </>
                       )}
@@ -458,7 +454,6 @@ export function SavingsGoalDialog({
                           <td key={`sum-${col.id}`} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap text-gray-700">¥{(summary.expenseTotals[col.name] || 0).toLocaleString()}</td>
                         ))}
                         <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-700">¥{summary.totalBalance.toLocaleString()}</td>
-                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-700">¥{summary.totalCarryOver.toLocaleString()}</td>
                         <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-blue-700">¥{summary.totalAvailable.toLocaleString()}</td>
                       </>
                     )}
