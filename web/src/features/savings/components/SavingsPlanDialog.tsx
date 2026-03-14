@@ -16,6 +16,8 @@ export type SavingsPlan = {
   expenses: Record<string, number>;
   remark: string;
   proofImage?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 interface SavingsPlanDialogProps {
@@ -203,6 +205,17 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
                     >
                       {plan.status === "COMPLETED" ? "已存款" : "未存款"}
                     </button>
+                    {plan.updatedAt && plan.status === "COMPLETED" && (
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        打卡：{new Date(plan.updatedAt).toLocaleString('zh-CN', { 
+                          year: 'numeric', 
+                          month: '2-digit', 
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    )}
                     <div className="text-xs text-gray-500">备注</div>
                     <Input
                       className="h-9 w-[180px]"

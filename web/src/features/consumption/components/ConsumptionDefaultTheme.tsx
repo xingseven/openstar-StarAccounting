@@ -749,9 +749,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <div className="min-w-[500px] md:w-full">
-              <DelayedRender delay={240} lazy className="h-[250px]">
-                <ChartContainer config={emptyChartConfig} className="h-[250px]">
-                  <BarChart accessibilityLayer data={isMobile ? data.stackedBar.slice(0, 10) : data.stackedBar}>
+              <DelayedRender delay={240} lazy className="h-[250px] w-full">
+                <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
+                  <BarChart accessibilityLayer data={isMobile ? data.stackedBar.slice(0, 10) : data.stackedBar} width={isMobile ? 500 : undefined}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="day"
@@ -792,20 +792,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="flex-1 pb-2">
             <DelayedRender delay={360} lazy className="h-[250px] w-full">
               <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
-                <ComposedChart data={data.pareto} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickMargin={0} />
-                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} width={40} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" unit="%" axisLine={false} tickLine={false} />
-                  <ChartTooltip />
-                  <Bar yAxisId="left" dataKey="value" barSize={50} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
-                    {data.pareto.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                  <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive animationDuration={900} animationEasing="ease-out" />
-                </ComposedChart>
-              </ChartContainer>
+                  <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickMargin={0} />
+                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} width={40} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" unit="%" axisLine={false} tickLine={false} width={40} />
+                    <ChartTooltip />
+                    <Bar yAxisId="left" dataKey="value" barSize={60} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
+                      {data.pareto.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                    <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive animationDuration={900} animationEasing="ease-out" />
+                  </ComposedChart>
+                </ChartContainer>
             </DelayedRender>
           </CardContent>
         </Card>
