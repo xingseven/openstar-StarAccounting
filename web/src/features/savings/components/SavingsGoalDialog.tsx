@@ -63,10 +63,12 @@ export function SavingsGoalDialog({
     { id: "exp1", name: "固定支出1" }
   ]);
   const [rows, setRows] = useState<PlanRow[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Reset or Load data when dialog opens
   useEffect(() => {
     if (open) {
+      setIsDirty(false);
       setStep(1);
       if (initialData) {
         setName(initialData.name);
@@ -107,6 +109,16 @@ export function SavingsGoalDialog({
     setRows(newRows);
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && isDirty) {
+      if (confirm("您有未保存的内容，确定要关闭吗？")) {
+        onOpenChange(false);
+      }
+    } else {
+      onOpenChange(newOpen);
+    }
+  };
+
   const handleNext = () => {
     if (!name) return;
     initRows();
@@ -115,6 +127,7 @@ export function SavingsGoalDialog({
 
   // Auto-fill logic: When first row changes, update others if they are "pristine" (simplified: just update all below)
   const handleRowChange = (index: number, field: keyof PlanRow | string, value: any, isExpense = false) => {
+    setIsDirty(true);
     const newRows = [...rows];
     
     if (isExpense) {
@@ -182,6 +195,7 @@ export function SavingsGoalDialog({
     const name = prompt("请输入列名 (如: 房租)");
     if (name) {
       setExpenseColumns([...expenseColumns, { id: Math.random().toString(36).substr(2, 5), name }]);
+      setIsDirty(true);
     }
   };
 
@@ -219,8 +233,13 @@ export function SavingsGoalDialog({
     }
   };
 
+  const handleBasicInfoChange = (setter: any, value: any) => {
+    setter(value);
+    setIsDirty(true);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className={clsx("transition-all duration-300", step === 2 ? "sm:max-w-[1000px] h-[80vh] flex flex-col" : "sm:max-w-[500px]")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -239,7 +258,7 @@ export function SavingsGoalDialog({
                 required
                 placeholder="例如：买房首付"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => handleBasicInfoChange(setName, e.target.value)}
                 className="h-11"
               />
             </div>
@@ -247,7 +266,7 @@ export function SavingsGoalDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">存钱模式</label>
-                <Select value={type} onValueChange={setType}>
+                <Select value={type} onValueChange={(val) => handleBasicInfoChange(setType, val)}>
                   <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="MONTHLY">每月存</SelectItem>
@@ -260,7 +279,7 @@ export function SavingsGoalDialog({
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">资金性质</label>
-                <Select value={depositType} onValueChange={setDepositType}>
+                <Select value={depositType} onValueChange={(val) => handleBasicInfoChange(setDepositType, val)}>
                   <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="CASH">现金</SelectItem>
@@ -274,11 +293,11 @@ export function SavingsGoalDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">开始月份</label>
-                <Input type="month" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="h-11" />
+                <Input type="month" value={startMonth} onChange={e => handleBasicInfoChange(setStartMonth, e.target.value)} className="h-11" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">持续月数</label>
-                <Input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} className="h-11" />
+                <Input type="number" value={duration} onChange={e => handleBasicInfoChange(setDuration, Number(e.target.value))} className="h-11" />
               </div>
             </div>
 
