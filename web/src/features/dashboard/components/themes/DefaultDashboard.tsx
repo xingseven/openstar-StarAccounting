@@ -145,7 +145,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
-          <Card className="border-gray-100 shadow-sm overflow-hidden">
+          <Card className="border-gray-200 shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="space-y-1">
                 <CardTitle className="text-lg font-bold text-gray-900">收支概览</CardTitle>
@@ -182,7 +182,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </CardContent>
           </Card>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
               <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
@@ -237,7 +237,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
-          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
@@ -281,7 +281,7 @@ function StatCard({ title, value, icon: Icon, trend, color, className }: {
 
   return (
     <div className={clsx(
-      "rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md",
+      "rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md",
       className
     )}>
       <div className="flex items-center justify-between mb-2 sm:mb-4">
@@ -310,7 +310,7 @@ function QuickAction({ href, icon: Icon, label, color }: { href: string; icon: a
   };
 
   return (
-    <Link href={href} className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-all hover:shadow-sm">
+    <Link href={href} className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all hover:shadow-sm">
       <div className={clsx("h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center mb-1.5 sm:mb-2 transition-colors", bgColors[color])}>
         <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
