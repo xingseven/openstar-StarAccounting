@@ -147,6 +147,30 @@ export default function LoansPage() {
     }
   }
 
+  async function handleRepay(item: Loan) {
+    const amountInput = prompt(`请输入本次还款金额（当前剩余 ¥${item.remainingAmount.toFixed(2)}）`);
+    if (!amountInput) return;
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert("还款金额必须大于 0");
+      return;
+    }
+    const description = prompt("备注（可选）") ?? "";
+    try {
+      await apiFetch(`/api/loans/${item.id}/repay`, {
+        method: "POST",
+        body: JSON.stringify({
+          amount,
+          description,
+          date: new Date().toISOString(),
+        }),
+      });
+      loadItems();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "登记还款失败");
+    }
+  }
+
   function openSchedule(item: Loan) {
     setScheduleItem(item);
     
@@ -199,6 +223,7 @@ export default function LoansPage() {
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
         onOpenSchedule={openSchedule}
+        onRepay={handleRepay}
       />
 
       {/* Modal & Schedule */}

@@ -555,13 +555,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0">
             <CardTitle className="text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={80}
-              className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[200px] w-[200px] rounded-full" />}
+              className="mx-auto h-[160px] w-[160px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[160px] w-[160px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[200px] w-[200px]">
+              <ChartContainer config={emptyChartConfig} className="h-[160px] w-[160px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -585,12 +585,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="w-full flex justify-center mt-4">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <div className="w-full flex justify-center mt-6">
+              <div className="flex flex-col gap-2 text-xs">
                  {data.platformDistribution.map((item, index) => (
-                   <div key={index} className="flex items-center gap-1">
+                   <div key={index} className="flex items-center gap-2">
                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
-                     <span className="text-gray-500 truncate max-w-[60px]">{item.name}</span>
+                     <span className="text-gray-500">{item.name}</span>
                      <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
                    </div>
                  ))}
@@ -603,21 +603,21 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0">
             <CardTitle className="text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={220}
-              className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[200px] w-[200px] rounded-full border-4 border-white" />}
+              className="mx-auto h-[160px] w-[160px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[160px] w-[160px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[200px] w-[200px]">
+              <ChartContainer config={commonConfig} className="h-[160px] w-[160px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
                     data={data.incomeExpense}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={40}
-                    strokeWidth={5}
+                    innerRadius={35}
+                    strokeWidth={4}
                     labelLine={false}
                     isAnimationActive
                     animationDuration={750}
@@ -634,13 +634,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="w-full flex justify-center mt-4">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <div className="w-full flex justify-center mt-6">
+              <div className="flex flex-col gap-2 text-xs">
                  {data.incomeExpense.map((item, index) => {
                    return (
-                     <div key={index} className="flex items-center gap-1">
+                     <div key={index} className="flex items-center gap-2">
                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
-                       <span className="text-gray-500 truncate max-w-[60px]">{item.name}</span>
+                       <span className="text-gray-500">{item.name}</span>
                        <span className="font-medium">{(item.value / incomeExpenseTotal * 100).toFixed(0)}%</span>
                      </div>
                    );
