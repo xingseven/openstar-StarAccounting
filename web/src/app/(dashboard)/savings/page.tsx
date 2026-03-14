@@ -31,6 +31,10 @@ export default function SavingsPage() {
   async function loadData() {
     setLoading(true);
     try {
+      // Debug: 检查当前用户
+      const token = typeof window !== 'undefined' ? localStorage.getItem('openstar_access_token') : null;
+      console.log('当前 token:', token ? token.substring(0, 50) + '...' : '无 token');
+      
       // 1. Load Goals
       const goalsData = await apiFetch<{ items: any[] }>("/api/savings");
       const list = goalsData.items.map((i) => ({
@@ -52,8 +56,14 @@ export default function SavingsPage() {
       // Let's use the 'category' filter if I added it? I didn't add category filter to GET /api/transactions
       // I will fetch recent 100 transactions and filter client side for now as a quick fix
       // TODO: Add category filter to backend
+      console.log('准备调用 /api/transactions...');
       const transData = await apiFetch<{ items: TransactionItem[]; total: number; page: number; pageSize: number }>(`/api/transactions?pageSize=100`);
-      console.log('原始交易数据:', transData);
+      console.log('原始交易数据（完整）:', JSON.stringify(transData, null, 2));
+      console.log('transData 的类型:', typeof transData);
+      console.log('transData.items:', transData.items);
+      console.log('transData.items 是否为数组:', Array.isArray(transData.items));
+      console.log('transData.items?.length:', transData.items?.length);
+      console.log('Object.keys(transData):', Object.keys(transData || {}));
       console.log('交易数量:', transData.items?.length || 0);
       
       const savingsKeywords = ["储蓄", "存款", "理财", "基金", "股票", "定投", "Savings", "Deposit"];
