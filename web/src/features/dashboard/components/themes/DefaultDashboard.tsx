@@ -95,17 +95,17 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <Wallet className="h-4 w-4" />
               <span className="text-sm font-medium">净资产</span>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight">
               ¥ {netWorth.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="mt-4 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
+            <div className="mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-400">
               <div>
                 <p>总资产</p>
-                <p className="text-gray-200 font-medium">¥{data.totalAssets.toFixed(0)}</p>
+                <p className="text-gray-200 font-medium text-sm sm:text-base">¥{data.totalAssets.toFixed(0)}</p>
               </div>
               <div className="text-right">
                 <p>负债</p>
-                <p className="text-red-300 font-medium">-¥{data.totalDebt.toFixed(0)}</p>
+                <p className="text-red-300 font-medium text-sm sm:text-base">-¥{data.totalDebt.toFixed(0)}</p>
               </div>
             </div>
           </div>
@@ -200,10 +200,10 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </div>
               ) : (
                 data.recentTransactions.map((t) => (
-                  <div key={t.id} className="group flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3 sm:gap-4">
+                  <div key={t.id} className="group flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       <div className={clsx(
-                        "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border shadow-sm",
+                        "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border shadow-sm shrink-0",
                         t.type === "EXPENSE" ? "bg-white border-gray-100" : "bg-green-50 border-green-100"
                       )}>
                         {t.type === "EXPENSE" ? (
@@ -212,17 +212,17 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                           <span className="text-base sm:text-lg">💰</span>
                         )}
                       </div>
-                      <div>
-                        <div className="font-semibold text-sm sm:text-base text-gray-900">{t.category || "未分类"}</div>
-                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 truncate">{t.category || "未分类"}</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1 truncate">
                           <span>{new Date(t.date).toLocaleDateString()}</span>
                           <span>·</span>
-                          <span>{t.merchant || t.platform}</span>
+                          <span className="truncate">{t.merchant || t.platform}</span>
                         </div>
                       </div>
                     </div>
                     <div className={clsx(
-                      "font-bold text-sm sm:text-base tabular-nums",
+                      "font-bold text-sm sm:text-base tabular-nums shrink-0 whitespace-nowrap",
                       t.type === "INCOME" ? "text-green-600" : "text-gray-900"
                     )}>
                       {t.type === "EXPENSE" ? "-" : "+"}
@@ -310,11 +310,11 @@ function QuickAction({ href, icon: Icon, label, color }: { href: string; icon: a
   };
 
   return (
-    <Link href={href} className="group flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-all hover:shadow-sm">
-      <div className={clsx("h-10 w-10 rounded-full flex items-center justify-center mb-2 transition-colors", bgColors[color])}>
-        <Icon className="h-5 w-5" />
+    <Link href={href} className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-all hover:shadow-sm">
+      <div className={clsx("h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center mb-1.5 sm:mb-2 transition-colors", bgColors[color])}>
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
-      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
+      <span className="text-xs sm:text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
     </Link>
   );
 }
