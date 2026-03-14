@@ -1,5 +1,6 @@
 import { 
   ArrowUpRight, 
+  ArrowDownLeft,
   Wallet, 
   CreditCard, 
   Banknote, 
@@ -207,9 +208,9 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                         t.type === "EXPENSE" ? "bg-white border-gray-100" : "bg-green-50 border-green-100"
                       )}>
                         {t.type === "EXPENSE" ? (
-                          <span className="text-base sm:text-lg">💸</span>
+                          <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                         ) : (
-                          <span className="text-base sm:text-lg">💰</span>
+                          <ArrowDownLeft className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
