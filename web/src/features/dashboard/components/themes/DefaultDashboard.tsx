@@ -85,20 +85,20 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto">
       {/* Top Stats Cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
         {/* Net Worth Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white shadow-xl">
+        <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6 text-white shadow-xl">
           <div className="relative z-10">
             <div className="flex items-center gap-2 text-gray-300 mb-2">
               <Wallet className="h-4 w-4" />
               <span className="text-sm font-medium">净资产</span>
             </div>
-            <div className="text-3xl font-bold tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold tracking-tight">
               ¥ {netWorth.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs text-gray-400">
+            <div className="mt-4 flex items-center justify-between text-[10px] sm:text-xs text-gray-400">
               <div>
                 <p>总资产</p>
                 <p className="text-gray-200 font-medium">¥{data.totalAssets.toFixed(0)}</p>
@@ -138,10 +138,11 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           icon={TrendingUp}
           trend={balance >= 0 ? "up" : "down"}
           color="blue"
+          className="col-span-2 sm:col-span-1"
         />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-gray-100 shadow-sm">
@@ -181,39 +182,39 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </CardContent>
           </Card>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900">近期交易</h3>
-              <Link href="/consumption" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                查看全部 <ArrowUpRight className="h-4 w-4" />
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
+              <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                查看全部 <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Link>
             </div>
             
             <div className="space-y-1">
               {data.recentTransactions.length === 0 ? (
-                <div className="py-12 text-center">
-                  <div className="mx-auto h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                    <Calendar className="h-6 w-6 text-gray-400" />
+                <div className="py-8 sm:py-12 text-center">
+                  <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gray-50 flex items-center justify-center mb-2 sm:mb-3">
+                    <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
                   </div>
-                  <p className="text-gray-500 text-sm">暂无交易记录</p>
+                  <p className="text-gray-500 text-xs sm:text-sm">暂无交易记录</p>
                 </div>
               ) : (
                 data.recentTransactions.map((t) => (
-                  <div key={t.id} className="group flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-4">
+                  <div key={t.id} className="group flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       <div className={clsx(
-                        "flex h-10 w-10 items-center justify-center rounded-full border shadow-sm",
+                        "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border shadow-sm",
                         t.type === "EXPENSE" ? "bg-white border-gray-100" : "bg-green-50 border-green-100"
                       )}>
                         {t.type === "EXPENSE" ? (
-                          <span className="text-lg">💸</span>
+                          <span className="text-base sm:text-lg">💸</span>
                         ) : (
-                          <span className="text-lg">💰</span>
+                          <span className="text-base sm:text-lg">💰</span>
                         )}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{t.category || "未分类"}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <div className="font-semibold text-sm sm:text-base text-gray-900">{t.category || "未分类"}</div>
+                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
                           <span>{new Date(t.date).toLocaleDateString()}</span>
                           <span>·</span>
                           <span>{t.merchant || t.platform}</span>
@@ -221,7 +222,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                       </div>
                     </div>
                     <div className={clsx(
-                      "font-bold tabular-nums",
+                      "font-bold text-sm sm:text-base tabular-nums",
                       t.type === "INCOME" ? "text-green-600" : "text-gray-900"
                     )}>
                       {t.type === "EXPENSE" ? "-" : "+"}
@@ -236,9 +237,9 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">快捷入口</h3>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
               <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
               <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
@@ -246,17 +247,17 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-blue-600 p-6 text-white shadow-lg relative overflow-hidden">
+          <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden">
             <div className="relative z-10">
-              <h3 className="text-lg font-bold mb-2">需要帮助？</h3>
-              <p className="text-blue-100 text-sm mb-4">
+              <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">需要帮助？</h3>
+              <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
                 查看文档了解如何更好地管理您的财务。
               </p>
-              <button className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors">
+              <button className="bg-white text-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-50 transition-colors">
                 查看文档
               </button>
             </div>
-            <div className="absolute right-0 bottom-0 h-32 w-32 bg-white/10 rounded-full blur-2xl translate-x-10 translate-y-10"></div>
+            <div className="absolute right-0 bottom-0 h-24 w-24 sm:h-32 sm:w-32 bg-white/10 rounded-full blur-2xl translate-x-8 translate-y-8 sm:translate-x-10 sm:translate-y-10"></div>
           </div>
         </div>
       </div>
@@ -264,12 +265,13 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, trend, color }: { 
+function StatCard({ title, value, icon: Icon, trend, color, className }: { 
   title: string; 
   value: number; 
   icon: any; 
   trend: "up" | "down";
   color: "red" | "green" | "blue";
+  className?: string;
 }) {
   const colorStyles = {
     red: "text-red-600 bg-red-50",
@@ -278,17 +280,20 @@ function StatCard({ title, value, icon: Icon, trend, color }: {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center justify-between mb-4">
+    <div className={clsx(
+      "rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md",
+      className
+    )}>
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
         <div className="flex items-center gap-2 text-gray-500">
-          <div className={clsx("p-2 rounded-lg", colorStyles[color])}>
-            <Icon className="h-5 w-5" />
+          <div className={clsx("p-1.5 sm:p-2 rounded-lg", colorStyles[color])}>
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <span className="text-sm font-medium">{title}</span>
+          <span className="text-xs sm:text-sm font-medium">{title}</span>
         </div>
       </div>
       <div className="flex items-end justify-between">
-        <div className="text-2xl font-bold text-gray-900">
+        <div className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
           ¥ {Math.abs(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
       </div>
