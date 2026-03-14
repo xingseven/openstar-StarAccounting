@@ -61,9 +61,9 @@ export default function SavingsPage() {
         )
       );
       console.log('交易加载:', {
-        总数：transData.total,
-        过滤后：filtered.length,
-        第一条：filtered[0]
+        总数: transData.total,
+        过滤后: filtered.length,
+        第一条: filtered[0]
       });
       setTransactions(filtered);
 
