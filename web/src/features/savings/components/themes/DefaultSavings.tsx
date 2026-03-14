@@ -312,35 +312,35 @@ export function SavingsDefaultTheme({
   } satisfies ChartConfig;
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">储蓄目标</h1>
-          <p className="text-gray-500 mt-1">积少成多，实现你的财务愿望</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">储蓄目标</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">积少成多，实现你的财务愿望</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 min-w-[140px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
               placeholder="搜索目标..."
-              className="pl-9 w-[200px] bg-white"
+              className="pl-9 w-full bg-white h-9 sm:h-10 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            新建目标
+          <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white h-9 sm:h-10 px-3 sm:px-4">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">新建目标</span>
           </Button>
         </div>
       </div>
 
       {/* Row 1: Summary Cards (3 cols) - With Skeleton */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-2 sm:gap-4 grid-cols-3">
         {loading ? (
           <>
             <StatsCardSkeleton />
@@ -350,41 +350,41 @@ export function SavingsDefaultTheme({
         ) : (
           <>
             <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">总存款</CardTitle>
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Wallet className="h-5 w-5 text-blue-600" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">总存款</CardTitle>
+                <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Wallet className="h-3 w-3 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">¥{totalSaved.toLocaleString()}</div>
-                <p className="text-xs text-gray-500 mt-1">所有目标的当前存款总和</p>
+              <CardContent className="pt-0">
+                <div className="text-base sm:text-2xl font-bold text-gray-900">¥{totalSaved.toLocaleString()}</div>
+                <p className="text-[9px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 hidden sm:block">所有目标的当前存款总和</p>
               </CardContent>
             </Card>
 
             <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">目标总额</CardTitle>
-                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Target className="h-5 w-5 text-purple-600" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">目标总额</CardTitle>
+                <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Target className="h-3 w-3 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">¥{totalTarget.toLocaleString()}</div>
-                <p className="text-xs text-gray-500 mt-1">所有目标的计划总额</p>
+              <CardContent className="pt-0">
+                <div className="text-base sm:text-2xl font-bold text-gray-900">¥{totalTarget.toLocaleString()}</div>
+                <p className="text-[9px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 hidden sm:block">所有目标的计划总额</p>
               </CardContent>
             </Card>
 
             <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">总体进度</CardTitle>
-                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+                <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">总体进度</CardTitle>
+                <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <TrendingUp className="h-3 w-3 sm:h-5 sm:w-5 text-green-600" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{overallProgress.toFixed(1)}%</div>
-                <Progress value={overallProgress} className="h-2 mt-2 bg-green-100" indicatorClassName="bg-green-500" />
+              <CardContent className="pt-0">
+                <div className="text-base sm:text-2xl font-bold text-gray-900">{overallProgress.toFixed(0)}%</div>
+                <Progress value={overallProgress} className="h-1.5 sm:h-2 mt-1 sm:mt-2 bg-green-100" indicatorClassName="bg-green-500" />
               </CardContent>
             </Card>
           </>
@@ -445,14 +445,14 @@ export function SavingsDefaultTheme({
 
           {/* Goals Table Column */}
           <Card className="md:col-span-3 overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between py-4">
-              <div className="space-y-1">
-                <CardTitle className="text-base">目标列表</CardTitle>
-                <CardDescription>按行展示每个储蓄目标</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
+              <div className="space-y-0 sm:space-y-1">
+                <CardTitle className="text-sm sm:text-base">目标列表</CardTitle>
+                <CardDescription className="hidden sm:block">按行展示每个储蓄目标</CardDescription>
               </div>
-              <Button onClick={onOpenCreate} size="sm">
-                <Plus className="mr-1 h-4 w-4" />
-                新增目标
+              <Button onClick={onOpenCreate} size="sm" className="h-8 text-xs">
+                <Plus className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">新增目标</span>
               </Button>
             </CardHeader>
             <CardContent className="pt-0">
