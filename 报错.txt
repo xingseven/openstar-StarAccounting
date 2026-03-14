@@ -1,77 +1,3 @@
-forward-logs-shared.ts:95 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-intercept-console-error.ts:42  A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
-
-- A server/client branch `if (typeof window !== 'undefined')`.
-- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
-- Date formatting in a user's locale which doesn't match the server.
-- External changing data without sending a snapshot of it along with the HTML.
-- Invalid HTML tag nesting.
-
-It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
-
-https://react.dev/link/hydration-mismatch
-
-  ...
-    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
-      <AppDevOverlayErrorBoundary globalError={[...]}>
-        <ReplaySsrOnlyErrors>
-        <DevRootHTTPAccessFallbackBoundary>
-          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
-            <HTTPAccessFallbackErrorBoundary pathname="/savings" notFound={<NotAllowedRootHTTPFallbackError>} ...>
-              <RedirectBoundary>
-                <RedirectErrorBoundary router={{...}}>
-                  <Head>
-                  <__next_root_layout_boundary__>
-                    <SegmentViewNode type="layout" pagePath="layout.tsx">
-                      <SegmentTrieNode>
-                      <link>
-                      <script>
-                      <script>
-                      <RootLayout>
-                        <html
-                          lang="zh-CN"
--                         data-redeviation-bs-uid="i468sflm8oe"
-                        >
-                  ...
-
-error @ intercept-console-error.ts:42
-forward-logs-shared.ts:95 SavingsDefaultTheme 收到 transactions: Array(0)
-forward-logs-shared.ts:95 transactions.length: 0
-forward-logs-shared.ts:95 当前 token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...
-forward-logs-shared.ts:95 Token 中的 userId: cmmoxdifo0000va045bngl0cy
-forward-logs-shared.ts:95 准备调用 /api/transactions...
-forward-logs-shared.ts:95 原始交易数据（完整）: {
-  "page": 1,
-  "pageSize": 100,
-  "total": 1,
-  "items": [
-    {
-      "id": "tx_1773490482735_2",
-      "orderId": null,
-      "date": "2026-03-14T20:14:42.735Z",
-      "type": "INCOME",
-      "amount": "3000",
-      "category": "储蓄存款",
-      "platform": "手动打卡",
-      "merchant": "测试储蓄目标",
-      "description": "储蓄打卡 - 2026/02",
-      "paymentMethod": null,
-      "status": null
-    }
-  ]
-}
-forward-logs-shared.ts:95 transData 的类型: object
-forward-logs-shared.ts:95 transData.items: Array(1)
-forward-logs-shared.ts:95 transData.items 是否为数组: true
-forward-logs-shared.ts:95 transData.items?.length: 1
-forward-logs-shared.ts:95 Object.keys(transData): Array(4)
-forward-logs-shared.ts:95 交易数量: 1
-forward-logs-shared.ts:95 过滤后的交易: Array(1)
-forward-logs-shared.ts:95 过滤数量: 1
-forward-logs-shared.ts:95 第一条过滤记录: Object
-forward-logs-shared.ts:95 SavingsDefaultTheme 收到 transactions: Array(1)
-forward-logs-shared.ts:95 transactions.length: 1
-forward-logs-shared.ts:95 [HMR] connected
 dialog.tsx:38  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
 warn @ forward-logs-shared.ts:95
 DescriptionWarning.useEffect @ dialog.tsx:543
@@ -583,7 +509,6 @@ flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:20241
 processRootScheduleInMicrotask @ react-dom-client.development.js:20280
 (匿名) @ react-dom-client.development.js:20418
 react-dom-client.development.js:20411 [Violation]'click' handler took 165ms
-[Violation]Forced reflow while executing JavaScript took 32ms
 inspector.js:7   POST http://localhost:3000/api/transactions 404 (Not Found)
 window.fetch @ inspector.js:7
 handleSubmit @ SavingsWithdrawalDialog.tsx:73

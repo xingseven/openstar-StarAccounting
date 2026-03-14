@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SavingsGoal } from "./themes/DefaultSavings";
+import { apiFetch } from "@/lib/api";
 
 interface SavingsWithdrawalDialogProps {
   open: boolean;
@@ -70,18 +71,16 @@ export function SavingsWithdrawalDialog({
         description: description || `从"${goal.name}"取款`,
       };
 
-      await fetch("/api/transactions", {
+      await apiFetch("/api/transactions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(transactionData),
       });
 
       // 2. 更新储蓄目标的 currentAmount
       const newCurrentAmount = goal.currentAmount - withdrawalAmount;
       
-      await fetch(`/api/savings/${goal.id}`, {
+      await apiFetch(`/api/savings/${goal.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentAmount: newCurrentAmount,
         }),

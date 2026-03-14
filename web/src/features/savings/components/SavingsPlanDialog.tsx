@@ -118,9 +118,8 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
         const plan = plans.find(p => p.id === id);
         if (plan && plan.amount > 0) {
           try {
-            await fetch("/api/transactions", {
+            await apiFetch("/api/transactions", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 amount: plan.amount.toString(),
                 type: "INCOME" as const,
