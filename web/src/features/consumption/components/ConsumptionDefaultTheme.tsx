@@ -1036,6 +1036,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   }}
                   nodePadding={50}
                   link={({ source, target }) => {
+                    if (!source || !target) {
+                      return { stroke: 'var(--color-chart-1)', fillOpacity: 0.3 };
+                    }
                     const sourceIndex = typeof source === 'number' ? source : source.index;
                     const targetIndex = typeof target === 'number' ? target : target.index;
                     const linkColors: Record<string, string> = {

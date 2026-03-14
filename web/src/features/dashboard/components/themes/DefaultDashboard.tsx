@@ -157,7 +157,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </button>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
+              <ChartContainer config={chartConfig} className="h-[120px] w-full">
                 <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
                   <YAxis
                     dataKey="name"
