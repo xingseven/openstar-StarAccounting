@@ -555,7 +555,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0">
             <CardTitle className="text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 relative">
+          <CardContent className="flex-1 pb-0 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={80}
               className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
@@ -585,14 +585,16 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-               {data.platformDistribution.map((item, index) => (
-                 <div key={index} className="flex items-center gap-1">
-                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                   <span className="text-gray-500">{item.name}</span>
-                   <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
-                 </div>
-               ))}
+            <div className="w-full flex justify-center mt-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                 {data.platformDistribution.map((item, index) => (
+                   <div key={index} className="flex items-center gap-1">
+                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                     <span className="text-gray-500 truncate max-w-[60px]">{item.name}</span>
+                     <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
+                   </div>
+                 ))}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -601,7 +603,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0">
             <CardTitle className="text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 relative">
+          <CardContent className="flex-1 pb-0 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={220}
               className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
@@ -632,16 +634,18 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-               {data.incomeExpense.map((item, index) => {
-                 return (
-                   <div key={index} className="flex items-center gap-1">
-                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                     <span className="text-gray-500">{item.name}</span>
-                     <span className="font-medium">{(item.value / incomeExpenseTotal * 100).toFixed(0)}%</span>
-                   </div>
-                 );
-               })}
+            <div className="w-full flex justify-center mt-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                 {data.incomeExpense.map((item, index) => {
+                   return (
+                     <div key={index} className="flex items-center gap-1">
+                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                       <span className="text-gray-500 truncate max-w-[60px]">{item.name}</span>
+                       <span className="font-medium">{(item.value / incomeExpenseTotal * 100).toFixed(0)}%</span>
+                     </div>
+                   );
+                 })}
+              </div>
             </div>
           </CardContent>
         </Card>

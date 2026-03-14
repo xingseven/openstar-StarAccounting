@@ -1833,6 +1833,67 @@ app.delete("/api/loans/:id", async (req, res) => {
   jsonOk(res, { deleted: true });
 });
 
+app.post("/api/loans/:id/repay", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+  const { amount, date, description } = req.body ?? {};
+  const repayAmount = Number(amount);
+  if (!Number.isFinite(repayAmount) || repayAmount <= 0) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "amount 必须大于 0");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const loan = await tx.loan.findFirst({ where: { id, userId } });
+        if (!loan) {
+          throw new Error("贷款不存在");
+        }
+        const nextRemaining = Math.max(0, Number(loan.remainingAmount) - repayAmount);
+        const nextPaidPeriods = Math.min(Number(loan.periods), Number(loan.paidPeriods) + 1);
+        const nextStatus = nextRemaining <= 0 ? "PAID_OFF" : "ACTIVE";
+        const updatedLoan = await tx.loan.update({
+          where: { id: loan.id },
+          data: {
+            remainingAmount: nextRemaining,
+            paidPeriods: nextPaidPeriods,
+            status: nextStatus,
+          },
+        });
+        const repaymentTx = await tx.transaction.create({
+          data: {
+            userId,
+            amount: repayAmount,
+            type: "REPAYMENT",
+            category: "贷款还款",
+            platform: loan.platform,
+            merchant: loan.platform,
+            date: date ? new Date(date) : new Date(),
+            description: typeof description === "string" ? description : null,
+            loanId: loan.id,
+          },
+        });
+        return { loan: updatedLoan, transaction: repaymentTx };
+      });
+      jsonOk(res, result);
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      if (message.includes("贷款不存在")) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "贷款不存在");
+        return;
+      }
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Memory mode not supported for repay");
+});
+
 // Asset API
 app.get("/api/assets", async (req, res) => {
   const userId = await requireUserId(req, res);

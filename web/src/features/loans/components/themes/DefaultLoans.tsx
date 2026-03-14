@@ -30,6 +30,7 @@ import {
   MoreHorizontal, 
   Calendar,
   Banknote,
+  HandCoins,
   Landmark,
   CreditCard,
   Building,
@@ -57,6 +58,7 @@ interface LoansViewProps {
   onOpenCreate: () => void;
   onOpenEdit: (item: Loan) => void;
   onOpenSchedule: (item: Loan) => void;
+  onRepay: (item: Loan) => void;
 }
 
 export function LoansDefaultTheme({
@@ -66,6 +68,7 @@ export function LoansDefaultTheme({
   onOpenCreate,
   onOpenEdit,
   onOpenSchedule,
+  onRepay,
 }: LoansViewProps) {
   const chartConfig = {
     paid: { label: "已还", color: "hsl(var(--chart-1))" },
@@ -179,6 +182,9 @@ export function LoansDefaultTheme({
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                        <button onClick={() => onOpenSchedule(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-blue-600 transition-colors" title="还款计划">
                         <Calendar className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => onRepay(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-emerald-600 transition-colors" title="登记还款">
+                        <HandCoins className="h-4 w-4" />
                       </button>
                       <button onClick={() => onOpenEdit(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors">
                         <MoreHorizontal className="h-4 w-4" />

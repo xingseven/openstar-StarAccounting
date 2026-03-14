@@ -9,6 +9,7 @@ type Asset = {
   id: string;
   name: string;
   balance: number;
+  estimatedValue?: string;
 };
 
 type Loan = {
@@ -62,7 +63,7 @@ export default function DashboardPage() {
         ]);
 
         setData({
-          totalAssets: assetsData.items.reduce((acc, cur) => acc + Number(cur.balance), 0),
+          totalAssets: assetsData.items.reduce((acc, cur) => acc + Number(cur.estimatedValue ?? cur.balance), 0),
           totalDebt: loansData.items.reduce((acc, cur) => acc + Number(cur.remainingAmount), 0),
           monthExpense: Number(expenseData.totalExpense),
           monthIncome: Number(incomeData.totalExpense),
