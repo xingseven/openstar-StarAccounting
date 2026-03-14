@@ -32,12 +32,9 @@ import { cn } from "@/lib/utils";
 import { 
     ArrowDownIcon, 
     ArrowUpIcon, 
-    CreditCard, 
     Wallet,
     ShoppingBag,
-    Coins,
-    Search,
-    MessageCircle
+    Search
   } from "lucide-react";
   import { Input } from "@/components/ui/input";
   import {
@@ -90,6 +87,32 @@ interface ConsumptionViewProps {
 // Helper component for skeleton loading
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("animate-pulse rounded-md bg-gray-100", className)} {...props} />;
+}
+
+function WechatOfficialIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#07C160" />
+      <ellipse cx="10" cy="10.2" rx="5.2" ry="3.9" fill="#FFFFFF" />
+      <ellipse cx="14.6" cy="14.5" rx="4.4" ry="3.3" fill="#FFFFFF" />
+      <circle cx="8.3" cy="9.8" r="0.7" fill="#07C160" />
+      <circle cx="11.5" cy="9.8" r="0.7" fill="#07C160" />
+      <circle cx="13.3" cy="14.2" r="0.6" fill="#07C160" />
+      <circle cx="15.9" cy="14.2" r="0.6" fill="#07C160" />
+    </svg>
+  );
+}
+
+function AlipayOfficialIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#1677FF" />
+      <path
+        fill="#FFFFFF"
+        d="M7 8.1h10.1v1.8h-4v1.3h4.9V13h-3.2c1.1 1.2 2.3 2.2 3.7 2.9l-1.1 1.6c-1.5-.8-2.9-2-4.2-3.6V18h-2v-3.4c-1.5 1.4-3.2 2.5-5.2 3.3L5 16.3c1.9-.7 3.6-1.8 5-3.3H6.8v-1.8h4.4V9.9H7V8.1z"
+      />
+    </svg>
+  );
 }
 
 // Helper component for staggered animation and lazy loading
@@ -231,10 +254,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+          <ShoppingBag className="absolute -right-3 -bottom-4 h-24 w-24 text-orange-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">总消费金额</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-full bg-orange-100/90 ring-4 ring-orange-50/80 flex items-center justify-center">
               <ShoppingBag className="h-5 w-5 text-orange-600" />
             </div>
           </CardHeader>
@@ -244,10 +268,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+          <Wallet className="absolute -right-3 -bottom-4 h-24 w-24 text-blue-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">本月收支</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-full bg-blue-100/90 ring-4 ring-blue-50/80 flex items-center justify-center">
               <Wallet className="h-5 w-5 text-blue-600" />
             </div>
           </CardHeader>
@@ -263,11 +288,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
+          <WechatOfficialIcon className="absolute -right-3 -bottom-4 h-24 w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">微信收支</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-[#07C160]/10 flex items-center justify-center">
-              <MessageCircle className="h-5 w-5 text-[#07C160]" />
+            <div className="h-9 w-9 rounded-full bg-[#07C160]/15 ring-4 ring-[#07C160]/10 flex items-center justify-center">
+              <WechatOfficialIcon className="h-5 w-5" />
             </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
@@ -282,11 +308,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
+          <AlipayOfficialIcon className="absolute -right-3 -bottom-4 h-24 w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-[#1677FF]/10 flex items-center justify-center">
-              <div className="font-bold text-[#1677FF] text-lg">支</div>
+            <div className="h-9 w-9 rounded-full bg-[#1677FF]/15 ring-4 ring-[#1677FF]/10 flex items-center justify-center">
+              <AlipayOfficialIcon className="h-5 w-5 rounded-sm" />
             </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">

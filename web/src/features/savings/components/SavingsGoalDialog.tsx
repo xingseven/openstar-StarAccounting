@@ -121,7 +121,9 @@ export function SavingsGoalDialog({
 
   const handleNext = () => {
     if (!name) return;
-    initRows();
+    if (rows.length === 0) {
+      initRows();
+    }
     setStep(2);
   };
 
