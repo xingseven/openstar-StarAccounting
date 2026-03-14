@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -64,6 +64,7 @@ export function SavingsGoalDialog({
   ]);
   const [rows, setRows] = useState<PlanRow[]>([]);
   const [isDirty, setIsDirty] = useState(false);
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Reset or Load data when dialog opens
   useEffect(() => {
@@ -241,6 +242,16 @@ export function SavingsGoalDialog({
     setRows([]); // Reset rows when basic info changes to force re-initialization
   };
 
+  const handleTableWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const container = tableScrollRef.current;
+    if (!container) return;
+    if (e.shiftKey || e.deltaX !== 0) {
+      e.preventDefault();
+      const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+      container.scrollLeft += delta;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className={clsx("transition-all duration-300", step === 2 ? "sm:max-w-[1000px] h-[80vh] flex flex-col" : "sm:max-w-[500px]")}>
@@ -325,16 +336,20 @@ export function SavingsGoalDialog({
             </div>
 
             {/* Table */}
-            <div className="flex-1 overflow-auto border rounded-lg bg-white">
-              <table className="w-full text-sm text-left relative" style={{ minWidth: type === 'MONTHLY' ? '100%' : '1200px' }}>
+            <div
+              ref={tableScrollRef}
+              onWheel={handleTableWheel}
+              className="flex-1 overflow-auto border rounded-lg bg-white"
+            >
+              <table className="text-sm text-left relative table-auto" style={{ width: "max-content", minWidth: type === 'MONTHLY' ? '100%' : '1400px' }}>
                 <thead className="bg-gray-50 text-gray-700 font-medium sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap sticky left-0 bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">月份</th>
                     {type !== 'MONTHLY' && (
                       <>
-                        <th className="p-3 w-[120px]">月薪</th>
+                        <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">月薪</th>
                         {expenseColumns.map(col => (
-                          <th key={col.id} className="p-3 min-w-[120px] group relative">
+                          <th key={col.id} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap group relative">
                             <div className="flex items-center justify-between">
                               {col.name}
                               <button 
@@ -346,14 +361,14 @@ export function SavingsGoalDialog({
                             </div>
                           </th>
                         ))}
-                        <th className="p-3 min-w-[100px] w-[100px] text-gray-500 whitespace-nowrap">本月结余</th>
-                        <th className="p-3 min-w-[100px] w-[100px] text-gray-500 whitespace-nowrap">上月结余</th>
-                        <th className="p-3 min-w-[100px] w-[100px] text-blue-600 font-bold whitespace-nowrap">可存金额</th>
+                        <th className="p-3 min-w-[120px] w-[120px] text-gray-500 whitespace-nowrap">本月结余</th>
+                        <th className="p-3 min-w-[120px] w-[120px] text-gray-500 whitespace-nowrap">上月结余</th>
+                        <th className="p-3 min-w-[120px] w-[120px] text-blue-600 font-bold whitespace-nowrap">可存金额</th>
                       </>
                     )}
                     <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">计划存款</th>
                     {type !== 'MONTHLY' && (
-                      <th className="p-3 min-w-[100px] w-[100px] text-purple-600 whitespace-nowrap">下月结余</th>
+                      <th className="p-3 min-w-[120px] w-[120px] text-purple-600 whitespace-nowrap">下月结余</th>
                     )}
                     <th className="p-3 min-w-[200px]">备注</th>
                   </tr>
@@ -364,7 +379,7 @@ export function SavingsGoalDialog({
                       <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
                       {type !== 'MONTHLY' && (
                         <>
-                          <td className="p-3">
+                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">
                             <input
                               type="number"
                               className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
@@ -374,7 +389,7 @@ export function SavingsGoalDialog({
                             />
                           </td>
                           {expenseColumns.map(col => (
-                            <td key={col.id} className="p-3">
+                            <td key={col.id} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap">
                               <input
                                 type="number"
                                 className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
@@ -384,12 +399,12 @@ export function SavingsGoalDialog({
                               />
                             </td>
                           ))}
-                          <td className="p-3 text-gray-500">¥{row.balance?.toLocaleString()}</td>
-                          <td className="p-3 text-gray-500">¥{row.prevCarryOver?.toLocaleString()}</td>
-                          <td className="p-3 text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
+                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-500">¥{row.balance?.toLocaleString()}</td>
+                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-500">¥{row.prevCarryOver?.toLocaleString()}</td>
+                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
                         </>
                       )}
-                      <td className="p-3">
+                      <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">
                         <input
                           type="number"
                           className="w-full bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-gray-900"
@@ -399,7 +414,7 @@ export function SavingsGoalDialog({
                         />
                       </td>
                       {type !== 'MONTHLY' && (
-                        <td className="p-3 text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
+                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
                       )}
                       <td className="p-3">
                         <input
