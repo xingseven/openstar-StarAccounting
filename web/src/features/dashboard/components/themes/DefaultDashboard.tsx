@@ -88,7 +88,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden px-2 sm:px-0">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden">
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {/* Net Worth Card */}

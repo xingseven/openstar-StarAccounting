@@ -102,11 +102,28 @@ export const MOCK_SANKEY = {
     { name: "交通出行" },      // 6
     { name: "休闲娱乐" },      // 7
     { name: "生活服务" },      // 8
+    // 第4级节点
+    { name: "星巴克" },        // 9
+    { name: "麦当劳" },        // 10
+    { name: "瑞幸咖啡" },      // 11
+    { name: "美团外卖" },      // 12
+    { name: "京东商城" },      // 13
+    { name: "淘宝" },          // 14
+    { name: "拼多多" },        // 15
+    { name: "滴滴出行" },      // 16
+    { name: "地铁" },          // 17
+    { name: "公交" },          // 18
+    { name: "爱奇艺" },        // 19
+    { name: "腾讯视频" },      // 20
+    { name: "话费充值" },      // 21
+    { name: "水电费" },        // 22
   ],
   links: [
+    // 第1级 → 第2级
     { source: 0, target: 2, value: 8000 },
     { source: 0, target: 3, value: 12000 },
     { source: 1, target: 3, value: 5000 },
+    // 第2级 → 第3级
     { source: 2, target: 4, value: 3000 },
     { source: 2, target: 6, value: 1500 },
     { source: 2, target: 8, value: 3500 },
@@ -114,6 +131,25 @@ export const MOCK_SANKEY = {
     { source: 3, target: 7, value: 4000 },
     { source: 3, target: 4, value: 2000 },
     { source: 3, target: 6, value: 3000 },
+    // 第3级 → 第4级（餐饮美食）
+    { source: 4, target: 9, value: 800 },   // 餐饮 → 星巴克
+    { source: 4, target: 10, value: 600 },  // 餐饮 → 麦当劳
+    { source: 4, target: 11, value: 500 },  // 餐饮 → 瑞幸咖啡
+    { source: 4, target: 12, value: 400 },  // 餐饮 → 美团外卖
+    // 第3级 → 第4级（购物消费）
+    { source: 5, target: 13, value: 2500 },  // 购物 → 京东商城
+    { source: 5, target: 14, value: 1500 },  // 购物 → 淘宝
+    { source: 5, target: 15, value: 800 },   // 购物 → 拼多多
+    // 第3级 → 第4级（交通出行）
+    { source: 6, target: 16, value: 2000 },  // 交通 → 滴滴出行
+    { source: 6, target: 17, value: 1500 },  // 交通 → 地铁
+    { source: 6, target: 18, value: 500 },   // 交通 → 公交
+    // 第3级 → 第4级（休闲娱乐）
+    { source: 7, target: 19, value: 1500 },  // 娱乐 → 爱奇艺
+    { source: 7, target: 20, value: 1200 },  // 娱乐 → 腾讯视频
+    // 第3级 → 第4级（生活服务）
+    { source: 8, target: 21, value: 2000 },  // 生活 → 话费充值
+    { source: 8, target: 22, value: 1500 },  // 生活 → 水电费
   ],
 };
 

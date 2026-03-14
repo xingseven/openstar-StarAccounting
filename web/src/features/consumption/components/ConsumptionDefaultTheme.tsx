@@ -1003,12 +1003,18 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <div className="min-w-[600px] md:w-full">
-            <DelayedRender delay={960} className="h-[300px] w-full">
+            <DelayedRender delay={960} className="h-[400px] w-full">
               <ReactECharts
                 option={{
                   tooltip: {
                     trigger: 'item',
                     triggerOn: 'mousemove',
+                  },
+                  grid: {
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
                   },
                   series: [
                     {
@@ -1018,25 +1024,47 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         focus: 'adjacency',
                       },
                       nodeAlign: 'left',
+                      left: 10,
+                      right: 100,
+                      top: 20,
+                      bottom: 20,
+                      nodeWidth: 18,
+                      nodeGap: 10,
+                      layoutIterations: 32,
+                      draggable: false,
                       data: data.sankey.nodes.map((node, index) => {
-                        const colors = [
-                          '#8B5CF6', // 工资收入 - 紫色
-                          '#F59E0B', // 理财收益 - 橙色
-                          '#07C160', // 微信钱包 - 绿色
-                          '#1677FF', // 支付宝 - 蓝色
-                          '#EF4444', // 餐饮美食 - 红色
-                          '#EC4899', // 购物消费 - 粉色
-                          '#14B8A6', // 交通出行 - 青色
-                          '#8B5CF6', // 休闲娱乐 - 紫色
-                          '#6366F1', // 生活服务 - 靛蓝
-                        ];
-                        return {
-                          name: node.name,
-                          itemStyle: {
-                            color: colors[index] || '#8B5CF6',
-                          },
-                        };
-                      }),
+                          const colors = [
+                            '#3B82F6', // 0: 工资收入 - 蓝色
+                            '#10B981', // 1: 理财收益 - 绿色
+                            '#07C160', // 2: 微信钱包 - 微信绿
+                            '#1677FF', // 3: 支付宝 - 支付宝蓝
+                            '#F97316', // 4: 餐饮美食 - 橙色
+                            '#8B5CF6', // 5: 购物消费 - 紫色
+                            '#06B6D4', // 6: 交通出行 - 青色
+                            '#EC4899', // 7: 休闲娱乐 - 粉色
+                            '#6B7280', // 8: 生活服务 - 灰色
+                            '#EF4444', // 9: 星巴克 - 红色
+                            '#F59E0B', // 10: 麦当劳 - 橙色
+                            '#84CC16', // 11: 瑞幸咖啡 - 绿色
+                            '#14B8A6', // 12: 美团外卖 - 青色
+                            '#F97316', // 13: 京东商城 - 橙色
+                            '#6366F1', // 14: 淘宝 - 靛蓝
+                            '#EC4899', // 15: 拼多多 - 粉色
+                            '#10B981', // 16: 滴滴出行 - 绿色
+                            '#06B6D4', // 17: 地铁 - 青色
+                            '#3B82F6', // 18: 公交 - 蓝色
+                            '#8B5CF6', // 19: 爱奇艺 - 紫色
+                            '#EF4444', // 20: 腾讯视频 - 红色
+                            '#F59E0B', // 21: 话费充值 - 橙色
+                            '#6B7280', // 22: 水电费 - 灰色
+                          ];
+                          return {
+                            name: node.name,
+                            itemStyle: {
+                              color: colors[index] || '#3B82F6',
+                            },
+                          };
+                        }),
                       links: data.sankey.links.map(link => ({
                         source: data.sankey.nodes[link.source].name,
                         target: data.sankey.nodes[link.target].name,
@@ -1054,13 +1082,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         color: '#333',
                         formatter: '{b}',
                       },
-                      nodeWidth: 20,
-                      nodeGap: 8,
-                      layoutIterations: 32,
                     },
                   ],
                 }}
-                style={{ height: '300px', width: '100%' }}
+                style={{ height: '400px', width: '100%' }}
               />
             </DelayedRender>
           </div>
