@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.8.24 - 2026-03-14
+
+### Features
+- **桑基图升级为 ECharts**:
+  - 从 Recharts 替换为 ECharts 桑基图组件
+  - 支持 4 级分支数据流展示
+  - 添加第 4 级节点：餐饮（星巴克、麦当劳、瑞幸咖啡、美团外卖）、购物（京东商城、淘宝、拼多多）、交通（滴滴出行、地铁、公交）、娱乐（爱奇艺、腾讯视频）、生活（话费充值、水电费）
+  - 节点颜色统一为绿色系 + 深蓝色，简洁美观
+  - 连接线使用渐变色，交互更流畅
+- **消费页布局优化**:
+  - 桑基图容器高度调整（300px → 500px）
+  - 移动端桑基图支持横向滚动查看
+- **修复 hydration 警告问题**:
+  - 在 layout.tsx 添加 suppressHydrationWarning 属性
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 桑基图替换为 ECharts 实现
+   - 浮窗筛选按钮修复按钮嵌套问题
+2. `web/src/features/consumption/mockData.ts`
+   - 桑基图数据扩展为 4 级分支
+3. `web/src/app/layout.tsx`
+   - 添加 suppressHydrationWarning 属性
+
+### Dependencies
+- 新增：echarts
+- 新增：echarts-for-react
+
 ## 1.8.23 - 2026-03-14
 
 ### Features

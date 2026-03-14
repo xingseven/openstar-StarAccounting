@@ -1002,8 +1002,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <div className="min-w-[600px] md:w-full">
-            <DelayedRender delay={960} className="h-[400px] w-full">
+          <div className="min-w-[700px] md:w-full">
+            <DelayedRender delay={960} className="h-[500px] w-full">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -1028,43 +1028,46 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       right: 100,
                       top: 20,
                       bottom: 20,
-                      nodeWidth: 18,
-                      nodeGap: 10,
-                      layoutIterations: 32,
+                      nodeWidth: 20,
+                      nodeGap: 12,
+                      layoutIterations: 64,
                       draggable: false,
+                      depthMode: 'vertical',
                       data: data.sankey.nodes.map((node, index) => {
-                          const colors = [
-                            '#3B82F6', // 0: 工资收入 - 蓝色
-                            '#10B981', // 1: 理财收益 - 绿色
-                            '#07C160', // 2: 微信钱包 - 微信绿
-                            '#1677FF', // 3: 支付宝 - 支付宝蓝
-                            '#F97316', // 4: 餐饮美食 - 橙色
-                            '#8B5CF6', // 5: 购物消费 - 紫色
-                            '#06B6D4', // 6: 交通出行 - 青色
-                            '#EC4899', // 7: 休闲娱乐 - 粉色
-                            '#6B7280', // 8: 生活服务 - 灰色
-                            '#EF4444', // 9: 星巴克 - 红色
-                            '#F59E0B', // 10: 麦当劳 - 橙色
-                            '#84CC16', // 11: 瑞幸咖啡 - 绿色
-                            '#14B8A6', // 12: 美团外卖 - 青色
-                            '#F97316', // 13: 京东商城 - 橙色
-                            '#6366F1', // 14: 淘宝 - 靛蓝
-                            '#EC4899', // 15: 拼多多 - 粉色
-                            '#10B981', // 16: 滴滴出行 - 绿色
-                            '#06B6D4', // 17: 地铁 - 青色
-                            '#3B82F6', // 18: 公交 - 蓝色
-                            '#8B5CF6', // 19: 爱奇艺 - 紫色
-                            '#EF4444', // 20: 腾讯视频 - 红色
-                            '#F59E0B', // 21: 话费充值 - 橙色
-                            '#6B7280', // 22: 水电费 - 灰色
-                          ];
-                          return {
-                            name: node.name,
-                            itemStyle: {
-                              color: colors[index] || '#3B82F6',
-                            },
-                          };
-                        }),
+                           const level = index < 2 ? 0 : index < 4 ? 1 : index < 9 ? 2 : 3;
+                           const colors = [
+                             '#166534', // 0: 工资收入 - 深绿
+                             '#15803D', // 1: 理财收益 - 深绿
+                             '#07C160', // 2: 微信钱包 - 绿色
+                             '#1677FF', // 3: 支付宝 - 蓝色
+                             '#22C55E', // 4: 餐饮美食 - 绿色
+                             '#3B82F6', // 5: 购物消费 - 蓝色
+                             '#06B6D4', // 6: 交通出行 - 青色
+                             '#14B8A6', // 7: 休闲娱乐 - 青色
+                             '#0EA5E9', // 8: 生活服务 - 浅蓝
+                             // 第4级 - 浅绿色系
+                             '#4ADE80', // 9: 星巴克
+                             '#86EFAC', // 10: 麦当劳
+                             '#A7F3D0', // 11: 瑞幸咖啡
+                             '#BBF7D0', // 12: 美团外卖
+                             '#93C5FD', // 13: 京东商城
+                             '#BFDBFE', // 14: 淘宝
+                             '#C7D2FE', // 15: 拼多多
+                             '#99F6E4', // 16: 滴滴出行
+                             '#CCFBF1', // 17: 地铁
+                             '#E0F2FE', // 18: 公交
+                             '#F0F9FF', // 19: 爱奇艺
+                             '#F1F5F9', // 20: 腾讯视频
+                             '#F8FAFC', // 21: 话费充值
+                             '#FCFCFD', // 22: 水电费
+                           ];
+                           return {
+                             name: node.name,
+                             itemStyle: {
+                               color: colors[index] || '#4ADE80',
+                             },
+                           };
+                         }),
                       links: data.sankey.links.map(link => ({
                         source: data.sankey.nodes[link.source].name,
                         target: data.sankey.nodes[link.target].name,
@@ -1085,7 +1088,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     },
                   ],
                 }}
-                style={{ height: '400px', width: '100%' }}
+                style={{ height: '500px', width: '100%' }}
               />
             </DelayedRender>
           </div>
