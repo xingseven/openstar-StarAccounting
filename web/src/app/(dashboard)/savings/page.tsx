@@ -8,6 +8,7 @@ import {
   TransactionItem 
 } from "@/features/savings/components/themes/DefaultSavings";
 import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
+import { SavingsPlanDialog } from "@/features/savings/components/SavingsPlanDialog";
 
 export default function SavingsPage() {
   const [items, setItems] = useState<SavingsGoal[]>([]);
@@ -17,7 +18,8 @@ export default function SavingsPage() {
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SavingsGoal | null>(null);
-  const [modalStep, setModalStep] = useState<1 | 2>(1);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planItem, setPlanItem] = useState<SavingsGoal | null>(null);
 
   useEffect(() => {
     loadData();
@@ -63,25 +65,17 @@ export default function SavingsPage() {
 
   function openCreate() {
     setEditingItem(null);
-    setModalStep(1);
     setIsModalOpen(true);
   }
 
   function openEdit(item: SavingsGoal) {
     setEditingItem(item);
-    setModalStep(1);
     setIsModalOpen(true);
   }
 
   function openPunch(item: SavingsGoal) {
-    setEditingItem(item);
-    setModalStep(2);
-    setIsModalOpen(true);
-  }
-
-  function handleModalOpenChange(open: boolean) {
-    setIsModalOpen(open);
-    if (!open) setModalStep(1);
+    setPlanItem(item);
+    setIsPlanModalOpen(true);
   }
 
   async function handleSave(data: Partial<SavingsGoal>) {
@@ -135,12 +129,18 @@ export default function SavingsPage() {
 
       <SavingsGoalDialog
         open={isModalOpen}
-        onOpenChange={handleModalOpenChange}
+        onOpenChange={setIsModalOpen}
         initialData={editingItem}
         onSave={handleSave}
         onDelete={handleDelete}
-        defaultStep={modalStep}
         onDataChanged={loadData}
+      />
+
+      <SavingsPlanDialog
+        open={isPlanModalOpen}
+        onOpenChange={setIsPlanModalOpen}
+        goal={planItem}
+        onPlansChanged={loadData}
       />
     </>
   );

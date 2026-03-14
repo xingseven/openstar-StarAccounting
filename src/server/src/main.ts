@@ -1362,6 +1362,7 @@ app.post("/api/savings", async (req, res) => {
               salary: p.salary ? Number(p.salary) : 0,
               expenses: p.expenses ?? {},
               remark: p.remark ?? "",
+              proofImage: p.proofImage ?? null,
             })),
           });
           
@@ -1551,6 +1552,7 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
             salary: p.salary ? Number(p.salary) : 0,
             expenses: p.expenses ?? {},
             remark: p.remark ?? "",
+            proofImage: p.proofImage ?? null,
           })),
         });
         const completedAgg = await tx.savingsPlan.aggregate({
@@ -1583,7 +1585,7 @@ app.put("/api/savings/plans/:planId", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const planId = req.params.planId;
-  const { status, amount, salary, expenses, remark } = req.body ?? {};
+  const { status, amount, salary, expenses, remark, proofImage } = req.body ?? {};
 
   const prisma = getPrisma();
   if (prisma) {
@@ -1607,6 +1609,7 @@ app.put("/api/savings/plans/:planId", async (req, res) => {
             ...(salary !== undefined ? { salary: Number(salary) } : {}),
             ...(expenses ? { expenses } : {}),
             ...(remark !== undefined ? { remark } : {}),
+            ...(proofImage !== undefined ? { proofImage } : {}),
           },
         });
         const completedAgg = await tx.savingsPlan.aggregate({

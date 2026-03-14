@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SavingsGoal } from "./themes/DefaultSavings";
 import { clsx } from "clsx";
 import { apiFetch } from "@/lib/api";
@@ -14,6 +15,7 @@ export type SavingsPlan = {
   salary: number;
   expenses: Record<string, number>;
   remark: string;
+  proofImage?: string;
 };
 
 interface SavingsPlanDialogProps {
@@ -26,6 +28,7 @@ interface SavingsPlanDialogProps {
 export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: SavingsPlanDialogProps) {
   const [plans, setPlans] = useState<SavingsPlan[]>([]);
   const [loading, setLoading] = useState(false);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && goal) {
@@ -137,132 +140,140 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
   };
 
   const calculatedPlans = goal?.type === "MONTHLY" ? plans : getCalculatedRows();
+  const displayPlans = calculatedPlans.filter((p: any) => Number(p.amount) > 0).length > 0
+    ? calculatedPlans.filter((p: any) => Number(p.amount) > 0)
+    : calculatedPlans;
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
+  const handleProofUpload = (planId: string, file?: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = typeof reader.result === "string" ? reader.result : "";
+      if (!value) return;
+      handleUpdatePlan(planId, { proofImage: value });
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1000px] max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[920px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>指定计划 - {goal?.name}</DialogTitle>
-          <DialogDescription>按月份逐行打卡，点击状态列标记已存款。</DialogDescription>
+          <DialogTitle>每月打卡 - {goal?.name}</DialogTitle>
+          <DialogDescription>卡片式打卡视图：仅显示存款月份，支持状态切换与凭证上传。</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex-1 overflow-auto p-1">
-              <div className="border rounded-lg">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 sticky top-0 z-10">
-                    <tr>
-                      <th className="p-3 font-medium">月份</th>
-                      {goal?.type !== "MONTHLY" && (
-                        <>
-                          <th className="p-3 font-medium">月薪</th>
-                          {/* Dynamic Expense Headers */}
-                          {Object.keys(plans[0]?.expenses || {}).map(key => (
-                            <th key={key} className="p-3 font-medium">{key}</th>
-                          ))}
-                          <th className="p-3 font-medium text-gray-500">本月结余</th>
-                          <th className="p-3 font-medium text-blue-600">可存金额</th>
-                        </>
+        <div className="flex-1 overflow-auto pr-1 space-y-3">
+          {loading ? (
+            <div className="text-sm text-gray-500 py-8 text-center">加载中...</div>
+          ) : (
+            displayPlans.map((plan: any) => (
+              <div
+                key={plan.id}
+                className={clsx(
+                  "rounded-lg border p-4 bg-white",
+                  plan.month === currentMonth && "border-blue-300 ring-1 ring-blue-100"
+                )}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2 min-w-[180px]">
+                    <div className="text-sm font-semibold text-gray-900">{plan.month.replace("-", "/")}</div>
+                    <div className="text-xs text-gray-500">计划存款</div>
+                    <Input
+                      type="number"
+                      className="h-9 w-[140px]"
+                      value={plan.amount}
+                      onChange={(e) => handleUpdatePlan(plan.id, { amount: Number(e.target.value) })}
+                    />
+                    {goal?.type !== "MONTHLY" ? (
+                      <div className="text-xs text-gray-500">可存金额：<span className="text-blue-600 font-medium">¥{plan.totalAvailable?.toLocaleString()}</span></div>
+                    ) : null}
+                  </div>
+
+                  <div className="space-y-2 min-w-[140px]">
+                    <div className="text-xs text-gray-500">打卡状态</div>
+                    <button
+                      onClick={() => handleUpdatePlan(plan.id, { status: plan.status === "COMPLETED" ? "PENDING" : "COMPLETED" })}
+                      className={clsx(
+                        "px-3 py-1.5 rounded text-xs font-medium",
+                        plan.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
                       )}
-                      <th className="p-3 font-medium">计划存款</th>
-                      {goal?.type !== "MONTHLY" && (
-                        <th className="p-3 font-medium text-purple-600">下月结余</th>
-                      )}
-                      <th className="p-3 font-medium">状态</th>
-                      <th className="p-3 font-medium">备注</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {calculatedPlans.map((plan: any) => (
-                      <tr key={plan.id} className="hover:bg-gray-50/50">
-                        <td className="p-3 font-medium">{plan.month}</td>
-                        
-                        {goal?.type !== "MONTHLY" && (
-                          <>
-                            <td className="p-3">
-                              <input 
-                                className="w-20 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none"
-                                type="number"
-                                value={plan.salary}
-                                onChange={(e) => handleUpdatePlan(plan.id, { salary: Number(e.target.value) })}
-                              />
-                            </td>
-                            {Object.keys(plan.expenses || {}).map(key => (
-                              <td key={key} className="p-3">
-                                <input 
-                                  className="w-20 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none"
-                                  type="number"
-                                  value={plan.expenses[key]}
-                                  onChange={(e) => {
-                                    const newExpenses = { ...plan.expenses, [key]: Number(e.target.value) };
-                                    handleUpdatePlan(plan.id, { expenses: newExpenses });
-                                  }}
-                                />
-                              </td>
-                            ))}
-                            <td className="p-3 text-gray-500">¥{plan.currentBalance?.toLocaleString()}</td>
-                            <td className="p-3 font-bold text-blue-600">¥{plan.totalAvailable?.toLocaleString()}</td>
-                          </>
-                        )}
+                    >
+                      {plan.status === "COMPLETED" ? "已存款" : "未存款"}
+                    </button>
+                    <div className="text-xs text-gray-500">备注</div>
+                    <Input
+                      className="h-9 w-[180px]"
+                      value={plan.remark || ""}
+                      placeholder="备注..."
+                      onChange={(e) => handleUpdatePlan(plan.id, { remark: e.target.value })}
+                    />
+                  </div>
 
-                        <td className="p-3">
-                          <input 
-                            className="w-24 bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none"
-                            type="number"
-                            value={plan.amount}
-                            onChange={(e) => handleUpdatePlan(plan.id, { amount: Number(e.target.value) })}
-                          />
-                        </td>
-
-                        {goal?.type !== "MONTHLY" && (
-                          <td className="p-3 font-bold text-purple-600">¥{plan.remaining?.toLocaleString()}</td>
-                        )}
-
-                        <td className="p-3">
-                          <button
-                            onClick={() => handleUpdatePlan(plan.id, { status: plan.status === "COMPLETED" ? "PENDING" : "COMPLETED" })}
-                            className={clsx(
-                              "px-2 py-1 rounded text-xs font-medium",
-                              plan.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                            )}
-                          >
-                            {plan.status === "COMPLETED" ? "已存款" : "未存款"}
-                          </button>
-                        </td>
-                        <td className="p-3">
-                          <input 
-                            className="w-full min-w-[100px] bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
-                            value={plan.remark || ""}
-                            placeholder={goal?.type === "MONTHLY" ? "备注..." : "备注"}
-                            onChange={(e) => handleUpdatePlan(plan.id, { remark: e.target.value })}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  <div
+                    className={clsx(
+                      "rounded-md border border-dashed p-3 min-w-[190px] bg-gray-50/60",
+                      dragOverId === plan.id && "border-blue-500 bg-blue-50"
+                    )}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverId(plan.id);
+                    }}
+                    onDragLeave={() => setDragOverId(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOverId(null);
+                      handleProofUpload(plan.id, e.dataTransfer.files?.[0]);
+                    }}
+                  >
+                    <div className="text-xs text-gray-500 mb-2">打卡凭证</div>
+                    <label htmlFor={`plan-proof-${plan.id}`} className="inline-flex items-center gap-2 cursor-pointer">
+                      <span className="px-2 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-700">上传</span>
+                    </label>
+                    <input
+                      id={`plan-proof-${plan.id}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleProofUpload(plan.id, e.target.files?.[0])}
+                    />
+                    <div className="text-[11px] text-gray-400 mt-1">支持拖入图片</div>
+                    {plan.proofImage ? (
+                      <button
+                        className="mt-2 block text-xs text-blue-600 hover:underline"
+                        onClick={() => window.open(plan.proofImage, "_blank")}
+                      >
+                        查看图片
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 flex justify-between">
-                 <Button
-                   variant="outline"
-                   onClick={async () => {
-                     if (!goal) return;
-                     if (!confirm("将按12个月重新初始化打卡计划，确定吗？")) return;
-                     setLoading(true);
-                     const initialized = await initializeEmptyPlans();
-                     if (initialized.length > 0) {
-                       setPlans(initialized);
-                       onPlansChanged?.();
-                     } else {
-                       alert("重新初始化失败，请重试");
-                     }
-                     setLoading(false);
-                   }}
-                 >
-                   重新初始化12个月
-                 </Button>
-              </div>
-            </div>
+            ))
+          )}
+
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!goal) return;
+                if (!confirm("将按12个月重新初始化打卡计划，确定吗？")) return;
+                setLoading(true);
+                const initialized = await initializeEmptyPlans();
+                if (initialized.length > 0) {
+                  setPlans(initialized);
+                  onPlansChanged?.();
+                } else {
+                  alert("重新初始化失败，请重试");
+                }
+                setLoading(false);
+              }}
+            >
+              重新初始化12个月
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

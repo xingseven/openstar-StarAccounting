@@ -76,6 +76,7 @@ export function SavingsGoalDialog({
   const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
   const [toasts, setToasts] = useState<{ id: string; message: string }[]>([]);
   const reminderRef = useRef<string>("");
+  const [dragOverProofId, setDragOverProofId] = useState<string | null>(null);
 
   const pushToast = (message: string) => {
     const id = Math.random().toString(36).slice(2, 9);
@@ -413,6 +414,10 @@ export function SavingsGoalDialog({
 
   const handleProofUpload = (index: number, file?: File | null) => {
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      pushToast("请上传图片文件");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const value = typeof reader.result === "string" ? reader.result : "";
@@ -420,6 +425,18 @@ export function SavingsGoalDialog({
       handleRowChange(index, "proofImage", value);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleProofDragOver = (rowId: string, e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOverProofId(rowId);
+  };
+
+  const handleProofDrop = (index: number, rowId: string, e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOverProofId(null);
+    const file = e.dataTransfer.files?.[0];
+    handleProofUpload(index, file);
   };
 
   return (
@@ -543,7 +560,7 @@ export function SavingsGoalDialog({
                       <th className="p-3 min-w-[120px] w-[120px] text-purple-600 whitespace-nowrap">下月结余</th>
                     )}
                     <th className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">状态</th>
-                    <th className="p-3 min-w-[130px] w-[130px] whitespace-nowrap">打卡凭证</th>
+                    <th className="p-3 min-w-[180px] w-[180px] whitespace-nowrap">打卡凭证</th>
                     <th className="p-3 min-w-[200px]">备注</th>
                   </tr>
                 </thead>
@@ -554,15 +571,15 @@ export function SavingsGoalDialog({
                     <tr
                       key={row.id}
                       className={clsx(
-                        "hover:bg-gray-50/50 transition-colors",
+                        "hover:bg-gray-50/50 transition-colors h-[96px]",
                         sourceIndex === 0 && "bg-blue-50/30",
                         row.month === currentMonth && "ring-1 ring-blue-200"
                       )}
                     >
-                      <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
+                      <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
                       {type !== 'MONTHLY' && (
                         <>
-                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">
+                          <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top">
                             <input
                               type="number"
                               className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
@@ -572,7 +589,7 @@ export function SavingsGoalDialog({
                             />
                           </td>
                           {expenseColumns.map(col => (
-                            <td key={col.id} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap">
+                            <td key={col.id} className="p-4 min-w-[140px] w-[140px] whitespace-nowrap align-top">
                               <input
                                 type="number"
                                 className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
@@ -582,11 +599,11 @@ export function SavingsGoalDialog({
                               />
                             </td>
                           ))}
-                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-500">¥{row.balance?.toLocaleString()}</td>
-                          <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
+                          <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top text-gray-500">¥{row.balance?.toLocaleString()}</td>
+                          <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
                         </>
                       )}
-                      <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">
+                      <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top">
                         <input
                           type="number"
                           className="w-full bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-gray-900"
@@ -596,9 +613,9 @@ export function SavingsGoalDialog({
                         />
                       </td>
                       {type !== 'MONTHLY' && (
-                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
+                        <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
                       )}
-                      <td className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">
+                      <td className="p-4 min-w-[100px] w-[100px] whitespace-nowrap align-top">
                         <button
                           onClick={() => handleRowChange(sourceIndex, "status", row.status === "COMPLETED" ? "PENDING" : "COMPLETED")}
                           className={clsx(
@@ -609,26 +626,47 @@ export function SavingsGoalDialog({
                           {row.status === "COMPLETED" ? "已存款" : "未存款"}
                         </button>
                       </td>
-                      <td className="p-3 min-w-[130px] w-[130px] whitespace-nowrap">
-                        <label className="inline-flex items-center gap-2 cursor-pointer">
-                          <span className="px-2 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-700">上传</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleProofUpload(sourceIndex, e.target.files?.[0])}
-                          />
-                        </label>
-                        {row.proofImage ? (
-                          <button
-                            className="mt-1 block text-xs text-blue-600 hover:underline"
-                            onClick={() => window.open(row.proofImage, "_blank")}
-                          >
-                            查看图片
-                          </button>
-                        ) : null}
+                      <td className="p-4 min-w-[180px] w-[180px] align-top">
+                        <div
+                          className={clsx(
+                            "rounded-md border border-dashed p-2 transition-colors",
+                            dragOverProofId === row.id ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-gray-50/50"
+                          )}
+                          onDragOver={(e) => handleProofDragOver(row.id, e)}
+                          onDragLeave={() => setDragOverProofId(null)}
+                          onDrop={(e) => handleProofDrop(sourceIndex, row.id, e)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <label htmlFor={`proof-${row.id}`} className="inline-flex items-center gap-2 cursor-pointer">
+                              <span className="px-2 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-700">上传</span>
+                            </label>
+                            <span className="text-[11px] text-gray-400">或拖入图片</span>
+                            <input
+                              id={`proof-${row.id}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleProofUpload(sourceIndex, e.target.files?.[0])}
+                            />
+                          </div>
+                          {row.proofImage ? (
+                            <div className="mt-2 space-y-1">
+                              <img
+                                src={row.proofImage}
+                                alt="打卡凭证"
+                                className="w-14 h-14 rounded object-cover border"
+                              />
+                              <button
+                                className="block text-xs text-blue-600 hover:underline"
+                                onClick={() => window.open(row.proofImage, "_blank")}
+                              >
+                                查看大图
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
                       </td>
-                      <td className="p-3">
+                      <td className="p-4 align-top">
                         <input
                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
                           value={row.remark}
@@ -657,7 +695,7 @@ export function SavingsGoalDialog({
                       <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-700">¥{summary.endingBalance.toLocaleString()}</td>
                     )}
                     <td className="p-3 min-w-[100px] w-[100px]"></td>
-                    <td className="p-3 min-w-[130px] w-[130px]"></td>
+                    <td className="p-3 min-w-[180px] w-[180px]"></td>
                     <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{displayRows.length}个存款月</td>
                   </tr>
                 </tfoot>

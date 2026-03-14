@@ -139,6 +139,8 @@ model SavingsPlan {
   /// 动态支出列 JSON（示例：{ "房租": 2000, "水电": 300 }）
   expenses  Json?
   remark    String?
+  /// 打卡凭证图片（Data URL 或可访问 URL）
+  proofImage String? @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

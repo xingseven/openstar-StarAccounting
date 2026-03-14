@@ -52,6 +52,14 @@ import {
     SelectTrigger,
     SelectValue,
   } from "@/components/ui/select";
+  import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+  } from "@/components/ui/popover";
+  import { Button } from "@/components/ui/button";
+  import { Filter } from "lucide-react";
+  import { Label } from "@/components/ui/label";
 
   // Types
   export type ConsumptionData = {
@@ -338,8 +346,87 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return matchesSearch && matchesPlatform;
   }), [data.transactions, lowerSearchTerm, platformFilter]);
 
+  const [showFloatingFilter, setShowFloatingFilter] = useState(false);
+
+  useEffect(() => {
+    // Find the main scroll container
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+
+    const handleScroll = () => {
+      setShowFloatingFilter(mainContent.scrollTop > 200);
+    };
+
+    mainContent.addEventListener("scroll", handleScroll);
+    return () => mainContent.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto p-6">
+    <div className="space-y-8 max-w-[1600px] mx-auto p-6 relative">
+      {/* Floating Filter Button */}
+      <div 
+        className={cn(
+          "fixed bottom-8 right-8 z-50 transition-all duration-300 transform",
+          showFloatingFilter ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
+        )}
+      >
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="icon" className="h-14 w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800">
+              <Filter className="h-6 w-6" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4 mr-8 mb-4" side="top" align="end">
+            <div className="space-y-4">
+              <h4 className="font-medium leading-none">快捷筛选</h4>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">搜索</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="search"
+                      placeholder="搜索..."
+                      className="pl-9 h-9"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">平台</Label>
+                  <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="所有平台" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">所有平台</SelectItem>
+                      <SelectItem value="wechat">微信</SelectItem>
+                      <SelectItem value="alipay">支付宝</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">时间</Label>
+                  <div className="flex items-center gap-2 border rounded-md p-1">
+                    <button 
+                      onClick={() => setDateFilter("month")}
+                      className={cn("flex-1 px-2 py-1 text-xs rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
+                    >
+                      本月
+                    </button>
+                    <div className="h-3 w-px bg-gray-200" />
+                    <span className="flex-1 text-center text-xs text-gray-500 px-1 truncate">{dateRangeLabel}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
