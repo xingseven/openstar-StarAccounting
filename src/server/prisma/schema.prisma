@@ -113,7 +113,22 @@ model SavingsGoal {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
+  plans SavingsPlan[]
   user User @relation(fields: [userId], references: [id])
+}
+
+model SavingsPlan {
+  id        String   @id @default(cuid())
+  goalId    String
+  amount    Decimal
+  status    PlanStatus @default(PENDING)
+  month     String // Format: YYYY-MM
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  goal SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
 }
 
 model ThemeConfig {
@@ -204,4 +219,10 @@ enum GoalStatus {
   ACTIVE
   COMPLETED
   ARCHIVED
+}
+
+enum PlanStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
 }

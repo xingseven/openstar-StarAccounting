@@ -1450,6 +1450,141 @@ app.delete("/api/savings/:id", async (req, res) => {
   jsonOk(res, { deleted: true });
 });
 
+// Savings Plan API
+app.get("/api/savings/:id/plans", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const goalId = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const plans = await prisma.savingsPlan.findMany({
+        where: { goalId },
+        orderBy: { month: "asc" },
+      });
+      jsonOk(res, { items: plans });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+  jsonOk(res, { items: [] });
+});
+
+app.post("/api/savings/:id/plans", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const goalId = req.params.id;
+  const { month, amount } = req.body ?? {};
+
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "month 格式错误 (YYYY-MM)");
+    return;
+  }
+  if (!amount || Number.isNaN(Number(amount))) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "amount 必填");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      // Check if goal belongs to user
+      const goal = await prisma.savingsGoal.findFirst({ where: { id: goalId, userId } });
+      if (!goal) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "目标不存在");
+        return;
+      }
+
+      const plan = await prisma.savingsPlan.create({
+        data: {
+          goalId,
+          month,
+          amount: Number(amount),
+          status: "PENDING",
+        },
+      });
+      jsonOk(res, { item: plan });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Memory mode not supported for plans");
+});
+
+app.put("/api/savings/plans/:planId", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const planId = req.params.planId;
+  const { status, amount } = req.body ?? {};
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      // Verify ownership via goal
+      const plan = await prisma.savingsPlan.findUnique({
+        where: { id: planId },
+        include: { goal: true },
+      });
+      if (!plan || plan.goal.userId !== userId) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "计划不存在");
+        return;
+      }
+
+      const updated = await prisma.savingsPlan.update({
+        where: { id: planId },
+        data: {
+          ...(status ? { status } : {}),
+          ...(amount ? { amount: Number(amount) } : {}),
+        },
+      });
+      jsonOk(res, { item: updated });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Memory mode not supported for plans");
+});
+
+app.delete("/api/savings/plans/:planId", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const planId = req.params.planId;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      // Verify ownership via goal
+      const plan = await prisma.savingsPlan.findUnique({
+        where: { id: planId },
+        include: { goal: true },
+      });
+      if (!plan || plan.goal.userId !== userId) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "计划不存在");
+        return;
+      }
+
+      await prisma.savingsPlan.delete({ where: { id: planId } });
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Memory mode not supported for plans");
+});
+
 // Loan API
 app.get("/api/loans", async (req, res) => {
   const userId = await requireUserId(req, res);
