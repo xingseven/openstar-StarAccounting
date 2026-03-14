@@ -108,6 +108,7 @@ model SavingsGoal {
   currentAmount Decimal    @default(0)
   deadline      DateTime?
   type          GoalType   @default(LONG_TERM)
+  depositType   DepositType @default(CASH)
   status        GoalStatus @default(ACTIVE)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -189,6 +190,14 @@ enum GoalType {
   MONTHLY
   YEARLY
   LONG_TERM
+  BI_MONTHLY_ODD
+  BI_MONTHLY_EVEN
+}
+
+enum DepositType {
+  CASH
+  FIXED_TERM
+  HELP_DEPOSIT
 }
 
 enum GoalStatus {

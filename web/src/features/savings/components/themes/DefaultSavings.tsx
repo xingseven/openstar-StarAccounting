@@ -44,7 +44,8 @@ export type SavingsGoal = {
   targetAmount: number;
   currentAmount: number;
   deadline: string | null;
-  type: "MONTHLY" | "YEARLY" | "LONG_TERM";
+  type: "MONTHLY" | "YEARLY" | "LONG_TERM" | "BI_MONTHLY_ODD" | "BI_MONTHLY_EVEN";
+  depositType: "CASH" | "FIXED_TERM" | "HELP_DEPOSIT";
   status: "ACTIVE" | "COMPLETED" | "ARCHIVED";
   createdAt: string;
 };
@@ -145,12 +146,14 @@ export function SavingsDefaultTheme({
       { name: "月度", value: 0, fill: "#F59E0B" }, // Amber
       { name: "年度", value: 0, fill: "#8B5CF6" }, // Purple
       { name: "长期", value: 0, fill: "#3B82F6" }, // Blue
+      { name: "隔月", value: 0, fill: "#10B981" }, // Emerald
     ];
     
     items.forEach(item => {
       if (item.type === "MONTHLY") data[0].value += item.currentAmount;
       else if (item.type === "YEARLY") data[1].value += item.currentAmount;
       else if (item.type === "LONG_TERM") data[2].value += item.currentAmount;
+      else if (item.type === "BI_MONTHLY_ODD" || item.type === "BI_MONTHLY_EVEN") data[3].value += item.currentAmount;
     });
 
     return data.filter(d => d.value > 0);
@@ -160,6 +163,7 @@ export function SavingsDefaultTheme({
     monthly: { label: "月度", color: "#F59E0B" },
     yearly: { label: "年度", color: "#8B5CF6" },
     longTerm: { label: "长期", color: "#3B82F6" },
+    biMonthly: { label: "隔月", color: "#10B981" },
   } satisfies ChartConfig;
 
   return (
@@ -292,20 +296,33 @@ export function SavingsDefaultTheme({
                           "h-10 w-10 rounded-full flex items-center justify-center",
                           item.type === "LONG_TERM" ? "bg-blue-50 text-blue-600" :
                           item.type === "YEARLY" ? "bg-purple-50 text-purple-600" :
-                          "bg-amber-50 text-amber-600"
+                          item.type === "MONTHLY" ? "bg-amber-50 text-amber-600" :
+                          "bg-emerald-50 text-emerald-600"
                         )}>
                           <PiggyBank className="h-5 w-5" />
                         </div>
                         <div>
                           <CardTitle className="text-base font-semibold">{item.name}</CardTitle>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className={clsx(
                               "px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider",
                               item.type === "LONG_TERM" ? "bg-blue-50 text-blue-700" :
                               item.type === "YEARLY" ? "bg-purple-50 text-purple-700" :
-                              "bg-amber-50 text-amber-700"
+                              item.type === "MONTHLY" ? "bg-amber-50 text-amber-700" :
+                              "bg-emerald-50 text-emerald-700"
                             )}>
-                              {item.type === "LONG_TERM" ? "长期" : item.type === "YEARLY" ? "年度" : "月度"}
+                              {item.type === "LONG_TERM" ? "长期" : 
+                               item.type === "YEARLY" ? "年度" : 
+                               item.type === "MONTHLY" ? "月度" :
+                               item.type === "BI_MONTHLY_ODD" ? "隔月(单)" : "隔月(双)"}
+                            </span>
+                            <span className={clsx(
+                              "px-2 py-0.5 rounded text-[10px] font-medium tracking-wider",
+                              "bg-gray-100 text-gray-600"
+                            )}>
+                              {item.depositType === "CASH" ? "现金" : 
+                               item.depositType === "FIXED_TERM" ? "死期" : 
+                               item.depositType === "HELP_DEPOSIT" ? "他人帮存" : "现金"}
                             </span>
                           </div>
                         </div>
@@ -332,7 +349,8 @@ export function SavingsDefaultTheme({
                           progress >= 100 ? "bg-green-500" : 
                           item.type === "LONG_TERM" ? "bg-blue-500" :
                           item.type === "YEARLY" ? "bg-purple-500" :
-                          "bg-amber-500"
+                          item.type === "MONTHLY" ? "bg-amber-500" :
+                          "bg-emerald-500"
                         )} 
                       />
                       {item.deadline && (

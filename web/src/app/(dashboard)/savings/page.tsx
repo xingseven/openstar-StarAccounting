@@ -27,6 +27,7 @@ export default function SavingsPage() {
   const [currentAmount, setCurrentAmount] = useState("0");
   const [deadline, setDeadline] = useState("");
   const [type, setType] = useState("LONG_TERM");
+  const [depositType, setDepositType] = useState("CASH");
   const [status, setStatus] = useState("ACTIVE");
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +80,8 @@ export default function SavingsPage() {
     setTargetAmount("");
     setCurrentAmount("0");
     setDeadline("");
-    setType("LONG_TERM");
+    setType("MONTHLY");
+    setDepositType("CASH");
     setStatus("ACTIVE");
     setError(null);
     setIsModalOpen(true);
@@ -92,6 +94,7 @@ export default function SavingsPage() {
     setCurrentAmount(String(item.currentAmount));
     setDeadline(item.deadline ? item.deadline.slice(0, 10) : "");
     setType(item.type);
+    setDepositType(item.depositType);
     setStatus(item.status);
     setError(null);
     setIsModalOpen(true);
@@ -109,6 +112,7 @@ export default function SavingsPage() {
         currentAmount,
         deadline: deadline || null,
         type,
+        depositType,
         status,
       };
 
@@ -222,11 +226,26 @@ export default function SavingsPage() {
                       value={type}
                       onChange={(e) => setType(e.target.value)}
                     >
-                      <option value="LONG_TERM">长期</option>
+                      <option value="MONTHLY">每月存</option>
+                      <option value="BI_MONTHLY_ODD">隔月存 (单月)</option>
+                      <option value="BI_MONTHLY_EVEN">隔月存 (双月)</option>
                       <option value="YEARLY">年度</option>
-                      <option value="MONTHLY">月度</option>
+                      <option value="LONG_TERM">长期</option>
                     </select>
                   </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">存款类型</label>
+                  <select
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                    value={depositType}
+                    onChange={(e) => setDepositType(e.target.value)}
+                  >
+                    <option value="CASH">现金</option>
+                    <option value="FIXED_TERM">死期</option>
+                    <option value="HELP_DEPOSIT">他人帮存</option>
+                  </select>
                 </div>
                 
                 {editingItem && (

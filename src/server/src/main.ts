@@ -62,6 +62,7 @@ type SavingsGoal = {
   currentAmount: string;
   deadline: string | null;
   type: string;
+  depositType?: string;
   status: string;
   createdAt: string;
 };
@@ -1324,7 +1325,7 @@ app.post("/api/savings", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
 
-  const { name, targetAmount, deadline, type } = req.body ?? {};
+  const { name, targetAmount, deadline, type, depositType } = req.body ?? {};
   if (typeof name !== "string" || !name.trim()) {
     jsonFail(res, 400, 50000, "INVALID_PARAM", "name 必填");
     return;
@@ -1344,6 +1345,7 @@ app.post("/api/savings", async (req, res) => {
           targetAmount: Number(targetAmount),
           deadline: deadline ? new Date(deadline) : null,
           type: type || "LONG_TERM",
+          depositType: depositType || "CASH",
         },
       });
       jsonOk(res, { item: goal });
@@ -1364,6 +1366,7 @@ app.post("/api/savings", async (req, res) => {
     currentAmount: "0",
     deadline: deadline || null,
     type: type || "LONG_TERM",
+    depositType: depositType || "CASH",
     status: "ACTIVE",
     createdAt: new Date().toISOString(),
   };
@@ -1376,7 +1379,7 @@ app.put("/api/savings/:id", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const id = req.params.id;
-  const { name, targetAmount, currentAmount, deadline, status } = req.body ?? {};
+  const { name, targetAmount, currentAmount, deadline, status, type, depositType } = req.body ?? {};
 
   const prisma = getPrisma();
   if (prisma) {
@@ -1389,6 +1392,8 @@ app.put("/api/savings/:id", async (req, res) => {
           ...(currentAmount !== undefined ? { currentAmount: Number(currentAmount) } : {}),
           ...(deadline ? { deadline: new Date(deadline) } : {}),
           ...(status ? { status } : {}),
+          ...(type ? { type } : {}),
+          ...(depositType ? { depositType } : {}),
         },
       });
       jsonOk(res, { item: goal });
@@ -1414,6 +1419,8 @@ app.put("/api/savings/:id", async (req, res) => {
     ...(currentAmount !== undefined ? { currentAmount: String(currentAmount) } : {}),
     ...(deadline ? { deadline } : {}),
     ...(status ? { status } : {}),
+    ...(type ? { type } : {}),
+    ...(depositType ? { depositType } : {}),
   };
   list[idx] = updated;
   jsonOk(res, { item: updated });

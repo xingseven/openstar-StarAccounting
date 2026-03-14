@@ -467,7 +467,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 4: Charts (2 cols) - Lazy Load */}
       <DelayedRender delay={100} lazy>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 items-start">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
