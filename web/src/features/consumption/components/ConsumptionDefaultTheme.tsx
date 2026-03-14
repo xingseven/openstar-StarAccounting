@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { siAlipay, siWechat } from "simple-icons";
+import ReactECharts from "echarts-for-react";
 import { 
     ArrowDownIcon, 
     ArrowUpIcon, 
@@ -994,7 +995,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
       </div>
 
-      {/* Row 7: Sankey Diagram - Lazy Load */}
+      {/* Row 7: Sankey Diagram - ECharts */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
@@ -1003,43 +1004,64 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         <CardContent className="overflow-x-auto">
           <div className="min-w-[600px] md:w-full">
             <DelayedRender delay={960} className="h-[300px] w-full">
-              <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
-                <Sankey
-                  data={data.sankey}
-                  margin={{ left: 0, right: 120, top: 10, bottom: 10 }}
-                  node={({ x, y, width, height, index, payload }) => {
-                    const nodeColors = [
-                      'var(--color-chart-1)', // 工资收入
-                      'var(--color-chart-2)', // 理财收益
-                      '#07C160', // 微信钱包 - 绿色
-                      '#1677FF', // 支付宝 - 蓝色
-                      'var(--color-chart-5)', // 餐饮美食
-                      'var(--color-chart-1)', // 购物消费
-                      'var(--color-chart-2)', // 交通出行
-                      'var(--color-chart-3)', // 休闲娱乐
-                      'var(--color-chart-4)', // 生活服务
-                    ];
-                    return (
-                      <Layer key={`node-${index}`}>
-                        <Rectangle x={x} y={y} width={width} height={height} fill={nodeColors[index] || 'var(--color-chart-1)'} fillOpacity={0.8} radius={[2, 2, 2, 2]} />
-                        <text
-                          x={x + width + 6}
-                          y={y + height / 2}
-                          dy="0.35em"
-                          fontSize={12}
-                          fill="#333"
-                        >
-                          {`${payload.name} (${payload.value})`}
-                        </text>
-                      </Layer>
-                    );
-                  }}
-                  nodePadding={50}
-                  link={{ stroke: 'var(--color-chart-1)', fillOpacity: 0.3 }}
-                >
-                  <Tooltip />
-                </Sankey>
-              </ChartContainer>
+              <ReactECharts
+                option={{
+                  tooltip: {
+                    trigger: 'item',
+                    triggerOn: 'mousemove',
+                  },
+                  series: [
+                    {
+                      type: 'sankey',
+                      layout: 'none',
+                      emphasis: {
+                        focus: 'adjacency',
+                      },
+                      nodeAlign: 'left',
+                      data: data.sankey.nodes.map((node, index) => {
+                        const colors = [
+                          '#8B5CF6', // 工资收入 - 紫色
+                          '#F59E0B', // 理财收益 - 橙色
+                          '#07C160', // 微信钱包 - 绿色
+                          '#1677FF', // 支付宝 - 蓝色
+                          '#EF4444', // 餐饮美食 - 红色
+                          '#EC4899', // 购物消费 - 粉色
+                          '#14B8A6', // 交通出行 - 青色
+                          '#8B5CF6', // 休闲娱乐 - 紫色
+                          '#6366F1', // 生活服务 - 靛蓝
+                        ];
+                        return {
+                          name: node.name,
+                          itemStyle: {
+                            color: colors[index] || '#8B5CF6',
+                          },
+                        };
+                      }),
+                      links: data.sankey.links.map(link => ({
+                        source: data.sankey.nodes[link.source].name,
+                        target: data.sankey.nodes[link.target].name,
+                        value: link.value,
+                      })),
+                      lineStyle: {
+                        color: 'gradient',
+                        curveness: 0.5,
+                        opacity: 0.4,
+                      },
+                      label: {
+                        show: true,
+                        position: 'right',
+                        fontSize: 12,
+                        color: '#333',
+                        formatter: '{b}',
+                      },
+                      nodeWidth: 20,
+                      nodeGap: 8,
+                      layoutIterations: 32,
+                    },
+                  ],
+                }}
+                style={{ height: '300px', width: '100%' }}
+              />
             </DelayedRender>
           </div>
         </CardContent>

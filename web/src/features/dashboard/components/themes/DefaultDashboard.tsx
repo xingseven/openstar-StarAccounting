@@ -88,37 +88,37 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto overflow-x-hidden">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden px-2 sm:px-0">
       {/* Top Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {/* Net Worth Card */}
-        <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6 text-white shadow-xl">
+        <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-3 sm:p-6 text-white shadow-xl">
           <div className="relative z-10">
-            <div className="flex items-center gap-2 text-gray-300 mb-2">
-              <Wallet className="h-4 w-4" />
-              <span className="text-sm font-medium">净资产</span>
+            <div className="flex items-center gap-2 text-gray-300 mb-1 sm:mb-2">
+              <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm font-medium">净资产</span>
             </div>
-            <div className="text-3xl sm:text-4xl font-bold tracking-tight">
-              ¥ {netWorth.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+              ¥ {netWorth.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-400">
+            <div className="mt-2 sm:mt-4 flex items-center justify-between text-[10px] sm:text-xs lg:text-sm text-gray-400">
               <div>
                 <p>总资产</p>
-                <p className="text-gray-200 font-medium text-sm sm:text-base">¥{data.totalAssets.toFixed(0)}</p>
+                <p className="text-gray-200 font-medium text-xs sm:text-sm">¥{data.totalAssets.toFixed(0)}</p>
               </div>
               <div className="text-right">
                 <p>负债</p>
-                <p className="text-red-300 font-medium text-sm sm:text-base">-¥{data.totalDebt.toFixed(0)}</p>
+                <p className="text-red-300 font-medium text-xs sm:text-sm">-¥{data.totalDebt.toFixed(0)}</p>
               </div>
             </div>
           </div>
           {/* Decorative circle */}
-          <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5 blur-3xl"></div>
+          <div className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 h-16 sm:h-24 lg:h-32 w-16 sm:w-24 lg:w-32 rounded-full bg-white/5 blur-2xl sm:blur-3xl"></div>
         </div>
         
         {/* Monthly Expense */}
         <StatCard 
-          title="本月支出" 
+          title="支出" 
           subtitle="消费"
           value={data.monthExpense} 
           icon={CreditCard}
@@ -128,7 +128,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
         {/* Monthly Income */}
         <StatCard 
-          title="本月收入" 
+          title="收入" 
           subtitle="消费"
           value={data.monthIncome} 
           icon={Banknote}
@@ -138,13 +138,12 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
         {/* Monthly Savings Income */}
         <StatCard 
-          title="本月储蓄" 
+          title="储蓄" 
           subtitle="存入"
           value={data.monthSavingsIncome} 
           icon={TrendingUp}
           trend={data.monthSavingsIncome >= 0 ? "up" : "down"}
           color="amber"
-          className="col-span-2 sm:col-span-1"
         />
       </div>
 
@@ -289,23 +288,23 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
 
   return (
     <div className={clsx(
-      "rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md",
+      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md",
       className
     )}>
-      <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <div className="flex items-center justify-between mb-1 sm:mb-2 lg:mb-4">
         <div className="flex items-center gap-2 text-gray-500">
           <div className={clsx("p-1.5 sm:p-2 rounded-lg", colorStyles[color])}>
-            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Icon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
           </div>
           <div>
-            <span className="text-xs sm:text-sm font-medium">{title}</span>
-            {subtitle && <span className="text-xs sm:text-sm text-gray-400 ml-1">({subtitle})</span>}
+            <span className="text-[10px] sm:text-xs lg:text-sm font-medium">{title}</span>
+            {subtitle && <span className="text-[9px] sm:text-[10px] lg:text-xs text-gray-400 ml-0.5 sm:ml-1">({subtitle})</span>}
           </div>
         </div>
       </div>
       <div className="flex items-end justify-between">
-        <div className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
-          ¥ {Math.abs(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <div className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 truncate">
+          ¥ {Math.abs(value).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </div>
       </div>
     </div>
