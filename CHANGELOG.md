@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.8.17 - 2026-03-14
+
+### Features
+- **Savings 页面取款功能**:
+  - 新增取款弹窗组件 `SavingsWithdrawalDialog`
+  - 在目标列表中添加"取款"按钮，支持从储蓄目标取款
+  - 自动创建取款交易记录（分类：储蓄取款）
+  - 实时更新储蓄目标的当前存款金额
+  - 取款金额验证：不能超过当前存款
+  - 支持备注说明，记录取款用途
+
+### Modified Files
+1. `web/src/features/savings/components/SavingsWithdrawalDialog.tsx` (新建)
+   - 创建取款弹窗组件
+   - 实现取款表单和验证逻辑
+   - 调用 API 创建交易记录和更新储蓄目标
+
+2. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 添加 `onOpenWithdrawal` 回调函数
+   - 在目标列表操作栏添加"取款"按钮
+   - 按钮在存款为 0 时禁用
+
+3. `web/src/app/(dashboard)/savings/page.tsx`
+   - 导入 `SavingsWithdrawalDialog` 组件
+   - 添加取款状态管理
+   - 实现 `openWithdrawal` 函数
+   - 传递回调到 `SavingsDefaultTheme`
+
 ## 1.8.16 - 2026-03-14
 
 ### Features

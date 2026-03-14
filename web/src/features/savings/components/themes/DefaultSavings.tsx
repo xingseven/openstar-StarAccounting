@@ -69,6 +69,7 @@ interface SavingsViewProps {
   onOpenCreate: () => void;
   onOpenEdit: (item: SavingsGoal) => void;
   onOpenPunch: (item: SavingsGoal) => void;
+  onOpenWithdrawal: (item: SavingsGoal) => void;
 }
 
 // Skeleton loader components
@@ -266,6 +267,7 @@ export function SavingsDefaultTheme({
   onOpenCreate,
   onOpenEdit,
   onOpenPunch,
+  onOpenWithdrawal,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -534,6 +536,16 @@ export function SavingsDefaultTheme({
                                   title="打开并勾选每月已存款"
                                 >
                                   每月打卡
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    onOpenWithdrawal(item);
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                  title="从该目标取款"
+                                  disabled={item.currentAmount <= 0}
+                                >
+                                  取款
                                 </button>
                                 <button
                                   onClick={() => {

@@ -316,6 +316,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("month");
+  const [isMobile, setIsMobile] = useState(false);
 
   const commonConfig = useMemo(() => ({
     expense: { label: "支出", color: "var(--color-chart-1)" },
@@ -349,6 +350,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [showFloatingFilter, setShowFloatingFilter] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
     // Find the main scroll container
     const mainContent = document.querySelector('main');
     if (!mainContent) return;
@@ -360,6 +372,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     mainContent.addEventListener("scroll", handleScroll);
     return () => mainContent.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const pieStrokeWidth = isMobile ? 12 : 4;
+  const pieInnerRadius = isMobile ? 25 : 35;
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto relative">
@@ -555,13 +570,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0">
             <CardTitle className="text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-0 pt-0 px-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={80}
-              className="mx-auto h-[160px] w-[160px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[160px] w-[160px] rounded-full" />}
+              className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[160px] w-[160px]">
+              <ChartContainer config={emptyChartConfig} className="h-[100px] w-[100px] md:h-[220px] md:w-[220px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -585,8 +600,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="w-full flex justify-center mt-6">
-              <div className="flex flex-col gap-2 text-xs">
+            <div className="w-full flex justify-center mt-0">
+              <div className="flex flex-col gap-0.5 text-xs md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-1">
                  {data.platformDistribution.map((item, index) => (
                    <div key={index} className="flex items-center gap-2">
                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
@@ -603,21 +618,21 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0">
             <CardTitle className="text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-0 pt-0 px-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={220}
-              className="mx-auto h-[160px] w-[160px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[160px] w-[160px] rounded-full border-4 border-white" />}
+              className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[160px] w-[160px]">
+              <ChartContainer config={commonConfig} className="h-[100px] w-[100px] md:h-[220px] md:w-[220px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
                     data={data.incomeExpense}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={35}
-                    strokeWidth={4}
+                    innerRadius={pieInnerRadius}
+                    strokeWidth={pieStrokeWidth}
                     labelLine={false}
                     isAnimationActive
                     animationDuration={750}
@@ -634,8 +649,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="w-full flex justify-center mt-6">
-              <div className="flex flex-col gap-2 text-xs">
+            <div className="w-full flex justify-center mt-0">
+              <div className="flex flex-col gap-0.5 text-xs md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-1">
                  {data.incomeExpense.map((item, index) => {
                    return (
                      <div key={index} className="flex items-center gap-2">
@@ -692,37 +707,39 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader>
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
-          <CardContent>
-            <DelayedRender delay={120} lazy className="h-[250px] w-full">
-              <ChartContainer config={trendChartConfig} className="h-[250px] w-full">
-                <LineChart
-                  accessibilityLayer
-                  data={data.trend}
-                  margin={{ left: 12, right: 12 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    tickFormatter={(value) => value.slice(5)}
-                  />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                  <Line
-                    dataKey="total"
-                    type="monotone"
-                    stroke="var(--color-chart-1)"
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive
-                    animationDuration={900}
-                    animationEasing="ease-out"
-                  />
-                </LineChart>
-              </ChartContainer>
-            </DelayedRender>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-[500px] md:w-full">
+              <DelayedRender delay={120} lazy className="h-[250px] w-full">
+                <ChartContainer config={trendChartConfig} className="h-[250px] w-full">
+                  <LineChart
+                    accessibilityLayer
+                    data={isMobile ? data.trend.slice(0, 10) : data.trend}
+                    margin={{ left: 12, right: 12 }}
+                    width={isMobile ? 500 : undefined}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="day"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => value.slice(5)}
+                    />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                    <Line
+                      dataKey="total"
+                      type="monotone"
+                      stroke="var(--color-chart-1)"
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive
+                      animationDuration={900}
+                      animationEasing="ease-out"
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </DelayedRender>
+            </div>
           </CardContent>
         </Card>
 
@@ -730,35 +747,37 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader>
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
-          <CardContent>
-            <DelayedRender delay={240} lazy className="h-[250px] w-full">
-              <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
-                <BarChart accessibilityLayer data={data.stackedBar}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value.slice(8)}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  {["餐饮", "购物", "交通", "娱乐"].map((key, i, arr) => (
-                    <Bar
-                      key={key}
-                      dataKey={key}
-                      stackId="a"
-                      fill={`var(--color-chart-${(i % 5) + 1})`}
-                      radius={i === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                      isAnimationActive
-                      animationDuration={700}
-                      animationBegin={i * 120}
-                      animationEasing="ease-out"
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-[500px] md:w-full">
+              <DelayedRender delay={240} lazy className="h-[250px]">
+                <ChartContainer config={emptyChartConfig} className="h-[250px]">
+                  <BarChart accessibilityLayer data={isMobile ? data.stackedBar.slice(0, 10) : data.stackedBar}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="day"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      tickFormatter={(value) => value.slice(8)}
                     />
-                  ))}
-                </BarChart>
-              </ChartContainer>
-            </DelayedRender>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    {["餐饮", "购物", "交通", "娱乐"].map((key, i, arr) => (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        stackId="a"
+                        fill={`var(--color-chart-${(i % 5) + 1})`}
+                        radius={i === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                        isAnimationActive
+                        animationDuration={700}
+                        animationBegin={i * 120}
+                        animationEasing="ease-out"
+                      />
+                    ))}
+                  </BarChart>
+                </ChartContainer>
+              </DelayedRender>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -773,13 +792,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="flex-1 pb-2">
             <DelayedRender delay={360} lazy className="h-[250px] w-full">
               <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
-                <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                <ComposedChart data={data.pareto} margin={{ top: 10, right: 0, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
-                  <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickMargin={0} />
+                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} width={40} />
                   <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" unit="%" axisLine={false} tickLine={false} />
                   <ChartTooltip />
-                  <Bar yAxisId="left" dataKey="value" barSize={30} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
+                  <Bar yAxisId="left" dataKey="value" barSize={50} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
                     {data.pareto.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}

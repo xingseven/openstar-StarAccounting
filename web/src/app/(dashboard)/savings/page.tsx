@@ -9,6 +9,7 @@ import {
 } from "@/features/savings/components/themes/DefaultSavings";
 import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
 import { SavingsPlanDialog } from "@/features/savings/components/SavingsPlanDialog";
+import { SavingsWithdrawalDialog } from "@/features/savings/components/SavingsWithdrawalDialog";
 
 export default function SavingsPage() {
   const [items, setItems] = useState<SavingsGoal[]>([]);
@@ -20,6 +21,8 @@ export default function SavingsPage() {
   const [editingItem, setEditingItem] = useState<SavingsGoal | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [planItem, setPlanItem] = useState<SavingsGoal | null>(null);
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+  const [withdrawalItem, setWithdrawalItem] = useState<SavingsGoal | null>(null);
 
   useEffect(() => {
     loadData();
@@ -78,6 +81,11 @@ export default function SavingsPage() {
     setIsPlanModalOpen(true);
   }
 
+  function openWithdrawal(item: SavingsGoal) {
+    setWithdrawalItem(item);
+    setIsWithdrawalModalOpen(true);
+  }
+
   async function handleSave(data: Partial<SavingsGoal>) {
     try {
       if (editingItem) {
@@ -126,6 +134,7 @@ export default function SavingsPage() {
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
         onOpenPunch={openPunch}
+        onOpenWithdrawal={openWithdrawal}
       />
 
       <SavingsGoalDialog
@@ -142,6 +151,13 @@ export default function SavingsPage() {
         onOpenChange={setIsPlanModalOpen}
         goal={planItem}
         onPlansChanged={loadData}
+      />
+
+      <SavingsWithdrawalDialog
+        open={isWithdrawalModalOpen}
+        onOpenChange={setIsWithdrawalModalOpen}
+        goal={withdrawalItem}
+        onWithdrawalChanged={loadData}
       />
     </>
   );
