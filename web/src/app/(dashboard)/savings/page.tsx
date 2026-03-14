@@ -7,12 +7,7 @@ import {
   SavingsGoal, 
   TransactionItem 
 } from "@/features/savings/components/themes/DefaultSavings";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
 
 export default function SavingsPage() {
   const [items, setItems] = useState<SavingsGoal[]>([]);
@@ -22,15 +17,6 @@ export default function SavingsPage() {
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SavingsGoal | null>(null);
-  const [name, setName] = useState("");
-  const [targetAmount, setTargetAmount] = useState("");
-  const [currentAmount, setCurrentAmount] = useState("0");
-  const [deadline, setDeadline] = useState("");
-  const [type, setType] = useState("LONG_TERM");
-  const [depositType, setDepositType] = useState("CASH");
-  const [status, setStatus] = useState("ACTIVE");
-  const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -76,73 +62,43 @@ export default function SavingsPage() {
 
   function openCreate() {
     setEditingItem(null);
-    setName("");
-    setTargetAmount("");
-    setCurrentAmount("0");
-    setDeadline("");
-    setType("MONTHLY");
-    setDepositType("CASH");
-    setStatus("ACTIVE");
-    setError(null);
     setIsModalOpen(true);
   }
 
   function openEdit(item: SavingsGoal) {
     setEditingItem(item);
-    setName(item.name);
-    setTargetAmount(String(item.targetAmount));
-    setCurrentAmount(String(item.currentAmount));
-    setDeadline(item.deadline ? item.deadline.slice(0, 10) : "");
-    setType(item.type);
-    setDepositType(item.depositType);
-    setStatus(item.status);
-    setError(null);
     setIsModalOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setFormLoading(true);
-    setError(null);
-
+  async function handleSave(data: Partial<SavingsGoal>) {
     try {
-      const body = {
-        name,
-        targetAmount,
-        currentAmount,
-        deadline: deadline || null,
-        type,
-        depositType,
-        status,
-      };
-
       if (editingItem) {
         await apiFetch(`/api/savings/${editingItem.id}`, {
           method: "PUT",
-          body: JSON.stringify(body),
+          body: JSON.stringify(data),
         });
       } else {
         await apiFetch("/api/savings", {
           method: "POST",
-          body: JSON.stringify(body),
+          body: JSON.stringify(data),
         });
       }
       setIsModalOpen(false);
       loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败");
-    } finally {
-      setFormLoading(false);
+      alert(err instanceof Error ? err.message : "操作失败");
+      throw err;
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("确定要删除这个目标吗？")) return;
     try {
       await apiFetch(`/api/savings/${id}`, { method: "DELETE" });
+      setIsModalOpen(false);
       loadData();
     } catch (e) {
       alert("删除失败");
+      throw e;
     }
   }
 
@@ -162,140 +118,13 @@ export default function SavingsPage() {
         onOpenEdit={openEdit}
       />
 
-      {/* Create/Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <Card className="w-full max-w-md shadow-xl">
-            <CardHeader>
-              <CardTitle>{editingItem ? "编辑目标" : "新建目标"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {error && (
-                <div className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">名称</label>
-                  <input
-                    required
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="例如：买房首付"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">目标金额</label>
-                    <input
-                      required
-                      type="number"
-                      step="0.01"
-                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                      value={targetAmount}
-                      onChange={(e) => setTargetAmount(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">当前已存</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                      value={currentAmount}
-                      onChange={(e) => setCurrentAmount(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">截止日期</label>
-                    <input
-                      type="date"
-                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                      value={deadline}
-                      onChange={(e) => setDeadline(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">类型</label>
-                    <select
-                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                      value={type}
-                      onChange={(e) => setType(e.target.value)}
-                    >
-                      <option value="MONTHLY">每月存</option>
-                      <option value="BI_MONTHLY_ODD">隔月存 (单月)</option>
-                      <option value="BI_MONTHLY_EVEN">隔月存 (双月)</option>
-                      <option value="YEARLY">年度</option>
-                      <option value="LONG_TERM">长期</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">存款类型</label>
-                  <select
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                    value={depositType}
-                    onChange={(e) => setDepositType(e.target.value)}
-                  >
-                    <option value="CASH">现金</option>
-                    <option value="FIXED_TERM">死期</option>
-                    <option value="HELP_DEPOSIT">他人帮存</option>
-                  </select>
-                </div>
-                
-                {editingItem && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">状态</label>
-                    <select
-                      className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    >
-                      <option value="ACTIVE">进行中</option>
-                      <option value="COMPLETED">已完成</option>
-                      <option value="ARCHIVED">已归档</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 text-sm font-medium hover:bg-gray-100 rounded-md"
-                  >
-                    取消
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={formLoading}
-                    className="bg-black text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    {formLoading ? "保存中..." : "保存"}
-                  </button>
-                </div>
-                {editingItem && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      handleDelete(editingItem.id);
-                    }}
-                    className="w-full text-center text-xs text-red-500 hover:underline pt-2"
-                  >
-                    删除此目标
-                  </button>
-                )}
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <SavingsGoalDialog
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        initialData={editingItem}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
     </>
   );
 }
