@@ -499,12 +499,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </CardHeader>
             <CardContent>
               <div className="h-[250px] overflow-y-auto">
-                <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+                <div className="grid grid-cols-7 gap-3 text-center text-sm mb-3">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
-                    <div key={d} className="font-medium text-gray-400">{d}</div>
+                    <div key={d} className="font-bold text-gray-500">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-3">
                   {/* Offset for first day of month (visual placeholder) */}
                   <div /> <div /> <div /> <div />
                   
@@ -520,11 +520,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("aspect-square rounded flex flex-col items-center justify-center p-0.5 transition-transform hover:scale-105", bg, text)}
+                        className={clsx("aspect-square rounded-md flex flex-col items-center justify-center p-1 transition-transform hover:scale-105 shadow-sm", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
-                        <span className="font-bold text-xs">{d.day}</span>
-                        {d.value > 0 && <span className="scale-90 origin-center text-[10px] font-medium leading-none mt-0.5">¥{Math.round(d.value)}</span>}
+                        <span className="font-bold text-sm mb-0.5">{d.day}</span>
+                        {d.value > 0 && <span className="text-xs font-medium leading-none">¥{Math.round(d.value)}</span>}
                       </div>
                     );
                   })}
