@@ -63,7 +63,16 @@ export function Header() {
           <Bell className="h-5 w-5" />
         </button>
 
-        <div className="h-8 w-px bg-gray-200 mx-1" />
+        {/* 移动端退出按钮 - 始终可见 */}
+        <button
+          onClick={logout}
+          className="lg:hidden rounded-full p-2 text-red-500 hover:bg-red-50"
+          title="退出登录"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
+
+        <div className="h-8 w-px bg-gray-200 mx-1 hidden md:block" />
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
