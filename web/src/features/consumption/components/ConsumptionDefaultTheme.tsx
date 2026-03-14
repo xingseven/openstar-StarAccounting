@@ -498,7 +498,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <CardDescription>每日消费强度分布</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[250px] overflow-y-auto">
+              <div className="w-full">
                 <div className="grid grid-cols-7 gap-3 text-center text-sm mb-3">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-bold text-gray-500">{d}</div>
@@ -520,7 +520,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("aspect-square rounded-md flex flex-col items-center justify-center p-1 transition-transform hover:scale-105 shadow-sm", bg, text)}
+                        className={clsx("aspect-[1.6/1] rounded-md flex flex-col items-center justify-center p-1 transition-transform hover:scale-105 shadow-sm", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
                         <span className="font-bold text-sm mb-0.5">{d.day}</span>
