@@ -520,7 +520,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("aspect-[1.6/1] rounded-md flex flex-col items-center justify-center p-1 transition-transform hover:scale-105 shadow-sm", bg, text)}
+                        className={clsx("aspect-[2.2/1] rounded-md flex flex-col items-center justify-center p-1 transition-transform hover:scale-105 shadow-sm", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
                         <span className="font-bold text-sm mb-0.5">{d.day}</span>
