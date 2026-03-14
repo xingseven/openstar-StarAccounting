@@ -36,7 +36,8 @@ import {
     Wallet,
     ShoppingBag,
     Coins,
-    Search
+    Search,
+    MessageCircle
   } from "lucide-react";
   import { Input } from "@/components/ui/input";
   import {
@@ -209,21 +210,25 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">总消费金额</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-gray-400" />
+            <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center">
+              <ShoppingBag className="h-5 w-5 text-orange-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">¥{data.summary.totalExpense.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
             <p className="text-xs text-gray-500 mt-1">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">本月收支</CardTitle>
-            <Wallet className="h-4 w-4 text-gray-400" />
+            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+              <Wallet className="h-5 w-5 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             <div>
@@ -237,40 +242,40 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">微信收支</CardTitle>
-            <div className="h-4 w-4 text-green-600 font-bold flex items-center justify-center rounded-full bg-green-100 text-[10px]">
-              微
+            <div className="h-8 w-8 rounded-full bg-[#07C160]/10 flex items-center justify-center">
+              <MessageCircle className="h-5 w-5 text-[#07C160]" />
             </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             <div>
               <div className="text-xs text-gray-500">收入</div>
-              <div className="text-lg font-semibold">¥{data.summary.wechat.income.toLocaleString()}</div>
+              <div className="text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
             </div>
             <div>
               <div className="text-xs text-gray-500">支出</div>
-              <div className="text-lg font-semibold">¥{data.summary.wechat.expense.toLocaleString()}</div>
+              <div className="text-lg font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-            <div className="h-4 w-4 text-blue-600 font-bold flex items-center justify-center rounded-full bg-blue-100 text-[10px]">
-              支
+            <div className="h-8 w-8 rounded-full bg-[#1677FF]/10 flex items-center justify-center">
+              <div className="font-bold text-[#1677FF] text-lg">支</div>
             </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             <div>
               <div className="text-xs text-gray-500">收入</div>
-              <div className="text-lg font-semibold">¥{data.summary.alipay.income.toLocaleString()}</div>
+              <div className="text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
             </div>
             <div>
               <div className="text-xs text-gray-500">支出</div>
-              <div className="text-lg font-semibold">¥{data.summary.alipay.expense.toLocaleString()}</div>
+              <div className="text-lg font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
@@ -494,12 +499,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </CardHeader>
             <CardContent>
               <div className="h-[250px] overflow-y-auto">
-                <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2 max-w-[300px] mx-auto">
+                <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-medium text-gray-400">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1 max-w-[300px] mx-auto">
+                <div className="grid grid-cols-7 gap-1">
                   {/* Offset for first day of month (visual placeholder) */}
                   <div /> <div /> <div /> <div />
                   
@@ -519,7 +524,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         title={`${d.date}: ¥${d.value}`}
                       >
                         <span className="font-bold text-xs">{d.day}</span>
-                        {d.value > 0 && <span className="scale-75 origin-center text-[10px] font-medium leading-none mt-0.5">¥{Math.round(d.value)}</span>}
+                        {d.value > 0 && <span className="scale-90 origin-center text-[10px] font-medium leading-none mt-0.5">¥{Math.round(d.value)}</span>}
                       </div>
                     );
                   })}
