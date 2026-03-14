@@ -303,13 +303,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       </div>
 
       {/* Row 2: Charts (3 cols) - Delay 200ms */}
-      <DelayedRender delay={200}>
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="col-span-1 flex flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle className="text-base">支付平台分布</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0 relative">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="col-span-1 flex flex-col">
+          <CardHeader className="items-center pb-0">
+            <CardTitle className="text-base">支付平台分布</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 pb-0 relative">
+            <DelayedRender 
+              delay={200} 
+              className="mx-auto aspect-square max-h-[200px] flex items-center justify-center"
+              fallback={<Skeleton className="w-[180px] h-[180px] rounded-full" />}
+            >
               <ChartContainer config={{}} className="mx-auto aspect-square max-h-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -330,23 +334,29 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   />
                 </PieChart>
               </ChartContainer>
-              <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-                 {data.platformDistribution.map((item, index) => (
-                   <div key={index} className="flex items-center gap-1">
-                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                     <span className="text-gray-500">{item.name}</span>
-                     <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
-                   </div>
-                 ))}
-              </div>
-            </CardContent>
-          </Card>
+            </DelayedRender>
+            <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+               {data.platformDistribution.map((item, index) => (
+                 <div key={index} className="flex items-center gap-1">
+                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                   <span className="text-gray-500">{item.name}</span>
+                   <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
+                 </div>
+               ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="col-span-1 flex flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle className="text-base">收支分析</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0 relative">
+        <Card className="col-span-1 flex flex-col">
+          <CardHeader className="items-center pb-0">
+            <CardTitle className="text-base">收支分析</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 pb-0 relative">
+            <DelayedRender 
+              delay={200} 
+              className="mx-auto aspect-square max-h-[200px] flex items-center justify-center"
+              fallback={<Skeleton className="w-[180px] h-[180px] rounded-full border-4 border-white" />}
+            >
               <ChartContainer config={commonConfig} className="mx-auto aspect-square max-h-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -368,26 +378,28 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   />
                 </PieChart>
               </ChartContainer>
-              <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-                 {data.incomeExpense.map((item, index) => {
-                   const total = data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0);
-                   return (
-                     <div key={index} className="flex items-center gap-1">
-                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                       <span className="text-gray-500">{item.name}</span>
-                       <span className="font-medium">{(item.value / total * 100).toFixed(0)}%</span>
-                     </div>
-                   );
-                 })}
-              </div>
-            </CardContent>
-          </Card>
+            </DelayedRender>
+            <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+               {data.incomeExpense.map((item, index) => {
+                 const total = data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0);
+                 return (
+                   <div key={index} className="flex items-center gap-1">
+                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                     <span className="text-gray-500">{item.name}</span>
+                     <span className="font-medium">{(item.value / total * 100).toFixed(0)}%</span>
+                   </div>
+                 );
+               })}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">热门商家 Top 10</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">热门商家 Top 10</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={200} className="h-[200px] w-full">
               <ChartContainer config={{}} className="h-[200px] w-full">
                 <BarChart
                   accessibilityLayer
@@ -413,19 +425,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   </Bar>
                 </BarChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-      </DelayedRender>
+            </DelayedRender>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Row 3: Charts (2 cols) - Lazy Load */}
-      <DelayedRender delay={100} lazy>
-        <div className="grid gap-4 md:grid-cols-2 items-start">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">支出趋势</CardTitle>
-            </CardHeader>
-            <CardContent>
+      <div className="grid gap-4 md:grid-cols-2 items-start">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">支出趋势</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={100} lazy className="h-[250px] w-full">
               <ChartContainer config={{ total: { label: "支出", color: "hsl(var(--chart-1))" } }} className="h-[250px] w-full">
                 <LineChart
                   accessibilityLayer
@@ -451,14 +463,16 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   />
                 </LineChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
+            </DelayedRender>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">消费分类堆积</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">消费分类堆积</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={100} lazy className="h-[250px] w-full">
               <ChartContainer config={{}} className="h-[250px] w-full">
                 <BarChart accessibilityLayer data={data.stackedBar}>
                   <CartesianGrid vertical={false} />
@@ -481,20 +495,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   ))}
                 </BarChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-      </DelayedRender>
+            </DelayedRender>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Row 4: Charts (2 cols) - Lazy Load */}
-      <DelayedRender delay={100} lazy>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="flex flex-col">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
-              <CardDescription>识别主要支出分类</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-2">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
+            <CardDescription>识别主要支出分类</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 pb-2">
+            <DelayedRender delay={100} lazy className="h-[250px] w-full">
               <ChartContainer config={{}} className="h-[250px] w-full">
                 <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
@@ -510,15 +524,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 4 }} />
                 </ComposedChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
+            </DelayedRender>
+          </CardContent>
+        </Card>
 
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-base">消费日历</CardTitle>
-              <CardDescription>每日消费强度分布</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="text-base">消费日历</CardTitle>
+            <CardDescription>每日消费强度分布</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1">
+            <DelayedRender delay={100} lazy className="h-[250px] w-full">
               <div className="w-full h-[250px] flex flex-col justify-between">
                 <div className="grid grid-cols-7 gap-3 text-center text-sm mb-2">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
@@ -541,7 +557,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("h-8 rounded-md flex flex-col items-center justify-center p-0.5 transition-transform hover:scale-105 shadow-sm", bg, text)}
+                        className={cn("h-8 rounded-md flex flex-col items-center justify-center p-0.5 transition-transform hover:scale-105 shadow-sm", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
                         <span className="font-bold text-xs mb-0.5">{d.day}</span>
@@ -551,19 +567,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   })}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </DelayedRender>
+            </DelayedRender>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Row 5: Charts (2 cols) - Lazy Load */}
-      <DelayedRender delay={100} lazy>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
-            </CardHeader>
-            <CardContent>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={100} lazy className="h-[250px] w-full">
               <div className="overflow-x-auto h-[250px]">
                 <table className="w-full text-sm text-center border-collapse">
                   <thead>
@@ -592,7 +608,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                                 className="absolute inset-1 rounded bg-blue-600 transition-opacity"
                                 style={{ opacity: intensity * 0.8 + (val > 0 ? 0.1 : 0) }}
                               />
-                              <span className={clsx("relative z-10 text-xs", intensity > 0.5 ? "text-white" : "text-gray-900")}>
+                              <span className={cn("relative z-10 text-xs", intensity > 0.5 ? "text-white" : "text-gray-900")}>
                                 {val > 0 ? `¥${val.toFixed(0)}` : "-"}
                               </span>
                             </td>
@@ -603,14 +619,16 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
+            </DelayedRender>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={100} lazy className="h-[250px] w-full">
               <ChartContainer config={commonConfig} className="h-[250px] w-full">
                 <BarChart accessibilityLayer data={data.weekdayWeekend}>
                   <CartesianGrid vertical={false} />
@@ -621,22 +639,41 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   </Bar>
                 </BarChart>
               </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-      </DelayedRender>
+            </DelayedRender>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Row 6: Transactions - Lazy Load */}
-      <DelayedRender delay={100} lazy>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-4">
-            <CardTitle className="text-base">交易明细</CardTitle>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 rounded text-xs bg-black text-white">支出</button>
-              <button className="px-3 py-1 rounded text-xs bg-gray-100">收入</button>
-            </div>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between py-4">
+          <CardTitle className="text-base">交易明细</CardTitle>
+          <div className="flex gap-2">
+            <button className="px-3 py-1 rounded text-xs bg-black text-white">支出</button>
+            <button className="px-3 py-1 rounded text-xs bg-gray-100">收入</button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DelayedRender 
+            delay={100} 
+            lazy 
+            fallback={
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                   <div key={i} className="flex items-center justify-between p-3 border-b last:border-0">
+                     <div className="space-y-2">
+                       <Skeleton className="h-4 w-32" />
+                       <div className="flex gap-2">
+                         <Skeleton className="h-3 w-16" />
+                         <Skeleton className="h-3 w-12" />
+                       </div>
+                     </div>
+                     <Skeleton className="h-5 w-20" />
+                   </div>
+                ))}
+              </div>
+            }
+          >
             <div className="space-y-2">
               {data.transactions.map(t => (
                 <div key={t.id} className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-gray-50">
@@ -648,15 +685,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       <span>{t.platform === "wechat" ? "微信" : "支付宝"}</span>
                     </div>
                   </div>
-                  <div className={clsx("font-bold text-sm", t.type === "INCOME" ? "text-green-600" : "")}>
+                  <div className={cn("font-bold text-sm", t.type === "INCOME" ? "text-green-600" : "")}>
                     {t.type === "EXPENSE" ? "-" : "+"}¥{Number(t.amount).toLocaleString()}
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      </DelayedRender>
+          </DelayedRender>
+        </CardContent>
+      </Card>
     </div>
   );
 }
