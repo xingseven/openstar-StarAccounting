@@ -795,7 +795,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
               <Sankey
                 data={data.sankey}
-                margin={{ left: 0, right: 80, top: 10, bottom: 10 }}
+                margin={{ left: 0, right: 150, top: 10, bottom: 10 }}
                 node={({ x, y, width, height, index, payload }) => {
                   return (
                     <Layer key={`node-${index}`}>

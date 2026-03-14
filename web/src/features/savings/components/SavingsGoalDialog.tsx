@@ -44,6 +44,7 @@ type PlanRow = {
   carryOver?: number; // from previous month
   totalAvailable?: number;
   finalBalance?: number; // carry to next month
+  proofImage?: string;
 };
 
 export function SavingsGoalDialog({ 
@@ -72,6 +73,17 @@ export function SavingsGoalDialog({
   const [rows, setRows] = useState<PlanRow[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [toasts, setToasts] = useState<{ id: string; message: string }[]>([]);
+  const reminderRef = useRef<string>("");
+
+  const pushToast = (message: string) => {
+    const id = Math.random().toString(36).slice(2, 9);
+    setToasts((prev) => [...prev, { id, message }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  };
 
   // Reset or Load data when dialog opens
   useEffect(() => {
@@ -126,6 +138,41 @@ export function SavingsGoalDialog({
     };
     init();
   }, [open, initialData, defaultStep]);
+
+  useEffect(() => {
+    if (!open) return;
+    const tick = () => setCurrentMonth(new Date().toISOString().slice(0, 7));
+    const timer = window.setInterval(tick, 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || step !== 2 || !initialData) return;
+    const storageKey = `savings-proof-${initialData.id}`;
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return;
+    try {
+      const proofMap = JSON.parse(raw) as Record<string, string>;
+      setRows((prev) =>
+        prev.map((r) => ({
+          ...r,
+          proofImage: proofMap[r.id] ?? r.proofImage,
+        }))
+      );
+    } catch {
+      window.localStorage.removeItem(storageKey);
+    }
+  }, [open, step, initialData]);
+
+  useEffect(() => {
+    if (!open || step !== 2 || !initialData) return;
+    const storageKey = `savings-proof-${initialData.id}`;
+    const proofMap = rows.reduce<Record<string, string>>((acc, r) => {
+      if (r.proofImage) acc[r.id] = r.proofImage;
+      return acc;
+    }, {});
+    window.localStorage.setItem(storageKey, JSON.stringify(proofMap));
+  }, [rows, open, step, initialData]);
 
   // Initialize Rows when entering Step 2
   const initRows = () => {
@@ -231,6 +278,10 @@ export function SavingsGoalDialog({
   }, [rows, type]);
 
   const finalRows = calculatedRows;
+  const displayRows = useMemo(() => {
+    const filtered = finalRows.filter((r) => Number(r.amount) > 0);
+    return filtered.length > 0 ? filtered : finalRows;
+  }, [finalRows]);
   const summary = useMemo(() => {
     const totalAmount = finalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalSalary = finalRows.reduce((sum, row) => sum + Number(row.salary || 0), 0);
@@ -250,6 +301,28 @@ export function SavingsGoalDialog({
       expenseTotals,
     };
   }, [finalRows, expenseColumns]);
+
+  useEffect(() => {
+    if (!open || step !== 2) return;
+    const depositRows = finalRows.filter((r) => Number(r.amount) > 0);
+    if (depositRows.length === 0) return;
+    const reminderState = `${currentMonth}|${depositRows.map((r) => `${r.month}:${r.status}`).join(",")}`;
+    if (reminderRef.current === reminderState) return;
+    reminderRef.current = reminderState;
+    const previousUncompleted = depositRows
+      .filter((r) => r.month < currentMonth && r.status !== "COMPLETED")
+      .sort((a, b) => b.month.localeCompare(a.month))[0];
+    if (previousUncompleted) {
+      pushToast(`提醒：${previousUncompleted.month.replace("-", "/")} 的计划存款尚未打卡`);
+    }
+    const now = new Date();
+    const isLastDay =
+      now.getDate() === new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const currentPlan = depositRows.find((r) => r.month === currentMonth);
+    if (isLastDay && currentPlan && currentPlan.status !== "COMPLETED") {
+      pushToast(`提醒：本月 (${currentMonth.replace("-", "/")}) 计划存款尚未打卡`);
+    }
+  }, [open, step, currentMonth, finalRows]);
 
   const handleAddColumn = () => {
     const name = prompt("请输入列名 (如: 房租)");
@@ -336,6 +409,17 @@ export function SavingsGoalDialog({
       const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
       container.scrollLeft += delta;
     }
+  };
+
+  const handleProofUpload = (index: number, file?: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = typeof reader.result === "string" ? reader.result : "";
+      if (!value) return;
+      handleRowChange(index, "proofImage", value);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -459,12 +543,22 @@ export function SavingsGoalDialog({
                       <th className="p-3 min-w-[120px] w-[120px] text-purple-600 whitespace-nowrap">下月结余</th>
                     )}
                     <th className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">状态</th>
+                    <th className="p-3 min-w-[130px] w-[130px] whitespace-nowrap">打卡凭证</th>
                     <th className="p-3 min-w-[200px]">备注</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {finalRows.map((row, idx) => (
-                    <tr key={row.id} className={clsx("hover:bg-gray-50/50 transition-colors", idx === 0 && "bg-blue-50/30")}>
+                  {displayRows.map((row) => {
+                    const sourceIndex = rows.findIndex((r) => r.id === row.id);
+                    return (
+                    <tr
+                      key={row.id}
+                      className={clsx(
+                        "hover:bg-gray-50/50 transition-colors",
+                        sourceIndex === 0 && "bg-blue-50/30",
+                        row.month === currentMonth && "ring-1 ring-blue-200"
+                      )}
+                    >
                       <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
                       {type !== 'MONTHLY' && (
                         <>
@@ -474,7 +568,7 @@ export function SavingsGoalDialog({
                               className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
                               value={row.salary || ""}
                               placeholder="0"
-                              onChange={e => handleRowChange(idx, 'salary', e.target.value)}
+                              onChange={e => handleRowChange(sourceIndex, 'salary', e.target.value)}
                             />
                           </td>
                           {expenseColumns.map(col => (
@@ -484,7 +578,7 @@ export function SavingsGoalDialog({
                                 className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
                                 value={row.expenses[col.name] || ""}
                                 placeholder="0"
-                                onChange={e => handleRowChange(idx, col.name, e.target.value, true)}
+                                onChange={e => handleRowChange(sourceIndex, col.name, e.target.value, true)}
                               />
                             </td>
                           ))}
@@ -498,7 +592,7 @@ export function SavingsGoalDialog({
                           className="w-full bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-gray-900"
                           value={row.amount || ""}
                           placeholder="0"
-                          onChange={e => handleRowChange(idx, 'amount', e.target.value)}
+                          onChange={e => handleRowChange(sourceIndex, 'amount', e.target.value)}
                         />
                       </td>
                       {type !== 'MONTHLY' && (
@@ -506,7 +600,7 @@ export function SavingsGoalDialog({
                       )}
                       <td className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">
                         <button
-                          onClick={() => handleRowChange(idx, "status", row.status === "COMPLETED" ? "PENDING" : "COMPLETED")}
+                          onClick={() => handleRowChange(sourceIndex, "status", row.status === "COMPLETED" ? "PENDING" : "COMPLETED")}
                           className={clsx(
                             "px-2 py-1 rounded text-xs font-medium",
                             row.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
@@ -515,16 +609,35 @@ export function SavingsGoalDialog({
                           {row.status === "COMPLETED" ? "已存款" : "未存款"}
                         </button>
                       </td>
+                      <td className="p-3 min-w-[130px] w-[130px] whitespace-nowrap">
+                        <label className="inline-flex items-center gap-2 cursor-pointer">
+                          <span className="px-2 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-700">上传</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleProofUpload(sourceIndex, e.target.files?.[0])}
+                          />
+                        </label>
+                        {row.proofImage ? (
+                          <button
+                            className="mt-1 block text-xs text-blue-600 hover:underline"
+                            onClick={() => window.open(row.proofImage, "_blank")}
+                          >
+                            查看图片
+                          </button>
+                        ) : null}
+                      </td>
                       <td className="p-3">
                         <input
                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
                           value={row.remark}
                           placeholder="备注..."
-                          onChange={e => handleRowChange(idx, 'remark', e.target.value)}
+                          onChange={e => handleRowChange(sourceIndex, 'remark', e.target.value)}
                         />
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
                 <tfoot>
                   <tr className="bg-amber-50/80 border-t-2 border-amber-200 font-semibold">
@@ -543,7 +656,9 @@ export function SavingsGoalDialog({
                     {type !== 'MONTHLY' && (
                       <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-700">¥{summary.endingBalance.toLocaleString()}</td>
                     )}
-                    <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{finalRows.length}个月</td>
+                    <td className="p-3 min-w-[100px] w-[100px]"></td>
+                    <td className="p-3 min-w-[130px] w-[130px]"></td>
+                    <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{displayRows.length}个存款月</td>
                   </tr>
                 </tfoot>
               </table>
@@ -561,6 +676,13 @@ export function SavingsGoalDialog({
           </div>
         )}
       </DialogContent>
+      <div className="fixed bottom-4 right-4 z-[100] space-y-2">
+        {toasts.map((toast) => (
+          <div key={toast.id} className="max-w-sm rounded-lg bg-black text-white text-sm px-4 py-3 shadow-lg">
+            {toast.message}
+          </div>
+        ))}
+      </div>
     </Dialog>
   );
 }
