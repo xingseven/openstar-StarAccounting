@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.8.20 - 2026-03-14
+
+### Features
+- **后端交易创建接口**:
+  - 新增 POST `/api/transactions` 接口
+  - 支持创建单条交易记录（取款、打卡等）
+  - 必填字段：amount, type, category, platform, date
+  - 可选字段：merchant, description
+  - 自动关联当前登录用户的 userId
+
+### Bug Fixes
+- **取款和打卡记录不显示问题**:
+  - 之前只有导入接口，没有单条创建接口
+  - 导致取款和打卡时创建交易失败
+  - 现在可以正常创建并显示交易记录
+
+### Modified Files
+1. `src/server/src/main.ts`
+   - 添加 POST /api/transactions 路由
+   - 实现单条交易创建逻辑
+   - 验证必填字段
+   - 自动注入 userId
+
 ## 1.8.19 - 2026-03-14
 
 ### Features
