@@ -803,7 +803,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="w-[1500px] md:w-full">
+            <div className="w-[750px] md:w-full">
               <DelayedRender delay={240} lazy className="h-[250px] w-full">
                 <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
                   <BarChart accessibilityLayer data={data.stackedBar}>
@@ -997,12 +997,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <div className="min-w-[600px] md:min-w-0">
-            <DelayedRender delay={960} lazy className="h-[300px]">
-              <ChartContainer config={emptyChartConfig} className="h-[300px]">
+          <div className="min-w-[600px] md:w-full">
+            <DelayedRender delay={960} lazy className="h-[300px] w-full">
+              <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
                 <Sankey
                   data={data.sankey}
-                  margin={{ left: 0, right: 80, top: 10, bottom: 10 }}
+                  margin={{ left: 0, right: 120, top: 10, bottom: 10 }}
                   node={({ x, y, width, height, index, payload }) => {
                     return (
                       <Layer key={`node-${index}`}>
