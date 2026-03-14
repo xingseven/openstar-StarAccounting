@@ -283,7 +283,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardHeader className="items-center pb-0">
               <CardTitle className="text-base">支付平台分布</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent className="flex-1 pb-0 relative">
               <ChartContainer config={{}} className="mx-auto aspect-square max-h-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -292,16 +292,27 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     dataKey="value"
                     nameKey="name"
                     innerRadius={0}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     labelLine={false}
                   >
                     {data.platformDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" verticalAlign="bottom" align="right" />
+                  <ChartLegend 
+                    content={<ChartLegendContent />} 
+                    className="hidden" 
+                  />
                 </PieChart>
               </ChartContainer>
+              <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+                 {data.platformDistribution.map((item, index) => (
+                   <div key={index} className="flex items-center gap-1">
+                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                     <span className="text-gray-500">{item.name}</span>
+                     <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
+                   </div>
+                 ))}
+              </div>
             </CardContent>
           </Card>
 
@@ -309,7 +320,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardHeader className="items-center pb-0">
               <CardTitle className="text-base">收支分析</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent className="flex-1 pb-0 relative">
               <ChartContainer config={commonConfig} className="mx-auto aspect-square max-h-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
@@ -319,16 +330,30 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     nameKey="name"
                     innerRadius={40}
                     strokeWidth={5}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     labelLine={false}
                   >
                     {data.incomeExpense.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" verticalAlign="bottom" align="right" />
+                  <ChartLegend 
+                    content={<ChartLegendContent />} 
+                    className="hidden" 
+                  />
                 </PieChart>
               </ChartContainer>
+              <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+                 {data.incomeExpense.map((item, index) => {
+                   const total = data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0);
+                   return (
+                     <div key={index} className="flex items-center gap-1">
+                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                       <span className="text-gray-500">{item.name}</span>
+                       <span className="font-medium">{(item.value / total * 100).toFixed(0)}%</span>
+                     </div>
+                   );
+                 })}
+              </div>
             </CardContent>
           </Card>
 
