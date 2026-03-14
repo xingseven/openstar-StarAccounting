@@ -29,6 +29,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { siAlipay, siWechat } from "simple-icons";
 import { 
     ArrowDownIcon, 
     ArrowUpIcon, 
@@ -92,13 +93,8 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
 function WechatOfficialIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#07C160" />
-      <ellipse cx="10" cy="10.2" rx="5.2" ry="3.9" fill="#FFFFFF" />
-      <ellipse cx="14.6" cy="14.5" rx="4.4" ry="3.3" fill="#FFFFFF" />
-      <circle cx="8.3" cy="9.8" r="0.7" fill="#07C160" />
-      <circle cx="11.5" cy="9.8" r="0.7" fill="#07C160" />
-      <circle cx="13.3" cy="14.2" r="0.6" fill="#07C160" />
-      <circle cx="15.9" cy="14.2" r="0.6" fill="#07C160" />
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`#${siWechat.hex}`} />
+      <path d={siWechat.path} fill="#FFFFFF" transform="translate(1.5 1.5) scale(0.875)" />
     </svg>
   );
 }
@@ -106,18 +102,8 @@ function WechatOfficialIcon({ className }: { className?: string }) {
 function AlipayOfficialIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#1677FF" />
-      <text
-        x="12"
-        y="15.2"
-        textAnchor="middle"
-        fill="#FFFFFF"
-        fontSize="11.5"
-        fontWeight="900"
-        fontFamily="PingFang SC, Microsoft YaHei, sans-serif"
-      >
-        支
-      </text>
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`#${siAlipay.hex}`} />
+      <path d={siAlipay.path} fill="#FFFFFF" transform="translate(1.5 1.5) scale(0.875)" />
     </svg>
   );
 }
