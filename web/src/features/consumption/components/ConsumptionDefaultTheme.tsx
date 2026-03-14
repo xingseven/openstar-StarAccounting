@@ -107,10 +107,17 @@ function AlipayOfficialIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill="#1677FF" />
-      <path
+      <text
+        x="12"
+        y="15.2"
+        textAnchor="middle"
         fill="#FFFFFF"
-        d="M7 8.1h10.1v1.8h-4v1.3h4.9V13h-3.2c1.1 1.2 2.3 2.2 3.7 2.9l-1.1 1.6c-1.5-.8-2.9-2-4.2-3.6V18h-2v-3.4c-1.5 1.4-3.2 2.5-5.2 3.3L5 16.3c1.9-.7 3.6-1.8 5-3.3H6.8v-1.8h4.4V9.9H7V8.1z"
-      />
+        fontSize="11.5"
+        fontWeight="900"
+        fontFamily="PingFang SC, Microsoft YaHei, sans-serif"
+      >
+        支
+      </text>
     </svg>
   );
 }

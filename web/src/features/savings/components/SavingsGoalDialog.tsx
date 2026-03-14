@@ -238,6 +238,7 @@ export function SavingsGoalDialog({
   const handleBasicInfoChange = (setter: any, value: any) => {
     setter(value);
     setIsDirty(true);
+    setRows([]); // Reset rows when basic info changes to force re-initialization
   };
 
   return (
