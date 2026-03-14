@@ -117,7 +117,7 @@ function GoalsTableSkeleton() {
         <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="overflow-auto">
+        <div className="overflow-x-auto md:overflow-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600">
               <tr>

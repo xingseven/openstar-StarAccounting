@@ -143,11 +143,18 @@ function DelayedRender({
   className?: string;
   fallback?: React.ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     let timerId: number | undefined;
     let idleId: number | undefined;
     let observer: IntersectionObserver | undefined;
@@ -207,48 +214,32 @@ function DelayedRender({
       };
     } 
     else {
-      timerId = window.setTimeout(() => {
-        setShouldRender(true);
-        rafId = window.requestAnimationFrame(() => setIsVisible(true));
-      }, delay);
-      return () => {
-        if (timerId !== undefined) {
-          window.clearTimeout(timerId);
-        }
-        if (rafId !== undefined) {
-          window.cancelAnimationFrame(rafId);
-        }
-      };
+      scheduleRender();
     }
-  }, [delay, lazy]);
+
+    return () => {
+      if (timerId !== undefined) window.clearTimeout(timerId);
+      if (idleId !== undefined && "cancelIdleCallback" in window) {
+        const cancelIdle = window.cancelIdleCallback as (handle: number) => void;
+        cancelIdle(idleId);
+      }
+      if (rafId !== undefined) window.cancelAnimationFrame(rafId);
+    };
+  }, [lazy, delay, mounted]);
+
+  if (!shouldRender) {
+    return fallback ? <div className={className}>{fallback}</div> : <div className={className} />;
+  }
 
   return (
-    <div ref={ref} className={className}>
-      {shouldRender ? (
-        <div
-          className={cn(
-            "transition-opacity duration-500 ease-out",
-            isVisible ? "opacity-100" : "opacity-0"
-          )}
-        >
-          {children}
-        </div>
-      ) : fallback ? (
-        fallback
-      ) : (
-        <div className="h-full w-full flex flex-col items-center justify-center bg-white/50 animate-pulse space-y-4 p-6">
-          <div className="w-full flex justify-between items-center">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-5 w-5 rounded-full" />
-          </div>
-          <div className="flex-1 w-full flex items-end justify-between gap-2">
-             {[...Array(7)].map((_, i) => (
-               <Skeleton key={i} className="w-full" style={{ height: `${22 + i * 8}%` }} />
-             ))}
-          </div>
-          <Skeleton className="h-4 w-full" />
-        </div>
+    <div 
+      ref={ref} 
+      className={cn(
+        className,
+        isVisible ? "animate-in fade-in duration-500" : "opacity-0"
       )}
+    >
+      {children}
     </div>
   );
 }
@@ -1002,7 +993,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <div className="min-w-[600px] md:w-full">
-            <DelayedRender delay={0} className="h-[300px] w-full">
+            <DelayedRender delay={960} lazy className="h-[300px] w-full">
               <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
                 <Sankey
                   data={data.sankey}
