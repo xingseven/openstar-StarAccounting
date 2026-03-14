@@ -63,16 +63,7 @@ export function Header() {
           <Bell className="h-5 w-5" />
         </button>
 
-        {/* 移动端退出按钮 - 始终可见 */}
-        <button
-          onClick={logout}
-          className="lg:hidden rounded-full p-2 text-red-500 hover:bg-red-50"
-          title="退出登录"
-        >
-          <LogOut className="h-5 w-5" />
-        </button>
-
-        <div className="h-8 w-px bg-gray-200 mx-1 hidden md:block" />
+        <div className="h-8 w-px bg-gray-200 mx-1" />
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
@@ -84,12 +75,20 @@ export function Header() {
             </div>
           </div>
           
+          {/* 移动端点击整个区域打开下拉菜单 */}
           <div className="relative">
             <button 
               onClick={() => setShowDropdown(!showDropdown)}
-              className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200"
+              className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="用户菜单"
             >
-              <UserIcon className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
+                <UserIcon className="h-5 w-5" />
+              </div>
+              {/* 移动端显示的小箭头 */}
+              <svg className="w-4 h-4 text-gray-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
             
             {/* Dropdown */}

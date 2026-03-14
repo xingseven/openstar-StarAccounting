@@ -432,6 +432,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return dates;
   };
 
+  const [filterOpen, setFilterOpen] = useState(false);
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto relative">
       {/* Floating Filter Button */}
@@ -441,12 +443,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           showFloatingFilter ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
         )}
       >
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button size="icon" className="h-14 w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800">
-              <Filter className="h-6 w-6" />
-            </Button>
-          </PopoverTrigger>
+        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+          <button 
+            type="button" 
+            className="h-14 w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center"
+            onClick={() => setFilterOpen(!filterOpen)}
+          >
+            <Filter className="h-6 w-6" />
+          </button>
           <PopoverContent className="w-80 p-4 mr-8 mb-4" side="top" align="end">
             <div className="space-y-4">
               <h4 className="font-medium leading-none">快捷筛选</h4>
@@ -1004,9 +1008,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   data={data.sankey}
                   margin={{ left: 0, right: 120, top: 10, bottom: 10 }}
                   node={({ x, y, width, height, index, payload }) => {
+                    const nodeColors = [
+                      'var(--color-chart-1)', // 工资收入
+                      'var(--color-chart-2)', // 理财收益
+                      'var(--color-chart-3)', // 微信钱包
+                      'var(--color-chart-4)', // 支付宝
+                      'var(--color-chart-5)', // 餐饮美食
+                      'var(--color-chart-1)', // 购物消费
+                      'var(--color-chart-2)', // 交通出行
+                      'var(--color-chart-3)', // 休闲娱乐
+                      'var(--color-chart-4)', // 生活服务
+                    ];
                     return (
                       <Layer key={`node-${index}`}>
-                        <Rectangle x={x} y={y} width={width} height={height} fill="var(--color-chart-1)" fillOpacity={0.8} radius={[2, 2, 2, 2]} />
+                        <Rectangle x={x} y={y} width={width} height={height} fill={nodeColors[index] || 'var(--color-chart-1)'} fillOpacity={0.8} radius={[2, 2, 2, 2]} />
                         <text
                           x={x + width + 6}
                           y={y + height / 2}
@@ -1021,7 +1036,24 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     );
                   }}
                   nodePadding={50}
-                  link={{ stroke: 'var(--color-chart-1)', fillOpacity: 0.3 }}
+                  link={({ source, target }) => {
+                    const sourceIndex = typeof source === 'number' ? source : source.index;
+                    const targetIndex = typeof target === 'number' ? target : target.index;
+                    const linkColors: Record<string, string> = {
+                      '0-2': 'var(--color-chart-1)',
+                      '0-3': 'var(--color-chart-2)',
+                      '1-3': 'var(--color-chart-3)',
+                      '2-4': 'var(--color-chart-1)',
+                      '2-6': 'var(--color-chart-2)',
+                      '2-8': 'var(--color-chart-3)',
+                      '3-5': 'var(--color-chart-4)',
+                      '3-7': 'var(--color-chart-5)',
+                      '3-4': 'var(--color-chart-1)',
+                      '3-6': 'var(--color-chart-2)',
+                    };
+                    const key = `${sourceIndex}-${targetIndex}`;
+                    return { stroke: linkColors[key] || 'var(--color-chart-1)', fillOpacity: 0.3 };
+                  }}
                 >
                   <Tooltip />
                 </Sankey>
