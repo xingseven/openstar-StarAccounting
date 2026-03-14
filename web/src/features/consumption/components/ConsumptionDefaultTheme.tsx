@@ -474,8 +474,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <CardDescription>识别主要支出分类</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}} className="h-[250px] w-full">
-                <ComposedChart data={data.pareto} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <ChartContainer config={{}} className="h-[200px] w-full">
+                <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 10 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} />
                   <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
