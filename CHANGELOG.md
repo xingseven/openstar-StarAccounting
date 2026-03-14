@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.8.21 - 2026-03-14
+
+### Bug Fixes
+- **数据库 transaction 表结构修复**:
+  - 修复 `createdAt` 和 `updatedAt` 字段缺少默认值的问题
+  - 添加 `DEFAULT CURRENT_TIMESTAMP(3)` 默认值
+  - 添加 `ON UPDATE CURRENT_TIMESTAMP(3)` 自动更新
+  - 解决后端创建交易时报错 "Field doesn't have a default value"
+
+### 问题根源
+1. 后端缺少 POST `/api/transactions` 接口（已在 v1.8.20 修复）
+2. 数据库 `transaction` 表的 `createdAt` 和 `updatedAt` 字段没有默认值
+3. 导致 Prisma 创建交易记录时失败
+
+### Modified Files
+1. 数据库修复
+   - `ALTER TABLE transaction MODIFY COLUMN updatedAt datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)`
+   - `ALTER TABLE transaction MODIFY COLUMN createdAt datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)`
+
 ## 1.8.20 - 2026-03-14
 
 ### Features

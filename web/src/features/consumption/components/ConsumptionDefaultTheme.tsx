@@ -397,25 +397,38 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const getWeekDates = (week: number) => {
     const year = 2026;
     const month = 2; // 3 月 (0-indexed)
-    const firstDay = getFirstDayOfWeek(year, month); // 3 月 1 号是周几
+    const firstDay = getFirstDayOfWeek(year, month); // 3 月 1 号是周几 (0=周日)
     const daysInMonth = getDaysInMonth(year, month);
-    
-    // 第一周从 1 号开始，但可能不是周一
-    // 计算第一周实际从哪天开始
-    const weekStartOffset = firstDay; // 周日=0, 周一=1, ...
-    
-    // 计算第 N 周的起始日期
-    const weekStart = (week - 1) * 7 - weekStartOffset + 1;
+    const daysInPrevMonth = getDaysInMonth(year, month - 1); // 2 月的天数
     
     const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const day = weekStart + i;
-      if (day >= 1 && day <= daysInMonth) {
-        dates.push(day);
-      } else {
-        dates.push(null); // 超出月份范围
+    
+    // 计算第 week 周的日期
+    if (week === 1) {
+      // 第一周：从 1 号开始，1 号是周日，所以周一到六是上个月的日期
+      for (let i = 0; i < 7; i++) {
+        // i=0 是周一，i=6 是周日
+        // 1 号是周日 (i=6)，所以 i<6 时是上个月的日期
+        if (i < 6) {
+          // 上个月的日期：从 (daysInPrevMonth - 5) 开始
+          dates.push({ day: daysInPrevMonth - 5 + i, month: 2, isCurrentMonth: false });
+        } else {
+          dates.push({ day: 1, month: 3, isCurrentMonth: true }); // 3 月 1 号
+        }
+      }
+    } else {
+      // 第 2 周及以后
+      const startDay = (week - 1) * 7 - (7 - firstDay) + 1;
+      for (let i = 0; i < 7; i++) {
+        const day = startDay + i;
+        if (day >= 1 && day <= daysInMonth) {
+          dates.push({ day, month: 3, isCurrentMonth: true });
+        } else {
+          dates.push({ day: day - daysInMonth, month: 4, isCurrentMonth: false }); // 下个月的日期
+        }
       }
     }
+    
     return dates;
   };
 
@@ -953,14 +966,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     height={50}
                     tick={({ x, y, payload }) => {
                       const dayIndex = payload.index;
-                      const date = (selectedWeek - 1) * 7 + dayIndex + 1;
+                      const weekDates = getWeekDates(selectedWeek);
+                      const dateInfo = weekDates[dayIndex];
                       return (
                         <g transform={`translate(${x},${y})`}>
                           <text x={0} y={0} dy={10} textAnchor="middle" fill="#666" fontSize={12}>
                             {payload.value}
                           </text>
                           <text x={0} y={0} dy={26} textAnchor="middle" fill="#999" fontSize={10}>
-                            {`3 月${date}日`}
+                            {dateInfo ? `${dateInfo.month}月${dateInfo.day}日` : ''}
                           </text>
                         </g>
                       );
@@ -988,7 +1002,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
               <Sankey
                 data={data.sankey}
-                margin={{ left: 0, right: 150, top: 10, bottom: 10 }}
+                margin={{ left: 0, right: 80, top: 10, bottom: 10 }}
                 node={({ x, y, width, height, index, payload }) => {
                   return (
                     <Layer key={`node-${index}`}>
