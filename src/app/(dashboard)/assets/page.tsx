@@ -2,16 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-
-type Asset = {
-  id: string;
-  name: string;
-  type: "CASH" | "BANK_CARD" | "ALIPAY" | "WECHAT" | "INVESTMENT" | "OTHER";
-  balance: number;
-  currency: string;
-  estimatedValue: number;
-  createdAt: string;
-};
+import { AssetsDefaultTheme, Asset } from "@/features/assets/components/themes/DefaultAssets";
 
 const SUPPORTED_CURRENCIES = ["CNY", "USD", "EUR", "HKD", "JPY", "GBP"];
 
@@ -116,124 +107,46 @@ export default function AssetsPage() {
   const totalAssets = items.reduce((sum, item) => sum + item.estimatedValue, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">资产管理</h1>
-          <p className="text-sm text-gray-600">管理你的现金、银行卡与投资账户</p>
-        </div>
-        <div className="flex gap-3">
-          <select
-            className="rounded border px-3 py-2 text-sm"
-            value={displayCurrency}
-            onChange={(e) => setDisplayCurrency(e.target.value)}
-          >
-            {SUPPORTED_CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                以 {c} 显示
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={openCreate}
-            className="rounded bg-black px-4 py-2 text-sm text-white hover:opacity-90"
-          >
-            新增资产
-          </button>
-        </div>
-      </div>
-
-      <div className="rounded border bg-black p-6 text-white">
-        <div className="text-sm opacity-80">总资产估值 ({displayCurrency})</div>
-        <div className="mt-2 text-3xl font-bold">
-          {displayCurrency === "CNY" ? "¥" : displayCurrency} {totalAssets.toFixed(2)}
-        </div>
-      </div>
-
-      {items.length === 0 ? (
-        <div className="rounded border p-8 text-center text-gray-500">
-          暂无资产记录
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.id} className="rounded border p-4 space-y-3 bg-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {item.type === "CASH"
-                      ? "现金"
-                      : item.type === "BANK_CARD"
-                      ? "银行卡"
-                      : item.type === "ALIPAY"
-                      ? "支付宝"
-                      : item.type === "WECHAT"
-                      ? "微信"
-                      : item.type === "INVESTMENT"
-                      ? "投资"
-                      : "其他"}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEdit(item)}
-                    className="text-xs text-gray-600 hover:text-black"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-xs text-red-600 hover:text-red-800"
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-end">
-                <div className="text-lg font-medium">
-                  {item.currency === "CNY" ? "¥" : item.currency} {item.balance.toFixed(2)}
-                </div>
-                {item.currency !== displayCurrency && (
-                  <div className="text-sm text-gray-500">
-                    ≈ {displayCurrency} {item.estimatedValue.toFixed(2)}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <>
+      <AssetsDefaultTheme 
+        items={items}
+        totalAssets={totalAssets}
+        displayCurrency={displayCurrency}
+        onCurrencyChange={setDisplayCurrency}
+        supportedCurrencies={SUPPORTED_CURRENCIES}
+        onOpenCreate={openCreate}
+        onOpenEdit={openEdit}
+        onDelete={handleDelete}
+      />
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-lg font-semibold">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-6 text-lg font-bold">
               {editingItem ? "编辑资产" : "新增资产"}
             </h2>
             {error && (
-              <div className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
                 {error}
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <label className="block space-y-1">
-                <span className="text-sm font-medium">名称</span>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">名称</label>
                 <input
                   required
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="例如：招商银行储蓄卡"
                 />
-              </label>
+              </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">类型</span>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">类型</label>
                   <select
-                    className="w-full rounded border px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
                     value={type}
                     onChange={(e) => setType(e.target.value)}
                   >
@@ -244,49 +157,61 @@ export default function AssetsPage() {
                     <option value="INVESTMENT">投资</option>
                     <option value="OTHER">其他</option>
                   </select>
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium">币种</span>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">币种</label>
                   <input
-                    className="w-full rounded border px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
                   />
-                </label>
+                </div>
               </div>
 
-              <label className="block space-y-1">
-                <span className="text-sm font-medium">余额</span>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">余额</label>
                 <input
                   required
                   type="number"
                   step="0.01"
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
                   value={balance}
                   onChange={(e) => setBalance(e.target.value)}
                 />
-              </label>
+              </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded px-4 py-2 text-sm hover:bg-gray-100"
+                  className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+                  className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
                 >
                   {loading ? "保存中..." : "保存"}
                 </button>
               </div>
+              {editingItem && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    handleDelete(editingItem.id);
+                  }}
+                  className="w-full text-center text-xs text-red-500 hover:underline pt-2"
+                >
+                  删除此资产
+                </button>
+              )}
             </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

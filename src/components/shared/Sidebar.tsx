@@ -9,7 +9,8 @@ import {
   PiggyBank, 
   Landmark, 
   Link as LinkIcon, 
-  Settings 
+  Settings,
+  Palette
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -20,6 +21,7 @@ const items = [
   { href: "/savings", label: "储蓄", icon: PiggyBank },
   { href: "/loans", label: "贷款", icon: Landmark },
   { href: "/connections", label: "连接", icon: LinkIcon },
+  { href: "/themes", label: "主题", icon: Palette },
   { href: "/settings", label: "设置", icon: Settings },
 ];
 
@@ -27,16 +29,16 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r bg-white flex-col hidden md:flex">
-      <div className="p-6 border-b flex items-center gap-2">
-        <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+    <aside className="w-64 border-r bg-white flex flex-col hidden md:flex shrink-0 h-full">
+      <div className="p-6 border-b flex items-center gap-3 shrink-0">
+        <div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
           X
         </div>
-        <span className="font-bold text-lg text-gray-900">XFDashboard</span>
+        <span className="font-bold text-xl text-gray-900 tracking-tight">XFDashboard</span>
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        <div className="text-xs font-semibold text-gray-400 mb-2 px-2 uppercase tracking-wider">
+        <div className="text-xs font-semibold text-gray-400 mb-2 px-3 uppercase tracking-wider">
           Menu
         </div>
         {items.map((item) => {
@@ -47,20 +49,20 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={clsx(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-blue-50 text-blue-700 shadow-sm"
+                  ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               )}
             >
-              <Icon className={clsx("h-5 w-5", isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500")} />
+              <Icon className={clsx("h-5 w-5 transition-colors", isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500")} />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t bg-gray-50/50">
+      <div className="p-4 border-t bg-gray-50/50 shrink-0">
         <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-4 text-white shadow-lg">
           <h4 className="font-semibold text-sm mb-1">OpenStar</h4>
           <p className="text-xs text-blue-100 opacity-90">
