@@ -552,13 +552,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
           <ShoppingBag className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
-            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-orange-100/90 ring-2 sm:ring-4 ring-orange-50/80 flex items-center justify-center">
               <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0">
+          <CardContent className="p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
             <div className="text-lg sm:text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
@@ -566,19 +566,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
           <Wallet className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
-            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-blue-100/90 ring-2 sm:ring-4 ring-blue-50/80 flex items-center justify-center">
               <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
             <div>
-              <div className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
               <div className="text-sm sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
               <div className="text-sm sm:text-lg font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
             </div>
           </CardContent>
@@ -586,19 +586,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
           <WechatOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
-            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#07C160]/15 ring-2 sm:ring-4 ring-[#07C160]/10 flex items-center justify-center">
               <WechatOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
             <div>
-              <div className="text-[9px] sm:text-xs text-gray-500">收入</div>
+              <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[9px] sm:text-xs text-gray-500">支出</div>
+              <div className="text-[10px] sm:text-xs text-gray-500">支出</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
             </div>
           </CardContent>
@@ -606,19 +606,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
           <AlipayOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
-            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#1677FF]/15 ring-2 sm:ring-4 ring-[#1677FF]/10 flex items-center justify-center">
               <AlipayOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5 rounded-sm" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
             <div>
-              <div className="text-[9px] sm:text-xs text-gray-500">收入</div>
+              <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[9px] sm:text-xs text-gray-500">支出</div>
+              <div className="text-[10px] sm:text-xs text-gray-500">支出</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
             </div>
           </CardContent>
@@ -626,18 +626,18 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       </div>
 
       {/* Row 2: Charts (3 cols) */}
-      <div className="grid gap-2 sm:gap-4 grid-cols-1 md:grid-cols-4">
-        <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0 p-3 sm:p-6">
-            <CardTitle className="text-xs sm:text-base">支付平台分布</CardTitle>
+      <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
+        <Card className="col-span-1 flex flex-col h-[180px] sm:h-[200px] md:h-auto">
+          <CardHeader className="items-center pb-0 p-2 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm md:text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 pt-0 px-2 sm:px-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-2 pt-0 px-2 sm:px-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={80}
-              className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] md:h-[220px] md:w-[220px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] md:h-[220px] md:w-[220px] rounded-full" />}
+              className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[180px] md:w-[180px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[180px] md:w-[180px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] md:h-[220px] md:w-[220px]">
+              <ChartContainer config={emptyChartConfig} className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[180px] md:w-[180px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -675,17 +675,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0">
-            <CardTitle className="text-base">收支分析</CardTitle>
+        <Card className="col-span-1 flex flex-col h-[180px] sm:h-[200px] md:h-auto">
+          <CardHeader className="items-center pb-0 p-2 sm:p-4">
+            <CardTitle className="text-xs sm:text-sm md:text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 pt-0 px-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-2 pt-0 px-2 sm:px-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={220}
-              className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] rounded-full border-4 border-white" />}
+              className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[180px] md:w-[180px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[180px] md:w-[180px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[100px] w-[100px] md:h-[220px] md:w-[220px]">
+              <ChartContainer config={commonConfig} className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[180px] md:w-[180px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
