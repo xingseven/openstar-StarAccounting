@@ -2,7 +2,25 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { DashboardDefaultTheme, DashboardData } from "@/features/dashboard/components/themes/DefaultDashboard";
+import { DashboardDefaultTheme } from "@/features/dashboard/components/themes/DefaultDashboard";
+
+export type DashboardData = {
+  totalAssets: number;
+  totalDebt: number;
+  monthExpense: number;
+  monthIncome: number;
+  monthSavingsIncome: number;
+  monthSavingsExpense: number;
+  recentTransactions: Array<{
+    id: string;
+    date: string;
+    type: "EXPENSE" | "INCOME";
+    amount: string;
+    category: string;
+    platform: string;
+    merchant?: string;
+  }>;
+};
 
 // Keep internal types for API response matching
 type Asset = {
@@ -40,6 +58,8 @@ export default function DashboardPage() {
     totalDebt: 0,
     monthExpense: 0,
     monthIncome: 0,
+    monthSavingsIncome: 0,
+    monthSavingsExpense: 0,
     recentTransactions: [],
   });
 
@@ -54,14 +74,27 @@ export default function DashboardPage() {
         const qsExpense = new URLSearchParams({ type: "EXPENSE", startDate: start, endDate: end });
         const qsIncome = new URLSearchParams({ type: "INCOME", startDate: start, endDate: end });
 
-        const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData] = await Promise.all([
+        const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData, savingsTxData] = await Promise.all([
           apiFetch<{ items: Asset[] }>("/api/assets"),
           apiFetch<{ items: Loan[] }>("/api/loans"),
           apiFetch<{ items: any[] }>("/api/savings"),
           apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsExpense}`),
           apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsIncome}`),
           apiFetch<{ items: Transaction[] }>(`/api/transactions?page=1&pageSize=5`),
+          apiFetch<{ items: Transaction[] }>(`/api/transactions?pageSize=100`),
         ]);
+
+        // 计算本月储蓄收支
+        const savingsKeywords = ["储蓄", "存款"];
+        const savingsTxs = savingsTxData.items.filter(t => 
+          savingsKeywords.some(k => t.category?.includes(k) || t.description?.includes(k))
+        );
+        const monthSavingsIncome = savingsTxs
+          .filter(t => t.type === "INCOME" && new Date(t.date) >= new Date(start))
+          .reduce((acc, t) => acc + Number(t.amount), 0);
+        const monthSavingsExpense = savingsTxs
+          .filter(t => t.type === "EXPENSE" && new Date(t.date) >= new Date(start))
+          .reduce((acc, t) => acc + Number(t.amount), 0);
 
         const assetsTotal = assetsData.items.reduce((acc, cur) => acc + Number(cur.estimatedValue ?? cur.balance), 0);
         const savingsTotal = savingsData.items.reduce((acc, cur) => acc + Number(cur.currentAmount), 0);
@@ -71,6 +104,8 @@ export default function DashboardPage() {
           totalDebt: loansData.items.reduce((acc, cur) => acc + Number(cur.remainingAmount), 0),
           monthExpense: Number(expenseData.totalExpense),
           monthIncome: Number(incomeData.totalExpense),
+          monthSavingsIncome,
+          monthSavingsExpense,
           recentTransactions: transactionsData.items,
         });
       } catch (e) {

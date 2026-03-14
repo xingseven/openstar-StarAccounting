@@ -36,6 +36,8 @@ export type DashboardData = {
   totalDebt: number;
   monthExpense: number;
   monthIncome: number;
+  monthSavingsIncome: number;
+  monthSavingsExpense: number;
   recentTransactions: Array<{
     id: string;
     date: string;
@@ -117,28 +119,31 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Monthly Expense */}
         <StatCard 
           title="本月支出" 
+          subtitle="消费"
           value={data.monthExpense} 
           icon={CreditCard}
-          trend="up" // Logic for trend to be implemented
+          trend="up"
           color="red"
         />
 
         {/* Monthly Income */}
         <StatCard 
           title="本月收入" 
+          subtitle="消费"
           value={data.monthIncome} 
           icon={Banknote}
           trend="up"
           color="green"
         />
 
-        {/* Monthly Balance */}
+        {/* Monthly Savings Income */}
         <StatCard 
-          title="本月结余" 
-          value={balance} 
+          title="本月储蓄" 
+          subtitle="存入"
+          value={data.monthSavingsIncome} 
           icon={TrendingUp}
-          trend={balance >= 0 ? "up" : "down"}
-          color="blue"
+          trend={data.monthSavingsIncome >= 0 ? "up" : "down"}
+          color="amber"
           className="col-span-2 sm:col-span-1"
         />
       </div>
@@ -266,18 +271,20 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, trend, color, className }: { 
-  title: string; 
+function StatCard({ title, subtitle, value, icon: Icon, trend, color, className }: { 
+  title: string;
+  subtitle?: string;
   value: number; 
   icon: any; 
   trend: "up" | "down";
-  color: "red" | "green" | "blue";
+  color: "red" | "green" | "blue" | "amber";
   className?: string;
 }) {
   const colorStyles = {
     red: "text-red-600 bg-red-50",
     green: "text-green-600 bg-green-50",
     blue: "text-blue-600 bg-blue-50",
+    amber: "text-amber-600 bg-amber-50",
   };
 
   return (
@@ -290,7 +297,10 @@ function StatCard({ title, value, icon: Icon, trend, color, className }: {
           <div className={clsx("p-1.5 sm:p-2 rounded-lg", colorStyles[color])}>
             <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <span className="text-xs sm:text-sm font-medium">{title}</span>
+          <div>
+            <span className="text-xs sm:text-sm font-medium">{title}</span>
+            {subtitle && <span className="text-xs sm:text-sm text-gray-400 ml-1">({subtitle})</span>}
+          </div>
         </div>
       </div>
       <div className="flex items-end justify-between">

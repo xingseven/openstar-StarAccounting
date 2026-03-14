@@ -1009,15 +1009,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   margin={{ left: 0, right: 120, top: 10, bottom: 10 }}
                   node={({ x, y, width, height, index, payload }) => {
                     const nodeColors = [
-                      'var(--color-chart-1)',
-                      'var(--color-chart-2)',
-                      'var(--color-chart-3)',
-                      'var(--color-chart-4)',
-                      'var(--color-chart-5)',
-                      'var(--color-chart-1)',
-                      'var(--color-chart-2)',
-                      'var(--color-chart-3)',
-                      'var(--color-chart-4)',
+                      'var(--color-chart-1)', // 工资收入
+                      'var(--color-chart-2)', // 理财收益
+                      '#07C160', // 微信钱包 - 绿色
+                      '#1677FF', // 支付宝 - 蓝色
+                      'var(--color-chart-5)', // 餐饮美食
+                      'var(--color-chart-1)', // 购物消费
+                      'var(--color-chart-2)', // 交通出行
+                      'var(--color-chart-3)', // 休闲娱乐
+                      'var(--color-chart-4)', // 生活服务
                     ];
                     return (
                       <Layer key={`node-${index}`}>
@@ -1035,27 +1035,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     );
                   }}
                   nodePadding={50}
-                  link={({ source, target }) => {
-                    if (!source || !target) {
-                      return { stroke: 'var(--color-chart-1)', fillOpacity: 0.3 };
-                    }
-                    const sourceIndex = typeof source === 'number' ? source : source.index;
-                    const targetIndex = typeof target === 'number' ? target : target.index;
-                    const linkColors: Record<string, string> = {
-                      '0-2': 'var(--color-chart-1)',
-                      '0-3': 'var(--color-chart-2)',
-                      '1-3': 'var(--color-chart-3)',
-                      '2-4': 'var(--color-chart-1)',
-                      '2-6': 'var(--color-chart-2)',
-                      '2-8': 'var(--color-chart-3)',
-                      '3-5': 'var(--color-chart-4)',
-                      '3-7': 'var(--color-chart-5)',
-                      '3-4': 'var(--color-chart-1)',
-                      '3-6': 'var(--color-chart-2)',
-                    };
-                    const key = `${sourceIndex}-${targetIndex}`;
-                    return { stroke: linkColors[key] || 'var(--color-chart-1)', fillOpacity: 0.3 };
-                  }}
+                  link={{ stroke: 'var(--color-chart-1)', fillOpacity: 0.3 }}
                 >
                   <Tooltip />
                 </Sankey>
