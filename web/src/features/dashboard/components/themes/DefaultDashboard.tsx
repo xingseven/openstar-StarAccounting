@@ -145,7 +145,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
-          <Card className="border-gray-200 shadow-sm overflow-hidden">
+          <Card className="border border-gray-200 shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="space-y-1">
                 <CardTitle className="text-lg font-bold text-gray-900">收支概览</CardTitle>
