@@ -27,5 +27,8 @@
   "homepage": "https://github.com/xingseven/openstar-xfdashborad#readme",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15"
   }
 }

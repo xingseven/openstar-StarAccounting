@@ -28,7 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { clsx } from "clsx";
+import { cn } from "@/lib/utils";
 import { 
     ArrowDownIcon, 
     ArrowUpIcon, 
@@ -87,8 +87,25 @@ interface ConsumptionViewProps {
   dateRangeLabel: string;
 }
 
+// Helper component for skeleton loading
+function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-md bg-gray-100", className)} />;
+}
+
 // Helper component for staggered animation and lazy loading
-function DelayedRender({ children, delay, lazy = false }: { children: React.ReactNode; delay: number; lazy?: boolean }) {
+function DelayedRender({ 
+  children, 
+  delay, 
+  lazy = false,
+  className,
+  fallback
+}: { 
+  children: React.ReactNode; 
+  delay: number; 
+  lazy?: boolean;
+  className?: string;
+  fallback?: React.ReactNode;
+}) {
   const [shouldRender, setShouldRender] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -120,18 +137,22 @@ function DelayedRender({ children, delay, lazy = false }: { children: React.Reac
   }, [delay, lazy]);
 
   if (!shouldRender) {
+    if (fallback) {
+      return <div ref={ref} className={className}>{fallback}</div>;
+    }
+
     return (
-      <div ref={ref} className="h-[250px] w-full flex flex-col items-center justify-center bg-white border rounded-xl animate-pulse space-y-4 p-6">
+      <div ref={ref} className={cn("w-full flex flex-col items-center justify-center bg-white/50 animate-pulse space-y-4 p-6", className)}>
         <div className="w-full flex justify-between items-center">
-          <div className="h-5 w-32 bg-gray-200 rounded"></div>
-          <div className="h-5 w-5 bg-gray-200 rounded-full"></div>
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-5 w-5 rounded-full" />
         </div>
         <div className="flex-1 w-full flex items-end justify-between gap-2">
            {[...Array(7)].map((_, i) => (
-             <div key={i} className="bg-gray-200 rounded-t w-full" style={{ height: `${Math.random() * 60 + 20}%` }}></div>
+             <Skeleton key={i} className="w-full" style={{ height: `${Math.random() * 60 + 20}%` }} />
            ))}
         </div>
-        <div className="h-4 w-full bg-gray-100 rounded"></div>
+        <Skeleton className="h-4 w-full" />
       </div>
     );
   }
@@ -198,7 +219,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
             <button 
               onClick={() => setDateFilter("month")}
-              className={clsx("px-3 py-1 text-sm rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
+              className={cn("px-3 py-1 text-sm rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
             >
               本月
             </button>
@@ -473,8 +494,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
               <CardDescription>识别主要支出分类</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-2 min-h-[250px]">
-              <ChartContainer config={{}} className="h-full w-full">
+            <CardContent className="flex-1 pb-2">
+              <ChartContainer config={{}} className="h-[250px] w-full">
                 <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -498,13 +519,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <CardDescription>每日消费强度分布</CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
-              <div className="w-full h-full">
-                <div className="grid grid-cols-7 gap-3 text-center text-sm mb-3">
+              <div className="w-full h-[250px] flex flex-col justify-between">
+                <div className="grid grid-cols-7 gap-3 text-center text-sm mb-2">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-bold text-gray-500">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-3">
+                <div className="grid grid-cols-7 gap-2 flex-1">
                   {/* Offset for first day of month (visual placeholder) */}
                   <div /> <div /> <div /> <div />
                   
@@ -520,11 +541,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("aspect-[2.2/1] rounded-md flex flex-col items-center justify-center p-1 transition-transform hover:scale-105 shadow-sm", bg, text)}
+                        className={clsx("h-8 rounded-md flex flex-col items-center justify-center p-0.5 transition-transform hover:scale-105 shadow-sm", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
-                        <span className="font-bold text-sm mb-0.5">{d.day}</span>
-                        {d.value > 0 && <span className="text-xs font-medium leading-none">¥{Math.round(d.value)}</span>}
+                        <span className="font-bold text-xs mb-0.5">{d.day}</span>
+                        {d.value > 0 && <span className="text-[10px] font-medium leading-none scale-90">¥{Math.round(d.value)}</span>}
                       </div>
                     );
                   })}
