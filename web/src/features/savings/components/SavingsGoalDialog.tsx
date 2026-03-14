@@ -193,6 +193,27 @@ export function SavingsGoalDialog({
   }, [rows, type]);
 
   const finalRows = calculatedRows;
+  const summary = useMemo(() => {
+    const totalAmount = finalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const totalSalary = finalRows.reduce((sum, row) => sum + Number(row.salary || 0), 0);
+    const totalBalance = finalRows.reduce((sum, row) => sum + Number(row.balance || 0), 0);
+    const totalCarryOver = finalRows.reduce((sum, row) => sum + Number((row as any).prevCarryOver ?? row.carryOver ?? 0), 0);
+    const totalAvailable = finalRows.reduce((sum, row) => sum + Number(row.totalAvailable || 0), 0);
+    const endingBalance = finalRows.length > 0 ? Number(finalRows[finalRows.length - 1].finalBalance || 0) : 0;
+    const expenseTotals = expenseColumns.reduce<Record<string, number>>((acc, col) => {
+      acc[col.name] = finalRows.reduce((sum, row) => sum + Number(row.expenses?.[col.name] || 0), 0);
+      return acc;
+    }, {});
+    return {
+      totalAmount,
+      totalSalary,
+      totalBalance,
+      totalCarryOver,
+      totalAvailable,
+      endingBalance,
+      expenseTotals,
+    };
+  }, [finalRows, expenseColumns]);
 
   const handleAddColumn = () => {
     const name = prompt("请输入列名 (如: 房租)");
@@ -427,6 +448,27 @@ export function SavingsGoalDialog({
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="bg-amber-50/80 border-t-2 border-amber-200 font-semibold">
+                    <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap sticky left-0 bg-amber-50/80 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">汇总</td>
+                    {type !== 'MONTHLY' && (
+                      <>
+                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-900">¥{summary.totalSalary.toLocaleString()}</td>
+                        {expenseColumns.map(col => (
+                          <td key={`sum-${col.id}`} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap text-gray-700">¥{(summary.expenseTotals[col.name] || 0).toLocaleString()}</td>
+                        ))}
+                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-700">¥{summary.totalBalance.toLocaleString()}</td>
+                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-700">¥{summary.totalCarryOver.toLocaleString()}</td>
+                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-blue-700">¥{summary.totalAvailable.toLocaleString()}</td>
+                      </>
+                    )}
+                    <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-900">¥{summary.totalAmount.toLocaleString()}</td>
+                    {type !== 'MONTHLY' && (
+                      <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-700">¥{summary.endingBalance.toLocaleString()}</td>
+                    )}
+                    <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{finalRows.length}个月</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
