@@ -494,12 +494,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </CardHeader>
             <CardContent>
               <div className="h-[250px] overflow-y-auto">
-                <div className="grid grid-cols-7 gap-2 text-center text-sm mb-2">
+                <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-medium text-gray-400">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1">
                   {/* Offset for first day of month (visual placeholder) */}
                   <div /> <div /> <div /> <div />
                   
@@ -515,11 +515,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     return (
                       <div 
                         key={d.date} 
-                        className={clsx("aspect-square rounded flex flex-col items-center justify-center text-xs p-1 transition-transform hover:scale-105", bg, text)}
+                        className={clsx("aspect-square rounded flex flex-col items-center justify-center p-0.5 transition-transform hover:scale-105", bg, text)}
                         title={`${d.date}: ¥${d.value}`}
                       >
-                        <span className="font-bold text-sm mb-1">{d.day}</span>
-                        {d.value > 0 && <span className="scale-75 origin-center">¥{Math.round(d.value)}</span>}
+                        <span className="font-bold text-xs">{d.day}</span>
+                        {d.value > 0 && <span className="scale-90 origin-center text-[10px] font-medium leading-none mt-0.5">¥{Math.round(d.value)}</span>}
                       </div>
                     );
                   })}
