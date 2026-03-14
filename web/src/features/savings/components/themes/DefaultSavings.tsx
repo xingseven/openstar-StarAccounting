@@ -118,7 +118,7 @@ function GoalsTableSkeleton() {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="overflow-auto">
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 {["名称", "模式", "存款类型", "当前/目标", "进度", "截止日期", "操作"].map((header, i) => (
@@ -461,8 +461,8 @@ export function SavingsDefaultTheme({
                   暂无目标，点击右上角新增
                 </div>
               ) : (
-                <div className="overflow-auto">
-                  <table className="w-full min-w-[860px] text-sm">
+                <div className="overflow-x-auto md:overflow-auto">
+                  <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-gray-600">
                       <tr>
                         <th className="text-left px-3 py-2 whitespace-nowrap">名称</th>
