@@ -88,8 +88,8 @@ interface ConsumptionViewProps {
 }
 
 // Helper component for skeleton loading
-function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-gray-100", className)} />;
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("animate-pulse rounded-md bg-gray-100", className)} {...props} />;
 }
 
 // Helper component for staggered animation and lazy loading
@@ -136,28 +136,28 @@ function DelayedRender({
     }
   }, [delay, lazy]);
 
-  if (!shouldRender) {
-    if (fallback) {
-      return <div ref={ref} className={className}>{fallback}</div>;
-    }
-
-    return (
-      <div ref={ref} className={cn("w-full flex flex-col items-center justify-center bg-white/50 animate-pulse space-y-4 p-6", className)}>
-        <div className="w-full flex justify-between items-center">
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-5 w-5 rounded-full" />
+  return (
+    <div ref={ref} className={className}>
+      {shouldRender ? (
+        <div className="animate-in fade-in duration-500">{children}</div>
+      ) : fallback ? (
+        fallback
+      ) : (
+        <div className="h-full w-full flex flex-col items-center justify-center bg-white/50 animate-pulse space-y-4 p-6">
+          <div className="w-full flex justify-between items-center">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-5 w-5 rounded-full" />
+          </div>
+          <div className="flex-1 w-full flex items-end justify-between gap-2">
+             {[...Array(7)].map((_, i) => (
+               <Skeleton key={i} className="w-full" style={{ height: `${22 + i * 8}%` }} />
+             ))}
+          </div>
+          <Skeleton className="h-4 w-full" />
         </div>
-        <div className="flex-1 w-full flex items-end justify-between gap-2">
-           {[...Array(7)].map((_, i) => (
-             <Skeleton key={i} className="w-full" style={{ height: `${Math.random() * 60 + 20}%` }} />
-           ))}
-        </div>
-        <Skeleton className="h-4 w-full" />
-      </div>
-    );
-  }
-
-  return <div className="animate-in fade-in duration-700 slide-in-from-bottom-4">{children}</div>;
+      )}
+    </div>
+  );
 }
 
 export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionViewProps) {
@@ -311,10 +311,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="flex-1 pb-0 relative">
             <DelayedRender 
               delay={200} 
-              className="mx-auto aspect-square max-h-[200px] flex items-center justify-center"
-              fallback={<Skeleton className="w-[180px] h-[180px] rounded-full" />}
+              className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[200px] w-[200px] rounded-full" />}
             >
-              <ChartContainer config={{}} className="mx-auto aspect-square max-h-[200px]">
+              <ChartContainer config={{}} className="h-[200px] w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -354,10 +354,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="flex-1 pb-0 relative">
             <DelayedRender 
               delay={200} 
-              className="mx-auto aspect-square max-h-[200px] flex items-center justify-center"
-              fallback={<Skeleton className="w-[180px] h-[180px] rounded-full border-4 border-white" />}
+              className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[200px] w-[200px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="mx-auto aspect-square max-h-[200px]">
+              <ChartContainer config={commonConfig} className="h-[200px] w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
