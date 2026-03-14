@@ -295,9 +295,11 @@ export function SavingsGoalDialog({
               <div className="text-sm text-gray-500">
                 提示：修改第一行数据将自动填充后续行
               </div>
-              <Button variant="outline" size="sm" onClick={handleAddColumn}>
-                <Plus className="h-4 w-4 mr-2" /> 添加支出列
-              </Button>
+              {type !== 'MONTHLY' && (
+                <Button variant="outline" size="sm" onClick={handleAddColumn}>
+                  <Plus className="h-4 w-4 mr-2" /> 添加支出列
+                </Button>
+              )}
             </div>
 
             {/* Table */}
@@ -306,25 +308,31 @@ export function SavingsGoalDialog({
                 <thead className="bg-gray-50 text-gray-700 font-medium sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th className="p-3 w-[100px]">月份</th>
-                    <th className="p-3 w-[120px]">月薪</th>
-                    {expenseColumns.map(col => (
-                      <th key={col.id} className="p-3 min-w-[100px] group relative">
-                        <div className="flex items-center justify-between">
-                          {col.name}
-                          <button 
-                            onClick={() => setExpenseColumns(expenseColumns.filter(c => c.id !== col.id))}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </th>
-                    ))}
-                    <th className="p-3 w-[100px] text-gray-500">本月结余</th>
-                    <th className="p-3 w-[100px] text-gray-500">上月结余</th>
-                    <th className="p-3 w-[100px] text-blue-600 font-bold">可存金额</th>
+                    {type !== 'MONTHLY' && (
+                      <>
+                        <th className="p-3 w-[120px]">月薪</th>
+                        {expenseColumns.map(col => (
+                          <th key={col.id} className="p-3 min-w-[100px] group relative">
+                            <div className="flex items-center justify-between">
+                              {col.name}
+                              <button 
+                                onClick={() => setExpenseColumns(expenseColumns.filter(c => c.id !== col.id))}
+                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </th>
+                        ))}
+                        <th className="p-3 w-[100px] text-gray-500">本月结余</th>
+                        <th className="p-3 w-[100px] text-gray-500">上月结余</th>
+                        <th className="p-3 w-[100px] text-blue-600 font-bold">可存金额</th>
+                      </>
+                    )}
                     <th className="p-3 w-[120px]">计划存款</th>
-                    <th className="p-3 w-[100px] text-purple-600">下月结余</th>
+                    {type !== 'MONTHLY' && (
+                      <th className="p-3 w-[100px] text-purple-600">下月结余</th>
+                    )}
                     <th className="p-3 min-w-[150px]">备注</th>
                   </tr>
                 </thead>
@@ -332,29 +340,33 @@ export function SavingsGoalDialog({
                   {finalRows.map((row, idx) => (
                     <tr key={row.id} className={clsx("hover:bg-gray-50/50 transition-colors", idx === 0 && "bg-blue-50/30")}>
                       <td className="p-3 font-medium text-gray-900">{row.month}</td>
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
-                          value={row.salary || ""}
-                          placeholder="0"
-                          onChange={e => handleRowChange(idx, 'salary', e.target.value)}
-                        />
-                      </td>
-                      {expenseColumns.map(col => (
-                        <td key={col.id} className="p-3">
-                          <input
-                            type="number"
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
-                            value={row.expenses[col.name] || ""}
-                            placeholder="0"
-                            onChange={e => handleRowChange(idx, col.name, e.target.value, true)}
-                          />
-                        </td>
-                      ))}
-                      <td className="p-3 text-gray-500">¥{row.balance?.toLocaleString()}</td>
-                      <td className="p-3 text-gray-500">¥{row.prevCarryOver?.toLocaleString()}</td>
-                      <td className="p-3 text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
+                      {type !== 'MONTHLY' && (
+                        <>
+                          <td className="p-3">
+                            <input
+                              type="number"
+                              className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
+                              value={row.salary || ""}
+                              placeholder="0"
+                              onChange={e => handleRowChange(idx, 'salary', e.target.value)}
+                            />
+                          </td>
+                          {expenseColumns.map(col => (
+                            <td key={col.id} className="p-3">
+                              <input
+                                type="number"
+                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
+                                value={row.expenses[col.name] || ""}
+                                placeholder="0"
+                                onChange={e => handleRowChange(idx, col.name, e.target.value, true)}
+                              />
+                            </td>
+                          ))}
+                          <td className="p-3 text-gray-500">¥{row.balance?.toLocaleString()}</td>
+                          <td className="p-3 text-gray-500">¥{row.prevCarryOver?.toLocaleString()}</td>
+                          <td className="p-3 text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
+                        </>
+                      )}
                       <td className="p-3">
                         <input
                           type="number"
@@ -364,7 +376,9 @@ export function SavingsGoalDialog({
                           onChange={e => handleRowChange(idx, 'amount', e.target.value)}
                         />
                       </td>
-                      <td className="p-3 text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
+                      {type !== 'MONTHLY' && (
+                        <td className="p-3 text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
+                      )}
                       <td className="p-3">
                         <input
                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
