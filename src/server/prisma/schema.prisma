@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// 用户主表：账号信息与所有业务数据的归属主体
 model User {
   id           String          @id @default(cuid())
   email        String          @unique
@@ -23,6 +24,7 @@ model User {
   updatedAt    DateTime        @updatedAt
 }
 
+/// 汇率表：维护币种兑换比率（from -> to）
 model ExchangeRate {
   id        String   @id @default(cuid())
   from      String
@@ -33,6 +35,7 @@ model ExchangeRate {
   @@unique([from, to])
 }
 
+/// 设备连接验证表：用于多端绑定、OTP 校验与设备追踪
 model AppConnection {
   id         String   @id @default(cuid())
   userId     String
@@ -52,6 +55,7 @@ model AppConnection {
   @@unique([otpCode, isVerified])
 }
 
+/// 交易流水表：收入/支出/转账/还款记录
 model Transaction {
   id            String          @id @default(cuid())
   userId        String
@@ -78,6 +82,7 @@ model Transaction {
   @@index([userId, loanId])
 }
 
+/// 贷款主表：记录每笔贷款及其还款进度
 model Loan {
   id              String      @id @default(cuid())
   userId          String
@@ -100,6 +105,7 @@ model Loan {
   @@index([userId, status])
 }
 
+/// 储蓄目标表：定义储蓄目标及目标级配置
 model SavingsGoal {
   id            String     @id @default(cuid())
   userId        String
@@ -114,20 +120,24 @@ model SavingsGoal {
   updatedAt     DateTime   @updatedAt
 
   plans SavingsPlan[]
-  planConfig Json? // Stores configuration like { salary, expenseDefs, depositDay, duration }
+  /// 计划配置快照（示例：{ salary, expenseDefs, depositDay, duration }）
+  planConfig Json?
   user User @relation(fields: [userId], references: [id])
 }
 
+/// 储蓄计划明细表：按月存储计划数据，可支持动态支出列
 model SavingsPlan {
   id        String   @id @default(cuid())
   goalId    String
   amount    Decimal
   status    PlanStatus @default(PENDING)
-  month     String // Format: YYYY-MM
+  /// 计划月份，格式：YYYY-MM
+  month     String
   
-  // Extended fields for Bi-Monthly/Detailed modes
+  /// 扩展字段：用于隔月存/高级模式
   salary    Decimal? @default(0)
-  expenses  Json?    // Stores values like { "Rent": 2000 }
+  /// 动态支出列 JSON（示例：{ "房租": 2000, "水电": 300 }）
+  expenses  Json?
   remark    String?
 
   createdAt DateTime @default(now())
@@ -138,6 +148,7 @@ model SavingsPlan {
   @@index([goalId])
 }
 
+/// 主题配置表：存储用户的界面主题与图表样式偏好
 model ThemeConfig {
   id           String   @id @default(cuid())
   userId       String   @unique
@@ -152,6 +163,7 @@ model ThemeConfig {
   user User @relation(fields: [userId], references: [id])
 }
 
+/// 资产账户表：现金、银行卡、支付平台与投资账户余额
 model Asset {
   id        String      @id @default(cuid())
   userId    String
@@ -167,6 +179,7 @@ model Asset {
   @@index([userId, type])
 }
 
+/// 预算表：按周期与分类记录预算额度
 model Budget {
   id        String       @id @default(cuid())
   userId    String
@@ -181,11 +194,13 @@ model Budget {
   @@unique([userId, category, period])
 }
 
+/// 预算周期枚举
 enum BudgetPeriod {
   MONTHLY
   YEARLY
 }
 
+/// 资产类型枚举
 enum AssetType {
   CASH
   BANK_CARD
@@ -195,6 +210,7 @@ enum AssetType {
   OTHER
 }
 
+/// 交易类型枚举
 enum TransactionType {
   INCOME
   EXPENSE
@@ -202,12 +218,14 @@ enum TransactionType {
   REPAYMENT
 }
 
+/// 贷款状态枚举
 enum LoanStatus {
   ACTIVE
   PAID_OFF
   OVERDUE
 }
 
+/// 储蓄目标类型枚举
 enum GoalType {
   MONTHLY
   YEARLY
@@ -216,18 +234,21 @@ enum GoalType {
   BI_MONTHLY_EVEN
 }
 
+/// 存款来源/性质枚举
 enum DepositType {
   CASH
   FIXED_TERM
   HELP_DEPOSIT
 }
 
+/// 储蓄目标状态枚举
 enum GoalStatus {
   ACTIVE
   COMPLETED
   ARCHIVED
 }
 
+/// 储蓄计划状态枚举
 enum PlanStatus {
   PENDING
   COMPLETED

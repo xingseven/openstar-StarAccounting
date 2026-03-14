@@ -1,0 +1,76 @@
+forward-logs-shared.ts:95 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+forward-logs-shared.ts:95 [HMR] connected
+intercept-console-error.ts:42  A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/savings" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html
+                          lang="zh-CN"
+-                         data-redeviation-bs-uid="52dosmj9deb"
+                        >
+                  ...
+
+error @ intercept-console-error.ts:42
+forward-logs-shared.ts:95  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+warn @ forward-logs-shared.ts:95
+forward-logs-shared.ts:95  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+warn @ forward-logs-shared.ts:95
+api/savings/cmmpykgpc002pvamk1mznez22/plans:1   Failed to load resource: the server responded with a status of 404 (Not Found)
+intercept-console-error.ts:42  Failed to fetch plans SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+error @ intercept-console-error.ts:42
+api/savings/cmmpykgpc002pvamk1mznez22/plans/batch:1   Failed to load resource: the server responded with a status of 404 (Not Found)
+intercept-console-error.ts:42  Failed to initialize plans SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+error @ intercept-console-error.ts:42
+[Violation]'click' handler took 981ms
+inspector.js:7   POST http://localhost:3000/api/savings/cmmpykgpc002pvamk1mznez22/plans/batch 404 (Not Found)
+window.fetch @ inspector.js:7
+initializeEmptyPlans @ SavingsPlanDialog.tsx:84
+onClick @ SavingsPlanDialog.tsx:265
+onClick @ useButton.js:84
+executeDispatch @ react-dom-client.development.js:20543
+runWithFiberInDEV @ react-dom-client.development.js:986
+processDispatchQueue @ react-dom-client.development.js:20593
+(匿名) @ react-dom-client.development.js:21164
+batchedUpdates$1 @ react-dom-client.development.js:3377
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
+dispatchEvent @ react-dom-client.development.js:25693
+dispatchDiscreteEvent @ react-dom-client.development.js:25661
+SavingsPlanDialog.tsx:105  Failed to initialize plans SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+error @ intercept-console-error.ts:42
+initializeEmptyPlans @ SavingsPlanDialog.tsx:105
+await in initializeEmptyPlans
+onClick @ SavingsPlanDialog.tsx:265
+onClick @ useButton.js:84
+executeDispatch @ react-dom-client.development.js:20543
+runWithFiberInDEV @ react-dom-client.development.js:986
+processDispatchQueue @ react-dom-client.development.js:20593
+(匿名) @ react-dom-client.development.js:21164
+batchedUpdates$1 @ react-dom-client.development.js:3377
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
+dispatchEvent @ react-dom-client.development.js:25693
+dispatchDiscreteEvent @ react-dom-client.development.js:25661

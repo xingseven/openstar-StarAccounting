@@ -90,3 +90,50 @@ export const MOCK_TRANSACTIONS = [
   { id: "4", merchant: "滴滴出行", date: "2024-03-14 18:45", category: "交通", platform: "wechat", type: "EXPENSE", amount: "45.50" },
   { id: "5", merchant: "山姆会员店", date: "2024-03-12 11:20", category: "购物", platform: "alipay", type: "EXPENSE", amount: "860.00" },
 ];
+
+export const MOCK_SANKEY = {
+  nodes: [
+    { name: "工资收入" },      // 0
+    { name: "理财收益" },      // 1
+    { name: "微信钱包" },      // 2
+    { name: "支付宝" },        // 3
+    { name: "餐饮美食" },      // 4
+    { name: "购物消费" },      // 5
+    { name: "交通出行" },      // 6
+    { name: "休闲娱乐" },      // 7
+    { name: "生活服务" },      // 8
+  ],
+  links: [
+    { source: 0, target: 2, value: 8000 },
+    { source: 0, target: 3, value: 12000 },
+    { source: 1, target: 3, value: 5000 },
+    { source: 2, target: 4, value: 3000 },
+    { source: 2, target: 6, value: 1500 },
+    { source: 2, target: 8, value: 3500 },
+    { source: 3, target: 5, value: 8000 },
+    { source: 3, target: 7, value: 4000 },
+    { source: 3, target: 4, value: 2000 },
+    { source: 3, target: 6, value: 3000 },
+  ],
+};
+
+export const MOCK_SCATTER = Array.from({ length: 50 }, (_, i) => {
+  const hour = Math.floor(Math.random() * 24);
+  const isNight = hour < 6 || hour > 22;
+  const baseAmount = isNight ? 200 : 50;
+  return {
+    id: i,
+    hour: hour + Math.random() * 0.9, // 浮点数时间，如 14.5 = 14:30
+    amount: Math.floor(Math.random() * 1000) + baseAmount,
+    category: ["餐饮", "购物", "交通", "娱乐"][Math.floor(Math.random() * 4)],
+  };
+});
+
+export const MOCK_HISTOGRAM = [
+  { range: "0-50", count: 145, fill: "var(--color-chart-1)" },
+  { range: "50-200", count: 86, fill: "var(--color-chart-2)" },
+  { range: "200-500", count: 42, fill: "var(--color-chart-3)" },
+  { range: "500-1k", count: 18, fill: "var(--color-chart-4)" },
+  { range: "1k-5k", count: 8, fill: "var(--color-chart-5)" },
+  { range: "5k+", count: 2, fill: "var(--color-chart-1)" },
+];

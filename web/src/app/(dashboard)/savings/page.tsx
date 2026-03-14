@@ -17,6 +17,7 @@ export default function SavingsPage() {
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SavingsGoal | null>(null);
+  const [modalStep, setModalStep] = useState<1 | 2>(1);
 
   useEffect(() => {
     loadData();
@@ -62,12 +63,25 @@ export default function SavingsPage() {
 
   function openCreate() {
     setEditingItem(null);
+    setModalStep(1);
     setIsModalOpen(true);
   }
 
   function openEdit(item: SavingsGoal) {
     setEditingItem(item);
+    setModalStep(1);
     setIsModalOpen(true);
+  }
+
+  function openPunch(item: SavingsGoal) {
+    setEditingItem(item);
+    setModalStep(2);
+    setIsModalOpen(true);
+  }
+
+  function handleModalOpenChange(open: boolean) {
+    setIsModalOpen(open);
+    if (!open) setModalStep(1);
   }
 
   async function handleSave(data: Partial<SavingsGoal>) {
@@ -116,14 +130,17 @@ export default function SavingsPage() {
         overallProgress={overallProgress}
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
+        onOpenPunch={openPunch}
       />
 
       <SavingsGoalDialog
         open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={handleModalOpenChange}
         initialData={editingItem}
         onSave={handleSave}
         onDelete={handleDelete}
+        defaultStep={modalStep}
+        onDataChanged={loadData}
       />
     </>
   );

@@ -37,7 +37,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { SavingsPlanDialog } from "../SavingsPlanDialog";
 
 export type SavingsGoal = {
   id: string;
@@ -68,6 +67,7 @@ interface SavingsViewProps {
   overallProgress: number;
   onOpenCreate: () => void;
   onOpenEdit: (item: SavingsGoal) => void;
+  onOpenPunch: (item: SavingsGoal) => void;
 }
 
 // Helper component for staggered animation and lazy loading
@@ -130,9 +130,9 @@ export function SavingsDefaultTheme({
   overallProgress,
   onOpenCreate,
   onOpenEdit,
+  onOpenPunch,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [planGoal, setPlanGoal] = useState<SavingsGoal | null>(null);
 
   // Filtered goals
   const filteredGoals = useMemo(() => {
@@ -282,119 +282,133 @@ export function SavingsDefaultTheme({
             </CardContent>
           </Card>
 
-          {/* Goals Grid Column */}
-          <div className="md:col-span-3 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredGoals.map((item) => {
-              const progress = item.targetAmount > 0 
-                ? Math.min(100, (item.currentAmount / item.targetAmount) * 100) 
-                : 0;
-              
-              return (
-                <Card key={item.id} className="group overflow-hidden hover:shadow-md transition-shadow relative border-l-4 border-l-transparent hover:border-l-gray-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex gap-3">
-                        <div className={clsx(
-                          "h-10 w-10 rounded-full flex items-center justify-center",
-                          item.type === "LONG_TERM" ? "bg-blue-50 text-blue-600" :
-                          item.type === "YEARLY" ? "bg-purple-50 text-purple-600" :
-                          item.type === "MONTHLY" ? "bg-amber-50 text-amber-600" :
-                          "bg-emerald-50 text-emerald-600"
-                        )}>
-                          <PiggyBank className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base font-semibold">{item.name}</CardTitle>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            {(item.type === "BI_MONTHLY_ODD" || item.type === "BI_MONTHLY_EVEN") ? (
-                              <div className="relative group/tooltip inline-block cursor-help">
-                                <span className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-emerald-50 text-emerald-700">
-                                  {item.type === "BI_MONTHLY_ODD" ? "隔月(单)" : "隔月(双)"}
-                                </span>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 leading-relaxed">
-                                  隔月存就是存款月可以存大额，因为有上个月剩余下来的除去固定支出的剩余就可以存这样子。
-                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                                </div>
-                              </div>
-                            ) : (
-                              <span className={clsx(
-                                "px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider",
-                                item.type === "LONG_TERM" ? "bg-blue-50 text-blue-700" :
-                                item.type === "YEARLY" ? "bg-purple-50 text-purple-700" :
-                                "bg-amber-50 text-amber-700"
-                              )}>
-                                {item.type === "LONG_TERM" ? "长期" : item.type === "YEARLY" ? "年度" : "月度"}
-                              </span>
-                            )}
-                            <span className={clsx(
-                              "px-2 py-0.5 rounded text-[10px] font-medium tracking-wider",
-                              "bg-gray-100 text-gray-600"
-                            )}>
-                              {item.depositType === "CASH" ? "现金" : 
-                               item.depositType === "FIXED_TERM" ? "死期" : 
-                               item.depositType === "HELP_DEPOSIT" ? "他人帮存" : "现金"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => setPlanGoal(item)} 
-                          className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-black transition-colors"
-                          title="指定计划"
-                        >
-                          <Target className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => onOpenEdit(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-black transition-colors" title="编辑">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-end">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {progress.toFixed(0)}<span className="text-sm text-gray-500 font-normal">%</span>
-                        </div>
-                        <div className="text-xs text-gray-500 mb-1 font-medium">
-                          ¥{item.currentAmount.toLocaleString()} / ¥{item.targetAmount.toLocaleString()}
-                        </div>
-                      </div>
-                      <Progress 
-                        value={progress} 
-                        className="h-2" 
-                        indicatorClassName={clsx(
-                          progress >= 100 ? "bg-green-500" : 
-                          item.type === "LONG_TERM" ? "bg-blue-500" :
-                          item.type === "YEARLY" ? "bg-purple-500" :
-                          item.type === "MONTHLY" ? "bg-amber-500" :
-                          "bg-emerald-500"
-                        )} 
-                      />
-                      {item.deadline && (
-                        <div className="flex items-center gap-1 text-xs text-gray-400 pt-2 border-t border-dashed">
-                          <CalendarIcon className="h-3 w-3" />
-                          截止日期: {item.deadline.slice(0, 10)}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            
-            {/* Empty State Add Button */}
-            <button
-              onClick={onOpenCreate}
-              className="group flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-8 text-gray-400 hover:border-blue-500 hover:bg-blue-50/50 hover:text-blue-600 transition-all duration-300 min-h-[200px]"
-            >
-              <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Plus className="h-6 w-6" />
+          {/* Goals Table Column */}
+          <Card className="md:col-span-3 overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between py-4">
+              <div className="space-y-1">
+                <CardTitle className="text-base">目标列表</CardTitle>
+                <CardDescription>按行展示每个储蓄目标</CardDescription>
               </div>
-              <span className="font-medium">添加新目标</span>
-            </button>
-          </div>
+              <Button onClick={onOpenCreate} size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                新增目标
+              </Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {filteredGoals.length === 0 ? (
+                <div className="text-center py-12 text-gray-500 text-sm bg-gray-50/50 rounded-lg border border-dashed">
+                  暂无目标，点击右上角新增
+                </div>
+              ) : (
+                <div className="overflow-auto">
+                  <table className="w-full min-w-[860px] text-sm">
+                    <thead className="bg-gray-50 text-gray-600">
+                      <tr>
+                        <th className="text-left px-3 py-2 whitespace-nowrap">名称</th>
+                        <th className="text-left px-3 py-2 whitespace-nowrap">模式</th>
+                        <th className="text-left px-3 py-2 whitespace-nowrap">存款类型</th>
+                        <th className="text-right px-3 py-2 whitespace-nowrap">当前/目标</th>
+                        <th className="text-left px-3 py-2 whitespace-nowrap">进度</th>
+                        <th className="text-left px-3 py-2 whitespace-nowrap">截止日期</th>
+                        <th className="text-right px-3 py-2 whitespace-nowrap">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {filteredGoals.map((item) => {
+                        const progress = item.targetAmount > 0
+                          ? Math.min(100, (item.currentAmount / item.targetAmount) * 100)
+                          : 0;
+                        return (
+                          <tr key={item.id} className="hover:bg-gray-50/70">
+                            <td className="px-3 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                <button
+                                  onClick={() => {
+                                    onOpenPunch(item);
+                                  }}
+                                className="hover:text-blue-600 transition-colors underline-offset-2 hover:underline"
+                                title="打开月度计划"
+                              >
+                                {item.name}
+                              </button>
+                            </td>
+                            <td className="px-3 py-3 whitespace-nowrap">
+                              {item.type === "BI_MONTHLY_ODD"
+                                ? "隔月(单)"
+                                : item.type === "BI_MONTHLY_EVEN"
+                                ? "隔月(双)"
+                                : item.type === "MONTHLY"
+                                ? "每月存"
+                                : item.type === "YEARLY"
+                                ? "年度"
+                                : "长期"}
+                            </td>
+                            <td className="px-3 py-3 whitespace-nowrap">
+                              {item.depositType === "CASH"
+                                ? "现金"
+                                : item.depositType === "FIXED_TERM"
+                                ? "死期"
+                                : "他人帮存"}
+                            </td>
+                            <td className="px-3 py-3 text-right whitespace-nowrap text-gray-700">
+                              ¥{item.currentAmount.toLocaleString()} / ¥{item.targetAmount.toLocaleString()}
+                            </td>
+                            <td className="px-3 py-3 min-w-[180px]">
+                              <div className="flex items-center gap-2">
+                                <Progress
+                                  value={progress}
+                                  className="h-2"
+                                  indicatorClassName={clsx(
+                                    progress >= 100 ? "bg-green-500" :
+                                    item.type === "LONG_TERM" ? "bg-blue-500" :
+                                    item.type === "YEARLY" ? "bg-purple-500" :
+                                    item.type === "MONTHLY" ? "bg-amber-500" :
+                                    "bg-emerald-500"
+                                  )}
+                                />
+                                <span className="text-xs text-gray-500 w-10 text-right">{progress.toFixed(0)}%</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 whitespace-nowrap text-gray-500">
+                              {item.deadline ? item.deadline.slice(0, 10) : "—"}
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => {
+                                    onOpenPunch(item);
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
+                                  title="打开并勾选每月已存款"
+                                >
+                                  每月打卡
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    onOpenPunch(item);
+                                  }}
+                                  className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
+                                  title="指定计划"
+                                >
+                                  <Target className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => onOpenEdit(item)}
+                                  className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
+                                  title="编辑"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </DelayedRender>
 
@@ -443,12 +457,6 @@ export function SavingsDefaultTheme({
         </Card>
       </DelayedRender>
 
-      {/* Dialogs */}
-      <SavingsPlanDialog 
-        open={!!planGoal} 
-        onOpenChange={(open) => !open && setPlanGoal(null)} 
-        goal={planGoal} 
-      />
     </div>
   );
 }

@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Trash2 } from "lucide-react";
 import { SavingsGoal } from "./themes/DefaultSavings";
 import { clsx } from "clsx";
+import { apiFetch } from "@/lib/api";
 
 export type SavingsPlan = {
   id: string;
@@ -21,22 +20,12 @@ interface SavingsPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   goal: SavingsGoal | null;
+  onPlansChanged?: () => void;
 }
 
-export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialogProps) {
+export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: SavingsPlanDialogProps) {
   const [plans, setPlans] = useState<SavingsPlan[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"setup" | "table">("setup");
-
-  // Setup States
-  const [duration, setDuration] = useState(12);
-  const [startMonth, setStartMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [depositDay, setDepositDay] = useState(15);
-  const [monthlyAmount, setMonthlyAmount] = useState(0);
-  const [baseSalary, setBaseSalary] = useState(0);
-  const [fixedExpenses, setFixedExpenses] = useState<{ name: string; amount: number }[]>([
-    { name: "固定支出1", amount: 0 },
-  ]);
 
   useEffect(() => {
     if (open && goal) {
@@ -48,16 +37,17 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
     if (!goal) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/savings/${goal.id}/plans`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      if (data.code === 200) {
-        setPlans(data.data.items);
-        if (data.data.items.length > 0) {
-          setActiveTab("table");
+      const data = await apiFetch<{ items: SavingsPlan[] }>(`/api/savings/${goal.id}/plans`);
+      const items = data.items;
+      if (items.length > 0) {
+        setPlans(items);
+      } else {
+        const initialized = await initializeEmptyPlans();
+        if (initialized.length > 0) {
+          setPlans(initialized);
+          onPlansChanged?.();
         } else {
-          setActiveTab("setup");
+          alert("初始化打卡表失败，请检查网络或重新打开后重试");
         }
       }
     } catch (error) {
@@ -67,92 +57,43 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
     }
   };
 
-  const handleGenerate = async () => {
-    if (!goal) return;
-    setLoading(true);
-    
-    const newPlans: any[] = [];
-    const [year, month] = startMonth.split("-").map(Number);
-    
-    // Carry over logic for Bi-Monthly
-    let previousCarryOver = 0;
-
-    for (let i = 0; i < duration; i++) {
+  const initializeEmptyPlans = async (): Promise<SavingsPlan[]> => {
+    if (!goal) return [];
+    const initDuration = 12;
+    const initStartMonth = new Date().toISOString().slice(0, 7);
+    const [year, month] = initStartMonth.split("-").map(Number);
+    const draftPlans: any[] = [];
+    for (let i = 0; i < initDuration; i++) {
       const currentDate = new Date(year, month - 1 + i, 1);
-      const mStr = currentDate.toISOString().slice(0, 7); // YYYY-MM
-      const currentMonthNum = currentDate.getMonth() + 1; // 1-12
-
-      let planItem: any = {
+      const mStr = currentDate.toISOString().slice(0, 7);
+      draftPlans.push({
         month: mStr,
+        amount: 0,
         status: "PENDING",
-        salary: baseSalary,
-        expenses: {},
+        salary: 0,
+        expenses: goal.type === "MONTHLY" ? {} : { 固定支出1: 0 },
         remark: "",
-      };
-
-      if (goal.type === "MONTHLY") {
-        planItem.amount = monthlyAmount;
-        planItem.remark = `每月${depositDay}号存款`;
-      } else {
-        // Bi-Monthly Logic
-        const isOdd = currentMonthNum % 2 !== 0;
-        const isTargetMonth = 
-          (goal.type === "BI_MONTHLY_ODD" && isOdd) || 
-          (goal.type === "BI_MONTHLY_EVEN" && !isOdd);
-
-        // Calculate expenses sum
-        let totalExpenses = 0;
-        fixedExpenses.forEach(exp => {
-          planItem.expenses[exp.name] = exp.amount;
-          totalExpenses += exp.amount;
-        });
-
-        const currentBalance = baseSalary - totalExpenses;
-        const totalAvailable = currentBalance + previousCarryOver;
-
-        if (isTargetMonth) {
-          // Default logic: Deposit everything available? Or user sets it?
-          // User requirement: "Can deposit 6000... if all deposited, 0 carry over"
-          // Let's default to depositing all available for now, user can edit later
-          planItem.amount = Math.max(0, totalAvailable);
-          previousCarryOver = 0;
-        } else {
-          planItem.amount = 0;
-          previousCarryOver = totalAvailable;
-        }
-      }
-      
-      newPlans.push(planItem);
+      });
     }
-
     try {
-      const res = await fetch(`/api/savings/${goal.id}/plans/batch`, {
+      const data = await apiFetch<{ items: SavingsPlan[] }>(`/api/savings/${goal.id}/plans/batch`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
         body: JSON.stringify({
-          plans: newPlans,
+          plans: draftPlans,
           config: {
-            duration,
-            startMonth,
-            depositDay,
-            monthlyAmount,
-            baseSalary,
-            fixedExpenses,
-          }
+            duration: initDuration,
+            startMonth: initStartMonth,
+            depositDay: 15,
+            monthlyAmount: 0,
+            baseSalary: 0,
+            fixedExpenses: [{ name: "固定支出1", amount: 0 }],
+          },
         }),
       });
-      const data = await res.json();
-      if (data.code === 200) {
-        setPlans(data.data.items);
-        setActiveTab("table");
-      }
+      return data.items ?? [];
     } catch (error) {
-      console.error("Failed to generate plans", error);
-    } finally {
-      setLoading(false);
+      console.error("Failed to initialize plans", error);
+      return [];
     }
   };
 
@@ -162,14 +103,11 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
     setPlans(updatedPlans);
 
     try {
-      await fetch(`/api/savings/plans/${id}`, {
+      await apiFetch(`/api/savings/plans/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
         body: JSON.stringify(updates),
       });
+      onPlansChanged?.();
     } catch (error) {
       console.error("Failed to update plan", error);
       fetchPlans(); // Revert on error
@@ -205,91 +143,10 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
       <DialogContent className="max-w-[1000px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>指定计划 - {goal?.name}</DialogTitle>
+          <DialogDescription>按月份逐行打卡，点击状态列标记已存款。</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col">
-          {activeTab === "setup" && (
-            <div className="p-4 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">开始月份</label>
-                  <Input type="month" value={startMonth} onChange={e => setStartMonth(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">持续月数</label>
-                  <Input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} />
-                </div>
-              </div>
-
-              {goal?.type === "MONTHLY" ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">每月存款日</label>
-                    <Input type="number" min={1} max={31} value={depositDay} onChange={e => setDepositDay(Number(e.target.value))} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">每月存款金额</label>
-                    <Input type="number" value={monthlyAmount} onChange={e => setMonthlyAmount(Number(e.target.value))} />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">月薪 (Base)</label>
-                    <Input type="number" value={baseSalary} onChange={e => setBaseSalary(Number(e.target.value))} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">固定支出项</label>
-                    {fixedExpenses.map((exp, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input 
-                          placeholder="支出名称" 
-                          value={exp.name} 
-                          onChange={e => {
-                            const newExps = [...fixedExpenses];
-                            newExps[idx].name = e.target.value;
-                            setFixedExpenses(newExps);
-                          }} 
-                        />
-                        <Input 
-                          type="number" 
-                          placeholder="金额" 
-                          value={exp.amount} 
-                          onChange={e => {
-                            const newExps = [...fixedExpenses];
-                            newExps[idx].amount = Number(e.target.value);
-                            setFixedExpenses(newExps);
-                          }} 
-                        />
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setFixedExpenses(fixedExpenses.filter((_, i) => i !== idx))}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setFixedExpenses([...fixedExpenses, { name: `固定支出${fixedExpenses.length + 1}`, amount: 0 }])}
-                    >
-                      <Plus className="h-4 w-4 mr-2" /> 添加支出项
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <Button className="w-full" onClick={handleGenerate} disabled={loading}>
-                {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-                生成计划表
-              </Button>
-            </div>
-          )}
-
-          {activeTab === "table" && (
             <div className="flex-1 overflow-auto p-1">
               <div className="border rounded-lg">
                 <table className="w-full text-sm text-left">
@@ -304,7 +161,6 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
                             <th key={key} className="p-3 font-medium">{key}</th>
                           ))}
                           <th className="p-3 font-medium text-gray-500">本月结余</th>
-                          <th className="p-3 font-medium text-gray-500">上月结余</th>
                           <th className="p-3 font-medium text-blue-600">可存金额</th>
                         </>
                       )}
@@ -317,7 +173,7 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {calculatedPlans.map((plan: any, idx) => (
+                    {calculatedPlans.map((plan: any) => (
                       <tr key={plan.id} className="hover:bg-gray-50/50">
                         <td className="p-3 font-medium">{plan.month}</td>
                         
@@ -345,10 +201,6 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
                               </td>
                             ))}
                             <td className="p-3 text-gray-500">¥{plan.currentBalance?.toLocaleString()}</td>
-                            <td className="p-3 text-gray-500">
-                              {/* Previous Carry Over is derived from previous row's remaining */}
-                              ¥{(idx > 0 ? calculatedPlans[idx - 1].remaining : 0)?.toLocaleString()}
-                            </td>
                             <td className="p-3 font-bold text-blue-600">¥{plan.totalAvailable?.toLocaleString()}</td>
                           </>
                         )}
@@ -374,7 +226,7 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
                               plan.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
                             )}
                           >
-                            {plan.status === "COMPLETED" ? "已达成" : "进行中"}
+                            {plan.status === "COMPLETED" ? "已存款" : "未存款"}
                           </button>
                         </td>
                         <td className="p-3">
@@ -391,16 +243,26 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
                 </table>
               </div>
               <div className="mt-4 flex justify-between">
-                 <Button variant="outline" onClick={() => {
-                   if (confirm("重新生成将覆盖现有计划，确定吗？")) {
-                     setActiveTab("setup");
-                   }
-                 }}>
-                   重置计划
+                 <Button
+                   variant="outline"
+                   onClick={async () => {
+                     if (!goal) return;
+                     if (!confirm("将按12个月重新初始化打卡计划，确定吗？")) return;
+                     setLoading(true);
+                     const initialized = await initializeEmptyPlans();
+                     if (initialized.length > 0) {
+                       setPlans(initialized);
+                       onPlansChanged?.();
+                     } else {
+                       alert("重新初始化失败，请重试");
+                     }
+                     setLoading(false);
+                   }}
+                 >
+                   重新初始化12个月
                  </Button>
               </div>
             </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -4,6 +4,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import {
 import { Loader2, CalendarIcon, PiggyBank, Wallet, Plus, Trash2, ArrowRight } from "lucide-react";
 import { SavingsGoal } from "./themes/DefaultSavings";
 import { clsx } from "clsx";
+import { apiFetch } from "@/lib/api";
 
 interface SavingsGoalDialogProps {
   open: boolean;
@@ -25,6 +27,8 @@ interface SavingsGoalDialogProps {
   initialData?: SavingsGoal | null;
   onSave: (data: Partial<SavingsGoal> & { plans?: any[], planConfig?: any }) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
+  defaultStep?: 1 | 2;
+  onDataChanged?: () => void;
 }
 
 type PlanRow = {
@@ -34,6 +38,7 @@ type PlanRow = {
   expenses: Record<string, number>; // dynamic columns
   amount: number; // deposit amount
   remark: string;
+  status?: "PENDING" | "COMPLETED" | "SKIPPED";
   // Computed
   balance?: number; // current month remaining
   carryOver?: number; // from previous month
@@ -46,7 +51,9 @@ export function SavingsGoalDialog({
   onOpenChange, 
   initialData, 
   onSave,
-  onDelete 
+  onDelete,
+  defaultStep = 1,
+  onDataChanged,
 }: SavingsGoalDialogProps) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
@@ -68,17 +75,46 @@ export function SavingsGoalDialog({
 
   // Reset or Load data when dialog opens
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const init = async () => {
       setIsDirty(false);
-      setStep(1);
+      setStep(defaultStep);
       if (initialData) {
         setName(initialData.name);
         setType(initialData.type);
         setDepositType(initialData.depositType);
-        // Loading existing plans is complex, skipping for simplicity in this "Create" focus
-        // Assuming Edit mode just edits basic info or redirects to Plan Management
+        if (defaultStep === 2) {
+          try {
+            const data = await apiFetch<{ items: any[] }>(`/api/savings/${initialData.id}/plans`);
+            const items = data.items ?? [];
+            if (items.length > 0) {
+              const expenseNames = Array.from(new Set(items.flatMap((p) => Object.keys(p.expenses ?? {}))));
+              setExpenseColumns(
+                expenseNames.length > 0
+                  ? expenseNames.map((n, i) => ({ id: `exp${i + 1}`, name: n }))
+                  : [{ id: "exp1", name: "固定支出1" }]
+              );
+              setRows(
+                items.map((p) => ({
+                  id: p.id,
+                  month: p.month,
+                  salary: Number(p.salary ?? 0),
+                  expenses: p.expenses ?? {},
+                  amount: Number(p.amount ?? 0),
+                  remark: p.remark ?? "",
+                  status: p.status ?? "PENDING",
+                }))
+              );
+              setStartMonth(items[0].month);
+              setDuration(items.length);
+            } else {
+              initRows();
+            }
+          } catch {
+            initRows();
+          }
+        }
       } else {
-        // Reset for create mode
         setName("");
         setType("MONTHLY");
         setDepositType("CASH");
@@ -87,8 +123,9 @@ export function SavingsGoalDialog({
         setExpenseColumns([{ id: "exp1", name: "固定支出1" }]);
         setRows([]);
       }
-    }
-  }, [open, initialData]);
+    };
+    init();
+  }, [open, initialData, defaultStep]);
 
   // Initialize Rows when entering Step 2
   const initRows = () => {
@@ -104,7 +141,8 @@ export function SavingsGoalDialog({
         salary: 0,
         expenses: {},
         amount: 0,
-        remark: ""
+        remark: "",
+        status: "PENDING",
       });
     }
     setRows(newRows);
@@ -225,28 +263,57 @@ export function SavingsGoalDialog({
     setLoading(true);
     try {
       const totalTarget = finalRows.reduce((sum, r) => sum + Number(r.amount), 0);
-      
-      await onSave({
-        name,
-        targetAmount: totalTarget,
-        type: type as any,
-        depositType: depositType as any,
-        deadline: finalRows[finalRows.length - 1].month + "-01", // Approx
-        status: "ACTIVE",
-        plans: finalRows.map(r => ({
-          month: r.month,
-          amount: r.amount,
-          salary: r.salary,
-          expenses: r.expenses,
-          remark: r.remark,
-          status: "PENDING"
-        })),
-        planConfig: {
-          expenseColumns,
-          startMonth,
-          duration
-        } as any
-      });
+      if (initialData) {
+        await onSave({
+          name,
+          targetAmount: totalTarget,
+          type: type as any,
+          depositType: depositType as any,
+          deadline: finalRows[finalRows.length - 1]?.month ? finalRows[finalRows.length - 1].month + "-01" : initialData.deadline ?? undefined,
+          status: "ACTIVE",
+        });
+        await apiFetch(`/api/savings/${initialData.id}/plans/batch`, {
+          method: "POST",
+          body: JSON.stringify({
+            plans: finalRows.map((r) => ({
+              month: r.month,
+              amount: r.amount,
+              salary: r.salary,
+              expenses: r.expenses,
+              remark: r.remark,
+              status: r.status ?? "PENDING",
+            })),
+            config: {
+              expenseColumns,
+              startMonth,
+              duration,
+            },
+          }),
+        });
+        onDataChanged?.();
+      } else {
+        await onSave({
+          name,
+          targetAmount: totalTarget,
+          type: type as any,
+          depositType: depositType as any,
+          deadline: finalRows[finalRows.length - 1].month + "-01",
+          status: "ACTIVE",
+          plans: finalRows.map(r => ({
+            month: r.month,
+            amount: r.amount,
+            salary: r.salary,
+            expenses: r.expenses,
+            remark: r.remark,
+            status: r.status ?? "PENDING"
+          })),
+          planConfig: {
+            expenseColumns,
+            startMonth,
+            duration
+          } as any
+        });
+      }
       onOpenChange(false);
     } catch (error) {
       console.error(error);
@@ -281,6 +348,9 @@ export function SavingsGoalDialog({
             </div>
             {step === 1 ? "新建储蓄目标" : `制定计划 - ${name}`}
           </DialogTitle>
+          <DialogDescription>
+            {step === 1 ? "填写目标基础信息并进入逐月计划表。" : "按月份逐行编辑计划与金额。"}
+          </DialogDescription>
         </DialogHeader>
 
         {step === 1 ? (
@@ -345,7 +415,7 @@ export function SavingsGoalDialog({
             {/* Toolbar */}
             <div className="flex justify-between items-center py-2 mb-2">
               <div className="text-sm text-gray-500">
-                提示：修改第一行数据将自动填充后续行
+                小提示：修改第一行数据将自动填充后续行，鼠标放在“添加支出列”上面回车即可打开新增列窗口。
               </div>
               {type !== 'MONTHLY' && (
                 <Button variant="outline" size="sm" onClick={handleAddColumn}>
@@ -388,6 +458,7 @@ export function SavingsGoalDialog({
                     {type !== 'MONTHLY' && (
                       <th className="p-3 min-w-[120px] w-[120px] text-purple-600 whitespace-nowrap">下月结余</th>
                     )}
+                    <th className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">状态</th>
                     <th className="p-3 min-w-[200px]">备注</th>
                   </tr>
                 </thead>
@@ -433,6 +504,17 @@ export function SavingsGoalDialog({
                       {type !== 'MONTHLY' && (
                         <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
                       )}
+                      <td className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">
+                        <button
+                          onClick={() => handleRowChange(idx, "status", row.status === "COMPLETED" ? "PENDING" : "COMPLETED")}
+                          className={clsx(
+                            "px-2 py-1 rounded text-xs font-medium",
+                            row.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                          )}
+                        >
+                          {row.status === "COMPLETED" ? "已存款" : "未存款"}
+                        </button>
+                      </td>
                       <td className="p-3">
                         <input
                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
@@ -468,10 +550,12 @@ export function SavingsGoalDialog({
             </div>
 
             <DialogFooter className="pt-4 border-t mt-auto">
-              <Button variant="ghost" onClick={() => setStep(1)}>上一步</Button>
+              {step === 2 && (
+                <Button variant="ghost" onClick={() => setStep(1)}>上一步</Button>
+              )}
               <Button onClick={handleSubmit} disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                确认创建
+                {initialData ? "保存计划" : "确认创建"}
               </Button>
             </DialogFooter>
           </div>

@@ -12,6 +12,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers);
   const token = getAccessToken();
   if (token) headers.set("authorization", `Bearer ${token}`);
+  if (init?.body && !(init.body instanceof FormData) && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -30,4 +33,3 @@ export async function apiFetch<T>(path: string, init?: RequestInit) {
 
   return json.data as T;
 }
-

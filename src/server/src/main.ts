@@ -1540,9 +1540,9 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
       // Since we don't have unique constraint on [goalId, month], we should be careful.
       // Let's delete all for now as this is a "Re-generate" action usually.
       
-      await prisma.$transaction([
-        prisma.savingsPlan.deleteMany({ where: { goalId } }),
-        prisma.savingsPlan.createMany({
+      await prisma.$transaction(async (tx) => {
+        await tx.savingsPlan.deleteMany({ where: { goalId } });
+        await tx.savingsPlan.createMany({
           data: plans.map((p: any) => ({
             goalId,
             month: p.month,
@@ -1552,8 +1552,16 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
             expenses: p.expenses ?? {},
             remark: p.remark ?? "",
           })),
-        }),
-      ]);
+        });
+        const completedAgg = await tx.savingsPlan.aggregate({
+          where: { goalId, status: "COMPLETED" },
+          _sum: { amount: true },
+        });
+        await tx.savingsGoal.update({
+          where: { id: goalId },
+          data: { currentAmount: Number(completedAgg._sum.amount ?? 0) },
+        });
+      });
 
       const newPlans = await prisma.savingsPlan.findMany({
         where: { goalId },
@@ -1590,15 +1598,26 @@ app.put("/api/savings/plans/:planId", async (req, res) => {
         return;
       }
 
-      const updated = await prisma.savingsPlan.update({
-        where: { id: planId },
-        data: {
-          ...(status ? { status } : {}),
-          ...(amount !== undefined ? { amount: Number(amount) } : {}),
-          ...(salary !== undefined ? { salary: Number(salary) } : {}),
-          ...(expenses ? { expenses } : {}),
-          ...(remark !== undefined ? { remark } : {}),
-        },
+      const updated = await prisma.$transaction(async (tx) => {
+        const next = await tx.savingsPlan.update({
+          where: { id: planId },
+          data: {
+            ...(status ? { status } : {}),
+            ...(amount !== undefined ? { amount: Number(amount) } : {}),
+            ...(salary !== undefined ? { salary: Number(salary) } : {}),
+            ...(expenses ? { expenses } : {}),
+            ...(remark !== undefined ? { remark } : {}),
+          },
+        });
+        const completedAgg = await tx.savingsPlan.aggregate({
+          where: { goalId: plan.goalId, status: "COMPLETED" },
+          _sum: { amount: true },
+        });
+        await tx.savingsGoal.update({
+          where: { id: plan.goalId },
+          data: { currentAmount: Number(completedAgg._sum.amount ?? 0) },
+        });
+        return next;
       });
       jsonOk(res, { item: updated });
       return;
@@ -1629,7 +1648,17 @@ app.delete("/api/savings/plans/:planId", async (req, res) => {
         return;
       }
 
-      await prisma.savingsPlan.delete({ where: { id: planId } });
+      await prisma.$transaction(async (tx) => {
+        await tx.savingsPlan.delete({ where: { id: planId } });
+        const completedAgg = await tx.savingsPlan.aggregate({
+          where: { goalId: plan.goalId, status: "COMPLETED" },
+          _sum: { amount: true },
+        });
+        await tx.savingsGoal.update({
+          where: { id: plan.goalId },
+          data: { currentAmount: Number(completedAgg._sum.amount ?? 0) },
+        });
+      });
       jsonOk(res, { deleted: true });
       return;
     } catch (e) {

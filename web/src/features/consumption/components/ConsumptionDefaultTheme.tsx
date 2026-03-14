@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { 
   Bar, 
   BarChart, 
@@ -6,12 +6,19 @@ import {
   Cell, 
   ComposedChart, 
   LabelList, 
+  Layer,
   Line, 
   LineChart, 
   Pie, 
   PieChart, 
+  Rectangle,
+  Sankey,
+  Scatter,
+  ScatterChart,
+  Tooltip,
   XAxis, 
   YAxis,
+  ZAxis,
 } from "recharts";
 import {
   ChartConfig,
@@ -69,6 +76,12 @@ import {
     categories: string[];
     data: Array<{ platform: string; category: string; total: number }>;
   };
+  sankey: {
+    nodes: Array<{ name: string }>;
+    links: Array<{ source: number; target: number; value: number }>;
+  };
+  scatter: Array<{ id: number; hour: number; amount: number; category: string }>;
+  histogram: Array<{ range: string; count: number; fill: string }>;
   transactions: Array<{
     id: string;
     merchant: string;
@@ -123,39 +136,95 @@ function DelayedRender({
   fallback?: React.ReactNode;
 }) {
   const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // If lazy, wait for intersection
+    let timerId: number | undefined;
+    let idleId: number | undefined;
+    let observer: IntersectionObserver | undefined;
+    let rafId: number | undefined;
+
+    const renderWithDelay = () => {
+      if (delay > 0) {
+        timerId = window.setTimeout(() => {
+          setShouldRender(true);
+          rafId = window.requestAnimationFrame(() => setIsVisible(true));
+        }, delay);
+        return;
+      }
+      setShouldRender(true);
+      rafId = window.requestAnimationFrame(() => setIsVisible(true));
+    };
+
+    const scheduleRender = () => {
+      if ("requestIdleCallback" in window) {
+        const requestIdle = window.requestIdleCallback as (
+          callback: IdleRequestCallback,
+          options?: IdleRequestOptions
+        ) => number;
+        idleId = requestIdle(() => renderWithDelay(), { timeout: 600 });
+        return;
+      }
+      renderWithDelay();
+    };
+
     if (lazy) {
-      const observer = new IntersectionObserver(
+      observer = new IntersectionObserver(
         (entries) => {
           if (entries[0].isIntersecting) {
-            // Add a small delay even after intersection to prevent jank during scroll
-            setTimeout(() => setShouldRender(true), delay);
+            scheduleRender();
             observer.disconnect();
           }
         },
-        { rootMargin: "50px" } // Start loading slightly before view
+        { rootMargin: "120px" }
       );
       
       if (ref.current) {
         observer.observe(ref.current);
       }
       
-      return () => observer.disconnect();
+      return () => {
+        observer?.disconnect();
+        if (timerId !== undefined) {
+          window.clearTimeout(timerId);
+        }
+        if (idleId !== undefined && "cancelIdleCallback" in window) {
+          const cancelIdle = window.cancelIdleCallback as (handle: number) => void;
+          cancelIdle(idleId);
+        }
+        if (rafId !== undefined) {
+          window.cancelAnimationFrame(rafId);
+        }
+      };
     } 
-    // If not lazy, just use timeout
     else {
-      const timer = setTimeout(() => setShouldRender(true), delay);
-      return () => clearTimeout(timer);
+      timerId = window.setTimeout(() => {
+        setShouldRender(true);
+        rafId = window.requestAnimationFrame(() => setIsVisible(true));
+      }, delay);
+      return () => {
+        if (timerId !== undefined) {
+          window.clearTimeout(timerId);
+        }
+        if (rafId !== undefined) {
+          window.cancelAnimationFrame(rafId);
+        }
+      };
     }
   }, [delay, lazy]);
 
   return (
     <div ref={ref} className={className}>
       {shouldRender ? (
-        <div className="animate-in fade-in duration-500">{children}</div>
+        <div
+          className={cn(
+            "transition-opacity duration-500 ease-out",
+            isVisible ? "opacity-100" : "opacity-0"
+          )}
+        >
+          {children}
+        </div>
       ) : fallback ? (
         fallback
       ) : (
@@ -176,27 +245,98 @@ function DelayedRender({
   );
 }
 
+function AnimatedCalendarGrid({ calendar }: { calendar: ConsumptionData["calendar"] }) {
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    setVisibleCount(0);
+    const timer = window.setInterval(() => {
+      setVisibleCount((prev) => {
+        if (prev >= calendar.length) {
+          window.clearInterval(timer);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 35);
+
+    return () => window.clearInterval(timer);
+  }, [calendar]);
+
+  return (
+    <div className="w-full h-[250px] flex flex-col justify-between">
+      <div className="grid grid-cols-7 gap-3 text-center text-sm mb-2">
+        {["日", "一", "二", "三", "四", "五", "六"].map(d => (
+          <div key={d} className="font-bold text-gray-500">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-2 flex-1">
+        <div /> <div /> <div /> <div />
+        {calendar.map((d, index) => {
+          const max = 2000;
+          const intensity = max > 0 ? d.value / max : 0;
+          const bg = intensity === 0 ? "bg-gray-50" :
+                     intensity < 0.2 ? "bg-blue-100" :
+                     intensity < 0.5 ? "bg-blue-300" :
+                     intensity < 0.8 ? "bg-blue-500" : "bg-blue-700";
+          const text = intensity > 0.5 ? "text-white" : "text-gray-700";
+          const visible = index < visibleCount;
+          
+          return (
+            <div
+              key={d.date}
+              className={cn(
+                "h-8 rounded-md flex flex-col items-center justify-center p-0.5 shadow-sm transition-all duration-300",
+                visible ? "opacity-100 scale-100" : "opacity-0 scale-90",
+                visible ? "hover:scale-105" : "",
+                bg,
+                text
+              )}
+              title={`${d.date}: ¥${d.value}`}
+            >
+              <span className="font-bold text-xs mb-0.5">{d.day}</span>
+              {d.value > 0 && <span className="text-[10px] font-medium leading-none scale-90">¥{Math.round(d.value)}</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("month");
 
-  // Configs
-  const commonConfig = {
+  const commonConfig = useMemo(() => ({
     expense: { label: "支出", color: "var(--color-chart-1)" },
     income: { label: "收入", color: "var(--color-chart-2)" },
-  } satisfies ChartConfig;
+  } satisfies ChartConfig), []);
+  const emptyChartConfig = useMemo(() => ({} as ChartConfig), []);
+  const trendChartConfig = useMemo(() => ({
+    total: { label: "支出", color: "hsl(var(--chart-1))" },
+  } satisfies ChartConfig), []);
+  const lowerSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
+  const incomeExpenseTotal = useMemo(
+    () => data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0),
+    [data.incomeExpense]
+  );
+  const heatmapValueMap = useMemo(() => {
+    const map = new Map<string, number>();
+    data.heatmap.data.forEach((item) => {
+      map.set(`${item.platform}::${item.category}`, Number(item.total) || 0);
+    });
+    return map;
+  }, [data.heatmap.data]);
 
-  // Filtered transactions
-  const filteredTransactions = data.transactions.filter(t => {
-    const matchesSearch = searchTerm === "" || 
-      t.merchant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.category.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTransactions = useMemo(() => data.transactions.filter((t) => {
+    const matchesSearch = lowerSearchTerm === "" || 
+      t.merchant.toLowerCase().includes(lowerSearchTerm) ||
+      t.category.toLowerCase().includes(lowerSearchTerm);
     const matchesPlatform = platformFilter === "all" || t.platform === platformFilter;
-    // Date filter would typically need backend support or more complex client logic, 
-    // for now we just show the selector UI as requested
     return matchesSearch && matchesPlatform;
-  });
+  }), [data.transactions, lowerSearchTerm, platformFilter]);
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto p-6">
@@ -322,7 +462,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
       </div>
 
-      {/* Row 2: Charts (3 cols) - Delay 200ms */}
+      {/* Row 2: Charts (3 cols) */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="col-span-1 flex flex-col">
           <CardHeader className="items-center pb-0">
@@ -330,11 +470,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="flex-1 pb-0 relative">
             <DelayedRender 
-              delay={200} 
+              delay={80}
               className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
               fallback={<Skeleton className="h-[200px] w-[200px] rounded-full" />}
             >
-              <ChartContainer config={{}} className="h-[200px] w-[200px]">
+              <ChartContainer config={emptyChartConfig} className="h-[200px] w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -343,6 +483,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     nameKey="name"
                     innerRadius={0}
                     labelLine={false}
+                    isAnimationActive
+                    animationDuration={700}
+                    animationEasing="ease-out"
                   >
                     {data.platformDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -373,7 +516,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="flex-1 pb-0 relative">
             <DelayedRender 
-              delay={200} 
+              delay={220}
               className="mx-auto h-[200px] w-[200px] flex items-center justify-center"
               fallback={<Skeleton className="h-[200px] w-[200px] rounded-full border-4 border-white" />}
             >
@@ -387,6 +530,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     innerRadius={40}
                     strokeWidth={5}
                     labelLine={false}
+                    isAnimationActive
+                    animationDuration={750}
+                    animationEasing="ease-out"
                   >
                     {data.incomeExpense.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -401,12 +547,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </DelayedRender>
             <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
                {data.incomeExpense.map((item, index) => {
-                 const total = data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0);
                  return (
                    <div key={index} className="flex items-center gap-1">
                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
                      <span className="text-gray-500">{item.name}</span>
-                     <span className="font-medium">{(item.value / total * 100).toFixed(0)}%</span>
+                     <span className="font-medium">{(item.value / incomeExpenseTotal * 100).toFixed(0)}%</span>
                    </div>
                  );
                })}
@@ -419,8 +564,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">热门商家 Top 10</CardTitle>
           </CardHeader>
           <CardContent>
-            <DelayedRender delay={200} className="h-[200px] w-full">
-              <ChartContainer config={{}} className="h-[200px] w-full">
+            <DelayedRender delay={360} className="h-[200px] w-full">
+              <ChartContainer config={emptyChartConfig} className="h-[200px] w-full">
                 <BarChart
                   accessibilityLayer
                   data={data.merchants}
@@ -438,7 +583,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   />
                   <XAxis dataKey="total" type="number" hide />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Bar dataKey="total" layout="vertical" radius={4} barSize={20}>
+                  <Bar dataKey="total" layout="vertical" radius={4} barSize={20} isAnimationActive animationDuration={650} animationEasing="ease-out">
                     {data.merchants.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
@@ -457,8 +602,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
           <CardContent>
-            <DelayedRender delay={100} lazy className="h-[250px] w-full">
-              <ChartContainer config={{ total: { label: "支出", color: "hsl(var(--chart-1))" } }} className="h-[250px] w-full">
+            <DelayedRender delay={120} lazy className="h-[250px] w-full">
+              <ChartContainer config={trendChartConfig} className="h-[250px] w-full">
                 <LineChart
                   accessibilityLayer
                   data={data.trend}
@@ -480,6 +625,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     stroke="var(--color-chart-1)"
                     strokeWidth={2}
                     dot={false}
+                    isAnimationActive
+                    animationDuration={900}
+                    animationEasing="ease-out"
                   />
                 </LineChart>
               </ChartContainer>
@@ -492,8 +640,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
           <CardContent>
-            <DelayedRender delay={100} lazy className="h-[250px] w-full">
-              <ChartContainer config={{}} className="h-[250px] w-full">
+            <DelayedRender delay={240} lazy className="h-[250px] w-full">
+              <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
                 <BarChart accessibilityLayer data={data.stackedBar}>
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -511,6 +659,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       stackId="a"
                       fill={`var(--color-chart-${(i % 5) + 1})`}
                       radius={i === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                      isAnimationActive
+                      animationDuration={700}
+                      animationBegin={i * 120}
+                      animationEasing="ease-out"
                     />
                   ))}
                 </BarChart>
@@ -528,20 +680,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardDescription>识别主要支出分类</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 pb-2">
-            <DelayedRender delay={100} lazy className="h-[250px] w-full">
-              <ChartContainer config={{}} className="h-[250px] w-full">
+            <DelayedRender delay={360} lazy className="h-[250px] w-full">
+              <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
                 <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} />
                   <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" unit="%" axisLine={false} tickLine={false} />
                   <ChartTooltip />
-                  <Bar yAxisId="left" dataKey="value" barSize={30} radius={[4, 4, 0, 0]}>
+                  <Bar yAxisId="left" dataKey="value" barSize={30} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
                     {data.pareto.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Bar>
-                  <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive animationDuration={900} animationEasing="ease-out" />
                 </ComposedChart>
               </ChartContainer>
             </DelayedRender>
@@ -554,39 +706,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardDescription>每日消费强度分布</CardDescription>
           </CardHeader>
           <CardContent className="flex-1">
-            <DelayedRender delay={100} lazy className="h-[250px] w-full">
-              <div className="w-full h-[250px] flex flex-col justify-between">
-                <div className="grid grid-cols-7 gap-3 text-center text-sm mb-2">
-                  {["日", "一", "二", "三", "四", "五", "六"].map(d => (
-                    <div key={d} className="font-bold text-gray-500">{d}</div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-2 flex-1">
-                  {/* Offset for first day of month (visual placeholder) */}
-                  <div /> <div /> <div /> <div />
-                  
-                  {data.calendar.map((d) => {
-                    const max = 2000;
-                    const intensity = max > 0 ? d.value / max : 0;
-                    const bg = intensity === 0 ? "bg-gray-50" :
-                               intensity < 0.2 ? "bg-blue-100" :
-                               intensity < 0.5 ? "bg-blue-300" :
-                               intensity < 0.8 ? "bg-blue-500" : "bg-blue-700";
-                    const text = intensity > 0.5 ? "text-white" : "text-gray-700";
-                    
-                    return (
-                      <div 
-                        key={d.date} 
-                        className={cn("h-8 rounded-md flex flex-col items-center justify-center p-0.5 transition-transform hover:scale-105 shadow-sm", bg, text)}
-                        title={`${d.date}: ¥${d.value}`}
-                      >
-                        <span className="font-bold text-xs mb-0.5">{d.day}</span>
-                        {d.value > 0 && <span className="text-[10px] font-medium leading-none scale-90">¥{Math.round(d.value)}</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            <DelayedRender delay={480} lazy className="h-[250px] w-full">
+              <AnimatedCalendarGrid calendar={data.calendar} />
             </DelayedRender>
           </CardContent>
         </Card>
@@ -599,7 +720,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
           </CardHeader>
           <CardContent>
-            <DelayedRender delay={100} lazy className="h-[250px] w-full">
+            <DelayedRender delay={600} lazy className="h-[250px] w-full">
               <div className="overflow-x-auto h-[250px]">
                 <table className="w-full text-sm text-center border-collapse">
                   <thead>
@@ -617,8 +738,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       <tr key={cat}>
                         <td className="p-2 border-b font-medium text-left bg-gray-50 text-xs">{cat}</td>
                         {data.heatmap.platforms.map(plat => {
-                          const item = data.heatmap.data.find(i => i.platform === plat && i.category === cat);
-                          const val = item ? Number(item.total) : 0;
+                          const val = heatmapValueMap.get(`${plat}::${cat}`) ?? 0;
                           const maxVal = 2500;
                           const intensity = maxVal > 0 ? val / maxVal : 0;
                           
@@ -648,13 +768,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
           </CardHeader>
           <CardContent>
-            <DelayedRender delay={100} lazy className="h-[250px] w-full">
+            <DelayedRender delay={720} lazy className="h-[250px] w-full">
               <ChartContainer config={commonConfig} className="h-[250px] w-full">
                 <BarChart accessibilityLayer data={data.weekdayWeekend}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="name" tickLine={false} axisLine={false} />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="var(--color-chart-1)">
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="var(--color-chart-1)" isAnimationActive animationDuration={700} animationEasing="ease-out">
                     <LabelList dataKey="value" position="top" formatter={(v: number) => `¥${v.toFixed(0)}`} fontSize={12} />
                   </Bar>
                 </BarChart>
@@ -664,7 +784,113 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
       </div>
 
-      {/* Row 6: Transactions - Lazy Load */}
+      {/* Row 7: Sankey Diagram - Lazy Load */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
+          <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DelayedRender delay={960} lazy className="h-[300px] w-full">
+            <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
+              <Sankey
+                data={data.sankey}
+                margin={{ left: 0, right: 80, top: 10, bottom: 10 }}
+                node={({ x, y, width, height, index, payload }) => {
+                  return (
+                    <Layer key={`node-${index}`}>
+                      <Rectangle x={x} y={y} width={width} height={height} fill="var(--color-chart-1)" fillOpacity={0.8} radius={[2, 2, 2, 2]} />
+                      <text
+                        x={x + width + 6}
+                        y={y + height / 2}
+                        dy="0.35em"
+                        fontSize={12}
+                        fill="#333"
+                        className="text-xs font-medium fill-gray-700 dark:fill-gray-200"
+                      >
+                        {`${payload.name} (${payload.value})`}
+                      </text>
+                    </Layer>
+                  );
+                }}
+                nodePadding={50}
+                link={{ stroke: 'var(--color-chart-1)', fillOpacity: 0.3 }}
+              >
+                <Tooltip />
+              </Sankey>
+            </ChartContainer>
+          </DelayedRender>
+        </CardContent>
+      </Card>
+
+      {/* Row 8: Scatter & Histogram - Lazy Load */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">消费时段分布 (散点图)</CardTitle>
+            <CardDescription>24小时消费习惯透视</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={1080} lazy className="h-[300px] w-full">
+              <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
+                <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis 
+                    type="number" 
+                    dataKey="hour" 
+                    name="时间" 
+                    unit="h" 
+                    domain={[0, 24]} 
+                    tickCount={7}
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    type="number" 
+                    dataKey="amount" 
+                    name="金额" 
+                    unit="¥" 
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <ZAxis type="number" dataKey="amount" range={[50, 400]} />
+                  <ChartTooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
+                  <Scatter name="消费记录" data={data.scatter} fill="var(--color-chart-2)" isAnimationActive animationDuration={800} />
+                </ScatterChart>
+              </ChartContainer>
+            </DelayedRender>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">单笔金额分布 (直方图)</CardTitle>
+            <CardDescription>消费力度画像分析</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DelayedRender delay={1200} lazy className="h-[300px] w-full">
+              <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
+                <BarChart data={data.histogram} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis dataKey="range" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
+                    {data.histogram.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                    <LabelList dataKey="count" position="top" fontSize={12} />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            </DelayedRender>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 9: Transactions - Lazy Load */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-4">
           <CardTitle className="text-base">交易明细</CardTitle>
@@ -675,7 +901,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </CardHeader>
         <CardContent>
           <DelayedRender 
-            delay={100} 
+            delay={840}
             lazy 
             fallback={
               <div className="space-y-2">
@@ -695,7 +921,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             }
           >
             <div className="space-y-2">
-              {data.transactions.map(t => (
+              {filteredTransactions.map(t => (
                 <div key={t.id} className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-gray-50">
                   <div>
                     <div className="font-medium text-sm">{t.merchant}</div>
