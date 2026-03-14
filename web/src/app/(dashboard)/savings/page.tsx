@@ -55,7 +55,10 @@ export default function SavingsPage() {
       const transData = await apiFetch<{ items: TransactionItem[] }>(`/api/transactions?pageSize=100`);
       const savingsKeywords = ["储蓄", "存款", "理财", "基金", "股票", "定投", "Savings", "Deposit"];
       const filtered = transData.items.filter(t => 
-        savingsKeywords.some(k => t.category.includes(k))
+        savingsKeywords.some(k => 
+          t.category.includes(k) || 
+          (t.description && t.description.includes(k))
+        )
       );
       setTransactions(filtered);
 

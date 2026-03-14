@@ -112,6 +112,31 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
         method: "PUT",
         body: JSON.stringify(updates),
       });
+      
+      // If status changed to COMPLETED, create a transaction record
+      if (updates.status === "COMPLETED") {
+        const plan = plans.find(p => p.id === id);
+        if (plan && plan.amount > 0) {
+          try {
+            await fetch("/api/transactions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount: plan.amount.toString(),
+                type: "INCOME" as const,
+                category: "储蓄存款",
+                platform: "手动打卡",
+                merchant: goal?.name || "储蓄目标",
+                date: new Date().toISOString(),
+                description: `储蓄打卡 - ${plan.month}`,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to create transaction for savings plan", err);
+          }
+        }
+      }
+      
       onPlansChanged?.();
     } catch (error) {
       console.error("Failed to update plan", error);

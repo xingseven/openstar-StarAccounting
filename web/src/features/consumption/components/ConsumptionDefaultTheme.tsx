@@ -317,6 +317,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [platformFilter, setPlatformFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("month");
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
 
   const commonConfig = useMemo(() => ({
     expense: { label: "支出", color: "var(--color-chart-1)" },
@@ -375,6 +376,21 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
   const pieStrokeWidth = isMobile ? 12 : 4;
   const pieInnerRadius = isMobile ? 25 : 35;
+
+  // 计算周数
+  const weekLabels = useMemo(() => {
+    const weeks = [];
+    const startDate = new Date(dateRangeLabel.split('至')[0].trim());
+    const endDate = new Date(dateRangeLabel.split('至')[1]?.trim() || new Date());
+    const totalTime = endDate.getTime() - startDate.getTime();
+    const days = Math.ceil(totalTime / (1000 * 3600 * 24)) + 1;
+    const totalWeeks = Math.ceil(days / 7);
+    
+    for (let i = 1; i <= totalWeeks; i++) {
+      weeks.push(`第${i}周`);
+    }
+    return weeks;
+  }, [dateRangeLabel]);
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto relative">
@@ -676,7 +692,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   accessibilityLayer
                   data={data.merchants}
                   layout="vertical"
-                  margin={{ left: 0, right: 20 }}
+                  margin={{ left: 0, right: 0 }}
                 >
                   <YAxis
                     dataKey="merchant"
@@ -875,14 +891,46 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
+              </div>
+              <div className="flex items-center gap-1">
+                {weekLabels.map((week, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedWeek(index + 1)}
+                    className={cn(
+                      "px-2 py-1 text-xs rounded font-medium transition-colors",
+                      selectedWeek === index + 1 
+                        ? "bg-gray-900 text-white" 
+                        : "bg-gray-100 text-gray-500 hover:text-gray-900"
+                    )}
+                  >
+                    {week}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <DelayedRender delay={720} lazy className="h-[250px] w-full">
               <ChartContainer config={commonConfig} className="h-[250px] w-full">
                 <BarChart accessibilityLayer data={data.weekdayWeekend}>
                   <CartesianGrid vertical={false} />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={({ x, y, payload }) => (
+                      <text x={x} y={y + 15} dy={10} textAnchor="middle" fill="#666" fontSize={12}>
+                        {payload.value}
+                        <tspan x={x} dy="14" fill="#999" fontSize={10}>
+                          {`3 月${(selectedWeek - 1) * 7 + [1, 2, 3, 4, 5, 6, 7][payload.index] || ''}日`}
+                        </tspan>
+                      </text>
+                    )}
+                  />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="var(--color-chart-1)" isAnimationActive animationDuration={700} animationEasing="ease-out">
                     <LabelList dataKey="value" position="top" formatter={(v: number) => `¥${v.toFixed(0)}`} fontSize={12} />
