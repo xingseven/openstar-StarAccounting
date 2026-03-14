@@ -25,11 +25,11 @@ const items = [
   { href: "/settings", label: "设置", icon: Settings },
 ];
 
-export function Sidebar() {
+export function SidebarContent() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r bg-white flex flex-col hidden md:flex shrink-0 h-full">
+    <div className="flex flex-col h-full bg-white">
       <div className="p-6 border-b flex items-center gap-3 shrink-0">
         <div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
           X
@@ -70,6 +70,14 @@ export function Sidebar() {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="w-64 border-r hidden md:flex shrink-0 h-full">
+      <SidebarContent />
     </aside>
   );
 }

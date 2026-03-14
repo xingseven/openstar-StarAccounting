@@ -301,6 +301,8 @@ remark                   varchar(191)        YES                 NULL
 
 salary                   decimal(65,30)      YES                 0.000000000000000000000000000000
 
+proofImage               longtext            YES                 NULL
+
 记录数：12
 
 创建语句：
@@ -315,6 +317,7 @@ CREATE TABLE `savingsplan` (
   `expenses` json DEFAULT NULL COMMENT '支出明细',
   `remark` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
   `salary` decimal(65,30) DEFAULT '0.000000000000000000000000000000' COMMENT '当月工资',
+  `proofImage` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '打卡凭证图片',
   PRIMARY KEY (`id`),
   KEY `SavingsPlan_goalId_idx` (`goalId`),
   CONSTRAINT `SavingsPlan_goalId_fkey` FOREIGN KEY (`goalId`) REFERENCES `savingsgoal` (`id`) ON DELETE CASCADE ON UPDATE CASCADE

@@ -116,6 +116,7 @@ export function SavingsGoalDialog({
                   amount: Number(p.amount ?? 0),
                   remark: p.remark ?? "",
                   status: p.status ?? "PENDING",
+                  proofImage: p.proofImage ?? "",
                 }))
               );
               setStartMonth(items[0].month);
@@ -146,34 +147,6 @@ export function SavingsGoalDialog({
     const timer = window.setInterval(tick, 60 * 1000);
     return () => window.clearInterval(timer);
   }, [open]);
-
-  useEffect(() => {
-    if (!open || step !== 2 || !initialData) return;
-    const storageKey = `savings-proof-${initialData.id}`;
-    const raw = window.localStorage.getItem(storageKey);
-    if (!raw) return;
-    try {
-      const proofMap = JSON.parse(raw) as Record<string, string>;
-      setRows((prev) =>
-        prev.map((r) => ({
-          ...r,
-          proofImage: proofMap[r.id] ?? r.proofImage,
-        }))
-      );
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    }
-  }, [open, step, initialData]);
-
-  useEffect(() => {
-    if (!open || step !== 2 || !initialData) return;
-    const storageKey = `savings-proof-${initialData.id}`;
-    const proofMap = rows.reduce<Record<string, string>>((acc, r) => {
-      if (r.proofImage) acc[r.id] = r.proofImage;
-      return acc;
-    }, {});
-    window.localStorage.setItem(storageKey, JSON.stringify(proofMap));
-  }, [rows, open, step, initialData]);
 
   // Initialize Rows when entering Step 2
   const initRows = () => {
@@ -279,10 +252,7 @@ export function SavingsGoalDialog({
   }, [rows, type]);
 
   const finalRows = calculatedRows;
-  const displayRows = useMemo(() => {
-    const filtered = finalRows.filter((r) => Number(r.amount) > 0);
-    return filtered.length > 0 ? filtered : finalRows;
-  }, [finalRows]);
+  const displayRows = finalRows;
   const summary = useMemo(() => {
     const totalAmount = finalRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const totalSalary = finalRows.reduce((sum, row) => sum + Number(row.salary || 0), 0);
@@ -304,7 +274,7 @@ export function SavingsGoalDialog({
   }, [finalRows, expenseColumns]);
 
   useEffect(() => {
-    if (!open || step !== 2) return;
+    if (!open || step !== 2 || !initialData) return;
     const depositRows = finalRows.filter((r) => Number(r.amount) > 0);
     if (depositRows.length === 0) return;
     const reminderState = `${currentMonth}|${depositRows.map((r) => `${r.month}:${r.status}`).join(",")}`;
@@ -324,6 +294,10 @@ export function SavingsGoalDialog({
       pushToast(`提醒：本月 (${currentMonth.replace("-", "/")}) 计划存款尚未打卡`);
     }
   }, [open, step, currentMonth, finalRows]);
+
+  useEffect(() => {
+    if (!open) reminderRef.current = "";
+  }, [open]);
 
   const handleAddColumn = () => {
     const name = prompt("请输入列名 (如: 房租)");
@@ -356,6 +330,7 @@ export function SavingsGoalDialog({
               expenses: r.expenses,
               remark: r.remark,
               status: r.status ?? "PENDING",
+              proofImage: r.proofImage ?? "",
             })),
             config: {
               expenseColumns,
@@ -379,7 +354,8 @@ export function SavingsGoalDialog({
             salary: r.salary,
             expenses: r.expenses,
             remark: r.remark,
-            status: r.status ?? "PENDING"
+            status: r.status ?? "PENDING",
+            proofImage: r.proofImage ?? "",
           })),
           planConfig: {
             expenseColumns,
@@ -696,7 +672,7 @@ export function SavingsGoalDialog({
                     )}
                     <td className="p-3 min-w-[100px] w-[100px]"></td>
                     <td className="p-3 min-w-[180px] w-[180px]"></td>
-                    <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{displayRows.length}个存款月</td>
+                    <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{finalRows.length}个月</td>
                   </tr>
                 </tfoot>
               </table>

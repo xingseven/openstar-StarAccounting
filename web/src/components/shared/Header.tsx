@@ -20,6 +20,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/settings": "系统设置",
 };
 
+import { MobileSidebar } from "@/components/shared/MobileSidebar";
+
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,18 +35,20 @@ export function Header() {
 
   function logout() {
     clearAccessToken();
-    router.replace("/auth/login");
+    // router.replace("/auth/login"); // 暂时禁用跳转
+    window.location.reload(); // 刷新页面以重置状态
   }
 
   const title = PAGE_TITLES[pathname] || "消费面板";
 
   return (
-    <header className="h-16 border-b bg-white px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
+    <header className="h-16 border-b bg-white px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <div className="flex items-center gap-2 md:gap-4">
+        <MobileSidebar />
+        <h1 className="text-lg md:text-xl font-semibold text-gray-800 truncate max-w-[200px] md:max-w-none">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         <div className="relative hidden md:block">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <input
