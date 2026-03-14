@@ -35,6 +35,16 @@ export default function SavingsPage() {
       const token = typeof window !== 'undefined' ? localStorage.getItem('openstar_access_token') : null;
       console.log('当前 token:', token ? token.substring(0, 50) + '...' : '无 token');
       
+      // 解析 token 中的 userId
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('Token 中的 userId:', payload.userId);
+        } catch (e) {
+          console.error('解析 token 失败:', e);
+        }
+      }
+      
       // 1. Load Goals
       const goalsData = await apiFetch<{ items: any[] }>("/api/savings");
       const list = goalsData.items.map((i) => ({

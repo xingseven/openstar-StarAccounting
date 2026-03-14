@@ -764,7 +764,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="w-[2000px] md:w-full">
+            <div className="w-[1200px] md:w-full">
               <DelayedRender delay={120} lazy className="h-[250px] w-full">
                 <ChartContainer config={trendChartConfig} className="h-[250px] w-full">
                   <LineChart
@@ -803,7 +803,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="w-[2000px] md:w-full">
+            <div className="w-[1500px] md:w-full">
               <DelayedRender delay={240} lazy className="h-[250px] w-full">
                 <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
                   <BarChart accessibilityLayer data={data.stackedBar}>
