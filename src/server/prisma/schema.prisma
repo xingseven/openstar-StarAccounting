@@ -114,6 +114,7 @@ model SavingsGoal {
   updatedAt     DateTime   @updatedAt
 
   plans SavingsPlan[]
+  planConfig Json? // Stores configuration like { salary, expenseDefs, depositDay, duration }
   user User @relation(fields: [userId], references: [id])
 }
 
@@ -123,6 +124,12 @@ model SavingsPlan {
   amount    Decimal
   status    PlanStatus @default(PENDING)
   month     String // Format: YYYY-MM
+  
+  // Extended fields for Bi-Monthly/Detailed modes
+  salary    Decimal? @default(0)
+  expenses  Json?    // Stores values like { "Rent": 2000 }
+  remark    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -1474,18 +1474,14 @@ app.get("/api/savings/:id/plans", async (req, res) => {
   jsonOk(res, { items: [] });
 });
 
-app.post("/api/savings/:id/plans", async (req, res) => {
+app.post("/api/savings/:id/plans/batch", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const goalId = req.params.id;
-  const { month, amount } = req.body ?? {};
+  const { plans, config } = req.body ?? {};
 
-  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    jsonFail(res, 400, 50000, "INVALID_PARAM", "month 格式错误 (YYYY-MM)");
-    return;
-  }
-  if (!amount || Number.isNaN(Number(amount))) {
-    jsonFail(res, 400, 50000, "INVALID_PARAM", "amount 必填");
+  if (!Array.isArray(plans) || plans.length === 0) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "plans 不能为空");
     return;
   }
 
@@ -1499,15 +1495,45 @@ app.post("/api/savings/:id/plans", async (req, res) => {
         return;
       }
 
-      const plan = await prisma.savingsPlan.create({
-        data: {
-          goalId,
-          month,
-          amount: Number(amount),
-          status: "PENDING",
-        },
+      // Update goal config if provided
+      if (config) {
+        await prisma.savingsGoal.update({
+          where: { id: goalId },
+          data: { planConfig: config },
+        });
+      }
+
+      // Transaction: Delete existing plans and create new ones (or upsert?)
+      // For simplicity in this "Generation" mode, we might want to clear and recreate, 
+      // OR intelligently merge. Given the user "Generate" flow, clear and create is safer for consistency.
+      // But user might have existing data. 
+      // Let's assume this endpoint is for "Initialization/Reset".
+      
+      // Better approach: Upsert based on Month?
+      // Since we don't have unique constraint on [goalId, month], we should be careful.
+      // Let's delete all for now as this is a "Re-generate" action usually.
+      
+      await prisma.$transaction([
+        prisma.savingsPlan.deleteMany({ where: { goalId } }),
+        prisma.savingsPlan.createMany({
+          data: plans.map((p: any) => ({
+            goalId,
+            month: p.month,
+            amount: Number(p.amount ?? 0),
+            status: p.status ?? "PENDING",
+            salary: p.salary ? Number(p.salary) : 0,
+            expenses: p.expenses ?? {},
+            remark: p.remark ?? "",
+          })),
+        }),
+      ]);
+
+      const newPlans = await prisma.savingsPlan.findMany({
+        where: { goalId },
+        orderBy: { month: "asc" },
       });
-      jsonOk(res, { item: plan });
+      
+      jsonOk(res, { items: newPlans });
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -1522,7 +1548,7 @@ app.put("/api/savings/plans/:planId", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const planId = req.params.planId;
-  const { status, amount } = req.body ?? {};
+  const { status, amount, salary, expenses, remark } = req.body ?? {};
 
   const prisma = getPrisma();
   if (prisma) {
@@ -1541,7 +1567,10 @@ app.put("/api/savings/plans/:planId", async (req, res) => {
         where: { id: planId },
         data: {
           ...(status ? { status } : {}),
-          ...(amount ? { amount: Number(amount) } : {}),
+          ...(amount !== undefined ? { amount: Number(amount) } : {}),
+          ...(salary !== undefined ? { salary: Number(salary) } : {}),
+          ...(expenses ? { expenses } : {}),
+          ...(remark !== undefined ? { remark } : {}),
         },
       });
       jsonOk(res, { item: updated });
