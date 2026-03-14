@@ -467,14 +467,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 4: Charts (2 cols) - Lazy Load */}
       <DelayedRender delay={100} lazy>
-        <div className="grid gap-4 md:grid-cols-2 items-start">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="flex flex-col">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
               <CardDescription>识别主要支出分类</CardDescription>
             </CardHeader>
-            <CardContent className="pb-2">
-              <ChartContainer config={{}} className="h-[250px] w-full">
+            <CardContent className="flex-1 pb-2 min-h-[250px]">
+              <ChartContainer config={{}} className="h-full w-full">
                 <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -492,13 +492,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="text-base">消费日历</CardTitle>
               <CardDescription>每日消费强度分布</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="w-full">
+            <CardContent className="flex-1">
+              <div className="w-full h-full">
                 <div className="grid grid-cols-7 gap-3 text-center text-sm mb-3">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-bold text-gray-500">{d}</div>

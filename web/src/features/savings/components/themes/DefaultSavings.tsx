@@ -37,6 +37,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { SavingsPlanDialog } from "../SavingsPlanDialog";
 
 export type SavingsGoal = {
   id: string;
@@ -131,6 +132,7 @@ export function SavingsDefaultTheme({
   onOpenEdit,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [planGoal, setPlanGoal] = useState<SavingsGoal | null>(null);
 
   // Filtered goals
   const filteredGoals = useMemo(() => {
@@ -304,18 +306,26 @@ export function SavingsDefaultTheme({
                         <div>
                           <CardTitle className="text-base font-semibold">{item.name}</CardTitle>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={clsx(
-                              "px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider",
-                              item.type === "LONG_TERM" ? "bg-blue-50 text-blue-700" :
-                              item.type === "YEARLY" ? "bg-purple-50 text-purple-700" :
-                              item.type === "MONTHLY" ? "bg-amber-50 text-amber-700" :
-                              "bg-emerald-50 text-emerald-700"
-                            )}>
-                              {item.type === "LONG_TERM" ? "长期" : 
-                               item.type === "YEARLY" ? "年度" : 
-                               item.type === "MONTHLY" ? "月度" :
-                               item.type === "BI_MONTHLY_ODD" ? "隔月(单)" : "隔月(双)"}
-                            </span>
+                            {(item.type === "BI_MONTHLY_ODD" || item.type === "BI_MONTHLY_EVEN") ? (
+                              <div className="relative group/tooltip inline-block cursor-help">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-emerald-50 text-emerald-700">
+                                  {item.type === "BI_MONTHLY_ODD" ? "隔月(单)" : "隔月(双)"}
+                                </span>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 leading-relaxed">
+                                  隔月存就是存款月可以存大额，因为有上个月剩余下来的除去固定支出的剩余就可以存这样子。
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className={clsx(
+                                "px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider",
+                                item.type === "LONG_TERM" ? "bg-blue-50 text-blue-700" :
+                                item.type === "YEARLY" ? "bg-purple-50 text-purple-700" :
+                                "bg-amber-50 text-amber-700"
+                              )}>
+                                {item.type === "LONG_TERM" ? "长期" : item.type === "YEARLY" ? "年度" : "月度"}
+                              </span>
+                            )}
                             <span className={clsx(
                               "px-2 py-0.5 rounded text-[10px] font-medium tracking-wider",
                               "bg-gray-100 text-gray-600"
@@ -327,9 +337,18 @@ export function SavingsDefaultTheme({
                           </div>
                         </div>
                       </div>
-                      <button onClick={() => onOpenEdit(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-black transition-colors opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => setPlanGoal(item)} 
+                          className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-black transition-colors"
+                          title="指定计划"
+                        >
+                          <Target className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => onOpenEdit(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-black transition-colors" title="编辑">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -423,6 +442,13 @@ export function SavingsDefaultTheme({
           </CardContent>
         </Card>
       </DelayedRender>
+
+      {/* Dialogs */}
+      <SavingsPlanDialog 
+        open={!!planGoal} 
+        onOpenChange={(open) => !open && setPlanGoal(null)} 
+        goal={planGoal} 
+      />
     </div>
   );
 }
