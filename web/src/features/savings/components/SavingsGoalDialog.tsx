@@ -329,7 +329,7 @@ export function SavingsGoalDialog({
               <table className="w-full text-sm text-left relative" style={{ minWidth: type === 'MONTHLY' ? '100%' : '1200px' }}>
                 <thead className="bg-gray-50 text-gray-700 font-medium sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="p-3 w-[100px] sticky left-0 bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">月份</th>
+                    <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap sticky left-0 bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">月份</th>
                     {type !== 'MONTHLY' && (
                       <>
                         <th className="p-3 w-[120px]">月薪</th>
@@ -361,7 +361,7 @@ export function SavingsGoalDialog({
                 <tbody className="divide-y">
                   {finalRows.map((row, idx) => (
                     <tr key={row.id} className={clsx("hover:bg-gray-50/50 transition-colors", idx === 0 && "bg-blue-50/30")}>
-                      <td className="p-3 font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month}</td>
+                      <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
                       {type !== 'MONTHLY' && (
                         <>
                           <td className="p-3">
