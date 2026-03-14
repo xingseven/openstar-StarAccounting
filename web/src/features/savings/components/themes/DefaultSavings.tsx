@@ -271,6 +271,12 @@ export function SavingsDefaultTheme({
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Debug log
+  useEffect(() => {
+    console.log('SavingsDefaultTheme 收到 transactions:', transactions);
+    console.log('transactions.length:', transactions.length);
+  }, [transactions]);
+
   // Filtered goals
   const filteredGoals = useMemo(() => {
     return items.filter(item => 

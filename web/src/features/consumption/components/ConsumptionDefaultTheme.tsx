@@ -764,14 +764,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="min-w-[500px] md:w-full">
+            <div className="min-w-[350px] md:w-full">
               <DelayedRender delay={120} lazy className="h-[250px] w-full">
                 <ChartContainer config={trendChartConfig} className="h-[250px] w-full">
                   <LineChart
                     accessibilityLayer
-                    data={isMobile ? data.trend.slice(0, 10) : data.trend}
+                    data={data.trend}
                     margin={{ left: 12, right: 12 }}
-                    width={isMobile ? 500 : undefined}
                   >
                     <CartesianGrid vertical={false} />
                     <XAxis
@@ -804,10 +803,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="min-w-[500px] md:w-full">
+            <div className="min-w-[350px] md:w-full">
               <DelayedRender delay={240} lazy className="h-[250px] w-full">
                 <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
-                  <BarChart accessibilityLayer data={isMobile ? data.stackedBar.slice(0, 10) : data.stackedBar} width={isMobile ? 500 : undefined}>
+                  <BarChart accessibilityLayer data={data.stackedBar}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="day"
@@ -997,36 +996,38 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向</CardDescription>
         </CardHeader>
-        <CardContent>
-          <DelayedRender delay={960} lazy className="h-[300px] w-full">
-            <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
-              <Sankey
-                data={data.sankey}
-                margin={{ left: 0, right: 80, top: 10, bottom: 10 }}
-                node={({ x, y, width, height, index, payload }) => {
-                  return (
-                    <Layer key={`node-${index}`}>
-                      <Rectangle x={x} y={y} width={width} height={height} fill="var(--color-chart-1)" fillOpacity={0.8} radius={[2, 2, 2, 2]} />
-                      <text
-                        x={x + width + 6}
-                        y={y + height / 2}
-                        dy="0.35em"
-                        fontSize={12}
-                        fill="#333"
-                        className="text-xs font-medium fill-gray-700 dark:fill-gray-200"
-                      >
-                        {`${payload.name} (${payload.value})`}
-                      </text>
-                    </Layer>
-                  );
-                }}
-                nodePadding={50}
-                link={{ stroke: 'var(--color-chart-1)', fillOpacity: 0.3 }}
-              >
-                <Tooltip />
-              </Sankey>
-            </ChartContainer>
-          </DelayedRender>
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[600px] md:min-w-0">
+            <DelayedRender delay={960} lazy className="h-[300px]">
+              <ChartContainer config={emptyChartConfig} className="h-[300px]">
+                <Sankey
+                  data={data.sankey}
+                  margin={{ left: 0, right: 80, top: 10, bottom: 10 }}
+                  node={({ x, y, width, height, index, payload }) => {
+                    return (
+                      <Layer key={`node-${index}`}>
+                        <Rectangle x={x} y={y} width={width} height={height} fill="var(--color-chart-1)" fillOpacity={0.8} radius={[2, 2, 2, 2]} />
+                        <text
+                          x={x + width + 6}
+                          y={y + height / 2}
+                          dy="0.35em"
+                          fontSize={12}
+                          fill="#333"
+                          className="text-xs font-medium fill-gray-700 dark:fill-gray-200"
+                        >
+                          {`${payload.name} (${payload.value})`}
+                        </text>
+                      </Layer>
+                    );
+                  }}
+                  nodePadding={50}
+                  link={{ stroke: 'var(--color-chart-1)', fillOpacity: 0.3 }}
+                >
+                  <Tooltip />
+                </Sankey>
+              </ChartContainer>
+            </DelayedRender>
+          </div>
         </CardContent>
       </Card>
 

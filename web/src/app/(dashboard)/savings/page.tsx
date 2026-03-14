@@ -53,6 +53,9 @@ export default function SavingsPage() {
       // I will fetch recent 100 transactions and filter client side for now as a quick fix
       // TODO: Add category filter to backend
       const transData = await apiFetch<{ items: TransactionItem[]; total: number; page: number; pageSize: number }>(`/api/transactions?pageSize=100`);
+      console.log('原始交易数据:', transData);
+      console.log('交易数量:', transData.items?.length || 0);
+      
       const savingsKeywords = ["储蓄", "存款", "理财", "基金", "股票", "定投", "Savings", "Deposit"];
       const filtered = transData.items.filter(t => 
         savingsKeywords.some(k => 
@@ -60,11 +63,13 @@ export default function SavingsPage() {
           (t.description && t.description.includes(k))
         )
       );
-      console.log('交易加载:', {
-        总数: transData.total,
-        过滤后: filtered.length,
-        第一条: filtered[0]
-      });
+      console.log('过滤后的交易:', filtered);
+      console.log('过滤数量:', filtered.length);
+      
+      if (filtered.length > 0) {
+        console.log('第一条过滤记录:', filtered[0]);
+      }
+      
       setTransactions(filtered);
 
     } catch (e) {
