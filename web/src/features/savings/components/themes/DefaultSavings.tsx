@@ -65,13 +65,143 @@ interface SavingsViewProps {
   totalSaved: number;
   totalTarget: number;
   overallProgress: number;
+  loading?: boolean;
   onOpenCreate: () => void;
   onOpenEdit: (item: SavingsGoal) => void;
   onOpenPunch: (item: SavingsGoal) => void;
 }
 
+// Skeleton loader components
+function StatsCardSkeleton() {
+  return (
+    <Card className="border-l-4 border-l-gray-300 shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-gray-500">
+          <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+        </CardTitle>
+        <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+        <div className="h-3 w-40 bg-gray-200 rounded animate-pulse"></div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DistributionChartSkeleton() {
+  return (
+    <Card className="md:col-span-1 flex flex-col">
+      <CardHeader className="items-center pb-0">
+        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
+        <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+      </CardHeader>
+      <CardContent className="flex-1 pb-0 relative min-h-[200px]">
+        <div className="mx-auto aspect-square max-h-[200px] flex items-center justify-center">
+          <div className="h-40 w-40 rounded-full border-8 border-gray-200 animate-pulse"></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GoalsTableSkeleton() {
+  return (
+    <Card className="md:col-span-3 overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between py-4">
+        <div className="space-y-1">
+          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-3 w-40 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="overflow-auto">
+          <table className="w-full min-w-[860px] text-sm">
+            <thead className="bg-gray-50 text-gray-600">
+              <tr>
+                {["名称", "模式", "存款类型", "当前/目标", "进度", "截止日期", "操作"].map((header, i) => (
+                  <th key={i} className="text-left px-3 py-2 whitespace-nowrap">
+                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {[...Array(5)].map((_, i) => (
+                <tr key={i} className="hover:bg-gray-50/70">
+                  <td className="px-3 py-3">
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse ml-auto"></div>
+                  </td>
+                  <td className="px-3 py-3 min-w-[180px]">
+                    <div className="h-2 w-full bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TransactionsSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between py-4">
+        <div className="space-y-1">
+          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-3 w-48 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-0 divide-y">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-3 -mx-6 px-6">
+              <div className="flex items-center gap-4">
+                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+                <div>
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
+                  <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // Helper component for staggered animation and lazy loading
-function DelayedRender({ children, delay, lazy = false }: { children: React.ReactNode; delay: number; lazy?: boolean }) {
+function DelayedRender({ children, delay, lazy = false, skeleton }: { 
+  children: React.ReactNode; 
+  delay: number; 
+  lazy?: boolean;
+  skeleton?: React.ReactNode;
+}) {
   const [shouldRender, setShouldRender] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -104,17 +234,21 @@ function DelayedRender({ children, delay, lazy = false }: { children: React.Reac
 
   if (!shouldRender) {
     return (
-      <div ref={ref} className="h-[250px] w-full flex flex-col items-center justify-center bg-white border rounded-xl animate-pulse space-y-4 p-6">
-        <div className="w-full flex justify-between items-center">
-          <div className="h-5 w-32 bg-gray-200 rounded"></div>
-          <div className="h-5 w-5 bg-gray-200 rounded-full"></div>
-        </div>
-        <div className="flex-1 w-full flex items-end justify-between gap-2">
-           {[...Array(3)].map((_, i) => (
-             <div key={i} className="bg-gray-200 rounded-t w-full" style={{ height: `${Math.random() * 60 + 20}%` }}></div>
-           ))}
-        </div>
-        <div className="h-4 w-full bg-gray-100 rounded"></div>
+      <div ref={ref}>
+        {skeleton || (
+          <div className="h-[250px] w-full flex flex-col items-center justify-center bg-white border rounded-xl animate-pulse space-y-4 p-6">
+            <div className="w-full flex justify-between items-center">
+              <div className="h-5 w-32 bg-gray-200 rounded"></div>
+              <div className="h-5 w-5 bg-gray-200 rounded-full"></div>
+            </div>
+            <div className="flex-1 w-full flex items-end justify-between gap-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-gray-200 rounded-t w-full" style={{ height: `${40 + i * 20}%` }}></div>
+              ))}
+            </div>
+            <div className="h-4 w-full bg-gray-100 rounded"></div>
+          </div>
+        )}
       </div>
     );
   }
@@ -128,6 +262,7 @@ export function SavingsDefaultTheme({
   totalSaved,
   totalTarget,
   overallProgress,
+  loading = false,
   onOpenCreate,
   onOpenEdit,
   onOpenPunch,
@@ -196,50 +331,68 @@ export function SavingsDefaultTheme({
         </div>
       </div>
 
-      {/* Row 1: Summary Cards (3 cols) - Instant Render */}
+      {/* Row 1: Summary Cards (3 cols) - With Skeleton */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">总存款</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <Wallet className="h-5 w-5 text-blue-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">¥{totalSaved.toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">所有目标的当前存款总和</p>
-          </CardContent>
-        </Card>
+        {loading ? (
+          <>
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </>
+        ) : (
+          <>
+            <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">总存款</CardTitle>
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-blue-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">¥{totalSaved.toLocaleString()}</div>
+                <p className="text-xs text-gray-500 mt-1">所有目标的当前存款总和</p>
+              </CardContent>
+            </Card>
 
-        <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">目标总额</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-              <Target className="h-5 w-5 text-purple-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">¥{totalTarget.toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">所有目标的计划总额</p>
-          </CardContent>
-        </Card>
+            <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">目标总额</CardTitle>
+                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Target className="h-5 w-5 text-purple-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">¥{totalTarget.toLocaleString()}</div>
+                <p className="text-xs text-gray-500 mt-1">所有目标的计划总额</p>
+              </CardContent>
+            </Card>
 
-        <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">总体进度</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{overallProgress.toFixed(1)}%</div>
-            <Progress value={overallProgress} className="h-2 mt-2 bg-green-100" indicatorClassName="bg-green-500" />
-          </CardContent>
-        </Card>
+            <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">总体进度</CardTitle>
+                <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">{overallProgress.toFixed(1)}%</div>
+                <Progress value={overallProgress} className="h-2 mt-2 bg-green-100" indicatorClassName="bg-green-500" />
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Row 2: Distribution Chart & Goals Grid */}
-      <DelayedRender delay={200}>
+      <DelayedRender 
+        delay={200} 
+        skeleton={
+          <div className="grid gap-6 md:grid-cols-4">
+            <DistributionChartSkeleton />
+            <GoalsTableSkeleton />
+          </div>
+        }
+      >
         <div className="grid gap-6 md:grid-cols-4">
           {/* Chart Column */}
           <Card className="md:col-span-1 flex flex-col">
@@ -333,9 +486,9 @@ export function SavingsDefaultTheme({
                             </td>
                             <td className="px-3 py-3 whitespace-nowrap">
                               {item.type === "BI_MONTHLY_ODD"
-                                ? "隔月(单)"
+                                ? "隔月 (单)"
                                 : item.type === "BI_MONTHLY_EVEN"
-                                ? "隔月(双)"
+                                ? "隔月 (双)"
                                 : item.type === "MONTHLY"
                                 ? "每月存"
                                 : item.type === "YEARLY"
@@ -413,12 +566,16 @@ export function SavingsDefaultTheme({
       </DelayedRender>
 
       {/* Row 3: Transactions - Lazy Load */}
-      <DelayedRender delay={100} lazy>
+      <DelayedRender 
+        delay={100} 
+        lazy
+        skeleton={<TransactionsSkeleton />}
+      >
         <Card>
           <CardHeader className="flex flex-row items-center justify-between py-4">
             <div className="space-y-1">
               <CardTitle className="text-base">存取记录</CardTitle>
-              <CardDescription>包含“储蓄”、“存款”、“理财”等分类的流水</CardDescription>
+              <CardDescription>包含"储蓄"、"存款"、"理财"等分类的流水</CardDescription>
             </div>
             <Button variant="ghost" size="sm" className="text-xs text-gray-500 hover:text-black">
               查看全部 <ArrowRight className="ml-1 h-3 w-3" />

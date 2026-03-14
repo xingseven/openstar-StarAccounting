@@ -54,16 +54,20 @@ export default function DashboardPage() {
         const qsExpense = new URLSearchParams({ type: "EXPENSE", startDate: start, endDate: end });
         const qsIncome = new URLSearchParams({ type: "INCOME", startDate: start, endDate: end });
 
-        const [assetsData, loansData, expenseData, incomeData, transactionsData] = await Promise.all([
+        const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData] = await Promise.all([
           apiFetch<{ items: Asset[] }>("/api/assets"),
           apiFetch<{ items: Loan[] }>("/api/loans"),
+          apiFetch<{ items: any[] }>("/api/savings"),
           apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsExpense}`),
           apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsIncome}`),
           apiFetch<{ items: Transaction[] }>(`/api/transactions?page=1&pageSize=5`),
         ]);
 
+        const assetsTotal = assetsData.items.reduce((acc, cur) => acc + Number(cur.estimatedValue ?? cur.balance), 0);
+        const savingsTotal = savingsData.items.reduce((acc, cur) => acc + Number(cur.currentAmount), 0);
+
         setData({
-          totalAssets: assetsData.items.reduce((acc, cur) => acc + Number(cur.estimatedValue ?? cur.balance), 0),
+          totalAssets: assetsTotal + savingsTotal,
           totalDebt: loansData.items.reduce((acc, cur) => acc + Number(cur.remainingAmount), 0),
           monthExpense: Number(expenseData.totalExpense),
           monthIncome: Number(incomeData.totalExpense),

@@ -122,6 +122,7 @@ export default function SavingsPage() {
         totalSaved={totalSaved}
         totalTarget={totalTarget}
         overallProgress={overallProgress}
+        loading={loading}
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
         onOpenPunch={openPunch}
