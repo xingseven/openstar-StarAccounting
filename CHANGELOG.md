@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.18 - 2026-03-14
+
+### Features
+- **打卡和取款日期显示**:
+  - 在储蓄打卡弹窗中显示打卡日期时间
+  - 已完成的打卡记录显示 "打卡：YYYY-MM-DD HH:mm"
+  - 取款交易自动记录当前时间
+  - 存取记录列表显示交易日期
+
+### Modified Files
+1. `web/src/features/savings/components/SavingsPlanDialog.tsx`
+   - 添加 `createdAt` 和 `updatedAt` 字段到类型定义
+   - 在打卡状态按钮下方显示打卡时间
+   - 仅对已完成状态显示打卡日期
+
 ## 1.8.17 - 2026-03-14
 
 ### Features
