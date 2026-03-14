@@ -4,6 +4,26 @@ import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { AssetsDefaultTheme, Asset } from "@/features/assets/components/themes/DefaultAssets";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  Plus,
+  Wallet,
+  TrendingUp,
+  ArrowUpRight,
+  Edit,
+  Trash2,
+} from "lucide-react";
+
+import { clsx } from "clsx";
+
 const SUPPORTED_CURRENCIES = ["CNY", "USD", "EUR", "HKD", "JPY", "GBP"];
 
 export default function AssetsPage() {
@@ -25,7 +45,7 @@ export default function AssetsPage() {
 
   async function loadItems() {
     try {
-      const data = await apiFetch<{ items: any[] }>(`/api/assets?currency=${displayCurrency}`);
+      const data = await apiFetch<{ items: Asset[] }>(`/api/assets?currency=${displayCurrency}`);
       const list = data.items.map((i) => ({
         ...i,
         balance: Number(i.balance),

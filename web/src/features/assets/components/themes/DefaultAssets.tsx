@@ -83,15 +83,15 @@ export function AssetsDefaultTheme({
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">资产管理</h1>
-          <p className="text-gray-500 mt-1">管理你的现金、银行卡与投资账户</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">资产管理</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">管理你的现金、银行卡与投资账户</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <Select value={displayCurrency} onValueChange={onCurrencyChange}>
-            <SelectTrigger className="w-[140px] bg-white">
+            <SelectTrigger className="w-[100px] sm:w-[140px] bg-white h-9 sm:h-10 text-xs sm:text-sm">
               <SelectValue placeholder="选择币种" />
             </SelectTrigger>
             <SelectContent>
@@ -103,21 +103,21 @@ export function AssetsDefaultTheme({
             </SelectContent>
           </Select>
           
-          <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            新增资产
+          <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white h-9 sm:h-10 px-3 sm:px-4">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">新增资产</span>
           </Button>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-black p-8 text-white shadow-lg relative overflow-hidden">
+      <div className="rounded-xl sm:rounded-xl border bg-black p-4 sm:p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-sm text-gray-400 font-medium mb-2">
-            <Wallet className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-[10px] sm:text-sm text-gray-400 font-medium mb-1 sm:mb-2">
+            <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
             总资产估值 ({displayCurrency})
           </div>
-          <div className="text-4xl font-bold tracking-tight">
-            {displayCurrency === "CNY" ? "¥" : displayCurrency} {totalAssets.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+          <div className="text-xl sm:text-3xl md:text-4xl font-bold tracking-tight">
+            {displayCurrency === "CNY" ? "¥" : displayCurrency} {totalAssets.toLocaleString('zh-CN', { minimumFractionDigits: 0 })}
           </div>
         </div>
         {/* Decorative background */}
@@ -125,44 +125,44 @@ export function AssetsDefaultTheme({
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-12 text-center text-gray-500 bg-gray-50/50">
-          <div className="mx-auto h-12 w-12 rounded-full bg-white border shadow-sm flex items-center justify-center mb-3">
-            <Wallet className="h-6 w-6 text-gray-400" />
+        <div className="rounded-xl border border-dashed p-8 sm:p-12 text-center text-gray-500 bg-gray-50/50">
+          <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white border shadow-sm flex items-center justify-center mb-2 sm:mb-3">
+            <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
           </div>
-          <p>暂无资产记录，开始添加你的第一笔资产吧</p>
+          <p className="text-xs sm:text-sm">暂无资产记录，开始添加你的第一笔资产吧</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
             <Card key={item.id} className="group hover:shadow-md transition-shadow relative overflow-hidden">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-1 sm:pb-3 p-3 sm:p-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gray-50 flex items-center justify-center border">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-50 flex items-center justify-center border">
                       {getIcon(item.type)}
                     </div>
                     <div>
-                      <CardTitle className="text-base font-semibold">{item.name}</CardTitle>
-                      <div className="text-xs text-gray-500 mt-0.5">{getLabel(item.type)}</div>
+                      <CardTitle className="text-xs sm:text-base font-semibold">{item.name}</CardTitle>
+                      <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5">{getLabel(item.type)}</div>
                     </div>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onOpenEdit(item)}
-                      className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
+                      className="p-1 sm:p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                     </button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  <div className="text-2xl font-bold text-gray-900">
+              <CardContent className="pt-0 p-3 sm:p-6">
+                <div className="space-y-0.5 sm:space-y-1">
+                  <div className="text-base sm:text-2xl font-bold text-gray-900">
                     {item.currency === "CNY" ? "¥" : item.currency} {item.balance.toLocaleString()}
                   </div>
                   {item.currency !== displayCurrency && (
-                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                    <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
                       <span>≈ {displayCurrency} {item.estimatedValue.toLocaleString()}</span>
                     </div>
                   )}

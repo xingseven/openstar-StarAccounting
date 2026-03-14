@@ -1002,8 +1002,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <div className="min-w-[700px] md:min-w-0">
-            <DelayedRender delay={960} className="h-[500px] w-full md:h-[600px]">
+          <div className="min-w-[900px] md:w-full">
+            <DelayedRender delay={960} className="h-[450px] w-full">
               <ReactECharts
                 option={{
                   tooltip: {
@@ -1025,14 +1025,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       },
                       nodeAlign: 'left',
                       left: 10,
-                      right: 100,
-                      top: 30,
-                      bottom: 30,
-                      nodeWidth: 24,
-                      nodeGap: 16,
-                      layoutIterations: 100,
+                      right: 140,
+                      top: 5,
+                      bottom: 5,
+                      nodeWidth: 22,
+                      nodeGap: 12,
+                      layoutIterations: 32,
                       draggable: false,
-                      orient: 'horizontal',
                       data: data.sankey.nodes.map((node, index) => {
                            const level = index < 2 ? 0 : index < 4 ? 1 : index < 9 ? 2 : 3;
                            const colors = [
@@ -1088,7 +1087,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     },
                   ],
                 }}
-                style={{ height: '500px', width: '100%' }}
+                style={{ height: '100%', width: '100%' }}
+                opts={{ renderer: 'svg' }}
               />
             </DelayedRender>
           </div>
