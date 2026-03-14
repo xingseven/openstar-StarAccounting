@@ -436,7 +436,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [filterOpen, setFilterOpen] = useState(false);
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto relative">
+    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto relative">
       {/* Floating Filter Button */}
       <div 
         className={cn(
@@ -447,23 +447,23 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
           <button 
             type="button" 
-            className="h-14 w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center"
+            className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center"
             onClick={() => setFilterOpen(!filterOpen)}
           >
-            <Filter className="h-6 w-6" />
+            <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
-          <PopoverContent className="w-80 p-4 mr-8 mb-4" side="top" align="end">
-            <div className="space-y-4">
-              <h4 className="font-medium leading-none">快捷筛选</h4>
-              <div className="space-y-3">
+          <PopoverContent className="w-72 sm:w-80 p-3 sm:p-4 mr-4 sm:mr-8 mb-4" side="top" align="end">
+            <div className="space-y-3 sm:space-y-4">
+              <h4 className="font-medium leading-none text-sm sm:text-base">快捷筛选</h4>
+              <div className="space-y-2 sm:space-y-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-500">搜索</Label>
+                  <Label className="text-[10px] sm:text-xs text-gray-500">搜索</Label>
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                     <Input
                       type="search"
                       placeholder="搜索..."
-                      className="pl-9 h-9"
+                      className="pl-9 h-8 sm:h-9 text-xs sm:text-sm"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -471,9 +471,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </div>
                 
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-500">平台</Label>
+                  <Label className="text-[10px] sm:text-xs text-gray-500">平台</Label>
                   <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
                       <SelectValue placeholder="所有平台" />
                     </SelectTrigger>
                     <SelectContent>
@@ -485,16 +485,16 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs text-gray-500">时间</Label>
+                  <Label className="text-[10px] sm:text-xs text-gray-500">时间</Label>
                   <div className="flex items-center gap-2 border rounded-md p-1">
                     <button 
                       onClick={() => setDateFilter("month")}
-                      className={cn("flex-1 px-2 py-1 text-xs rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
+                      className={cn("flex-1 px-2 py-1 text-[10px] sm:text-xs rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
                     >
                       本月
                     </button>
                     <div className="h-3 w-px bg-gray-200" />
-                    <span className="flex-1 text-center text-xs text-gray-500 px-1 truncate">{dateRangeLabel}</span>
+                    <span className="flex-1 text-center text-[10px] sm:text-xs text-gray-500 px-1 truncate">{dateRangeLabel}</span>
                   </div>
                 </div>
               </div>
@@ -503,20 +503,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Popover>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
-          <p className="text-gray-500 mt-1">全方位洞察您的收支状况</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
               placeholder="搜索消费明细..."
-              className="pl-9 w-[200px] bg-white"
+              className="pl-9 w-full bg-white h-9 sm:h-10 text-xs sm:text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -524,7 +524,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
           {/* Platform Filter */}
           <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-[140px] bg-white">
+            <SelectTrigger className="w-[100px] sm:w-[140px] bg-white h-9 sm:h-10 text-xs sm:text-sm">
               <SelectValue placeholder="所有平台" />
             </SelectTrigger>
             <SelectContent>
@@ -535,7 +535,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </Select>
 
           {/* Date Filter */}
-          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
+          <div className="hidden sm:flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
             <button 
               onClick={() => setDateFilter("month")}
               className={cn("px-3 py-1 text-sm rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
@@ -549,95 +549,95 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       </div>
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
-          <ShoppingBag className="absolute -right-3 -bottom-4 h-24 w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">总消费金额</CardTitle>
-            <div className="h-9 w-9 rounded-full bg-orange-100/90 ring-4 ring-orange-50/80 flex items-center justify-center">
-              <ShoppingBag className="h-5 w-5 text-orange-600" />
+          <ShoppingBag className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-orange-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
+            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-orange-100/90 ring-2 sm:ring-4 ring-orange-50/80 flex items-center justify-center">
+              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
-            <p className="text-xs text-gray-500 mt-1">共 {data.summary.expenseCount} 笔支出</p>
+          <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="text-lg sm:text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-          <Wallet className="absolute -right-3 -bottom-4 h-24 w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">本月收支</CardTitle>
-            <div className="h-9 w-9 rounded-full bg-blue-100/90 ring-4 ring-blue-50/80 flex items-center justify-center">
-              <Wallet className="h-5 w-5 text-blue-600" />
+          <Wallet className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-blue-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
+            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-blue-100/90 ring-2 sm:ring-4 ring-blue-50/80 flex items-center justify-center">
+              <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0">
             <div>
-              <div className="text-xs text-gray-500 flex items-center gap-1"><ArrowDownIcon className="h-3 w-3 text-green-500" /> 收入</div>
-              <div className="text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
+              <div className="text-sm sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-xs text-gray-500 flex items-center gap-1"><ArrowUpIcon className="h-3 w-3 text-red-500" /> 支出</div>
-              <div className="text-lg font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
+              <div className="text-sm sm:text-lg font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
-          <WechatOfficialIcon className="absolute -right-3 -bottom-4 h-24 w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">微信收支</CardTitle>
-            <div className="h-9 w-9 rounded-full bg-[#07C160]/15 ring-4 ring-[#07C160]/10 flex items-center justify-center">
-              <WechatOfficialIcon className="h-5 w-5" />
+          <WechatOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
+            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#07C160]/15 ring-2 sm:ring-4 ring-[#07C160]/10 flex items-center justify-center">
+              <WechatOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0">
             <div>
-              <div className="text-xs text-gray-500">收入</div>
-              <div className="text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-xs text-gray-500">收入</div>
+              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-xs text-gray-500">支出</div>
-              <div className="text-lg font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-xs text-gray-500">支出</div>
+              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
-          <AlipayOfficialIcon className="absolute -right-3 -bottom-4 h-24 w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-            <div className="h-9 w-9 rounded-full bg-[#1677FF]/15 ring-4 ring-[#1677FF]/10 flex items-center justify-center">
-              <AlipayOfficialIcon className="h-5 w-5 rounded-sm" />
+          <AlipayOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+            <CardTitle className="text-[10px] sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
+            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#1677FF]/15 ring-2 sm:ring-4 ring-[#1677FF]/10 flex items-center justify-center">
+              <AlipayOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5 rounded-sm" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0">
             <div>
-              <div className="text-xs text-gray-500">收入</div>
-              <div className="text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-xs text-gray-500">收入</div>
+              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-xs text-gray-500">支出</div>
-              <div className="text-lg font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-xs text-gray-500">支出</div>
+              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Row 2: Charts (3 cols) */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-2 sm:gap-4 grid-cols-1 md:grid-cols-4">
         <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0">
-            <CardTitle className="text-base">支付平台分布</CardTitle>
+          <CardHeader className="items-center pb-0 p-3 sm:p-6">
+            <CardTitle className="text-xs sm:text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-0 pt-0 px-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-0 pt-0 px-2 sm:px-4 relative flex flex-col items-center justify-center">
             <DelayedRender 
               delay={80}
-              className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[100px] w-[100px] md:h-[220px] md:w-[220px] rounded-full" />}
+              className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] md:h-[220px] md:w-[220px] flex items-center justify-center"
+              fallback={<Skeleton className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] md:h-[220px] md:w-[220px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[100px] w-[100px] md:h-[220px] md:w-[220px]">
+              <ChartContainer config={emptyChartConfig} className="h-[80px] w-[80px] sm:h-[100px] sm:w-[100px] md:h-[220px] md:w-[220px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
