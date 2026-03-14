@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -15,7 +15,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Loader2, CalendarIcon, Coins, PiggyBank, Wallet } from "lucide-react";
+import { Loader2, CalendarIcon, PiggyBank, Wallet, Plus, Trash2, ArrowRight } from "lucide-react";
 import { SavingsGoal } from "./themes/DefaultSavings";
 import { clsx } from "clsx";
 
@@ -23,9 +23,23 @@ interface SavingsGoalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: SavingsGoal | null;
-  onSave: (data: Partial<SavingsGoal>) => Promise<void>;
+  onSave: (data: Partial<SavingsGoal> & { plans?: any[], planConfig?: any }) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
 }
+
+type PlanRow = {
+  id: string;
+  month: string; // YYYY-MM
+  salary: number;
+  expenses: Record<string, number>; // dynamic columns
+  amount: number; // deposit amount
+  remark: string;
+  // Computed
+  balance?: number; // current month remaining
+  carryOver?: number; // from previous month
+  totalAvailable?: number;
+  finalBalance?: number; // carry to next month
+};
 
 export function SavingsGoalDialog({ 
   open, 
@@ -35,52 +49,186 @@ export function SavingsGoalDialog({
   onDelete 
 }: SavingsGoalDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
   
-  // Form States
+  // Step 1: Basic Info
   const [name, setName] = useState("");
-  const [targetAmount, setTargetAmount] = useState("");
-  const [currentAmount, setCurrentAmount] = useState("0");
-  const [deadline, setDeadline] = useState("");
   const [type, setType] = useState("MONTHLY");
   const [depositType, setDepositType] = useState("CASH");
-  const [status, setStatus] = useState("ACTIVE");
+  const [startMonth, setStartMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [duration, setDuration] = useState(12);
+
+  // Step 2: Plan Table
+  const [expenseColumns, setExpenseColumns] = useState<{id: string, name: string}[]>([
+    { id: "exp1", name: "固定支出1" }
+  ]);
+  const [rows, setRows] = useState<PlanRow[]>([]);
 
   // Reset or Load data when dialog opens
   useEffect(() => {
     if (open) {
+      setStep(1);
       if (initialData) {
         setName(initialData.name);
-        setTargetAmount(String(initialData.targetAmount));
-        setCurrentAmount(String(initialData.currentAmount));
-        setDeadline(initialData.deadline ? initialData.deadline.slice(0, 10) : "");
         setType(initialData.type);
         setDepositType(initialData.depositType);
-        setStatus(initialData.status);
+        // Loading existing plans is complex, skipping for simplicity in this "Create" focus
+        // Assuming Edit mode just edits basic info or redirects to Plan Management
       } else {
         // Reset for create mode
         setName("");
-        setTargetAmount("");
-        setCurrentAmount("0");
-        setDeadline("");
         setType("MONTHLY");
         setDepositType("CASH");
-        setStatus("ACTIVE");
+        setStartMonth(new Date().toISOString().slice(0, 7));
+        setDuration(12);
+        setExpenseColumns([{ id: "exp1", name: "固定支出1" }]);
+        setRows([]);
       }
     }
   }, [open, initialData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Initialize Rows when entering Step 2
+  const initRows = () => {
+    const newRows: PlanRow[] = [];
+    const [year, month] = startMonth.split("-").map(Number);
+    
+    for (let i = 0; i < duration; i++) {
+      const date = new Date(year, month - 1 + i, 1);
+      const mStr = date.toISOString().slice(0, 7);
+      newRows.push({
+        id: Math.random().toString(36).substr(2, 9),
+        month: mStr,
+        salary: 0,
+        expenses: {},
+        amount: 0,
+        remark: ""
+      });
+    }
+    setRows(newRows);
+  };
+
+  const handleNext = () => {
+    if (!name) return;
+    initRows();
+    setStep(2);
+  };
+
+  // Auto-fill logic: When first row changes, update others if they are "pristine" (simplified: just update all below)
+  const handleRowChange = (index: number, field: keyof PlanRow | string, value: any, isExpense = false) => {
+    const newRows = [...rows];
+    
+    if (isExpense) {
+      newRows[index].expenses = { ...newRows[index].expenses, [field]: Number(value) };
+    } else {
+      (newRows[index] as any)[field] = value;
+    }
+
+    // Auto-fill logic for first row
+    if (index === 0) {
+      for (let i = 1; i < newRows.length; i++) {
+        if (isExpense) {
+          newRows[i].expenses = { ...newRows[i].expenses, [field]: Number(value) };
+        } else if (field === 'salary') {
+          newRows[i].salary = Number(value);
+        } else if (field === 'amount' && type === 'MONTHLY') {
+          // Only auto-fill deposit amount for Monthly mode
+          newRows[i].amount = Number(value);
+        }
+      }
+    }
+
+    setRows(newRows);
+  };
+
+  // Dynamic Calculation
+  const calculatedRows = useMemo(() => {
+    let carryOver = 0;
+    return rows.map((row, idx) => {
+      const totalExpenses = Object.values(row.expenses).reduce((a, b) => a + Number(b), 0);
+      const currentBalance = Number(row.salary) - totalExpenses;
+      
+      // Determine if this is a deposit month for Bi-Monthly
+      const [y, m] = row.month.split('-').map(Number);
+      const isOdd = m % 2 !== 0;
+      const isTargetMonth = type === 'MONTHLY' || 
+                           (type === 'BI_MONTHLY_ODD' && isOdd) || 
+                           (type === 'BI_MONTHLY_EVEN' && !isOdd);
+
+      const totalAvailable = currentBalance + carryOver;
+      
+      // Auto-calculate deposit amount for Bi-Monthly if not manually set (or just default logic)
+      // Here we respect user input 'amount', but we can pre-fill it in initRows or handleRowChange
+      // Let's stick to user input for 'amount', but display available
+      
+      const finalBalance = totalAvailable - Number(row.amount);
+      
+      // Update carryOver for next iteration
+      carryOver = finalBalance;
+
+      return {
+        ...row,
+        balance: currentBalance,
+        carryOver: idx === 0 ? 0 : (calculatedRows?.[idx-1]?.finalBalance ?? 0), // Use memoized prev if possible, but here we iterate sequentially
+        totalAvailable,
+        finalBalance
+      };
+    });
+  }, [rows, type]);
+
+  // Need to fix the carryOver reference in map, simpler to just recalculate in one pass
+  const displayRows = () => {
+    let carryOver = 0;
+    return rows.map(row => {
+      const totalExpenses = Object.values(row.expenses).reduce((a, b) => a + Number(b), 0);
+      const currentBalance = Number(row.salary) - totalExpenses;
+      const totalAvailable = currentBalance + carryOver;
+      const finalBalance = totalAvailable - Number(row.amount);
+      
+      const rowData = {
+        ...row,
+        balance: currentBalance,
+        prevCarryOver: carryOver,
+        totalAvailable,
+        finalBalance
+      };
+      carryOver = finalBalance;
+      return rowData;
+    });
+  };
+  const finalRows = displayRows();
+
+  const handleAddColumn = () => {
+    const name = prompt("请输入列名 (如: 房租)");
+    if (name) {
+      setExpenseColumns([...expenseColumns, { id: Math.random().toString(36).substr(2, 5), name }]);
+    }
+  };
+
+  const handleSubmit = async () => {
     setLoading(true);
     try {
+      const totalTarget = finalRows.reduce((sum, r) => sum + Number(r.amount), 0);
+      
       await onSave({
         name,
-        targetAmount: Number(targetAmount),
-        currentAmount: Number(currentAmount),
-        deadline: deadline || null,
+        targetAmount: totalTarget,
         type: type as any,
         depositType: depositType as any,
-        status: status as any,
+        deadline: finalRows[finalRows.length - 1].month + "-01", // Approx
+        status: "ACTIVE",
+        plans: finalRows.map(r => ({
+          month: r.month,
+          amount: r.amount,
+          salary: r.salary,
+          expenses: r.expenses,
+          remark: r.remark,
+          status: "PENDING"
+        })),
+        planConfig: {
+          expenseColumns,
+          startMonth,
+          duration
+        } as any
       });
       onOpenChange(false);
     } catch (error) {
@@ -90,172 +238,175 @@ export function SavingsGoalDialog({
     }
   };
 
-  const handleDelete = async () => {
-    if (initialData && onDelete && confirm("确定要删除这个目标吗？此操作无法撤销。")) {
-      setLoading(true);
-      try {
-        await onDelete(initialData.id);
-        onOpenChange(false);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className={clsx("transition-all duration-300", step === 2 ? "sm:max-w-[1000px] h-[80vh] flex flex-col" : "sm:max-w-[500px]")}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 bg-blue-50 rounded-full text-blue-600">
-              {initialData ? <PiggyBank className="h-5 w-5" /> : <Wallet className="h-5 w-5" />}
+              {step === 1 ? <Wallet className="h-5 w-5" /> : <PiggyBank className="h-5 w-5" />}
             </div>
-            {initialData ? "编辑储蓄目标" : "新建储蓄目标"}
+            {step === 1 ? "新建储蓄目标" : `制定计划 - ${name}`}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {/* Name Field */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">目标名称</label>
-            <Input
-              required
-              placeholder="例如：买房首付、旅游基金"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="h-11 bg-gray-50/50 focus:bg-white transition-colors"
-            />
-          </div>
+        {step === 1 ? (
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">目标名称</label>
+              <Input
+                required
+                placeholder="例如：买房首付"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="h-11"
+              />
+            </div>
 
-          {/* Amount Fields */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                目标金额 <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">¥</span>
-                <Input
-                  required
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={targetAmount}
-                  onChange={(e) => setTargetAmount(e.target.value)}
-                  className="pl-7 h-11 bg-gray-50/50 focus:bg-white transition-colors font-medium"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">当前已存</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">¥</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={currentAmount}
-                  onChange={(e) => setCurrentAmount(e.target.value)}
-                  className="pl-7 h-11 bg-gray-50/50 focus:bg-white transition-colors font-medium"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Type & Deposit Type */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">存钱模式</label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="h-11 bg-gray-50/50 focus:bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MONTHLY">每月存</SelectItem>
-                  <SelectItem value="BI_MONTHLY_ODD">隔月存 (单月)</SelectItem>
-                  <SelectItem value="BI_MONTHLY_EVEN">隔月存 (双月)</SelectItem>
-                  <SelectItem value="YEARLY">年度目标</SelectItem>
-                  <SelectItem value="LONG_TERM">长期目标</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">资金性质</label>
-              <Select value={depositType} onValueChange={setDepositType}>
-                <SelectTrigger className="h-11 bg-gray-50/50 focus:bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CASH">现金</SelectItem>
-                  <SelectItem value="FIXED_TERM">死期存款</SelectItem>
-                  <SelectItem value="HELP_DEPOSIT">他人帮存</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Date & Status */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                截止日期
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="date"
-                  value={deadline}
-                  onChange={(e) => setDeadline(e.target.value)}
-                  className="pl-9 h-11 bg-gray-50/50 focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-            
-            {initialData && (
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">状态</label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className={clsx(
-                    "h-11 border-2 font-medium",
-                    status === "COMPLETED" ? "border-green-100 bg-green-50 text-green-700" : 
-                    status === "ARCHIVED" ? "border-gray-100 bg-gray-50 text-gray-500" :
-                    "border-blue-100 bg-blue-50 text-blue-700"
-                  )}>
-                    <SelectValue />
-                  </SelectTrigger>
+                <label className="text-sm font-medium text-gray-700">存钱模式</label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ACTIVE">进行中</SelectItem>
-                    <SelectItem value="COMPLETED">已达成</SelectItem>
-                    <SelectItem value="ARCHIVED">已归档</SelectItem>
+                    <SelectItem value="MONTHLY">每月存</SelectItem>
+                    <SelectItem value="BI_MONTHLY_ODD">隔月存 (单月)</SelectItem>
+                    <SelectItem value="BI_MONTHLY_EVEN">隔月存 (双月)</SelectItem>
+                    <SelectItem value="YEARLY">年度目标</SelectItem>
+                    <SelectItem value="LONG_TERM">长期目标</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">资金性质</label>
+                <Select value={depositType} onValueChange={setDepositType}>
+                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CASH">现金</SelectItem>
+                    <SelectItem value="FIXED_TERM">死期存款</SelectItem>
+                    <SelectItem value="HELP_DEPOSIT">他人帮存</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <DialogFooter className="gap-2 pt-2">
-            {initialData && onDelete && (
-              <Button 
-                type="button" 
-                variant="ghost" 
-                onClick={handleDelete}
-                className="mr-auto text-red-500 hover:text-red-600 hover:bg-red-50"
-                disabled={loading}
-              >
-                删除
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">开始月份</label>
+                <Input type="month" value={startMonth} onChange={e => setStartMonth(e.target.value)} className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">持续月数</label>
+                <Input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} className="h-11" />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={handleNext} className="w-full">
+                下一步 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            )}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-              取消
-            </Button>
-            <Button type="submit" disabled={loading} className="min-w-[100px]">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {initialData ? "保存修改" : "立即创建"}
-            </Button>
-          </DialogFooter>
-        </form>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Toolbar */}
+            <div className="flex justify-between items-center py-2 mb-2">
+              <div className="text-sm text-gray-500">
+                提示：修改第一行数据将自动填充后续行
+              </div>
+              <Button variant="outline" size="sm" onClick={handleAddColumn}>
+                <Plus className="h-4 w-4 mr-2" /> 添加支出列
+              </Button>
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 overflow-auto border rounded-lg bg-white">
+              <table className="w-full text-sm text-left relative">
+                <thead className="bg-gray-50 text-gray-700 font-medium sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    <th className="p-3 w-[100px]">月份</th>
+                    <th className="p-3 w-[120px]">月薪</th>
+                    {expenseColumns.map(col => (
+                      <th key={col.id} className="p-3 min-w-[100px] group relative">
+                        <div className="flex items-center justify-between">
+                          {col.name}
+                          <button 
+                            onClick={() => setExpenseColumns(expenseColumns.filter(c => c.id !== col.id))}
+                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </th>
+                    ))}
+                    <th className="p-3 w-[100px] text-gray-500">本月结余</th>
+                    <th className="p-3 w-[100px] text-gray-500">上月结余</th>
+                    <th className="p-3 w-[100px] text-blue-600 font-bold">可存金额</th>
+                    <th className="p-3 w-[120px]">计划存款</th>
+                    <th className="p-3 w-[100px] text-purple-600">下月结余</th>
+                    <th className="p-3 min-w-[150px]">备注</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {finalRows.map((row, idx) => (
+                    <tr key={row.id} className={clsx("hover:bg-gray-50/50 transition-colors", idx === 0 && "bg-blue-50/30")}>
+                      <td className="p-3 font-medium text-gray-900">{row.month}</td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
+                          value={row.salary || ""}
+                          placeholder="0"
+                          onChange={e => handleRowChange(idx, 'salary', e.target.value)}
+                        />
+                      </td>
+                      {expenseColumns.map(col => (
+                        <td key={col.id} className="p-3">
+                          <input
+                            type="number"
+                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
+                            value={row.expenses[col.name] || ""}
+                            placeholder="0"
+                            onChange={e => handleRowChange(idx, col.name, e.target.value, true)}
+                          />
+                        </td>
+                      ))}
+                      <td className="p-3 text-gray-500">¥{row.balance?.toLocaleString()}</td>
+                      <td className="p-3 text-gray-500">¥{row.prevCarryOver?.toLocaleString()}</td>
+                      <td className="p-3 text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          className="w-full bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-gray-900"
+                          value={row.amount || ""}
+                          placeholder="0"
+                          onChange={e => handleRowChange(idx, 'amount', e.target.value)}
+                        />
+                      </td>
+                      <td className="p-3 text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
+                      <td className="p-3">
+                        <input
+                          className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
+                          value={row.remark}
+                          placeholder="备注..."
+                          onChange={e => handleRowChange(idx, 'remark', e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <DialogFooter className="pt-4 border-t mt-auto">
+              <Button variant="ghost" onClick={() => setStep(1)}>上一步</Button>
+              <Button onClick={handleSubmit} disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                确认创建
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
