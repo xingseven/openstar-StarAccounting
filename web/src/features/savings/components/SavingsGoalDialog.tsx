@@ -163,39 +163,20 @@ export function SavingsGoalDialog({
       const finalBalance = totalAvailable - Number(row.amount);
       
       // Update carryOver for next iteration
+      const prevCarryOver = carryOver;
       carryOver = finalBalance;
 
       return {
         ...row,
         balance: currentBalance,
-        carryOver: idx === 0 ? 0 : (calculatedRows?.[idx-1]?.finalBalance ?? 0), // Use memoized prev if possible, but here we iterate sequentially
+        carryOver: prevCarryOver,
         totalAvailable,
         finalBalance
       };
     });
   }, [rows, type]);
 
-  // Need to fix the carryOver reference in map, simpler to just recalculate in one pass
-  const displayRows = () => {
-    let carryOver = 0;
-    return rows.map(row => {
-      const totalExpenses = Object.values(row.expenses).reduce((a, b) => a + Number(b), 0);
-      const currentBalance = Number(row.salary) - totalExpenses;
-      const totalAvailable = currentBalance + carryOver;
-      const finalBalance = totalAvailable - Number(row.amount);
-      
-      const rowData = {
-        ...row,
-        balance: currentBalance,
-        prevCarryOver: carryOver,
-        totalAvailable,
-        finalBalance
-      };
-      carryOver = finalBalance;
-      return rowData;
-    });
-  };
-  const finalRows = displayRows();
+  const finalRows = calculatedRows;
 
   const handleAddColumn = () => {
     const name = prompt("请输入列名 (如: 房租)");
