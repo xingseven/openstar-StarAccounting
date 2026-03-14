@@ -346,14 +346,14 @@ export function SavingsGoalDialog({
                             </div>
                           </th>
                         ))}
-                        <th className="p-3 w-[100px] text-gray-500">本月结余</th>
-                        <th className="p-3 w-[100px] text-gray-500">上月结余</th>
-                        <th className="p-3 w-[100px] text-blue-600 font-bold">可存金额</th>
+                        <th className="p-3 min-w-[100px] text-gray-500">本月结余</th>
+                        <th className="p-3 min-w-[100px] text-gray-500">上月结余</th>
+                        <th className="p-3 min-w-[100px] text-blue-600 font-bold">可存金额</th>
                       </>
                     )}
                     <th className="p-3 w-[120px]">计划存款</th>
                     {type !== 'MONTHLY' && (
-                      <th className="p-3 w-[100px] text-purple-600">下月结余</th>
+                      <th className="p-3 min-w-[100px] text-purple-600">下月结余</th>
                     )}
                     <th className="p-3 min-w-[200px]">备注</th>
                   </tr>
