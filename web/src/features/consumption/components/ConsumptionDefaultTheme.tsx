@@ -377,20 +377,47 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const pieStrokeWidth = isMobile ? 12 : 4;
   const pieInnerRadius = isMobile ? 25 : 35;
 
-  // 计算周数
+  // 计算周数 - 假设一个月最多 5 周
   const weekLabels = useMemo(() => {
-    const weeks = [];
-    const startDate = new Date(dateRangeLabel.split('至')[0].trim());
-    const endDate = new Date(dateRangeLabel.split('至')[1]?.trim() || new Date());
-    const totalTime = endDate.getTime() - startDate.getTime();
-    const days = Math.ceil(totalTime / (1000 * 3600 * 24)) + 1;
-    const totalWeeks = Math.ceil(days / 7);
+    const weeks = ['第 1 周', '第 2 周', '第 3 周', '第 4 周', '第 5 周'];
+    return weeks.slice(0, 5);
+  }, []);
+
+  // 获取某月 1 号是周几 (0=周日，1=周一，..., 6=周六)
+  const getFirstDayOfWeek = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  // 获取某月的天数
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  // 计算当前周的日期
+  const getWeekDates = (week: number) => {
+    const year = 2026;
+    const month = 2; // 3 月 (0-indexed)
+    const firstDay = getFirstDayOfWeek(year, month); // 3 月 1 号是周几
+    const daysInMonth = getDaysInMonth(year, month);
     
-    for (let i = 1; i <= totalWeeks; i++) {
-      weeks.push(`第${i}周`);
+    // 第一周从 1 号开始，但可能不是周一
+    // 计算第一周实际从哪天开始
+    const weekStartOffset = firstDay; // 周日=0, 周一=1, ...
+    
+    // 计算第 N 周的起始日期
+    const weekStart = (week - 1) * 7 - weekStartOffset + 1;
+    
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const day = weekStart + i;
+      if (day >= 1 && day <= daysInMonth) {
+        dates.push(day);
+      } else {
+        dates.push(null); // 超出月份范围
+      }
     }
-    return weeks;
-  }, [dateRangeLabel]);
+    return dates;
+  };
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto relative">
@@ -891,11 +918,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 {weekLabels.map((week, index) => (
                   <button
                     key={index}
@@ -922,14 +949,22 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     dataKey="name" 
                     tickLine={false} 
                     axisLine={false}
-                    tick={({ x, y, payload }) => (
-                      <text x={x} y={y + 15} dy={10} textAnchor="middle" fill="#666" fontSize={12}>
-                        {payload.value}
-                        <tspan x={x} dy="14" fill="#999" fontSize={10}>
-                          {`3 月${(selectedWeek - 1) * 7 + [1, 2, 3, 4, 5, 6, 7][payload.index] || ''}日`}
-                        </tspan>
-                      </text>
-                    )}
+                    tickMargin={0}
+                    height={50}
+                    tick={({ x, y, payload }) => {
+                      const dayIndex = payload.index;
+                      const date = (selectedWeek - 1) * 7 + dayIndex + 1;
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text x={0} y={0} dy={10} textAnchor="middle" fill="#666" fontSize={12}>
+                            {payload.value}
+                          </text>
+                          <text x={0} y={0} dy={26} textAnchor="middle" fill="#999" fontSize={10}>
+                            {`3 月${date}日`}
+                          </text>
+                        </g>
+                      );
+                    }}
                   />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="var(--color-chart-1)" isAnimationActive animationDuration={700} animationEasing="ease-out">

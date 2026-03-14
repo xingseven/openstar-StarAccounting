@@ -898,6 +898,43 @@ app.delete("/api/transactions/:id", async (req, res) => {
   jsonOk(res, { deleted: true });
 });
 
+app.post("/api/transactions", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const { amount, type, category, platform, merchant, date, description } = req.body ?? {};
+
+  if (!amount || !type || !category || !platform || !date) {
+    jsonFail(res, 400, 50000, "INTERNAL_ERROR", "缺少必填字段");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const tx = await prisma.transaction.create({
+        data: {
+          userId,
+          amount: String(amount),
+          type: type as never,
+          category,
+          platform,
+          merchant: merchant ?? null,
+          date: new Date(date),
+          description: description ?? null,
+        },
+      });
+      jsonOk(res, { item: tx });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Database not available");
+});
+
 app.post("/api/transactions/import", upload.single("file"), async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
