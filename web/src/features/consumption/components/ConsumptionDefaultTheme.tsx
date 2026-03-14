@@ -469,11 +469,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       <DelayedRender delay={100} lazy>
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
               <CardDescription>识别主要支出分类</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-2">
               <ChartContainer config={{}} className="h-[250px] w-full">
                 <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} />
