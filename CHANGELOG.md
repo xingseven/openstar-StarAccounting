@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.8.19 - 2026-03-14
+
+### Features
+- **存取记录列表显示优化**:
+  - 打卡存款时自动创建交易记录（类别：储蓄存款）
+  - 优化存取记录过滤逻辑，同时检查 category 和 description 字段
+  - 确保打卡和取款记录都能在存取记录列表中显示
+  - 支持关键词：储蓄、存款、理财、基金、股票、定投等
+
+### Modified Files
+1. `web/src/features/savings/components/SavingsPlanDialog.tsx`
+   - 在 `handleUpdatePlan` 函数中添加交易创建逻辑
+   - 当打卡状态变为 COMPLETED 时创建 INCOME 类型交易
+   - 交易描述包含月份信息
+
+2. `web/src/app/(dashboard)/savings/page.tsx`
+   - 优化过滤逻辑，同时检查 category 和 description
+   - 扩大匹配范围，确保所有储蓄相关交易都能显示
+
 ## 1.8.18 - 2026-03-14
 
 ### Features
