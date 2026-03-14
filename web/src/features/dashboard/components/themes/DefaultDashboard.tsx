@@ -85,7 +85,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 md:space-y-8 max-w-7xl mx-auto overflow-x-hidden">
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
         {/* Net Worth Card */}
@@ -144,8 +144,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
       <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="border-gray-100 shadow-sm">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
+          <Card className="border-gray-100 shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="space-y-1">
                 <CardTitle className="text-lg font-bold text-gray-900">收支概览</CardTitle>
@@ -182,7 +182,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </CardContent>
           </Card>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
               <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
@@ -236,8 +236,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         </div>
 
         {/* Sidebar / Quick Actions */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm">
+        <div className="space-y-6 min-w-0">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
@@ -247,7 +247,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden">
+          <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden z-0">
             <div className="relative z-10">
               <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">需要帮助？</h3>
               <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
@@ -257,7 +257,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 查看文档
               </button>
             </div>
-            <div className="absolute right-0 bottom-0 h-24 w-24 sm:h-32 sm:w-32 bg-white/10 rounded-full blur-2xl translate-x-8 translate-y-8 sm:translate-x-10 sm:translate-y-10"></div>
+            <div className="absolute right-0 bottom-0 h-24 w-24 sm:h-32 sm:w-32 bg-white/10 rounded-full blur-2xl translate-x-8 translate-y-8 sm:translate-x-10 sm:translate-y-10 pointer-events-none"></div>
           </div>
         </div>
       </div>
