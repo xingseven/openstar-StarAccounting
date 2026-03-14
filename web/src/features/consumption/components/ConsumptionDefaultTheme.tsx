@@ -494,12 +494,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </CardHeader>
             <CardContent>
               <div className="h-[250px] overflow-y-auto">
-                <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+                <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2 max-w-[300px] mx-auto">
                   {["日", "一", "二", "三", "四", "五", "六"].map(d => (
                     <div key={d} className="font-medium text-gray-400">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1 max-w-[300px] mx-auto">
                   {/* Offset for first day of month (visual placeholder) */}
                   <div /> <div /> <div /> <div />
                   
@@ -519,7 +519,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         title={`${d.date}: ¥${d.value}`}
                       >
                         <span className="font-bold text-xs">{d.day}</span>
-                        {d.value > 0 && <span className="scale-90 origin-center text-[10px] font-medium leading-none mt-0.5">¥{Math.round(d.value)}</span>}
+                        {d.value > 0 && <span className="scale-75 origin-center text-[10px] font-medium leading-none mt-0.5">¥{Math.round(d.value)}</span>}
                       </div>
                     );
                   })}
