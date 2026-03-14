@@ -362,7 +362,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   }, []);
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto p-6 relative">
+    <div className="space-y-8 max-w-[1600px] mx-auto relative">
       {/* Floating Filter Button */}
       <div 
         className={cn(

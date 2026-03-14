@@ -169,7 +169,7 @@ export function SavingsDefaultTheme({
   } satisfies ChartConfig;
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto p-6">
+    <div className="space-y-8 max-w-[1600px] mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">储蓄目标</h1>
