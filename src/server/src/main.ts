@@ -1325,30 +1325,56 @@ app.post("/api/savings", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
 
-  const { name, targetAmount, deadline, type, depositType } = req.body ?? {};
+  const { name, targetAmount, deadline, type, depositType, plans, planConfig } = req.body ?? {};
   if (typeof name !== "string" || !name.trim()) {
     jsonFail(res, 400, 50000, "INVALID_PARAM", "name 必填");
     return;
   }
-  if (!targetAmount || Number.isNaN(Number(targetAmount))) {
-    jsonFail(res, 400, 50000, "INVALID_PARAM", "targetAmount 必填");
-    return;
-  }
+  // targetAmount can be 0 if calculated from plans
+  const targetVal = targetAmount && !Number.isNaN(Number(targetAmount)) ? Number(targetAmount) : 0;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const goal = await prisma.savingsGoal.create({
-        data: {
-          userId,
-          name,
-          targetAmount: Number(targetAmount),
-          deadline: deadline ? new Date(deadline) : null,
-          type: type || "LONG_TERM",
-          depositType: depositType || "CASH",
-        },
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Create Goal
+        const goal = await tx.savingsGoal.create({
+          data: {
+            userId,
+            name,
+            targetAmount: targetVal,
+            deadline: deadline ? new Date(deadline) : null,
+            type: type || "LONG_TERM",
+            depositType: depositType || "CASH",
+            planConfig: planConfig ?? undefined,
+          },
+        });
+
+        // 2. Create Plans if provided
+        let createdPlans: any[] = [];
+        if (Array.isArray(plans) && plans.length > 0) {
+          await tx.savingsPlan.createMany({
+            data: plans.map((p: any) => ({
+              goalId: goal.id,
+              month: p.month,
+              amount: Number(p.amount ?? 0),
+              status: p.status ?? "PENDING",
+              salary: p.salary ? Number(p.salary) : 0,
+              expenses: p.expenses ?? {},
+              remark: p.remark ?? "",
+            })),
+          });
+          
+          createdPlans = await tx.savingsPlan.findMany({
+            where: { goalId: goal.id },
+            orderBy: { month: "asc" },
+          });
+        }
+
+        return { goal, plans: createdPlans };
       });
-      jsonOk(res, { item: goal });
+
+      jsonOk(res, { item: result.goal, plans: result.plans });
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -1357,12 +1383,13 @@ app.post("/api/savings", async (req, res) => {
     }
   }
 
+  // Memory fallback (simplified, no plans)
   const list = savingsGoalsByUser.get(userId) ?? [];
   const goal: SavingsGoal = {
     id: crypto.randomUUID(),
     userId,
     name,
-    targetAmount: String(targetAmount),
+    targetAmount: String(targetVal),
     currentAmount: "0",
     deadline: deadline || null,
     type: type || "LONG_TERM",
