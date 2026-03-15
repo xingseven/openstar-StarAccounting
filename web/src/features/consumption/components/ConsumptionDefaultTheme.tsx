@@ -552,13 +552,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
           <ShoppingBag className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-orange-100/90 ring-2 sm:ring-4 ring-orange-50/80 flex items-center justify-center">
               <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
+          <CardContent className="p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
             <div className="text-lg sm:text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
             <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
@@ -566,13 +566,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
           <Wallet className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-blue-100/90 ring-2 sm:ring-4 ring-blue-50/80 flex items-center justify-center">
               <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
             <div>
               <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
               <div className="text-sm sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
@@ -586,13 +586,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
           <WechatOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#07C160]/15 ring-2 sm:ring-4 ring-[#07C160]/10 flex items-center justify-center">
               <WechatOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
             <div>
               <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
@@ -606,13 +606,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
           <AlipayOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-6">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
             <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#1677FF]/15 ring-2 sm:ring-4 ring-[#1677FF]/10 flex items-center justify-center">
               <AlipayOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5 rounded-sm" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-6 pt-0 pb-3 sm:pb-6">
+          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
             <div>
               <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
