@@ -183,23 +183,33 @@ model Asset {
 
 /// 预算表：按周期与分类记录预算额度
 model Budget {
-  id        String       @id @default(cuid())
-  userId    String
-  amount    Decimal
-  category  String       @default("ALL") // "ALL" for total budget, or specific category name
-  period    BudgetPeriod @default(MONTHLY)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id           String        @id @default(cuid())
+  userId       String
+  amount       Decimal
+  category     String        @default("ALL") // "ALL" for total budget, or specific category name
+  platform     String?       // 平台名称（当 scopeType 为 PLATFORM 时使用）
+  period       BudgetPeriod  @default(MONTHLY)
+  scopeType    BudgetScope   @default(GLOBAL) // 预算作用域：全局/分类/平台
+  alertPercent Int           @default(80) // 预警阈值百分比，默认 80%
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 
-  @@unique([userId, category, period])
+  @@unique([userId, category, period, scopeType, platform])
 }
 
 /// 预算周期枚举
 enum BudgetPeriod {
   MONTHLY
   YEARLY
+}
+
+/// 预算作用域枚举
+enum BudgetScope {
+  GLOBAL     // 全局预算
+  CATEGORY   // 分类预算
+  PLATFORM   // 平台预算
 }
 
 /// 资产类型枚举

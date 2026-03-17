@@ -1,5 +1,51 @@
 # Changelog
 
+## 1.8.38 - 2026-03-17
+
+### Fixes
+- **彻底解决全局布局抖动 (Layout Shift)**:
+  - 针对用户反馈的 "刷新时滚动条出现导致模块偏移" 问题，实施了基于 `scrollbar-gutter: stable` 的终极修复。
+  - 在全局 CSS (`globals.css`) 中新增 `.scrollbar-stable` 工具类。
+  - 将该类应用到 Dashboard 布局的核心滚动容器 (`layout.tsx`)。
+  - 效果：无论页面内容是否溢出，浏览器都会预留滚动条的轨道空间（空白槽位），从而保证内容区域宽度恒定。这意味着当加载完成滚动条消失时，模块绝对不会发生任何水平位移，彻底消除了抖动。
+
+### Modified Files
+1. `web/src/app/globals.css`
+   - 添加 `.scrollbar-stable` 类。
+2. `web/src/app/(dashboard)/layout.tsx`
+   - 为 `main` 容器添加 `scrollbar-stable` 类。
+
+## 1.8.37 - 2026-03-17
+
+### Fixes
+- **进一步优化储蓄页布局偏移问题**:
+  - 针对用户反馈的“加载时滚动条出现导致模块左移，加载完滚动条消失导致模块右移”的抖动问题，进行了深度优化。
+  - 大幅减小了 Skeleton（骨架屏）组件的高度，确保在加载状态下页面总高度也不会超过常见视口高度，从而彻底避免临时滚动条的出现。
+  - 调整详情：
+    - `DistributionChartSkeleton`: 250px -> 200px
+    - `GoalsTableSkeleton`: 250px -> 200px
+    - `TransactionsSkeleton`: 200px -> 150px
+  - 现在加载态更加紧凑，无论是在加载中还是加载完成，页面都能保持稳定的无滚动条状态（在数据量未超出一屏的情况下）。
+
+### Modified Files
+1. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 调整所有 Skeleton 组件的 `min-h` 类。
+
+## 1.8.36 - 2026-03-17
+
+### Fixes
+- **修复储蓄页面布局抖动**:
+  - 移除了 `DefaultSavings.tsx` 中导致强制滚动条的 `min-h-[101vh]` 属性，响应用户需求，保持页面无滚动条的清爽状态。
+  - 优化了骨架屏 (Skeleton) 的高度：
+    - 将 `DistributionChartSkeleton` 和 `GoalsTableSkeleton` 的最小高度从 350px 调整为 250px。
+    - 将 `TransactionsSkeleton` 的最小高度从 300px 调整为 200px。
+  - 这些调整消除了因加载态高度大于真实内容高度而导致的临时滚动条出现，从而彻底解决了页面刷新时的水平偏移抖动问题。
+
+### Modified Files
+1. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 移除 `min-h-[101vh]`。
+   - 调整 Skeleton 组件的 `min-h` 类。
+
 ## 1.8.35 - 2026-03-17
 
 ### UI/UX Improvements

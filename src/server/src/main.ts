@@ -8,7 +8,7 @@ import { mapRowToTransaction } from "./etl/mapTransaction.js";
 import { signAccessToken, verifyAccessToken } from "./auth/jwt.js";
 import { hashPassword, verifyPassword } from "./auth/password.js";
 import { convertCurrency, type ExchangeRate as CurrencyExchangeRate } from "./lib/currency.js";
-import { calculateBudgetUsage } from "./logic/budget.js";
+import { calculateBudgetUsage, calculateBudgetHealth, type BudgetStatus } from "./logic/budget.js";
 import { calculateAssetValue } from "./logic/asset.js";
 import { fetchExchangeRates } from "./services/exchangeRate.js";
 
@@ -2128,7 +2128,6 @@ app.get("/api/budgets", async (req, res) => {
         where: { userId },
         orderBy: { createdAt: "desc" },
       });
-      // Calculate used amount for each budget
       const now = new Date();
       const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const currentYearStart = new Date(now.getFullYear(), 0, 1);
@@ -2141,16 +2140,40 @@ app.get("/api/budgets", async (req, res) => {
             type: "EXPENSE",
             date: { gte: start },
           };
-          if (b.category !== "ALL") {
+          
+          const scopeType = b.scopeType || "GLOBAL";
+          if (scopeType === "CATEGORY" && b.category !== "ALL") {
+            where.category = b.category;
+          } else if (scopeType === "PLATFORM" && b.platform) {
+            where.platform = b.platform;
+          } else if (scopeType === "GLOBAL" && b.category !== "ALL") {
             where.category = b.category;
           }
+          
           const sum = await prisma.transaction.aggregate({
             where,
             _sum: { amount: true },
           });
+          
+          const used = Number(sum._sum.amount ?? 0);
+          const budgetAmount = Number(b.amount);
+          const percent = budgetAmount > 0 ? (used / budgetAmount) * 100 : 0;
+          const alertPercent = b.alertPercent ?? 80;
+          
+          let status: BudgetStatus = "normal";
+          if (percent >= 100) {
+            status = "overdue";
+          } else if (percent >= alertPercent) {
+            status = "warning";
+          }
+
           return {
             ...b,
-            used: String(sum._sum.amount ?? 0),
+            amount: String(b.amount),
+            used: used.toFixed(2),
+            percent: percent.toFixed(2),
+            status,
+            alertPercent,
           };
         })
       );
@@ -2169,12 +2192,18 @@ app.get("/api/budgets", async (req, res) => {
   const now = new Date();
   
   const items = budgets.map((b) => {
-    const used = calculateBudgetUsage(
+    const health = calculateBudgetHealth(
       { ...b, amount: Number(b.amount) },
       transactions.map(t => ({ ...t, amount: Number(t.amount), date: new Date(t.date) })),
       now
     );
-    return { ...b, used: used.toFixed(2) };
+    return { 
+      ...b, 
+      used: health.used.toFixed(2),
+      percent: health.percent.toFixed(2),
+      status: health.status,
+      alertPercent: health.alertPercent,
+    };
   });
 
   jsonOk(res, { items });
@@ -2184,7 +2213,7 @@ app.post("/api/budgets", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
 
-  const { amount, category, period } = req.body ?? {};
+  const { amount, category, period, scopeType, platform, alertPercent } = req.body ?? {};
   if (!amount || Number.isNaN(Number(amount))) {
     jsonFail(res, 400, 50000, "INVALID_PARAM", "amount 必填");
     return;
@@ -2199,13 +2228,15 @@ app.post("/api/budgets", async (req, res) => {
           amount: Number(amount),
           category: category || "ALL",
           period: period || "MONTHLY",
+          scopeType: scopeType || "GLOBAL",
+          platform: platform || null,
+          alertPercent: alertPercent ?? 80,
         },
       });
-      jsonOk(res, { item: budget });
+      jsonOk(res, { item: { ...budget, amount: String(budget.amount) } });
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
-      // Handle unique constraint error
       if (typeof e === "object" && e && "code" in e && (e as any).code === "P2002") {
         jsonFail(res, 400, 50000, "DUPLICATE_BUDGET", "该分类在此周期下已存在预算");
         return;
@@ -2216,7 +2247,6 @@ app.post("/api/budgets", async (req, res) => {
   }
 
   const list = budgetsByUser.get(userId) ?? [];
-  // Check duplicate
   const exists = list.some(
     (b) => b.category === (category || "ALL") && b.period === (period || "MONTHLY")
   );
@@ -2242,7 +2272,7 @@ app.put("/api/budgets/:id", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const id = req.params.id;
-  const { amount } = req.body ?? {};
+  const { amount, alertPercent } = req.body ?? {};
 
   const prisma = getPrisma();
   if (prisma) {
@@ -2250,10 +2280,11 @@ app.put("/api/budgets/:id", async (req, res) => {
       const budget = await prisma.budget.update({
         where: { id, userId },
         data: {
-          ...(amount ? { amount: Number(amount) } : {}),
+          ...(amount !== undefined ? { amount: Number(amount) } : {}),
+          ...(alertPercent !== undefined ? { alertPercent: Number(alertPercent) } : {}),
         },
       });
-      jsonOk(res, { item: budget });
+      jsonOk(res, { item: { ...budget, amount: String(budget.amount) } });
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -2299,6 +2330,132 @@ app.delete("/api/budgets/:id", async (req, res) => {
   const newList = list.filter((b) => b.id !== id);
   budgetsByUser.set(userId, newList);
   jsonOk(res, { deleted: true });
+});
+
+app.get("/api/budgets/alerts", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const budgets = await prisma.budget.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentYearStart = new Date(now.getFullYear(), 0, 1);
+
+      const alerts: Array<{
+        id: string;
+        category: string;
+        platform?: string | null;
+        period: string;
+        scopeType: string;
+        amount: string;
+        used: string;
+        percent: number;
+        status: BudgetStatus;
+        alertPercent: number;
+      }> = [];
+
+      for (const b of budgets) {
+        const start = b.period === "MONTHLY" ? currentMonthStart : currentYearStart;
+        const where: any = {
+          userId,
+          type: "EXPENSE",
+          date: { gte: start },
+        };
+        
+        const scopeType = b.scopeType || "GLOBAL";
+        if (scopeType === "CATEGORY" && b.category !== "ALL") {
+          where.category = b.category;
+        } else if (scopeType === "PLATFORM" && b.platform) {
+          where.platform = b.platform;
+        } else if (scopeType === "GLOBAL" && b.category !== "ALL") {
+          where.category = b.category;
+        }
+        
+        const sum = await prisma.transaction.aggregate({
+          where,
+          _sum: { amount: true },
+        });
+        
+        const used = Number(sum._sum.amount ?? 0);
+        const budgetAmount = Number(b.amount);
+        const percent = budgetAmount > 0 ? (used / budgetAmount) * 100 : 0;
+        const alertPercent = b.alertPercent ?? 80;
+        
+        let status: BudgetStatus = "normal";
+        if (percent >= 100) {
+          status = "overdue";
+        } else if (percent >= alertPercent) {
+          status = "warning";
+        }
+
+        if (status !== "normal") {
+          alerts.push({
+            id: b.id,
+            category: b.category,
+            platform: b.platform,
+            period: b.period,
+            scopeType: b.scopeType || "GLOBAL",
+            amount: String(b.amount),
+            used: used.toFixed(2),
+            percent,
+            status,
+            alertPercent,
+          });
+        }
+      }
+
+      jsonOk(res, { alerts });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const budgets = budgetsByUser.get(userId) ?? [];
+  const transactions = transactionsByUser.get(userId) ?? [];
+  const now = new Date();
+  
+  const alerts: Array<{
+    id: string;
+    category: string;
+    period: string;
+    amount: string;
+    used: string;
+    percent: number;
+    status: BudgetStatus;
+    alertPercent: number;
+  }> = [];
+
+  for (const b of budgets) {
+    const health = calculateBudgetHealth(
+      { ...b, amount: Number(b.amount) },
+      transactions.map(t => ({ ...t, amount: Number(t.amount), date: new Date(t.date) })),
+      now
+    );
+    
+    if (health.status !== "normal") {
+      alerts.push({
+        id: b.id,
+        category: b.category,
+        period: b.period,
+        amount: b.amount,
+        used: health.used.toFixed(2),
+        percent: health.percent,
+        status: health.status,
+        alertPercent: health.alertPercent,
+      });
+    }
+  }
+
+  jsonOk(res, { alerts });
 });
 
 // Exchange Rate API

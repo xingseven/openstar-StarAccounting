@@ -6,7 +6,9 @@ import {
   Banknote, 
   TrendingUp,
   MoreHorizontal,
-  Calendar
+  Calendar,
+  AlertTriangle,
+  AlertCircle
 } from "lucide-react";
 import { 
   BarChart, 
@@ -31,6 +33,19 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 
+export type BudgetAlert = {
+  id: string;
+  category: string;
+  platform?: string | null;
+  period: string;
+  scopeType: string;
+  amount: string;
+  used: string;
+  percent: number;
+  status: "normal" | "warning" | "overdue";
+  alertPercent: number;
+};
+
 export type DashboardData = {
   totalAssets: number;
   totalDebt: number;
@@ -47,6 +62,7 @@ export type DashboardData = {
     platform: string;
     merchant?: string;
   }>;
+  budgetAlerts: BudgetAlert[];
 };
 
 interface DashboardViewProps {
@@ -89,6 +105,71 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
   return (
     <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden">
+      {/* Budget Alerts Banner */}
+      {data.budgetAlerts.length > 0 && (
+        <div className="rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 sm:p-6 shadow-sm">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-xl bg-red-100 shrink-0">
+              <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base sm:text-lg font-bold text-red-900 mb-1 sm:mb-2">
+                预算预警 ({data.budgetAlerts.length})
+              </h3>
+              <div className="space-y-2">
+                {data.budgetAlerts.slice(0, 3).map((alert) => (
+                  <div key={alert.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/60 border border-red-100">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <div className={clsx(
+                        "p-1.5 sm:p-2 rounded-lg shrink-0",
+                        alert.status === "overdue" ? "bg-red-100" : "bg-yellow-100"
+                      )}>
+                        <AlertCircle className={clsx(
+                          "h-3 w-3 sm:h-4 sm:w-4",
+                          alert.status === "overdue" ? "text-red-600" : "text-yellow-600"
+                        )} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm sm:text-base text-gray-900 truncate">
+                          {alert.category === "ALL" ? "总预算" : alert.category}
+                          {alert.scopeType === "PLATFORM" && alert.platform && ` - ${alert.platform}`}
+                        </div>
+                        <div className="text-[10px] sm:text-xs text-gray-500">
+                          {alert.period === "MONTHLY" ? "月度" : "年度"} · 
+                          已用 ¥{Number(alert.used).toFixed(0)} / ¥{Number(alert.amount).toFixed(0)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className={clsx(
+                        "text-sm sm:text-base font-bold",
+                        alert.status === "overdue" ? "text-red-600" : "text-yellow-600"
+                      )}>
+                        {alert.percent.toFixed(0)}%
+                      </div>
+                      <div className={clsx(
+                        "text-[10px] sm:text-xs",
+                        alert.status === "overdue" ? "text-red-500" : "text-yellow-500"
+                      )}>
+                        {alert.status === "overdue" ? "超支" : "预警"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {data.budgetAlerts.length > 3 && (
+                  <Link 
+                    href="/budgets" 
+                    className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
+                  >
+                    查看全部 {data.budgetAlerts.length} 个预警 <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {/* Net Worth Card */}
@@ -113,7 +194,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </div>
             </div>
           </div>
-          {/* Decorative circle */}
           <div className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 h-16 sm:h-24 lg:h-32 w-16 sm:w-24 lg:w-32 rounded-full bg-white/5 blur-2xl sm:blur-3xl"></div>
         </div>
         
@@ -189,7 +269,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           </Card>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
             <div className="relative z-10">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
@@ -247,14 +327,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
             <div className="relative z-10">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
+              <QuickAction href="/budgets" icon={CreditCard} label="预算管理" color="red" />
               <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
               <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
-              <QuickAction href="/connections" icon={CreditCard} label="连接管理" color="indigo" />
             </div>
             </div>
           </div>
@@ -299,7 +379,7 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
       "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md relative overflow-hidden",
       className
     )}>
-      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+      <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
       <div className="relative z-10">
       <div className="flex items-center justify-between mb-1 sm:mb-2 lg:mb-4">
         <div className="flex items-center gap-2 text-gray-500">
@@ -327,6 +407,7 @@ function QuickAction({ href, icon: Icon, label, color }: { href: string; icon: a
     blue: "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
     purple: "bg-purple-50 text-purple-600 group-hover:bg-purple-100",
     amber: "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
+    red: "bg-red-50 text-red-600 group-hover:bg-red-100",
     indigo: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
   };
 

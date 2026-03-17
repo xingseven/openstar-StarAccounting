@@ -16,6 +16,19 @@ const DashboardDefaultTheme = dynamic(
   }
 );
 
+export type BudgetAlert = {
+  id: string;
+  category: string;
+  platform?: string | null;
+  period: string;
+  scopeType: string;
+  amount: string;
+  used: string;
+  percent: number;
+  status: "normal" | "warning" | "overdue";
+  alertPercent: number;
+};
+
 export type DashboardData = {
   totalAssets: number;
   totalDebt: number;
@@ -32,9 +45,9 @@ export type DashboardData = {
     platform: string;
     merchant?: string;
   }>;
+  budgetAlerts: BudgetAlert[];
 };
 
-// Keep internal types for API response matching
 type Asset = {
   id: string;
   name: string;
@@ -73,6 +86,7 @@ export default function DashboardPage() {
     monthSavingsIncome: 0,
     monthSavingsExpense: 0,
     recentTransactions: [],
+    budgetAlerts: [],
   });
 
   useEffect(() => {
@@ -86,7 +100,7 @@ export default function DashboardPage() {
         const qsExpense = new URLSearchParams({ type: "EXPENSE", startDate: start, endDate: end });
         const qsIncome = new URLSearchParams({ type: "INCOME", startDate: start, endDate: end });
 
-        const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData, savingsTxData] = await Promise.all([
+        const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData, savingsTxData, budgetAlertsData] = await Promise.all([
           apiFetch<{ items: Asset[] }>("/api/assets"),
           apiFetch<{ items: Loan[] }>("/api/loans"),
           apiFetch<{ items: any[] }>("/api/savings"),
@@ -94,9 +108,9 @@ export default function DashboardPage() {
           apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsIncome}`),
           apiFetch<{ items: Transaction[] }>(`/api/transactions?page=1&pageSize=5`),
           apiFetch<{ items: Transaction[] }>(`/api/transactions?pageSize=100`),
+          apiFetch<{ alerts: BudgetAlert[] }>("/api/budgets/alerts"),
         ]);
 
-        // 计算本月储蓄收支
         const savingsKeywords = ["储蓄", "存款"];
         const savingsTxs = savingsTxData.items.filter(t => 
           savingsKeywords.some(k => t.category?.includes(k) || t.description?.includes(k))
@@ -119,6 +133,7 @@ export default function DashboardPage() {
           monthSavingsIncome,
           monthSavingsExpense,
           recentTransactions: transactionsData.items,
+          budgetAlerts: budgetAlertsData.alerts || [],
         });
       } catch (e) {
         console.error(e);

@@ -89,7 +89,7 @@ interface SavingsViewProps {
 // Skeleton loader components
 function StatsCardSkeleton() {
   return (
-    <Card className="border-l-4 border-l-gray-300 shadow-sm">
+    <Card className="border-l-4 border-l-gray-300 shadow-sm min-h-[100px]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-gray-500">
           <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
@@ -106,14 +106,14 @@ function StatsCardSkeleton() {
 
 function DistributionChartSkeleton() {
   return (
-    <Card className="md:col-span-1 flex flex-col">
+    <Card className="md:col-span-1 flex flex-col min-h-[200px]">
       <CardHeader className="items-center pb-0">
         <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
         <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
       </CardHeader>
-      <CardContent className="flex-1 pb-0 relative min-h-[200px]">
-        <div className="mx-auto aspect-square max-h-[200px] flex items-center justify-center">
-          <div className="h-40 w-40 rounded-full border-8 border-gray-200 animate-pulse"></div>
+      <CardContent className="flex-1 pb-0 relative min-h-[140px]">
+        <div className="mx-auto aspect-square max-h-[120px] flex items-center justify-center">
+          <div className="h-28 w-28 rounded-full border-8 border-gray-200 animate-pulse"></div>
         </div>
       </CardContent>
     </Card>
@@ -122,7 +122,7 @@ function DistributionChartSkeleton() {
 
 function GoalsTableSkeleton() {
   return (
-    <Card className="md:col-span-3 overflow-hidden">
+    <Card className="md:col-span-3 overflow-hidden min-h-[200px]">
       <CardHeader className="flex flex-row items-center justify-between py-4">
         <div className="space-y-1">
           <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
@@ -182,7 +182,7 @@ function GoalsTableSkeleton() {
 
 function TransactionsSkeleton() {
   return (
-    <Card>
+    <Card className="min-h-[150px]">
       <CardHeader className="flex flex-row items-center justify-between py-4">
         <div className="space-y-1">
           <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
@@ -266,6 +266,11 @@ function DelayedRender({ children, delay, lazy = false, skeleton }: {
         )}
       </div>
     );
+  }
+
+  // When not lazy, render content immediately without skeleton to prevent layout shift on refresh
+  if (!lazy && !skeleton) {
+    return <>{children}</>;
   }
 
   return <div className="animate-in fade-in duration-700 slide-in-from-bottom-4">{children}</div>;
@@ -563,15 +568,15 @@ export function SavingsDefaultTheme({
       </div>
 
       {/* Row 2: Distribution Chart & Goals Grid */}
-      <DelayedRender 
-        delay={200} 
-        skeleton={
-          <div className="grid gap-6 md:grid-cols-4">
+      {loading ? (
+        <div className="grid gap-6 md:grid-cols-5">
+          <DistributionChartSkeleton />
+          <div className="md:col-span-1">
             <DistributionChartSkeleton />
-            <GoalsTableSkeleton />
           </div>
-        }
-      >
+          <GoalsTableSkeleton />
+        </div>
+      ) : (
         <div className="grid gap-6 md:grid-cols-5">
           {/* Chart Column 1: 储蓄模式分布 */}
           <Card className="md:col-span-1 flex flex-col">
@@ -656,7 +661,7 @@ export function SavingsDefaultTheme({
           </Card>
 
           {/* Goals Table Column */}
-          <Card className="md:col-span-3 overflow-hidden">
+          <Card className="md:col-span-3 overflow-hidden min-h-[350px]">
             <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
               <div className="space-y-0 sm:space-y-1">
                 <CardTitle className="text-sm sm:text-base">目标列表</CardTitle>
@@ -923,7 +928,7 @@ export function SavingsDefaultTheme({
             </CardContent>
           </Card>
         </div>
-      </DelayedRender>
+      )}
 
       {/* Row 3: Transactions - Lazy Load */}
       <DelayedRender 
