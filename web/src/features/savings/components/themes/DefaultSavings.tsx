@@ -371,12 +371,10 @@ export function SavingsDefaultTheme({
               </CardContent>
             </Card>
 
-            <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+            <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+              <TrendingUp className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-green-500/10" />
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
                 <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总体进度</CardTitle>
-                <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <TrendingUp className="h-3 w-3 sm:h-5 sm:w-5 text-green-600" />
-                </div>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="text-lg sm:text-lg font-bold text-gray-900">{overallProgress.toFixed(0)}%</div>

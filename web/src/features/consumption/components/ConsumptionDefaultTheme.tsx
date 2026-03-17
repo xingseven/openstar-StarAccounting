@@ -617,17 +617,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 2: Charts (3 cols) */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0 p-2 sm:p-4 md:p-6">
+        <Card className="col-span-1 flex flex-col h-[180px] md:h-auto">
+          <CardHeader className="items-center pb-0 p-1 md:p-6">
             <CardTitle className="text-xs sm:text-sm md:text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-4 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
-            <DelayedRender 
+          <CardContent className="flex-1 pb-1 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
+            <DelayedRender
               delay={80}
-              className="mx-auto h-[120px] w-[120px] flex items-center justify-center md:h-[200px] md:w-[200px]"
-              fallback={<Skeleton className="h-[120px] w-[120px] md:h-[200px] md:w-[200px] rounded-full" />}
+              className="mx-auto h-[100px] w-[100px] flex items-center justify-center md:h-[200px] md:w-[200px]"
+              fallback={<Skeleton className="h-[100px] w-[100px] md:h-[200px] md:w-[200px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[120px] w-[120px] md:h-[200px] md:w-[200px]">
+              <ChartContainer config={emptyChartConfig} className="h-[100px] w-[100px] md:h-[200px] md:w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -665,17 +665,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0 p-4 md:p-6">
-            <CardTitle className="text-sm md:text-base">收支分析</CardTitle>
+        <Card className="col-span-1 flex flex-col h-[180px] md:h-auto">
+          <CardHeader className="items-center pb-0 p-1 md:p-6">
+            <CardTitle className="text-xs sm:text-sm md:text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-4 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
-            <DelayedRender 
+          <CardContent className="flex-1 pb-1 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
+            <DelayedRender
               delay={220}
-              className="mx-auto h-[120px] w-[120px] flex items-center justify-center md:h-[200px] md:w-[200px]"
-              fallback={<Skeleton className="h-[120px] w-[120px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
+              className="mx-auto h-[100px] w-[100px] flex items-center justify-center md:h-[200px] md:w-[200px]"
+              fallback={<Skeleton className="h-[100px] w-[100px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[120px] w-[120px] md:h-[200px] md:w-[200px]">
+              <ChartContainer config={commonConfig} className="h-[100px] w-[100px] md:h-[200px] md:w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
