@@ -418,7 +418,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   }, []);
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto relative pb-8">
+    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
       <div className="flex flex-col gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
@@ -426,14 +426,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </div>
         
         {/* 顶部过滤模块 - Sticky 吸顶效果 */}
-        <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2 -mx-2 px-2 sm:mx-0 sm:px-0 flex flex-wrap items-center gap-2 sm:gap-3 border-b sm:border-none mb-2">
+        <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-b-xl sm:rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3 transition-all duration-200">
           {/* Search */}
-          <div className="relative flex-1 min-w-[120px] sm:min-w-[200px] shadow-sm sm:shadow-none">
+          <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
               placeholder="搜索消费明细..."
-              className="pl-9 w-full bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200"
+              className="pl-9 w-full bg-gray-50/50 hover:bg-gray-50 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -441,7 +441,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
           {/* Platform Filter */}
           <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-[100px] sm:w-[140px] bg-white h-9 sm:h-10 text-xs sm:text-sm shadow-sm sm:shadow-none border-gray-200">
+            <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50/50 hover:bg-gray-50 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors">
               <SelectValue placeholder="所有平台" />
             </SelectTrigger>
             <SelectContent>
@@ -452,15 +452,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </Select>
 
           {/* Date Filter */}
-          <div className="hidden sm:flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+          <div className="hidden sm:flex items-center gap-2 bg-gray-50/50 p-1 rounded-lg border border-gray-200">
             <button 
               onClick={() => setDateFilter("month")}
-              className={cn("px-3 py-1 text-sm rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
+              className={cn("px-3 py-1.5 text-sm rounded-md font-medium transition-all shadow-sm", dateFilter === "month" ? "bg-white text-gray-900" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50")}
             >
               本月
             </button>
             <div className="h-4 w-px bg-gray-200 mx-1" />
-            <span className="text-sm text-gray-500 px-2 cursor-pointer hover:text-gray-900">{dateRangeLabel}</span>
+            <span className="text-sm text-gray-500 px-3 cursor-pointer hover:text-gray-900 transition-colors">{dateRangeLabel}</span>
           </div>
         </div>
       </div>

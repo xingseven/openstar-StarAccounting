@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.32 - 2026-03-17
+
+### UI/UX Improvements
+- **顶部筛选栏样式升级**:
+  - 修复了因为父容器存在 `relative` 属性可能导致的 `sticky` 布局失效问题。
+  - 优化了筛选栏吸顶时的视觉效果，移除了粗糙的底边框，增加了柔和的阴影 (`shadow-sm`)。
+  - 增加了内边距 (`py-3 px-4`) 和圆角 (`rounded-xl`)，使其在吸顶时看起来像一个悬浮的独立控制面板。
+  - 搜索框、下拉菜单的背景色调整为淡灰色 (`bg-gray-50/50`)，并添加了 `hover` 和 `focus` 状态下的过渡动画，提升交互质感。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 移除外层容器的 `relative` 类。
+   - 更新 `sticky` 容器及其子组件的 Tailwind 类名。
+
 ## 1.8.31 - 2026-03-17
 
 ### UI/UX Improvements
