@@ -69,8 +69,8 @@ export default function SettingsPage() {
   if (!user) return <div className="p-8 text-center text-gray-500">加载中...</div>;
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <div>
+    <div className="max-w-2xl mx-auto space-y-8">
+      <div className="text-center">
         <h1 className="text-xl font-semibold">设置</h1>
         <p className="text-sm text-gray-600">管理你的个人资料与安全设置</p>
       </div>
@@ -86,7 +86,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="rounded border bg-white p-6 space-y-6">
+      <div className="rounded border bg-white p-6 space-y-6 text-center">
         <h2 className="font-medium">基本信息</h2>
         <form onSubmit={handleUpdateProfile} className="space-y-4">
           <label className="block space-y-1">
@@ -118,7 +118,7 @@ export default function SettingsPage() {
         </form>
       </div>
 
-      <div className="rounded border bg-white p-6 space-y-6">
+      <div className="rounded border bg-white p-6 space-y-6 text-center">
         <h2 className="font-medium">安全设置</h2>
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           <label className="block space-y-1">
