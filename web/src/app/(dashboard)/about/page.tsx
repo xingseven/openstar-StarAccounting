@@ -125,7 +125,7 @@ const contributors = [
     name: "OpenStar Team",
     role: "核心开发",
     contributions: ["架构设计", "核心功能开发", "性能优化"],
-    gradient: "from-blue-500 to-indigo-600",
+    gradient: "from-blue-500 to-blue-700",
   },
   {
     name: "Community",
@@ -168,7 +168,7 @@ const features = [
 
 function VersionTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    major: { label: "重大更新", className: "bg-violet-100 text-violet-700 border border-violet-200" },
+    major: { label: "重大更新", className: "bg-slate-100 text-slate-700 border border-slate-200" },
     feature: { label: "新功能", className: "bg-blue-100 text-blue-700 border border-blue-200" },
     bugfix: { label: "Bug 修复", className: "bg-emerald-100 text-emerald-700 border border-emerald-200" },
   };
@@ -220,7 +220,7 @@ export default function AboutPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-8">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 md:p-12">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-slate-800 p-8 md:p-12">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjMCAwIDItMiAyLTRzLTItMi0yLTJoLThjMCAwIDIgMiAyIDRzLTIgMi0yIDJjMCAwIDIgMiAyIDRzLTIgMi0yIDJoOGMwIDAtMi0yLTItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
         <div className="relative z-10">
           <div className="flex items-center gap-4 mb-6">
@@ -263,7 +263,7 @@ export default function AboutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
               <Download className="h-5 w-5 text-white" />
             </div>
             <div>

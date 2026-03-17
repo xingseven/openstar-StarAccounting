@@ -65,7 +65,7 @@ export function SidebarContent() {
       </nav>
 
       <div className="p-4 border-t bg-gray-50/50 shrink-0">
-        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-4 text-white shadow-lg">
+        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 p-4 text-white shadow-lg">
           <h4 className="font-semibold text-sm mb-1">OpenStar</h4>
           <p className="text-xs text-blue-100 opacity-90">
             开源个人财务管理面板
