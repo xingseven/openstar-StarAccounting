@@ -86,8 +86,8 @@ export default function ConnectionsPage() {
   const expired = generateData ? remainingSeconds <= 0 : false;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="space-y-2 text-center">
         <h1 className="text-xl font-semibold">连接管理</h1>
         <p className="text-sm text-gray-600">用于 APP 通过公网 IP + 一次性验证码建立安全绑定</p>
       </div>
