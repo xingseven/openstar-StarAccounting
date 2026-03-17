@@ -285,6 +285,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     () => data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0),
     [data.incomeExpense]
   );
+  const lowerSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
   const heatmapValueMap = useMemo(() => {
     const map = new Map<string, number>();
     data.heatmap.data.forEach((item) => {
@@ -400,8 +401,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     
     return dates;
   };
-
-  const lowerSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
 
   // Refs for ECharts instances
   const chartsRef = useRef<any[]>([]);
