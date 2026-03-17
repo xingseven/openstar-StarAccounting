@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  BottomSheetDescription,
+  BottomSheetFooter
+} from "@/components/ui/bottomsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -56,6 +57,7 @@ export function SavingsGoalDialog({
   defaultStep = 1,
   onDataChanged,
 }: SavingsGoalDialogProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   
@@ -77,6 +79,7 @@ export function SavingsGoalDialog({
   const [toasts, setToasts] = useState<{ id: string; message: string }[]>([]);
   const reminderRef = useRef<string>("");
   const [dragOverProofId, setDragOverProofId] = useState<string | null>(null);
+  const bypassUnsavedConfirmRef = useRef(false);
 
   const pushToast = (message: string) => {
     const id = Math.random().toString(36).slice(2, 9);
@@ -91,6 +94,7 @@ export function SavingsGoalDialog({
     if (!open) return;
     const init = async () => {
       setIsDirty(false);
+      bypassUnsavedConfirmRef.current = false;
       setStep(defaultStep);
       if (initialData) {
         setName(initialData.name);
@@ -170,13 +174,25 @@ export function SavingsGoalDialog({
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && isDirty) {
-      if (confirm("您有未保存的内容，确定要关闭吗？")) {
+    if (!newOpen) {
+      if (bypassUnsavedConfirmRef.current) {
+        bypassUnsavedConfirmRef.current = false;
         onOpenChange(false);
+        return;
       }
-    } else {
-      onOpenChange(newOpen);
+      if (isDirty) {
+        confirm({
+          title: "确认关闭",
+          description: "您有未保存的内容，确定要关闭吗？",
+          onConfirm: () => {
+            bypassUnsavedConfirmRef.current = true;
+            onOpenChange(false);
+          },
+        });
+        return;
+      }
     }
+    onOpenChange(newOpen);
   };
 
   const handleNext = () => {
@@ -416,87 +432,94 @@ export function SavingsGoalDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={clsx("transition-all duration-300", step === 2 ? "sm:max-w-[1000px] h-[80vh] flex flex-col" : "sm:max-w-[500px]")}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
+    <BottomSheet open={open} onOpenChange={handleOpenChange}>
+      <BottomSheetContent className={clsx("transition-all duration-300 flex flex-col", step === 2 ? "h-[85vh]" : "")} hideClose>
+        <BottomSheetHeader>
+          <BottomSheetTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 bg-blue-50 rounded-full text-blue-600">
               {step === 1 ? <Wallet className="h-5 w-5" /> : <PiggyBank className="h-5 w-5" />}
             </div>
             {step === 1 ? "新建储蓄目标" : `制定计划 - ${name}`}
-          </DialogTitle>
-          <DialogDescription>
+          </BottomSheetTitle>
+          <BottomSheetDescription>
             {step === 1 ? "填写目标基础信息并进入逐月计划表。" : "按月份逐行编辑计划与金额。"}
-          </DialogDescription>
-        </DialogHeader>
+          </BottomSheetDescription>
+        </BottomSheetHeader>
 
         {step === 1 ? (
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
+          <div className="space-y-3 py-2 overflow-y-auto">
+            {/* 目标名称 */}
+            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
               <label className="text-sm font-medium text-gray-700">目标名称</label>
               <Input
                 required
                 placeholder="例如：买房首付"
                 value={name}
                 onChange={(e) => handleBasicInfoChange(setName, e.target.value)}
-                className="h-11"
+                className="h-10 bg-white border-gray-200 rounded-lg"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">存钱模式</label>
-                <Select value={type} onValueChange={(val) => handleBasicInfoChange(setType, val)}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MONTHLY">每月存</SelectItem>
-                    <SelectItem value="BI_MONTHLY_ODD">隔月存 (单月)</SelectItem>
-                    <SelectItem value="BI_MONTHLY_EVEN">隔月存 (双月)</SelectItem>
-                    <SelectItem value="YEARLY">年度目标</SelectItem>
-                    <SelectItem value="LONG_TERM">长期目标</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">资金性质</label>
-                <Select value={depositType} onValueChange={(val) => handleBasicInfoChange(setDepositType, val)}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CASH">现金</SelectItem>
-                    <SelectItem value="FIXED_TERM">死期存款</SelectItem>
-                    <SelectItem value="HELP_DEPOSIT">他人帮存</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">开始月份</label>
-                <Input type="month" value={startMonth} onChange={e => handleBasicInfoChange(setStartMonth, e.target.value)} className="h-11" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">持续月数</label>
-                <Input type="number" value={duration} onChange={e => handleBasicInfoChange(setDuration, Number(e.target.value))} className="h-11" />
+            {/* 存钱模式和资金性质 */}
+            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">存钱模式</label>
+                  <Select value={type} onValueChange={(val) => handleBasicInfoChange(setType, val)}>
+                    <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MONTHLY">每月存</SelectItem>
+                      <SelectItem value="BI_MONTHLY_ODD">隔月存 (单月)</SelectItem>
+                      <SelectItem value="BI_MONTHLY_EVEN">隔月存 (双月)</SelectItem>
+                      <SelectItem value="YEARLY">年度目标</SelectItem>
+                      <SelectItem value="LONG_TERM">长期目标</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">资金性质</label>
+                  <Select value={depositType} onValueChange={(val) => handleBasicInfoChange(setDepositType, val)}>
+                    <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CASH">现金</SelectItem>
+                      <SelectItem value="FIXED_TERM">死期存款</SelectItem>
+                      <SelectItem value="HELP_DEPOSIT">他人帮存</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button onClick={handleNext} className="w-full">
+            {/* 时间设置 */}
+            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">开始月份</label>
+                  <Input type="month" value={startMonth} onChange={e => handleBasicInfoChange(setStartMonth, e.target.value)} className="h-10 bg-white border-gray-200 rounded-lg" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">持续月数</label>
+                  <Input type="number" value={duration} onChange={e => handleBasicInfoChange(setDuration, Number(e.target.value))} className="h-10 bg-white border-gray-200 rounded-lg" />
+                </div>
+              </div>
+            </div>
+
+            <BottomSheetFooter>
+              <Button onClick={handleNext} className="w-full h-11 bg-blue-500 hover:bg-blue-600 rounded-lg">
                 下一步 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </DialogFooter>
+            </BottomSheetFooter>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
             {/* Toolbar */}
             <div className="flex justify-between items-center py-2 mb-2">
               <div className="text-sm text-gray-500">
                 小提示：修改第一行数据将自动填充后续行，鼠标放在“添加支出列”上面回车即可打开新增列窗口。
               </div>
               {type !== 'MONTHLY' && (
-                <Button variant="outline" size="sm" onClick={handleAddColumn}>
-                  <Plus className="h-4 w-4 mr-2" /> 添加支出列
+                <Button variant="outline" size="sm" onClick={handleAddColumn} className="flex-shrink-0">
+                  <Plus className="h-4 w-4 mr-1" /> 添加支出列
                 </Button>
               )}
             </div>
@@ -505,15 +528,15 @@ export function SavingsGoalDialog({
             <div
               ref={tableScrollRef}
               onWheel={handleTableWheel}
-              className="flex-1 overflow-auto border rounded-lg bg-white"
+              className="flex-1 overflow-auto border rounded-lg bg-white min-h-0"
             >
               <table className="text-sm text-left relative table-auto" style={{ width: "max-content", minWidth: type === 'MONTHLY' ? '100%' : '1400px' }}>
                 <thead className="bg-gray-50 text-gray-700 font-medium sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap sticky left-0 bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">月份</th>
+                    <th className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap sticky left-0 bg-gray-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">月份</th>
                     {type !== 'MONTHLY' && (
                       <>
-                        <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">月薪</th>
+                        <th className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap">月薪</th>
                         {expenseColumns.map(col => (
                           <th key={col.id} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap group relative">
                             <div className="flex items-center justify-between">
@@ -527,17 +550,17 @@ export function SavingsGoalDialog({
                             </div>
                           </th>
                         ))}
-                        <th className="p-3 min-w-[120px] w-[120px] text-gray-500 whitespace-nowrap">本月结余</th>
-                        <th className="p-3 min-w-[120px] w-[120px] text-blue-600 font-bold whitespace-nowrap">可存金额</th>
+                        <th className="p-3 text-center min-w-[80px] w-[80px] text-gray-500 whitespace-nowrap">本月结余</th>
+                        <th className="p-3 text-center min-w-[80px] w-[80px] text-blue-600 font-bold whitespace-nowrap">可存金额</th>
                       </>
                     )}
-                    <th className="p-3 min-w-[120px] w-[120px] whitespace-nowrap">计划存款</th>
+                    <th className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap">计划存款</th>
                     {type !== 'MONTHLY' && (
-                      <th className="p-3 min-w-[120px] w-[120px] text-purple-600 whitespace-nowrap">下月结余</th>
+                      <th className="p-3 text-center min-w-[80px] w-[80px] text-purple-600 whitespace-nowrap">下月结余</th>
                     )}
-                    <th className="p-3 min-w-[100px] w-[100px] whitespace-nowrap">状态</th>
-                    <th className="p-3 min-w-[180px] w-[180px] whitespace-nowrap">打卡凭证</th>
-                    <th className="p-3 min-w-[200px]">备注</th>
+                    <th className="p-3 text-center min-w-[100px] w-[100px] whitespace-nowrap">状态</th>
+                    <th className="p-3 text-center min-w-[180px] w-[180px] whitespace-nowrap">打卡凭证</th>
+                    <th className="p-3 text-center min-w-[200px]">备注</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -547,39 +570,39 @@ export function SavingsGoalDialog({
                     <tr
                       key={row.id}
                       className={clsx(
-                        "hover:bg-gray-50/50 transition-colors h-[96px]",
+                        "hover:bg-gray-50/50 transition-colors h-4",
                         sourceIndex === 0 && "bg-blue-50/30",
                         row.month === currentMonth && "ring-1 ring-blue-200"
                       )}
                     >
-                      <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
+                      <td className="p-2 text-center min-w-[80px] w-[80px] whitespace-nowrap align-middle text-center font-medium text-gray-900 sticky left-0 bg-white z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] group-hover:bg-gray-50/50">{row.month.replace("-", "/")}</td>
                       {type !== 'MONTHLY' && (
                         <>
-                          <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top">
+                          <td className="p-2 text-center min-w-[80px] w-[80px] whitespace-nowrap align-middle">
                             <input
                               type="number"
-                              className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
+                              className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-center"
                               value={row.salary || ""}
                               placeholder="0"
                               onChange={e => handleRowChange(sourceIndex, 'salary', e.target.value)}
                             />
                           </td>
                           {expenseColumns.map(col => (
-                            <td key={col.id} className="p-4 min-w-[140px] w-[140px] whitespace-nowrap align-top">
+                            <td key={col.id} className="p-2 min-w-[140px] w-[140px] whitespace-nowrap align-middle">
                               <input
                                 type="number"
-                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all"
+                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-center"
                                 value={row.expenses[col.name] || ""}
                                 placeholder="0"
                                 onChange={e => handleRowChange(sourceIndex, col.name, e.target.value, true)}
                               />
                             </td>
                           ))}
-                          <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top text-gray-500">¥{row.balance?.toLocaleString()}</td>
-                          <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
+                          <td className="p-2 text-center min-w-[80px] w-[80px] whitespace-nowrap align-middle text-gray-500">¥{row.balance?.toLocaleString()}</td>
+                          <td className="p-2 text-center min-w-[80px] w-[80px] whitespace-nowrap align-middle text-blue-600 font-medium">¥{row.totalAvailable?.toLocaleString()}</td>
                         </>
                       )}
-                      <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top">
+                      <td className="p-2 text-center min-w-[80px] w-[80px] whitespace-nowrap align-middle">
                         <input
                           type="number"
                           className="w-full bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none transition-all text-gray-900"
@@ -589,9 +612,9 @@ export function SavingsGoalDialog({
                         />
                       </td>
                       {type !== 'MONTHLY' && (
-                        <td className="p-4 min-w-[120px] w-[120px] whitespace-nowrap align-top text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
+                        <td className="p-2 text-center min-w-[80px] w-[80px] whitespace-nowrap align-middle text-purple-600 font-medium">¥{row.finalBalance?.toLocaleString()}</td>
                       )}
-                      <td className="p-4 min-w-[100px] w-[100px] whitespace-nowrap align-top">
+                      <td className="p-2 text-center min-w-[100px] w-[100px] whitespace-nowrap align-middle">
                         <button
                           onClick={() => handleRowChange(sourceIndex, "status", row.status === "COMPLETED" ? "PENDING" : "COMPLETED")}
                           className={clsx(
@@ -602,7 +625,7 @@ export function SavingsGoalDialog({
                           {row.status === "COMPLETED" ? "已存款" : "未存款"}
                         </button>
                       </td>
-                      <td className="p-4 min-w-[180px] w-[180px] align-top">
+                      <td className="p-2 text-center min-w-[180px] w-[180px] align-middle">
                         <div
                           className={clsx(
                             "rounded-md border border-dashed p-2 transition-colors",
@@ -642,7 +665,7 @@ export function SavingsGoalDialog({
                           ) : null}
                         </div>
                       </td>
-                      <td className="p-4 align-top">
+                      <td className="p-2 text-center align-middle">
                         <input
                           className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
                           value={row.remark}
@@ -655,41 +678,41 @@ export function SavingsGoalDialog({
                 </tbody>
                 <tfoot>
                   <tr className="bg-amber-50/80 border-t-2 border-amber-200 font-semibold">
-                    <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap sticky left-0 bg-amber-50/80 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">汇总</td>
+                    <td className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap sticky left-0 bg-amber-50/80 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">汇总</td>
                     {type !== 'MONTHLY' && (
                       <>
-                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-900">¥{summary.totalSalary.toLocaleString()}</td>
+                        <td className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap text-gray-900">¥{summary.totalSalary.toLocaleString()}</td>
                         {expenseColumns.map(col => (
                           <td key={`sum-${col.id}`} className="p-3 min-w-[140px] w-[140px] whitespace-nowrap text-gray-700">¥{(summary.expenseTotals[col.name] || 0).toLocaleString()}</td>
                         ))}
-                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-700">¥{summary.totalBalance.toLocaleString()}</td>
-                        <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-blue-700">¥{summary.totalAvailable.toLocaleString()}</td>
+                        <td className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap text-gray-700">¥{summary.totalBalance.toLocaleString()}</td>
+                        <td className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap text-blue-700">¥{summary.totalAvailable.toLocaleString()}</td>
                       </>
                     )}
-                    <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-gray-900">¥{summary.totalAmount.toLocaleString()}</td>
+                    <td className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap text-gray-900">¥{summary.totalAmount.toLocaleString()}</td>
                     {type !== 'MONTHLY' && (
-                      <td className="p-3 min-w-[120px] w-[120px] whitespace-nowrap text-purple-700">¥{summary.endingBalance.toLocaleString()}</td>
+                      <td className="p-3 text-center min-w-[80px] w-[80px] whitespace-nowrap text-purple-700">¥{summary.endingBalance.toLocaleString()}</td>
                     )}
-                    <td className="p-3 min-w-[100px] w-[100px]"></td>
-                    <td className="p-3 min-w-[180px] w-[180px]"></td>
-                    <td className="p-3 min-w-[200px] whitespace-nowrap text-gray-600">{finalRows.length}个月</td>
+                    <td className="p-3 text-center min-w-[100px] w-[100px]"></td>
+                    <td className="p-3 text-center min-w-[180px] w-[180px]"></td>
+                    <td className="p-3 text-center min-w-[200px] whitespace-nowrap text-gray-600">{finalRows.length}个月</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
 
-            <DialogFooter className="pt-4 border-t mt-auto">
+            <BottomSheetFooter className="pt-4 border-t mt-auto flex-row justify-between">
               {step === 2 && (
-                <Button variant="ghost" onClick={() => setStep(1)}>上一步</Button>
+                <Button variant="outline" onClick={() => setStep(1)} className="rounded-lg h-11">上一步</Button>
               )}
-              <Button onClick={handleSubmit} disabled={loading}>
+              <Button onClick={handleSubmit} disabled={loading} className="rounded-lg h-11 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg shadow-green-500/25">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 {initialData ? "保存计划" : "确认创建"}
               </Button>
-            </DialogFooter>
+            </BottomSheetFooter>
           </div>
         )}
-      </DialogContent>
+      </BottomSheetContent>
       <div className="fixed bottom-4 right-4 z-[100] space-y-2">
         {toasts.map((toast) => (
           <div key={toast.id} className="max-w-sm rounded-lg bg-black text-white text-sm px-4 py-3 shadow-lg">
@@ -697,6 +720,8 @@ export function SavingsGoalDialog({
           </div>
         ))}
       </div>
-    </Dialog>
+
+      {ConfirmDialog}
+    </BottomSheet>
   );
 }

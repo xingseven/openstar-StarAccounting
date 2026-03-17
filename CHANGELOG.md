@@ -14,6 +14,13 @@
   - 移动端桑基图支持横向滚动查看
 - **修复 hydration 警告问题**:
   - 在 layout.tsx 添加 suppressHydrationWarning 属性
+- **桑基图布局修复**:
+  - 将 ECharts 桑基图 `layout` 从 `none` 调整为 `sankey`，恢复自动布局算法
+  - 修复图形仅占顶部区域的问题，使节点与连线按容器高度正常分布
+  - 修复 `DelayedRender` 过渡层未设置 `h-full w-full` 导致子图表 `height: 100%` 失效
+- **储蓄弹窗交互修复**:
+  - 修复移动端“确认关闭”在取消后再次反复弹出的问题
+  - 为关闭确认流程增加一次性放行标记，避免 `onOpenChange(false)` 二次触发时重复进入未保存确认
 
 ### Modified Files
 1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
