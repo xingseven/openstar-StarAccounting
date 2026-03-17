@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   History,
   Download,
@@ -131,7 +131,7 @@ const contributors = [
     name: "Community",
     role: "社区贡献者",
     contributions: ["Bug 修复", "功能建议", "文档完善"],
-    gradient: "from-purple-500 to-pink-500",
+    gradient: "from-slate-500 to-gray-500",
   },
 ];
 
@@ -161,7 +161,7 @@ const websites = [
 
 const features = [
   { icon: TrendingUp, label: "资产管理", color: "text-blue-500" },
-  { icon: Sparkles, label: "消费分析", color: "text-purple-500" },
+  { icon: Sparkles, label: "消费分析", color: "text-slate-500" },
   { icon: Shield, label: "储蓄目标", color: "text-emerald-500" },
   { icon: Zap, label: "贷款追踪", color: "text-amber-500" },
 ];
@@ -180,8 +180,27 @@ function VersionTypeBadge({ type }: { type: string }) {
   );
 }
 
+type Contributor = {
+  login: string;
+  avatar_url: string;
+  html_url: string;
+  contributions: number;
+};
+
 export default function AboutPage() {
   const [expandedVersions, setExpandedVersions] = useState<string[]>(["1.8.25"]);
+  const [githubContributors, setGithubContributors] = useState<Contributor[]>([]);
+
+  useEffect(() => {
+    fetch("https://api.github.com/repos/xingseven/openstar-xfdashborad/contributors")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setGithubContributors(data);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch contributors:", err));
+  }, []);
 
   const toggleVersion = (version: string) => {
     setExpandedVersions((prev) =>
@@ -270,12 +289,52 @@ export default function AboutPage() {
 
         <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center">
               <Users className="h-5 w-5 text-white" />
             </div>
             <h2 className="text-lg font-semibold text-gray-900">贡献者</h2>
           </div>
-          <div className="space-y-3">
+          
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <Github className="h-4 w-4" />
+              GitHub Contributors
+            </h3>
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+              {githubContributors.map((contributor) => (
+                <a
+                  key={contributor.login}
+                  href={contributor.html_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-1 group"
+                  title={`${contributor.login} (${contributor.contributions} contributions)`}
+                >
+                  <div className="relative">
+                    <img
+                      src={contributor.avatar_url}
+                      alt={contributor.login}
+                      className="h-10 w-10 rounded-full border-2 border-white shadow-sm group-hover:scale-110 transition-transform"
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-blue-100 text-blue-700 text-[10px] px-1 rounded-full font-medium border border-white">
+                      {contributor.contributions}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-500 truncate max-w-full group-hover:text-blue-600 transition-colors">
+                    {contributor.login}
+                  </span>
+                </a>
+              ))}
+              {githubContributors.length === 0 && (
+                <div className="col-span-full text-center py-4 text-sm text-gray-400">
+                  Loading contributors...
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t border-gray-100 pt-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Core Team</h3>
             {contributors.map((contributor, idx) => (
               <div
                 key={idx}
