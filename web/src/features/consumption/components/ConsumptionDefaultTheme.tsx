@@ -1213,6 +1213,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </DelayedRender>
         </CardContent>
       </Card>
+      </div>
     </>
   );
 }
