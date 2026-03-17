@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.28 - 2026-03-17
+
+### Fixes
+- **消费页图表主题色修复**:
+  - 修复了将 Recharts 替换为 ECharts 后导致的图表主题色丢失问题。
+  - 将所有图表的颜色统一为日历图的蓝色色阶（`#1d4ed8`, `#3b82f6`, `#60a5fa`, `#93c5fd`, `#dbeafe`）。
+  - 更新了 `mockData.ts` 中的硬编码 CSS 变量为对应的 Hex 颜色值。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 更新堆叠柱状图、散点图等图表的硬编码颜色。
+2. `web/src/features/consumption/mockData.ts`
+   - 将 `var(--color-chart-X)` 替换为蓝色色阶。
+
 ## 1.8.27 - 2026-03-17
 
 ### Features

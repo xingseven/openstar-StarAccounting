@@ -769,13 +769,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     },
                     yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
                     series: [{
-                      name: '支出',
-                      type: 'line',
-                      data: data.trend.map(t => t.total),
-                      smooth: true,
-                      itemStyle: { color: 'var(--color-chart-1)' },
-                      areaStyle: { opacity: 0.1 }
-                    }]
+                    name: '支出',
+                    type: 'line',
+                    data: data.trend.map(t => t.total),
+                    smooth: true,
+                    itemStyle: { color: '#3b82f6' },
+                    areaStyle: { opacity: 0.1, color: '#3b82f6' }
+                  }]
                   }}
                   style={{ height: '100%', width: '100%' }}
                 />
@@ -805,13 +805,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       axisTick: { show: false }
                     },
                     yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
-                    series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => ({
-                      name: key,
-                      type: 'bar',
-                      stack: 'total',
-                      data: data.stackedBar.map(t => t[key]),
-                      itemStyle: { borderRadius: i === 3 ? [4, 4, 0, 0] : [0, 0, 0, 0] }
-                    }))
+                    series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => {
+                      const colors = ['#1d4ed8', '#3b82f6', '#93c5fd', '#dbeafe'];
+                      return {
+                        name: key,
+                        type: 'bar',
+                        stack: 'total',
+                        data: data.stackedBar.map(t => t[key]),
+                        itemStyle: { 
+                          color: colors[i],
+                          borderRadius: i === 3 ? [4, 4, 0, 0] : [0, 0, 0, 0] 
+                        }
+                      };
+                    })
                   }}
                   style={{ height: '100%', width: '100%' }}
                 />
@@ -860,7 +866,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       yAxisIndex: 1,
                       data: data.pareto.map(t => t.cumulativePercentage),
                       smooth: true,
-                      itemStyle: { color: 'var(--color-chart-2)' }
+                      itemStyle: { color: '#fb923c' } // Use an orange/amber color for contrast against blue bars
                     }
                   ]
                 }}
@@ -986,7 +992,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     name: '平均消费',
                     type: 'bar',
                     data: data.weekdayWeekend.map(t => t.value),
-                    itemStyle: { color: 'var(--color-chart-1)', borderRadius: [4, 4, 0, 0] },
+                    itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
                     label: { show: true, position: 'top', formatter: '¥{c}' }
                   }]
                 }}
@@ -1120,7 +1126,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     type: 'scatter',
                     data: data.scatter.map(item => [item.hour, item.amount, item.category]),
                     symbolSize: (val: any[]) => Math.max(Math.min(val[1] / 10, 20), 5),
-                    itemStyle: { color: 'var(--color-chart-2)', opacity: 0.7 }
+                    itemStyle: { color: '#3b82f6', opacity: 0.7 }
                   }]
                 }}
                 style={{ height: '100%', width: '100%' }}

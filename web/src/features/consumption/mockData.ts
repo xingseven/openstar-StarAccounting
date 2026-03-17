@@ -9,14 +9,14 @@ export const MOCK_SUMMARY = {
 };
 
 export const MOCK_PLATFORM_DISTRIBUTION = [
-  { name: "微信", value: 5230, fill: "var(--color-chart-1)" },
-  { name: "支付宝", value: 7350, fill: "var(--color-chart-2)" },
-  { name: "云闪付", value: 0, fill: "var(--color-chart-3)" },
+  { name: "微信", value: 5230, fill: "#3b82f6" },
+  { name: "支付宝", value: 7350, fill: "#1d4ed8" },
+  { name: "云闪付", value: 0, fill: "#93c5fd" },
 ];
 
 export const MOCK_INCOME_EXPENSE = [
-  { name: "支出", value: 12580, fill: "var(--color-chart-1)" },
-  { name: "收入", value: 25000, fill: "var(--color-chart-2)" },
+  { name: "支出", value: 12580, fill: "#3b82f6" },
+  { name: "收入", value: 25000, fill: "#1d4ed8" },
 ];
 
 export const MOCK_MERCHANTS = [
@@ -30,7 +30,10 @@ export const MOCK_MERCHANTS = [
   { merchant: "全家便利店", total: 180 },
   { merchant: "肯德基", total: 150 },
   { merchant: "麦当劳", total: 120 },
-].map((item, i) => ({ ...item, fill: `var(--color-chart-${(i % 5) + 1})` }));
+].map((item, i) => {
+  const colors = ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"];
+  return { ...item, fill: colors[i % 5] };
+});
 
 export const MOCK_TREND = Array.from({ length: 30 }, (_, i) => ({
   day: `2024-03-${String(i + 1).padStart(2, "0")}`,
@@ -46,22 +49,22 @@ export const MOCK_STACKED_BAR = MOCK_TREND.slice(0, 14).map(d => ({
 }));
 
 export const MOCK_PARETO = [
-  { name: "餐饮", value: 4500, cumulativePercentage: 35, fill: "var(--color-chart-1)" },
-  { name: "购物", value: 3200, cumulativePercentage: 60, fill: "var(--color-chart-2)" },
-  { name: "住房", value: 2500, cumulativePercentage: 80, fill: "var(--color-chart-3)" },
-  { name: "交通", value: 1200, cumulativePercentage: 90, fill: "var(--color-chart-4)" },
-  { name: "娱乐", value: 800, cumulativePercentage: 96, fill: "var(--color-chart-5)" },
-  { name: "医疗", value: 380, cumulativePercentage: 100, fill: "var(--color-chart-1)" },
+  { name: "餐饮", value: 4500, cumulativePercentage: 35, fill: "#1d4ed8" },
+  { name: "购物", value: 3200, cumulativePercentage: 60, fill: "#3b82f6" },
+  { name: "住房", value: 2500, cumulativePercentage: 80, fill: "#60a5fa" },
+  { name: "交通", value: 1200, cumulativePercentage: 90, fill: "#93c5fd" },
+  { name: "娱乐", value: 800, cumulativePercentage: 96, fill: "#dbeafe" },
+  { name: "医疗", value: 380, cumulativePercentage: 100, fill: "#eff6ff" },
 ];
 
 export const MOCK_WEEKDAY_WEEKEND = [
-  { name: "周一", value: 320, fill: "var(--color-chart-1)" },
-  { name: "周二", value: 280, fill: "var(--color-chart-1)" },
-  { name: "周三", value: 350, fill: "var(--color-chart-1)" },
-  { name: "周四", value: 300, fill: "var(--color-chart-1)" },
-  { name: "周五", value: 450, fill: "var(--color-chart-1)" },
-  { name: "周六", value: 850, fill: "var(--color-chart-2)" },
-  { name: "周日", value: 780, fill: "var(--color-chart-2)" },
+  { name: "周一", value: 320, fill: "#93c5fd" },
+  { name: "周二", value: 280, fill: "#93c5fd" },
+  { name: "周三", value: 350, fill: "#93c5fd" },
+  { name: "周四", value: 300, fill: "#93c5fd" },
+  { name: "周五", value: 450, fill: "#60a5fa" },
+  { name: "周六", value: 850, fill: "#1d4ed8" },
+  { name: "周日", value: 780, fill: "#3b82f6" },
 ];
 
 export const MOCK_CALENDAR = Array.from({ length: 35 }, (_, i) => ({
@@ -166,10 +169,10 @@ export const MOCK_SCATTER = Array.from({ length: 50 }, (_, i) => {
 });
 
 export const MOCK_HISTOGRAM = [
-  { range: "0-50", count: 145, fill: "var(--color-chart-1)" },
-  { range: "50-200", count: 86, fill: "var(--color-chart-2)" },
-  { range: "200-500", count: 42, fill: "var(--color-chart-3)" },
-  { range: "500-1k", count: 18, fill: "var(--color-chart-4)" },
-  { range: "1k-5k", count: 8, fill: "var(--color-chart-5)" },
-  { range: "5k+", count: 2, fill: "var(--color-chart-1)" },
+  { range: "0-50", count: 145, fill: "#dbeafe" },
+  { range: "50-200", count: 86, fill: "#93c5fd" },
+  { range: "200-500", count: 42, fill: "#60a5fa" },
+  { range: "500-1k", count: 18, fill: "#3b82f6" },
+  { range: "1k-5k", count: 8, fill: "#2563eb" },
+  { range: "5k+", count: 2, fill: "#1d4ed8" },
 ];
