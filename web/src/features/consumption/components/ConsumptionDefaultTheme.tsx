@@ -274,6 +274,122 @@ function AnimatedCalendarGrid({ calendar }: { calendar: ConsumptionData["calenda
   );
 }
 
+// 抽离悬浮筛选按钮组件以避免整个页面重渲染
+function FloatingFilterButton({ 
+  searchTerm, 
+  setSearchTerm, 
+  platformFilter, 
+  setPlatformFilter, 
+  dateFilter, 
+  setDateFilter, 
+  dateRangeLabel 
+}: {
+  searchTerm: string;
+  setSearchTerm: (val: string) => void;
+  platformFilter: string;
+  setPlatformFilter: (val: string) => void;
+  dateFilter: string;
+  setDateFilter: (val: string) => void;
+  dateRangeLabel: string;
+}) {
+  const [showFloatingFilter, setShowFloatingFilter] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+
+    let ticking = false;
+    let lastScrollTop = mainContent.scrollTop;
+
+    const handleScroll = () => {
+      lastScrollTop = mainContent.scrollTop;
+      
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setShowFloatingFilter(lastScrollTop > 200);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    mainContent.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    
+    return () => mainContent.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div 
+      className={cn(
+        "fixed bottom-8 right-8 z-50 transition-all duration-300 transform",
+        showFloatingFilter ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
+      )}
+      style={{ willChange: 'transform, opacity' }}
+    >
+      <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+        <PopoverTrigger asChild>
+          <button 
+            type="button" 
+            className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+          >
+            <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 sm:w-80 p-3 sm:p-4 mr-4 sm:mr-8 mb-4" side="top" align="end">
+          <div className="space-y-3 sm:space-y-4">
+            <h4 className="font-medium leading-none text-sm sm:text-base">快捷筛选</h4>
+            <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-1">
+                <Label className="text-[10px] sm:text-xs text-gray-500">搜索</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <Input
+                    type="search"
+                    placeholder="搜索..."
+                    className="pl-9 h-8 sm:h-9 text-xs sm:text-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <Label className="text-[10px] sm:text-xs text-gray-500">平台</Label>
+                <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                  <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
+                    <SelectValue placeholder="所有平台" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">所有平台</SelectItem>
+                    <SelectItem value="wechat">微信</SelectItem>
+                    <SelectItem value="alipay">支付宝</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[10px] sm:text-xs text-gray-500">时间</Label>
+                <div className="flex items-center gap-2 border rounded-md p-1">
+                  <button 
+                    onClick={() => setDateFilter("month")}
+                    className={cn("flex-1 px-2 py-1 text-[10px] sm:text-xs rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
+                  >
+                    本月
+                  </button>
+                  <div className="h-3 w-px bg-gray-200" />
+                  <span className="flex-1 text-center text-[10px] sm:text-xs text-gray-500 px-1 truncate">{dateRangeLabel}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -302,8 +418,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return matchesSearch && matchesPlatform;
   }), [data.transactions, lowerSearchTerm, platformFilter]);
 
-  const [showFloatingFilter, setShowFloatingFilter] = useState(false);
-
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     const checkMobile = () => {
@@ -322,35 +436,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       window.removeEventListener('resize', debouncedCheckMobile);
       clearTimeout(timeoutId);
     };
-  }, []);
-
-  useEffect(() => {
-    // Find the main scroll container
-    const mainContent = document.querySelector('main');
-    if (!mainContent) return;
-
-    let ticking = false;
-    let lastScrollTop = mainContent.scrollTop;
-
-    const handleScroll = () => {
-      lastScrollTop = mainContent.scrollTop;
-      
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setShowFloatingFilter(lastScrollTop > 200);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    // Use passive event listener for better scrolling performance
-    mainContent.addEventListener("scroll", handleScroll, { passive: true });
-    
-    // Initial check
-    handleScroll();
-    
-    return () => mainContent.removeEventListener("scroll", handleScroll);
   }, []);
 
   const pieStrokeWidth = isMobile ? 12 : 4;
@@ -421,10 +506,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
   useEffect(() => {
     const handleResize = () => {
-      chartsRef.current.forEach((chart) => {
-        if (chart?.getEchartsInstance) {
-          chart.getEchartsInstance().resize();
-        }
+      // Use requestAnimationFrame to throttle resize events
+      window.requestAnimationFrame(() => {
+        chartsRef.current.forEach((chart) => {
+          if (chart?.getEchartsInstance) {
+            chart.getEchartsInstance().resize();
+          }
+        });
       });
     };
 
@@ -442,77 +530,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     };
   }, []);
 
-  const [filterOpen, setFilterOpen] = useState(false);
-
   return (
     <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto relative">
-      {/* Floating Filter Button */}
-      <div 
-        className={cn(
-          "fixed bottom-8 right-8 z-50 transition-all duration-300 transform",
-          showFloatingFilter ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
-        )}
-        style={{ willChange: 'transform, opacity' }}
-      >
-        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-          <PopoverTrigger asChild>
-            <button 
-              type="button" 
-              className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-            >
-              <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 sm:w-80 p-3 sm:p-4 mr-4 sm:mr-8 mb-4" side="top" align="end">
-            <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-medium leading-none text-sm sm:text-base">快捷筛选</h4>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-[10px] sm:text-xs text-gray-500">搜索</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      type="search"
-                      placeholder="搜索..."
-                      className="pl-9 h-8 sm:h-9 text-xs sm:text-sm"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-1">
-                  <Label className="text-[10px] sm:text-xs text-gray-500">平台</Label>
-                  <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                    <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                      <SelectValue placeholder="所有平台" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">所有平台</SelectItem>
-                      <SelectItem value="wechat">微信</SelectItem>
-                      <SelectItem value="alipay">支付宝</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-[10px] sm:text-xs text-gray-500">时间</Label>
-                  <div className="flex items-center gap-2 border rounded-md p-1">
-                    <button 
-                      onClick={() => setDateFilter("month")}
-                      className={cn("flex-1 px-2 py-1 text-[10px] sm:text-xs rounded font-medium transition-colors", dateFilter === "month" ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900")}
-                    >
-                      本月
-                    </button>
-                    <div className="h-3 w-px bg-gray-200" />
-                    <span className="flex-1 text-center text-[10px] sm:text-xs text-gray-500 px-1 truncate">{dateRangeLabel}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <FloatingFilterButton 
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        platformFilter={platformFilter}
+        setPlatformFilter={setPlatformFilter}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        dateRangeLabel={dateRangeLabel}
+      />
 
       <div className="flex flex-col gap-3 sm:gap-4">
         <div>

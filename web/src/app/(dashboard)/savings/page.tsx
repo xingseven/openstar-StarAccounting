@@ -169,7 +169,7 @@ export default function SavingsPage() {
 
   return (
     <>
-      <SavingsDefaultTheme 
+      <SavingsDefaultTheme
         items={items}
         transactions={transactions}
         totalSaved={totalSaved}
@@ -180,6 +180,7 @@ export default function SavingsPage() {
         onOpenEdit={openEdit}
         onOpenPunch={openPunch}
         onOpenWithdrawal={openWithdrawal}
+        onDelete={(item) => handleDelete(item.id)}
       />
 
       <SavingsGoalDialog

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.30 - 2026-03-17
+
+### Performance Improvements
+- **悬浮筛选按钮彻底解决卡顿**:
+  - 发现悬浮按钮之前的卡顿是由于 `showFloatingFilter` 状态的改变触发了整个 `ConsumptionDefaultTheme` 组件（包含所有图表）的重渲染。
+  - 将悬浮按钮及其状态（`showFloatingFilter`, `filterOpen`）和滚动监听逻辑抽离成了独立的子组件 `FloatingFilterButton`。
+  - 现在滚动页面时，状态更新只会在 `FloatingFilterButton` 组件内部发生，不会再引起复杂图表组件的无效重渲染，彻底解决了滚动卡顿问题。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 新增 `FloatingFilterButton` 组件。
+   - 移除 `ConsumptionDefaultTheme` 中的滚动监听和悬浮按钮相关状态。
+
 ## 1.8.29 - 2026-03-17
 
 ### Performance Improvements

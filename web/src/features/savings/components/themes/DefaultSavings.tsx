@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { 
-  Plus, 
-  Target, 
-  TrendingUp, 
-  Calendar as CalendarIcon, 
-  MoreHorizontal,
+import {
+  Plus,
+  Target,
+  TrendingUp,
+  Calendar as CalendarIcon,
   Wallet,
   PiggyBank,
   ArrowRight,
@@ -70,6 +69,7 @@ interface SavingsViewProps {
   onOpenEdit: (item: SavingsGoal) => void;
   onOpenPunch: (item: SavingsGoal) => void;
   onOpenWithdrawal: (item: SavingsGoal) => void;
+  onDelete: (item: SavingsGoal) => void;
 }
 
 // Skeleton loader components
@@ -268,6 +268,7 @@ export function SavingsDefaultTheme({
   onOpenEdit,
   onOpenPunch,
   onOpenWithdrawal,
+  onDelete,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -558,10 +559,17 @@ export function SavingsDefaultTheme({
                                 </button>
                                 <button
                                   onClick={() => onOpenEdit(item)}
-                                  className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
+                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
                                   title="编辑"
                                 >
-                                  <MoreHorizontal className="h-4 w-4" />
+                                  修改
+                                </button>
+                                <button
+                                  onClick={() => onDelete(item)}
+                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                  title="删除"
+                                >
+                                  删除
                                 </button>
                               </div>
                             </td>
