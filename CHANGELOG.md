@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.31 - 2026-03-17
+
+### UI/UX Improvements
+- **消费页筛选交互重构**:
+  - 移除了右下角的悬浮筛选按钮（`FloatingFilterButton`）。
+  - 将页面顶部的搜索框、平台筛选和时间筛选模块改为**吸顶 (Sticky) 效果**。
+  - 在向下滚动页面时，筛选模块会固定在页面顶部并带有毛玻璃 (Backdrop Blur) 背景，方便用户随时进行数据筛选，交互更加直观自然。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 删除 `FloatingFilterButton` 组件及其相关逻辑。
+   - 为顶部的筛选容器添加 `sticky top-0 z-40 bg-gray-50/95 backdrop-blur` 等样式类。
+
 ## 1.8.30 - 2026-03-17
 
 ### Performance Improvements
