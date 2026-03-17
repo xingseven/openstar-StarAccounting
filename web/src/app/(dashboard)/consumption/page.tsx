@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { ConsumptionDefaultTheme, ConsumptionData } from "@/features/consumption/components/ConsumptionDefaultTheme";
+import dynamic from "next/dynamic";
+import type { ConsumptionData } from "@/features/consumption/components/ConsumptionDefaultTheme";
 import {
   MOCK_SUMMARY,
   MOCK_PLATFORM_DISTRIBUTION,
@@ -18,6 +19,18 @@ import {
   MOCK_HISTOGRAM,
   MOCK_TRANSACTIONS
 } from "@/features/consumption/mockData";
+
+const ConsumptionDefaultTheme = dynamic(
+  () => import("@/features/consumption/components/ConsumptionDefaultTheme").then(mod => mod.ConsumptionDefaultTheme),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    )
+  }
+);
 
 export default function ConsumptionPage() {
   // In a real application, you would fetch data here and pass it to the theme component.

@@ -23,6 +23,10 @@
   - 修复 BottomSheet 底部滑出/收回动画不连贯（闪烁）的问题，统一动画曲线与执行方式
   - 为关闭确认流程增加一次性放行标记，避免 `onOpenChange(false)` 二次触发时重复进入未保存确认
   - 增加关闭确认状态锁与取消后一次性忽略机制，消除事件连发导致的再次弹窗
+- **页面切换性能优化**:
+  - 对总览、资产、消费、储蓄、贷款页面的核心图表视图（如 `ConsumptionDefaultTheme`）应用了 `next/dynamic` 异步加载 (ssr: false)。
+  - 彻底解决了通过侧边栏切换页面时（尤其是切换到消费页面时）由于同步加载大量图表组件（ECharts/Recharts）导致的主线程阻塞和页面卡顿问题。
+  - 实现了页面切换的瞬间响应，提升了全站导航的流畅度。
 
 ### Modified Files
 1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`

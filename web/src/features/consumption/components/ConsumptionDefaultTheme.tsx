@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { siAlipay, siWechat } from "simple-icons";
-import ReactECharts from "echarts-for-react";
+import dynamic from "next/dynamic";
 import { 
     ArrowDownIcon, 
     ArrowUpIcon, 
@@ -61,6 +61,8 @@ import {
   import { Button } from "@/components/ui/button";
   import { Filter } from "lucide-react";
   import { Label } from "@/components/ui/label";
+
+  const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 
   // Types
   export type ConsumptionData = {
@@ -554,9 +556,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
-            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-orange-100/90 ring-1 sm:ring-2 ring-orange-50/80 flex items-center justify-center">
-              <ShoppingBag className="h-2 w-2 sm:h-4 sm:w-4 text-orange-600" />
-            </div>
           </CardHeader>
           <CardContent className="p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div className="text-lg sm:text-lg font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
@@ -568,9 +567,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
-            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-blue-100/90 ring-1 sm:ring-2 ring-blue-50/80 flex items-center justify-center">
-              <Wallet className="h-2 w-2 sm:h-4 sm:w-4 text-blue-600" />
-            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
@@ -588,9 +584,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
-            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-[#07C160]/15 ring-1 sm:ring-2 ring-[#07C160]/10 flex items-center justify-center">
-              <WechatOfficialIcon className="h-2 w-2 sm:h-4 sm:w-4" />
-            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
@@ -608,9 +601,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-[#1677FF]/15 ring-1 sm:ring-2 ring-[#1677FF]/10 flex items-center justify-center">
-              <AlipayOfficialIcon className="h-2 w-2 sm:h-4 sm:w-4 rounded-sm" />
-            </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>

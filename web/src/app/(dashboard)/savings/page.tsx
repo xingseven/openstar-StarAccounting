@@ -2,11 +2,23 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { 
-  SavingsDefaultTheme, 
+import dynamic from "next/dynamic";
+import type { 
   SavingsGoal, 
   TransactionItem 
 } from "@/features/savings/components/themes/DefaultSavings";
+
+const SavingsDefaultTheme = dynamic(
+  () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    )
+  }
+);
 import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
 import { SavingsPlanDialog } from "@/features/savings/components/SavingsPlanDialog";
 import { SavingsWithdrawalDialog } from "@/features/savings/components/SavingsWithdrawalDialog";

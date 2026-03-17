@@ -2,7 +2,20 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { LoansDefaultTheme, Loan } from "@/features/loans/components/themes/DefaultLoans";
+import dynamic from "next/dynamic";
+import type { Loan } from "@/features/loans/components/themes/DefaultLoans";
+
+const LoansDefaultTheme = dynamic(
+  () => import("@/features/loans/components/themes/DefaultLoans").then(mod => mod.LoansDefaultTheme),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    )
+  }
+);
 import {
   Card,
   CardContent,

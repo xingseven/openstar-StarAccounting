@@ -2,7 +2,20 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { AssetsDefaultTheme, Asset } from "@/features/assets/components/themes/DefaultAssets";
+import dynamic from "next/dynamic";
+import type { Asset } from "@/features/assets/components/themes/DefaultAssets";
+
+const AssetsDefaultTheme = dynamic(
+  () => import("@/features/assets/components/themes/DefaultAssets").then(mod => mod.AssetsDefaultTheme),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    )
+  }
+);
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

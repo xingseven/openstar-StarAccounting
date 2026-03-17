@@ -2,7 +2,19 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { DashboardDefaultTheme } from "@/features/dashboard/components/themes/DefaultDashboard";
+import dynamic from "next/dynamic";
+
+const DashboardDefaultTheme = dynamic(
+  () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    )
+  }
+);
 
 export type DashboardData = {
   totalAssets: number;
