@@ -621,13 +621,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0 p-1 md:p-6">
             <CardTitle className="text-xs sm:text-sm md:text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-1 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
+          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
             <DelayedRender
               delay={80}
-              className="mx-auto h-[115px] w-[115px] flex items-center justify-center md:h-[200px] md:w-[200px]"
-              fallback={<Skeleton className="h-[115px] w-[115px] md:h-[200px] md:w-[200px] rounded-full" />}
+              className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
+              fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[115px] w-[115px] md:h-[200px] md:w-[200px]">
+              <ChartContainer config={emptyChartConfig} className="h-[125px] w-[125px] md:h-[200px] md:w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -669,20 +669,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0 p-1 md:p-6">
             <CardTitle className="text-xs sm:text-sm md:text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-1 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
+          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
             <DelayedRender
               delay={220}
-              className="mx-auto h-[115px] w-[115px] flex items-center justify-center md:h-[200px] md:w-[200px]"
-              fallback={<Skeleton className="h-[115px] w-[115px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
+              className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
+              fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[115px] w-[115px] md:h-[200px] md:w-[200px]">
+              <ChartContainer config={commonConfig} className="h-[125px] w-[125px] md:h-[200px] md:w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
                     data={data.incomeExpense}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius="65%"
+                    innerRadius="70%"
                     strokeWidth={2}
                     labelLine={false}
                     isAnimationActive

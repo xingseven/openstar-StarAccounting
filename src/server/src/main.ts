@@ -177,13 +177,13 @@ async function cleanupExpiredInDb() {
   });
 }
 
-function getUserEmail(req: Request) {
+function getUserEmail(req: Request): string | null {
   const header = req.headers["x-user-email"] ?? req.headers["x-user-id"];
   if (typeof header === "string" && header.trim().length > 0) {
     const v = header.trim();
     return v.includes("@") ? v : `${v}@dev.local`;
   }
-  return "dev@local";
+  return null;
 }
 
 async function ensureUserId(email: string) {
@@ -217,7 +217,12 @@ async function requireUserId(req: Request, res: Response) {
 
   const prisma = getPrisma();
   if (!prisma) {
-    return memoryUserId(getUserEmail(req));
+    const email = getUserEmail(req);
+    if (!email) {
+      jsonFail(res, 401, 10002, "TOKEN_EXPIRED", "请先登录");
+      return null;
+    }
+    return memoryUserId(email);
   }
 
   const allowDevHeaders = true; // process.env.ALLOW_DEV_HEADERS === "1";
@@ -227,6 +232,10 @@ async function requireUserId(req: Request, res: Response) {
   }
 
   const email = getUserEmail(req);
+  if (!email) {
+    jsonFail(res, 401, 10002, "TOKEN_EXPIRED", "请先登录");
+    return null;
+  }
   const userId = await ensureUserId(email);
   if (!userId) {
     jsonFail(res, 500, 50000, "INTERNAL_ERROR", "用户初始化失败");
