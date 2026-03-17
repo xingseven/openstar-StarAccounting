@@ -21,6 +21,7 @@
 - **储蓄弹窗交互修复**:
   - 修复移动端“确认关闭”在取消后再次反复弹出的问题
   - 为关闭确认流程增加一次性放行标记，避免 `onOpenChange(false)` 二次触发时重复进入未保存确认
+  - 增加关闭确认状态锁与取消后一次性忽略机制，消除事件连发导致的再次弹窗
 
 ### Modified Files
 1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`

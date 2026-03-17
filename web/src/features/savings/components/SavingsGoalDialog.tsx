@@ -80,6 +80,8 @@ export function SavingsGoalDialog({
   const reminderRef = useRef<string>("");
   const [dragOverProofId, setDragOverProofId] = useState<string | null>(null);
   const bypassUnsavedConfirmRef = useRef(false);
+  const closeConfirmOpenRef = useRef(false);
+  const ignoreNextCloseAttemptRef = useRef(false);
 
   const pushToast = (message: string) => {
     const id = Math.random().toString(36).slice(2, 9);
@@ -95,6 +97,8 @@ export function SavingsGoalDialog({
     const init = async () => {
       setIsDirty(false);
       bypassUnsavedConfirmRef.current = false;
+      closeConfirmOpenRef.current = false;
+      ignoreNextCloseAttemptRef.current = false;
       setStep(defaultStep);
       if (initialData) {
         setName(initialData.name);
@@ -180,13 +184,24 @@ export function SavingsGoalDialog({
         onOpenChange(false);
         return;
       }
+      if (ignoreNextCloseAttemptRef.current) {
+        ignoreNextCloseAttemptRef.current = false;
+        return;
+      }
       if (isDirty) {
+        if (closeConfirmOpenRef.current) return;
+        closeConfirmOpenRef.current = true;
         confirm({
           title: "确认关闭",
           description: "您有未保存的内容，确定要关闭吗？",
           onConfirm: () => {
+            closeConfirmOpenRef.current = false;
             bypassUnsavedConfirmRef.current = true;
             onOpenChange(false);
+          },
+          onCancel: () => {
+            closeConfirmOpenRef.current = false;
+            ignoreNextCloseAttemptRef.current = true;
           },
         });
         return;
