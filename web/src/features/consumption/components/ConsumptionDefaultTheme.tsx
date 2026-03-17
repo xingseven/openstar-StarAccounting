@@ -552,74 +552,74 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
-            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-orange-100/90 ring-1 sm:ring-4 ring-orange-50/80 flex items-center justify-center">
-              <ShoppingBag className="h-3 w-3 sm:h-5 sm:w-5 text-orange-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+            <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">总消费金额</CardTitle>
+            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-orange-100/90 ring-1 sm:ring-2 ring-orange-50/80 flex items-center justify-center">
+              <ShoppingBag className="h-2 w-2 sm:h-4 sm:w-4 text-orange-600" />
             </div>
           </CardHeader>
-          <CardContent className="p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
-            <div className="text-lg sm:text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0 sm:mt-1">共 {data.summary.expenseCount} 笔支出</p>
+          <CardContent className="p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
+            <div className="text-sm sm:text-lg font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
+            <p className="text-[9px] sm:text-[10px] text-gray-500">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
           <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
-            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-blue-100/90 ring-1 sm:ring-4 ring-blue-50/80 flex items-center justify-center">
-              <Wallet className="h-3 w-3 sm:h-5 sm:w-5 text-blue-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+            <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">本月收支</CardTitle>
+            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-blue-100/90 ring-1 sm:ring-2 ring-blue-50/80 flex items-center justify-center">
+              <Wallet className="h-2 w-2 sm:h-4 sm:w-4 text-blue-600" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-2 p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
-              <div className="text-sm sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowDownIcon className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-green-500" /> 收入</div>
+              <div className="text-xs sm:text-sm font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
-              <div className="text-sm sm:text-lg font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowUpIcon className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-red-500" /> 支出</div>
+              <div className="text-xs sm:text-sm font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
-            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-[#07C160]/15 ring-1 sm:ring-4 ring-[#07C160]/10 flex items-center justify-center">
-              <WechatOfficialIcon className="h-3 w-3 sm:h-5 sm:w-5" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+            <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">微信收支</CardTitle>
+            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-[#07C160]/15 ring-1 sm:ring-2 ring-[#07C160]/10 flex items-center justify-center">
+              <WechatOfficialIcon className="h-2 w-2 sm:h-4 sm:w-4" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-2 p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
-              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500">收入</div>
+              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500">支出</div>
-              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500">支出</div>
+              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-[#1677FF]/15 ring-1 sm:ring-4 ring-[#1677FF]/10 flex items-center justify-center">
-              <AlipayOfficialIcon className="h-3 w-3 sm:h-5 sm:w-5 rounded-sm" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+            <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">支付宝收支</CardTitle>
+            <div className="h-4 w-4 sm:h-7 sm:w-7 rounded-full bg-[#1677FF]/15 ring-1 sm:ring-2 ring-[#1677FF]/10 flex items-center justify-center">
+              <AlipayOfficialIcon className="h-2 w-2 sm:h-4 sm:w-4 rounded-sm" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-2 p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
-              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500">收入</div>
+              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500">支出</div>
-              <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500">支出</div>
+              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
