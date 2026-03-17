@@ -9,19 +9,27 @@ datasource db {
 
 /// 用户主表：账号信息与所有业务数据的归属主体
 model User {
-  id           String          @id @default(cuid())
-  email        String          @unique
-  password     String
-  name         String?
-  transactions Transaction[]
-  loans        Loan[]
-  savingsGoals SavingsGoal[]
-  assets       Asset[]
-  budgets      Budget[]
-  settings     ThemeConfig?
-  connections  AppConnection[]
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id              String            @id @default(cuid())
+  email           String            @unique
+  password        String
+  name            String?
+  role            UserRole          @default(USER)
+  transactions    Transaction[]
+  loans           Loan[]
+  savingsGoals    SavingsGoal[]
+  assets          Asset[]
+  budgets         Budget[]
+  settings        ThemeConfig?
+  connections     AppConnection[]
+  importErrorLogs ImportErrorLog[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+/// 用户角色枚举
+enum UserRole {
+  USER
+  ADMIN
 }
 
 /// 汇率表：维护币种兑换比率（from -> to）
@@ -210,6 +218,24 @@ enum BudgetScope {
   GLOBAL     // 全局预算
   CATEGORY   // 分类预算
   PLATFORM   // 平台预算
+}
+
+/// 导入错误日志表：记录账单导入时的异常行数据
+model ImportErrorLog {
+  id           String   @id @default(cuid())
+  userId       String
+  fileName     String   // 导入的文件名
+  lineNumber   Int      // 错误行号
+  rawData      String   @db.Text // 原始行数据
+  errorMessage String   @db.Text // 错误原因
+  errorType    String   // 错误类型：PARSE_ERROR, VALIDATION_ERROR, DUPLICATE
+  resolved     Boolean  @default(false) // 是否已处理
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, resolved])
 }
 
 /// 资产类型枚举

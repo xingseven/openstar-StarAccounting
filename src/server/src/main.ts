@@ -244,6 +244,32 @@ async function requireUserId(req: Request, res: Response) {
   return userId;
 }
 
+async function requireAdmin(req: Request, res: Response): Promise<string | null> {
+  const userId = await requireUserId(req, res);
+  if (!userId) return null;
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    return userId;
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (!user || user.role !== "ADMIN") {
+      jsonFail(res, 403, 10003, "FORBIDDEN", "需要管理员权限");
+      return null;
+    }
+    return userId;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown";
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+    return null;
+  }
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
@@ -904,6 +930,139 @@ app.delete("/api/transactions/:id", async (req, res) => {
   const list = transactionsByUser.get(userId) ?? [];
   const newList = list.filter((t) => t.id !== id);
   transactionsByUser.set(userId, newList);
+  jsonOk(res, { deleted: true });
+});
+
+app.post("/api/transactions/batch", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const { action, ids, category } = req.body ?? {};
+
+  if (!action || !ids || !Array.isArray(ids) || ids.length === 0) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "缺少必要参数");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      if (action === "delete") {
+        const result = await prisma.transaction.deleteMany({
+          where: { id: { in: ids }, userId },
+        });
+        jsonOk(res, { deleted: result.count });
+        return;
+      } else if (action === "updateCategory" && category) {
+        const result = await prisma.transaction.updateMany({
+          where: { id: { in: ids }, userId },
+          data: { category },
+        });
+        jsonOk(res, { updated: result.count });
+        return;
+      } else {
+        jsonFail(res, 400, 50000, "INVALID_ACTION", "不支持的操作类型");
+        return;
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = transactionsByUser.get(userId) ?? [];
+  if (action === "delete") {
+    const newList = list.filter((t) => !ids.includes(t.id));
+    transactionsByUser.set(userId, newList);
+    jsonOk(res, { deleted: ids.length });
+    return;
+  } else if (action === "updateCategory" && category) {
+    let count = 0;
+    const newList = list.map((t) => {
+      if (ids.includes(t.id)) {
+        count++;
+        return { ...t, category };
+      }
+      return t;
+    });
+    transactionsByUser.set(userId, newList);
+    jsonOk(res, { updated: count });
+    return;
+  }
+
+  jsonFail(res, 400, 50000, "INVALID_ACTION", "不支持的操作类型");
+});
+
+app.get("/api/import-errors", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const { resolved } = req.query;
+      const where: any = { userId };
+      if (resolved !== undefined) {
+        where.resolved = resolved === "true";
+      }
+      const logs = await prisma.importErrorLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+      });
+      jsonOk(res, { items: logs });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonOk(res, { items: [] });
+});
+
+app.put("/api/import-errors/:id/resolve", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const log = await prisma.importErrorLog.update({
+        where: { id, userId },
+        data: { resolved: true },
+      });
+      jsonOk(res, { item: log });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 404, 50000, "NOT_FOUND", "记录不存在");
+});
+
+app.delete("/api/import-errors/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      await prisma.importErrorLog.delete({ where: { id, userId } });
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
   jsonOk(res, { deleted: true });
 });
 
@@ -2676,6 +2835,140 @@ app.put("/api/settings/password", async (req, res) => {
   }
 
   jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持修改密码");
+});
+
+// Admin API
+app.get("/api/admin/stats", async (req, res) => {
+  const userId = await requireAdmin(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const [userCount, transactionCount, assetCount, loanCount, savingsCount, budgetCount] = await Promise.all([
+        prisma.user.count(),
+        prisma.transaction.count(),
+        prisma.asset.count(),
+        prisma.loan.count(),
+        prisma.savingsGoal.count(),
+        prisma.budget.count(),
+      ]);
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const recentTransactions = await prisma.transaction.count({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+      });
+
+      const importSuccessRate = await prisma.importErrorLog.aggregate({
+        _count: { id: true },
+        where: { resolved: false },
+      });
+
+      jsonOk(res, {
+        users: userCount,
+        transactions: transactionCount,
+        assets: assetCount,
+        loans: loanCount,
+        savings: savingsCount,
+        budgets: budgetCount,
+        recentTransactions,
+        unresolvedErrors: importSuccessRate._count.id,
+      });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonOk(res, {
+    users: 0,
+    transactions: 0,
+    assets: 0,
+    loans: 0,
+    savings: 0,
+    budgets: 0,
+    recentTransactions: 0,
+    unresolvedErrors: 0,
+  });
+});
+
+app.get("/api/admin/users", async (req, res) => {
+  const userId = await requireAdmin(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const { page = 1, pageSize = 20 } = req.query;
+      const skip = (Number(page) - 1) * Number(pageSize);
+      
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({
+          skip,
+          take: Number(pageSize),
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            createdAt: true,
+            _count: {
+              select: {
+                transactions: true,
+                assets: true,
+                budgets: true,
+              },
+            },
+          },
+        }),
+        prisma.user.count(),
+      ]);
+
+      jsonOk(res, { items: users, total, page: Number(page), pageSize: Number(pageSize) });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonOk(res, { items: [], total: 0, page: 1, pageSize: 20 });
+});
+
+app.put("/api/admin/users/:id/role", async (req, res) => {
+  const adminId = await requireAdmin(req, res);
+  if (!adminId) return;
+  const targetId = req.params.id;
+  const { role } = req.body ?? {};
+
+  if (!role || !["USER", "ADMIN"].includes(role)) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "无效的角色类型");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const user = await prisma.user.update({
+        where: { id: targetId },
+        data: { role },
+        select: { id: true, email: true, name: true, role: true },
+      });
+      jsonOk(res, { item: user });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 404, 50000, "NOT_FOUND", "用户不存在");
 });
 
 const port = Number(process.env.PORT ?? 3004);
