@@ -126,6 +126,9 @@
   html {
     @apply font-sans;
   }
+  .recharts-surface {
+    background: transparent !important;
+  }
 }
 
 @layer utilities {
