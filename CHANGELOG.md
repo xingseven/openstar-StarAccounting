@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.34 - 2026-03-17
+
+### Performance Improvements
+- **修复滚动吸顶导致的严重卡顿**:
+  - 发现使用 `isStickyVisible` 状态实现吸顶效果时，再次犯了“状态提升”的性能陷阱：由于状态定义在庞大的父组件 `ConsumptionDefaultTheme` 中，每次滚动切换吸顶状态时，都会导致页面上所有复杂的 ECharts 图表和数据列表被强制重新渲染，引发严重的掉帧和卡顿。
+  - 进行了深度重构：将吸顶筛选栏及其滚动监听状态（`isStickyVisible`）完全抽离为一个独立的纯净子组件 `FixedStickyHeader`。
+  - 优化后，滚动状态的改变被严格限制在 `FixedStickyHeader` 内部，只有该导航栏会执行轻量级的 CSS 类名切换，父组件和图表彻底免疫滚动更新，实现了绝对丝滑的滚动体验。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 提取 `FixedStickyHeader` 组件。
+   - 移除 `ConsumptionDefaultTheme` 中的滚动监听和 `isStickyVisible` 状态。
+
 ## 1.8.33 - 2026-03-17
 
 ### Fixes & Improvements

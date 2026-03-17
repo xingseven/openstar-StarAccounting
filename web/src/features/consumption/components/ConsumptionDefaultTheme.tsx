@@ -277,6 +277,99 @@ function AnimatedCalendarGrid({ calendar }: { calendar: ConsumptionData["calenda
 // 移除悬浮按钮组件
 // function FloatingFilterButton({ ... }) { ... }
 
+// 抽离独立的吸顶筛选栏组件，避免滚动时触发整个页面的重渲染
+function FixedStickyHeader({ 
+  searchTerm, 
+  setSearchTerm, 
+  platformFilter, 
+  setPlatformFilter, 
+  dateFilter, 
+  setDateFilter, 
+  dateRangeLabel 
+}: {
+  searchTerm: string;
+  setSearchTerm: (val: string) => void;
+  platformFilter: string;
+  setPlatformFilter: (val: string) => void;
+  dateFilter: string;
+  setDateFilter: (val: string) => void;
+  dateRangeLabel: string;
+}) {
+  const [isStickyVisible, setIsStickyVisible] = useState(false);
+
+  useEffect(() => {
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsStickyVisible(mainContent.scrollTop > 150);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    mainContent.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Check initial position
+    
+    return () => mainContent.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <div 
+      className={cn(
+        "fixed top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 transition-all duration-300 ease-in-out px-4 py-3 flex justify-center",
+        isStickyVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+      )}
+      style={{ willChange: 'transform, opacity' }}
+    >
+      <div className="w-full max-w-[1600px] flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="font-bold text-gray-900 hidden md:block mr-4">消费分析</div>
+        
+        {/* Search */}
+        <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="search"
+            placeholder="搜索消费明细..."
+            className="pl-9 w-full bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Platform Filter */}
+        <Select value={platformFilter} onValueChange={setPlatformFilter}>
+          <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors">
+            <SelectValue placeholder="所有平台" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">所有平台</SelectItem>
+            <SelectItem value="wechat">微信</SelectItem>
+            <SelectItem value="alipay">支付宝</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Date Filter */}
+        <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-md border border-gray-200">
+          <button 
+            onClick={() => setDateFilter("month")}
+            className={cn("px-3 py-1 text-xs rounded-md font-medium transition-all", dateFilter === "month" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
+          >
+            本月
+          </button>
+          <div className="h-3 w-px bg-gray-300 mx-0.5" />
+          <span className="text-xs text-gray-500 px-2">{dateRangeLabel}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -391,9 +484,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     }
   };
 
-  // State for sticky header visibility
-  const [isStickyVisible, setIsStickyVisible] = useState(false);
-
   useEffect(() => {
     const handleResize = () => {
       // Use requestAnimationFrame to throttle resize events
@@ -420,79 +510,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     };
   }, []);
 
-  // Handle scroll for sticky header
-  useEffect(() => {
-    const mainContent = document.querySelector('main');
-    if (!mainContent) return;
-
-    let ticking = false;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          // Show fixed header after scrolling past the original header (approx 150px)
-          setIsStickyVisible(mainContent.scrollTop > 150);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    mainContent.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Check initial position
-    
-    return () => mainContent.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <>
-      {/* 独立的 Fixed 吸顶栏 - 脱离正常文档流，避免被父容器 overflow 隐藏 */}
-      <div 
-        className={cn(
-          "fixed top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 transition-all duration-300 ease-in-out px-4 py-3 flex justify-center",
-          isStickyVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
-        )}
-      >
-        <div className="w-full max-w-[1600px] flex flex-wrap items-center gap-2 sm:gap-4">
-          <div className="font-bold text-gray-900 hidden md:block mr-4">消费分析</div>
-          
-          {/* Search */}
-          <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              type="search"
-              placeholder="搜索消费明细..."
-              className="pl-9 w-full bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          {/* Platform Filter */}
-          <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors">
-              <SelectValue placeholder="所有平台" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有平台</SelectItem>
-              <SelectItem value="wechat">微信</SelectItem>
-              <SelectItem value="alipay">支付宝</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Date Filter */}
-          <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-md border border-gray-200">
-            <button 
-              onClick={() => setDateFilter("month")}
-              className={cn("px-3 py-1 text-xs rounded-md font-medium transition-all", dateFilter === "month" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
-            >
-              本月
-            </button>
-            <div className="h-3 w-px bg-gray-300 mx-0.5" />
-            <span className="text-xs text-gray-500 px-2">{dateRangeLabel}</span>
-          </div>
-        </div>
-      </div>
+      <FixedStickyHeader 
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        platformFilter={platformFilter}
+        setPlatformFilter={setPlatformFilter}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        dateRangeLabel={dateRangeLabel}
+      />
 
       <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
         <div className="flex flex-col gap-3 sm:gap-4">
