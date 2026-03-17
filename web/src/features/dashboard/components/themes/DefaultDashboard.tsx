@@ -189,7 +189,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           </Card>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
             <div className="relative z-10">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
@@ -247,7 +247,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+            <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
             <div className="relative z-10">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
@@ -299,7 +299,7 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
       "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md relative overflow-hidden",
       className
     )}>
-      <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
       <div className="relative z-10">
       <div className="flex items-center justify-between mb-1 sm:mb-2 lg:mb-4">
         <div className="flex items-center gap-2 text-gray-500">

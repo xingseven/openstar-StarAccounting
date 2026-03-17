@@ -206,8 +206,9 @@ export default function SavingsPage() {
   }
 
   function handleCopy(item: SavingsGoal) {
-    // Open create dialog with copied data (empty id means create new)
-    setEditingItem({ ...item, id: "", name: `${item.name} (副本)`, currentAmount: 0 });
+    // Open create dialog with copied data
+    const { id, createdAt, currentAmount, ...rest } = item;
+    setEditingItem({ ...rest, id: "", name: `${item.name} (副本)`, currentAmount: 0, createdAt: new Date().toISOString() });
     setIsModalOpen(true);
   }
 
