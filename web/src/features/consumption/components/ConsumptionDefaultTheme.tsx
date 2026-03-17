@@ -238,20 +238,7 @@ function DelayedRender({
         </div>
       ) : fallback ? (
         fallback
-      ) : (
-        <div className="h-full w-full flex flex-col items-center justify-center bg-white/50 animate-pulse space-y-4 p-6">
-          <div className="w-full flex justify-between items-center">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-5 w-5 rounded-full" />
-          </div>
-          <div className="flex-1 w-full flex items-end justify-between gap-2">
-             {[...Array(7)].map((_, i) => (
-               <Skeleton key={i} className="w-full" style={{ height: `${22 + i * 8}%` }} />
-             ))}
-          </div>
-          <Skeleton className="h-4 w-full" />
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
