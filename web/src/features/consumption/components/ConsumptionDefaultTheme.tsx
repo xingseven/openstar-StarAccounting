@@ -686,8 +686,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
 
         <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0 p-1 md:p-6">
-            <CardTitle className="text-xs sm:text-sm md:text-base">收支分析</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">收支分析</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
             <DelayedRender
