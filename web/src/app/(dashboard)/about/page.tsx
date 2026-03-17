@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Info,
   History,
   Download,
   Users,
@@ -11,15 +10,13 @@ import {
   ChevronUp,
   ExternalLink,
   Github,
-  Star,
-  GitFork,
-  Bug,
-  Lightbulb,
-  Code,
-  Heart,
+  Sparkles,
+  Zap,
+  Shield,
+  TrendingUp,
   CheckCircle,
-  AlertCircle,
   Clock,
+  ArrowRight,
 } from "lucide-react";
 
 const CURRENT_VERSION = "1.8.25";
@@ -127,14 +124,14 @@ const contributors = [
   {
     name: "OpenStar Team",
     role: "核心开发",
-    avatar: null,
     contributions: ["架构设计", "核心功能开发", "性能优化"],
+    gradient: "from-blue-500 to-indigo-600",
   },
   {
     name: "Community",
     role: "社区贡献者",
-    avatar: null,
     contributions: ["Bug 修复", "功能建议", "文档完善"],
+    gradient: "from-purple-500 to-pink-500",
   },
 ];
 
@@ -144,59 +141,47 @@ const websites = [
     url: "https://github.com/openstar-project/xfdashboard",
     icon: Github,
     description: "查看源码、提交 Issue 或参与开发",
+    gradient: "from-gray-700 to-gray-900",
   },
   {
     name: "问题反馈",
     url: "https://github.com/openstar-project/xfdashboard/issues",
-    icon: Bug,
+    icon: Zap,
     description: "报告 Bug 或提出功能建议",
+    gradient: "from-amber-500 to-orange-500",
   },
   {
     name: "功能建议",
     url: "https://github.com/openstar-project/xfdashboard/discussions",
-    icon: Lightbulb,
+    icon: Sparkles,
     description: "参与讨论，分享你的想法",
+    gradient: "from-emerald-500 to-teal-500",
   },
+];
+
+const features = [
+  { icon: TrendingUp, label: "资产管理", color: "text-blue-500" },
+  { icon: Sparkles, label: "消费分析", color: "text-purple-500" },
+  { icon: Shield, label: "储蓄目标", color: "text-emerald-500" },
+  { icon: Zap, label: "贷款追踪", color: "text-amber-500" },
 ];
 
 function VersionTypeBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; className: string }> = {
-    major: { label: "重大更新", className: "bg-purple-100 text-purple-700" },
-    feature: { label: "新功能", className: "bg-blue-100 text-blue-700" },
-    bugfix: { label: "Bug 修复", className: "bg-green-100 text-green-700" },
+    major: { label: "重大更新", className: "bg-violet-100 text-violet-700 border border-violet-200" },
+    feature: { label: "新功能", className: "bg-blue-100 text-blue-700 border border-blue-200" },
+    bugfix: { label: "Bug 修复", className: "bg-emerald-100 text-emerald-700 border border-emerald-200" },
   };
   const { label, className } = config[type] || config.feature;
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${className}`}>
+    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${className}`}>
       {label}
     </span>
   );
 }
 
-function SectionCard({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-blue-600" />
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-      </div>
-      {children}
-    </div>
-  );
-}
-
 export default function AboutPage() {
-  const [expandedVersions, setExpandedVersions] = useState<string[]>([]);
+  const [expandedVersions, setExpandedVersions] = useState<string[]>(["1.8.25"]);
 
   const toggleVersion = (version: string) => {
     setExpandedVersions((prev) =>
@@ -215,244 +200,211 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">关于</h1>
-        <p className="text-sm text-gray-600 mt-1">了解 XFDashboard 项目</p>
-      </div>
-
-      <SectionCard title="项目介绍" icon={Info}>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+    <div className="max-w-5xl mx-auto space-y-8 pb-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 md:p-12">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjMCAwIDItMiAyLTRzLTItMi0yLTJoLThjMCAwIDIgMiAyIDRzLTIgMi0yIDJjMCAwIDIgMiAyIDRzLTIgMi0yIDJoOGMwIDAtMi0yLTItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-16 w-16 md:h-20 md:w-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white font-bold text-3xl md:text-4xl shadow-xl border border-white/30">
               X
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900">XFDashboard</h3>
-              <p className="text-sm text-gray-500">OpenStar 开源个人财务管理面板</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">v{CURRENT_VERSION}</span>
-                <span className="text-xs text-gray-400">Next.js + Express + Prisma</span>
-              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white">XFDashboard</h1>
+              <p className="text-blue-100 mt-1">OpenStar 开源个人财务管理面板</p>
             </div>
           </div>
-          <div className="text-sm text-gray-600 leading-relaxed space-y-2">
-            <p>
-              XFDashboard 是一个开源的个人财务管理面板，旨在帮助用户更好地管理和追踪个人财务状况。
-              项目采用现代化的技术栈，提供直观的可视化图表和丰富的功能模块。
-            </p>
-            <p>
-              主要功能包括：资产管理、消费分析、储蓄目标、贷款追踪、预算管理等。
-              支持导入微信/支付宝账单，自动分类统计消费数据，生成多维度分析报告。
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 pt-2">
-            <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-              <Star className="h-3 w-3" /> 开源免费
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium border border-white/30">
+              <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
+              v{CURRENT_VERSION}
             </span>
-            <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-              <Code className="h-3 w-3" /> TypeScript
-            </span>
-            <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-              <GitFork className="h-3 w-3" /> 社区驱动
+            <span className="inline-flex items-center gap-1.5 bg-white/10 text-white/80 px-3 py-1.5 rounded-full text-sm">
+              Next.js + Express + Prisma
             </span>
           </div>
         </div>
-      </SectionCard>
+      </div>
 
-      <SectionCard title="版本更新记录" icon={History}>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">查看项目的版本迭代历史</p>
-            <div className="flex gap-2">
-              <button
-                onClick={expandAllVersions}
-                className="text-xs text-blue-600 hover:text-blue-700"
-              >
-                展开全部
-              </button>
-              <span className="text-gray-300">|</span>
-              <button
-                onClick={collapseAllVersions}
-                className="text-xs text-blue-600 hover:text-blue-700"
-              >
-                收起全部
-              </button>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {features.map((feature, idx) => (
+          <div
+            key={idx}
+            className="group relative overflow-hidden rounded-xl bg-white border border-gray-100 p-4 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
+          >
+            <div className="flex flex-col items-center text-center">
+              <div className={`h-10 w-10 rounded-lg bg-gray-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${feature.color}`}>
+                <feature.icon className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">{feature.label}</span>
             </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <Download className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">当前版本</h2>
+              <p className="text-sm text-gray-500">v{CURRENT_VERSION} · 2026-03-17</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-sm text-green-700 font-medium">已是最新版本</span>
+          </div>
+          <a
+            href="https://github.com/openstar-project/xfdashboard/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors group"
+          >
+            <Github className="h-4 w-4" />
+            查看所有版本
+            <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+          </a>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+              <Users className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">贡献者</h2>
           </div>
           <div className="space-y-3">
-            {versionHistory.map((item) => (
-              <div
-                key={item.version}
-                className="border rounded-lg overflow-hidden"
-              >
-                <button
-                  onClick={() => toggleVersion(item.version)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <VersionTypeBadge type={item.type} />
-                    <span className="font-medium text-gray-900">
-                      v{item.version}
-                    </span>
-                    <span className="text-xs text-gray-400">{item.date}</span>
-                    {item.version === CURRENT_VERSION && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-                        当前版本
-                      </span>
-                    )}
-                  </div>
-                  {expandedVersions.includes(item.version) ? (
-                    <ChevronUp className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-                {expandedVersions.includes(item.version) && (
-                  <div className="px-4 pb-4 pt-0 border-t bg-gray-50/50">
-                    <ul className="space-y-2 mt-3">
-                      {item.highlights.map((highlight, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2 text-sm text-gray-600"
-                        >
-                          <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                          {highlight}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="更新版本" icon={Download}>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Download className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">当前版本</p>
-                <p className="text-sm text-gray-500">v{CURRENT_VERSION}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-400">发布日期</p>
-              <p className="text-sm text-gray-600">2026-03-17</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <a
-              href="https://github.com/openstar-project/xfdashboard/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors group"
-            >
-              <Github className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">GitHub Releases</p>
-                <p className="text-xs text-gray-500">下载最新发布版本</p>
-              </div>
-              <ExternalLink className="h-4 w-4 text-gray-400" />
-            </a>
-            <div className="flex items-center gap-3 p-4 border rounded-lg bg-gray-50">
-              <Clock className="h-5 w-5 text-gray-400" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">检查更新</p>
-                <p className="text-xs text-gray-500">已是最新版本</p>
-              </div>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg">
-            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
-            <p className="text-xs text-amber-700">
-              建议定期更新以获取最新功能和安全修复。更新前请备份重要数据。
-            </p>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="贡献者" icon={Users}>
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            感谢所有为项目做出贡献的开发者
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {contributors.map((contributor, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-4 p-4 border rounded-lg"
+                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
               >
-                <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${contributor.gradient} flex items-center justify-center text-white font-bold text-sm`}>
                   {contributor.name.charAt(0)}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900">{contributor.name}</p>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                      {contributor.role}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {contributor.contributions.map((c, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 text-sm">{contributor.name}</p>
+                  <p className="text-xs text-gray-500">{contributor.role}</p>
                 </div>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-center gap-2 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg">
-            <Heart className="h-4 w-4 text-pink-500" />
-            <p className="text-sm text-gray-600">
-              感谢所有贡献者的付出，让项目变得更好
-            </p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <History className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">版本更新记录</h2>
+              <p className="text-sm text-gray-500">查看项目的版本迭代历史</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={expandAllVersions}
+              className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              展开全部
+            </button>
+            <button
+              onClick={collapseAllVersions}
+              className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              收起全部
+            </button>
           </div>
         </div>
-      </SectionCard>
-
-      <SectionCard title="网站" icon={Globe}>
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            访问以下网站获取更多信息或参与项目
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {websites.map((site, idx) => (
-              <a
-                key={idx}
-                href={site.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center p-4 border rounded-lg hover:bg-gray-50 hover:border-blue-200 transition-all group"
+        <div className="space-y-3">
+          {versionHistory.map((item, index) => (
+            <div
+              key={item.version}
+              className={`border rounded-xl overflow-hidden transition-all duration-200 ${
+                item.version === CURRENT_VERSION 
+                  ? "border-blue-200 bg-blue-50/50" 
+                  : "border-gray-100 hover:border-gray-200"
+              }`}
+            >
+              <button
+                onClick={() => toggleVersion(item.version)}
+                className="w-full flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors"
               >
-                <div className="h-12 w-12 bg-gray-100 group-hover:bg-blue-100 rounded-lg flex items-center justify-center mb-3 transition-colors">
-                  <site.icon className="h-6 w-6 text-gray-500 group-hover:text-blue-600 transition-colors" />
+                <div className="flex items-center gap-3">
+                  <VersionTypeBadge type={item.type} />
+                  <span className="font-semibold text-gray-900">v{item.version}</span>
+                  <span className="text-xs text-gray-400">{item.date}</span>
+                  {item.version === CURRENT_VERSION && (
+                    <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                      当前
+                    </span>
+                  )}
                 </div>
-                <p className="font-medium text-gray-900 text-sm">{site.name}</p>
-                <p className="text-xs text-gray-500 text-center mt-1">
-                  {site.description}
-                </p>
-                <ExternalLink className="h-3 w-3 text-gray-400 mt-2" />
-              </a>
-            ))}
+                {expandedVersions.includes(item.version) ? (
+                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                )}
+              </button>
+              {expandedVersions.includes(item.version) && (
+                <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+                  <ul className="space-y-2 mt-3">
+                    {item.highlights.map((highlight, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2.5 text-sm text-gray-600"
+                      >
+                        <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Globe className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">相关链接</h2>
+            <p className="text-sm text-gray-500">访问以下网站获取更多信息</p>
           </div>
         </div>
-      </SectionCard>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {websites.map((site, idx) => (
+            <a
+              key={idx}
+              href={site.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative overflow-hidden rounded-xl border border-gray-100 p-5 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
+            >
+              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${site.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <site.icon className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">{site.name}</h3>
+              <p className="text-xs text-gray-500 mb-3">{site.description}</p>
+              <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
+                访问 <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
 
-      <div className="text-center text-xs text-gray-400 py-4">
-        <p>OpenStar XFDashboard v{CURRENT_VERSION}</p>
-        <p className="mt-1">Made with ❤️ by OpenStar Team</p>
+      <div className="text-center py-6">
+        <p className="text-sm text-gray-400">OpenStar XFDashboard v{CURRENT_VERSION}</p>
+        <p className="text-xs text-gray-300 mt-1">Made with ❤️ by OpenStar Team</p>
       </div>
     </div>
   );
