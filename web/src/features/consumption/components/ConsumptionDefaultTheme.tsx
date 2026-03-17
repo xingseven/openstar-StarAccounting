@@ -1,33 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { 
-  Bar, 
-  BarChart, 
-  CartesianGrid, 
-  Cell, 
-  ComposedChart, 
-  LabelList, 
-  Layer,
-  Line, 
-  LineChart, 
-  Pie, 
-  PieChart, 
-  Rectangle,
-  Sankey,
-  Scatter,
-  ScatterChart,
-  Tooltip,
-  XAxis, 
-  YAxis,
-  ZAxis,
-} from "recharts";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+// Recharts imports removed for performance optimization
 import {
   Card,
   CardContent,
@@ -365,8 +337,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     const mainContent = document.querySelector('main');
     if (!mainContent) return;
 
+    let ticking = false;
     const handleScroll = () => {
-      setShowFloatingFilter(mainContent.scrollTop > 200);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setShowFloatingFilter(mainContent.scrollTop > 200);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     mainContent.addEventListener("scroll", handleScroll);
@@ -702,7 +681,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     data={data.incomeExpense}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius="70%"
+                    innerRadius="55%"
                     strokeWidth={2}
                     labelLine={false}
                     isAnimationActive
