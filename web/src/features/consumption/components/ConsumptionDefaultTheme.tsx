@@ -550,7 +550,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">总消费金额</CardTitle>
@@ -564,7 +564,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
           <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">本月收支</CardTitle>
@@ -584,7 +584,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">微信收支</CardTitle>
@@ -604,7 +604,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
+        <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">支付宝收支</CardTitle>
