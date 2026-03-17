@@ -58,6 +58,9 @@ export type TransactionItem = {
   description: string | null;
 };
 
+type SortOption = "progress" | "deadline" | "name" | "createdAt";
+type FilterOption = "all" | "active" | "completed" | "archived";
+
 interface SavingsViewProps {
   items: SavingsGoal[];
   transactions: TransactionItem[];
@@ -70,6 +73,9 @@ interface SavingsViewProps {
   onOpenPunch: (item: SavingsGoal) => void;
   onOpenWithdrawal: (item: SavingsGoal) => void;
   onDelete: (item: SavingsGoal) => void;
+  onArchive?: (item: SavingsGoal) => Promise<void>;
+  onBatchDelete?: (ids: string[]) => Promise<void>;
+  onBatchArchive?: (ids: string[]) => Promise<void>;
 }
 
 // Skeleton loader components
@@ -269,8 +275,14 @@ export function SavingsDefaultTheme({
   onOpenPunch,
   onOpenWithdrawal,
   onDelete,
+  onArchive,
+  onBatchDelete,
+  onBatchArchive,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("progress");
+  const [filterBy, setFilterBy] = useState<FilterOption>("active");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Debug log
   useEffect(() => {
@@ -278,13 +290,88 @@ export function SavingsDefaultTheme({
     console.log('transactions.length:', transactions.length);
   }, [transactions]);
 
-  // Filtered goals
+  // Filtered and sorted goals
   const filteredGoals = useMemo(() => {
-    return items.filter(item => 
-      searchTerm === "" || 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [items, searchTerm]);
+    let result = [...items];
+
+    // Filter by status
+    if (filterBy === "active") {
+      result = result.filter(item => item.status === "ACTIVE");
+    } else if (filterBy === "completed") {
+      result = result.filter(item => item.status === "COMPLETED");
+    } else if (filterBy === "archived") {
+      result = result.filter(item => item.status === "ARCHIVED");
+    }
+
+    // Search filter
+    if (searchTerm) {
+      result = result.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortBy === "progress") {
+        const progressA = a.targetAmount > 0 ? a.currentAmount / a.targetAmount : 0;
+        const progressB = b.targetAmount > 0 ? b.currentAmount / b.targetAmount : 0;
+        return progressB - progressA;
+      } else if (sortBy === "deadline") {
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      } else if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === "createdAt") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return 0;
+    });
+
+    return result;
+  }, [items, searchTerm, sortBy, filterBy]);
+
+  // Deposit type distribution data
+  const depositTypeData = useMemo(() => {
+    const data = [
+      { name: "现金", value: 0, fill: "#10B981" },
+      { name: "死期", value: 0, fill: "#8B5CF6" },
+      { name: "他人帮存", value: 0, fill: "#F59E0B" },
+    ];
+    items.forEach(item => {
+      if (item.depositType === "CASH") data[0].value += item.currentAmount;
+      else if (item.depositType === "FIXED_TERM") data[1].value += item.currentAmount;
+      else if (item.depositType === "HELP_DEPOSIT") data[2].value += item.currentAmount;
+    });
+    return data.filter(d => d.value > 0);
+  }, [items]);
+
+  // Calculate expected completion date
+  const getExpectedCompletion = (item: SavingsGoal): string | null => {
+    if (!item.deadline || item.currentAmount >= item.targetAmount) return null;
+    const remaining = item.targetAmount - item.currentAmount;
+    const months = Math.ceil(remaining / 1000); // Assume 1000/month average, simplified
+    const expected = new Date();
+    expected.setMonth(expected.getMonth() + months);
+    return expected.toLocaleDateString("zh-CN", { year: "numeric", month: "long" });
+  };
+
+  // Calculate days until deadline
+  const getDaysUntilDeadline = (deadline: string | null): number | null => {
+    if (!deadline) return null;
+    const diff = new Date(deadline).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  // Check if progress is behind schedule
+  const isBehindSchedule = (item: SavingsGoal): boolean => {
+    if (!item.deadline || item.currentAmount >= item.targetAmount) return false;
+    const totalDays = new Date(item.deadline).getTime() - new Date(item.createdAt).getTime();
+    const elapsedDays = new Date().getTime() - new Date(item.createdAt).getTime();
+    const expectedProgress = elapsedDays / totalDays;
+    const actualProgress = item.currentAmount / item.targetAmount;
+    return expectedProgress - actualProgress > 0.2; // 20% behind
+  };
 
   // Chart Data: Savings Distribution by Type
   const distributionData = useMemo(() => {

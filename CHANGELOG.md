@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.8.35 - 2026-03-17
+
+### UI/UX Improvements
+- **设置页面布局优化**:
+  - 将设置页面模块从靠左显示改为居中显示
+  - 容器最大宽度限制为 2xl (约 672px)，避免过宽影响阅读
+  - 标题和模块标题统一居中对齐
+- **连接页面布局优化**:
+  - 将连接页面模块从全屏宽度改为居中显示
+  - 容器最大宽度限制为 2xl (约 672px)
+  - 标题居中显示
+
+### Modified Files
+1. `web/src/app/(dashboard)/settings/page.tsx`
+   - 添加 `mx-auto` 类使容器居中
+   - 为标题和模块添加 `text-center` 类
+2. `web/src/app/(dashboard)/connections/page.tsx`
+   - 添加 `max-w-2xl mx-auto` 类限制宽度并居中
+   - 为标题添加 `text-center` 类
+
 ## 1.8.34 - 2026-03-17
 
 ### Performance Improvements
