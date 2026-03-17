@@ -10,7 +10,8 @@ import {
   Landmark, 
   Link as LinkIcon, 
   Settings,
-  Palette
+  Palette,
+  Info
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -23,6 +24,7 @@ const items = [
   { href: "/connections", label: "连接", icon: LinkIcon },
   { href: "/themes", label: "主题", icon: Palette },
   { href: "/settings", label: "设置", icon: Settings },
+  { href: "/about", label: "关于", icon: Info },
 ];
 
 export function SidebarContent() {
