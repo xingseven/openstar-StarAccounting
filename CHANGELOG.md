@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.33 - 2026-03-17
+
+### Fixes & Improvements
+- **彻底解决吸顶失效问题**:
+  - 发现原有的 `sticky` 方案由于受到更高层级祖先元素的 `overflow` 或布局限制，在某些情况下无法正常工作。
+  - 重构了吸顶逻辑：采用监听滚动状态配合 `fixed` 定位的方案。
+  - 新增了一个独立于正常文档流的 `Fixed` 导航栏，当页面向下滚动超过 150px 时，该导航栏会平滑地从顶部滑出，彻底摆脱了父容器布局的限制。
+  - 吸顶导航栏增加了 "消费分析" 标题，使其在滚动后依然保持良好的上下文提示。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 增加 `isStickyVisible` 状态和滚动监听逻辑。
+   - 使用 `fixed` 元素实现自定义吸顶效果。
+
 ## 1.8.32 - 2026-03-17
 
 ### UI/UX Improvements

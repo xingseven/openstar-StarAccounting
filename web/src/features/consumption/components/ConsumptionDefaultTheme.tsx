@@ -391,6 +391,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     }
   };
 
+  // State for sticky header visibility
+  const [isStickyVisible, setIsStickyVisible] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       // Use requestAnimationFrame to throttle resize events
@@ -417,23 +420,49 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     };
   }, []);
 
+  // Handle scroll for sticky header
+  useEffect(() => {
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Show fixed header after scrolling past the original header (approx 150px)
+          setIsStickyVisible(mainContent.scrollTop > 150);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    mainContent.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Check initial position
+    
+    return () => mainContent.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
-      <div className="flex flex-col gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
-        </div>
-        
-        {/* 顶部过滤模块 - Sticky 吸顶效果 */}
-        <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-b-xl sm:rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3 transition-all duration-200">
+    <>
+      {/* 独立的 Fixed 吸顶栏 - 脱离正常文档流，避免被父容器 overflow 隐藏 */}
+      <div 
+        className={cn(
+          "fixed top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 transition-all duration-300 ease-in-out px-4 py-3 flex justify-center",
+          isStickyVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+        )}
+      >
+        <div className="w-full max-w-[1600px] flex flex-wrap items-center gap-2 sm:gap-4">
+          <div className="font-bold text-gray-900 hidden md:block mr-4">消费分析</div>
+          
           {/* Search */}
           <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
               placeholder="搜索消费明细..."
-              className="pl-9 w-full bg-gray-50/50 hover:bg-gray-50 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors"
+              className="pl-9 w-full bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -441,7 +470,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
           {/* Platform Filter */}
           <Select value={platformFilter} onValueChange={setPlatformFilter}>
-            <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50/50 hover:bg-gray-50 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors">
+            <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors">
               <SelectValue placeholder="所有平台" />
             </SelectTrigger>
             <SelectContent>
@@ -452,18 +481,65 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </Select>
 
           {/* Date Filter */}
-          <div className="hidden sm:flex items-center gap-2 bg-gray-50/50 p-1 rounded-lg border border-gray-200">
+          <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-md border border-gray-200">
             <button 
               onClick={() => setDateFilter("month")}
-              className={cn("px-3 py-1.5 text-sm rounded-md font-medium transition-all shadow-sm", dateFilter === "month" ? "bg-white text-gray-900" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50")}
+              className={cn("px-3 py-1 text-xs rounded-md font-medium transition-all", dateFilter === "month" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
             >
               本月
             </button>
-            <div className="h-4 w-px bg-gray-200 mx-1" />
-            <span className="text-sm text-gray-500 px-3 cursor-pointer hover:text-gray-900 transition-colors">{dateRangeLabel}</span>
+            <div className="h-3 w-px bg-gray-300 mx-0.5" />
+            <span className="text-xs text-gray-500 px-2">{dateRangeLabel}</span>
           </div>
         </div>
       </div>
+
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
+          </div>
+          
+          {/* 原始的顶部过滤模块 (非吸顶状态) */}
+          <div className="bg-white py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="search"
+                placeholder="搜索消费明细..."
+                className="pl-9 w-full bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Platform Filter */}
+            <Select value={platformFilter} onValueChange={setPlatformFilter}>
+              <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors">
+                <SelectValue placeholder="所有平台" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">所有平台</SelectItem>
+                <SelectItem value="wechat">微信</SelectItem>
+                <SelectItem value="alipay">支付宝</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Date Filter */}
+            <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <button 
+                onClick={() => setDateFilter("month")}
+                className={cn("px-3 py-1.5 text-sm rounded-md font-medium transition-all shadow-sm", dateFilter === "month" ? "bg-white text-gray-900" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
+              >
+                本月
+              </button>
+              <div className="h-4 w-px bg-gray-200 mx-1" />
+              <span className="text-sm text-gray-500 px-3">{dateRangeLabel}</span>
+            </div>
+          </div>
+        </div>
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
@@ -1137,6 +1213,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </DelayedRender>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }
