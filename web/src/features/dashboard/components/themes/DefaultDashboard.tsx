@@ -93,6 +93,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {/* Net Worth Card */}
         <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-3 sm:p-6 text-white shadow-xl">
+          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 11px), repeating-linear-gradient(-45deg, transparent, transparent 15px, rgba(255,255,255,0.2) 15px, rgba(255,255,255,0.2) 16px)' }}></div>
           <div className="relative z-10">
             <div className="flex items-center gap-2 text-gray-300 mb-1 sm:mb-2">
               <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -187,7 +188,9 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </CardContent>
           </Card>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
+            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+            <div className="relative z-10">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
               <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
@@ -237,12 +240,15 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 ))
               )}
             </div>
+            </div>
           </div>
         </div>
 
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
+            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+            <div className="relative z-10">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
@@ -250,9 +256,11 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
               <QuickAction href="/connections" icon={CreditCard} label="连接管理" color="indigo" />
             </div>
+            </div>
           </div>
 
           <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden z-0">
+            <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 11px), repeating-linear-gradient(-45deg, transparent, transparent 15px, rgba(255,255,255,0.15) 15px, rgba(255,255,255,0.15) 16px)' }}></div>
             <div className="relative z-10">
               <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">需要帮助？</h3>
               <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
@@ -288,9 +296,11 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
 
   return (
     <div className={clsx(
-      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md",
+      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md relative overflow-hidden",
       className
     )}>
+      <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+      <div className="relative z-10">
       <div className="flex items-center justify-between mb-1 sm:mb-2 lg:mb-4">
         <div className="flex items-center gap-2 text-gray-500">
           <div className={clsx("p-1.5 sm:p-2 rounded-lg", colorStyles[color])}>
@@ -306,6 +316,7 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
         <div className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 truncate">
           ¥ {Math.abs(value).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -9,7 +9,14 @@ import {
   ArrowRight,
   Search,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  ArrowUpDown,
+  Download,
+  Archive,
+  Trash2,
+  AlertCircle,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import {
   Card,
@@ -76,6 +83,7 @@ interface SavingsViewProps {
   onArchive?: (item: SavingsGoal) => Promise<void>;
   onBatchDelete?: (ids: string[]) => Promise<void>;
   onBatchArchive?: (ids: string[]) => Promise<void>;
+  onCopy?: (item: SavingsGoal) => void;
 }
 
 // Skeleton loader components
@@ -278,6 +286,7 @@ export function SavingsDefaultTheme({
   onArchive,
   onBatchDelete,
   onBatchArchive,
+  onCopy,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("progress");
@@ -420,6 +429,86 @@ export function SavingsDefaultTheme({
             />
           </div>
 
+          {/* Filter buttons */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant={filterBy === "active" ? "default" : "outline"}
+              size="sm"
+              className="h-9 px-2 sm:px-3"
+              onClick={() => setFilterBy("active")}
+            >
+              进行中
+            </Button>
+            <Button
+              variant={filterBy === "completed" ? "default" : "outline"}
+              size="sm"
+              className="h-9 px-2 sm:px-3"
+              onClick={() => setFilterBy("completed")}
+            >
+              已完成
+            </Button>
+            <Button
+              variant={filterBy === "archived" ? "default" : "outline"}
+              size="sm"
+              className="h-9 px-2 sm:px-3"
+              onClick={() => setFilterBy("archived")}
+            >
+              已归档
+            </Button>
+            <Button
+              variant={filterBy === "all" ? "default" : "outline"}
+              size="sm"
+              className="h-9 px-2 sm:px-3"
+              onClick={() => setFilterBy("all")}
+            >
+              全部
+            </Button>
+          </div>
+
+          {/* Sort dropdown */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="h-9 px-2 text-sm border rounded-md bg-white"
+          >
+            <option value="progress">按进度</option>
+            <option value="deadline">按截止日期</option>
+            <option value="name">按名称</option>
+            <option value="createdAt">按创建时间</option>
+          </select>
+
+          {/* Export button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-2 sm:px-3"
+            onClick={() => {
+              const csv = [
+                ["名称", "模式", "存款类型", "当前金额", "目标金额", "完成率", "截止日期", "状态"].join(","),
+                ...filteredGoals.map(item => [
+                  item.name,
+                  item.type,
+                  item.depositType,
+                  item.currentAmount,
+                  item.targetAmount,
+                  `${((item.currentAmount / item.targetAmount) * 100).toFixed(1)}%`,
+                  item.deadline?.slice(0, 10) || "",
+                  item.status
+                ].join(","))
+              ].join("\n");
+              const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `储蓄目标_${new Date().toLocaleDateString("zh-CN")}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">导出</span>
+          </Button>
+
           <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white h-9 sm:h-10 px-3 sm:px-4">
             <Plus className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">新建目标</span>
@@ -483,12 +572,12 @@ export function SavingsDefaultTheme({
           </div>
         }
       >
-        <div className="grid gap-6 md:grid-cols-4">
-          {/* Chart Column */}
+        <div className="grid gap-6 md:grid-cols-5">
+          {/* Chart Column 1: 储蓄模式分布 */}
           <Card className="md:col-span-1 flex flex-col">
             <CardHeader className="items-center pb-0">
               <CardTitle className="text-base">储蓄分布</CardTitle>
-              <CardDescription>按类型统计</CardDescription>
+              <CardDescription>按模式统计</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 pb-0 relative min-h-[200px]">
               {distributionData.length > 0 ? (
@@ -525,6 +614,47 @@ export function SavingsDefaultTheme({
             </CardContent>
           </Card>
 
+          {/* Chart Column 2: 存款类型分布 */}
+          <Card className="md:col-span-1 flex flex-col">
+            <CardHeader className="items-center pb-0">
+              <CardTitle className="text-base">存款类型</CardTitle>
+              <CardDescription>按方式统计</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0 relative min-h-[200px]">
+              {depositTypeData.length > 0 ? (
+                <>
+                  <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
+                    <PieChart>
+                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                      <Pie
+                        data={depositTypeData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={40}
+                        strokeWidth={5}
+                      >
+                        {depositTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                  <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+                    {depositTypeData.map((item, index) => (
+                      <div key={index} className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                        <span className="text-gray-500">{item.name}</span>
+                        <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Goals Table Column */}
           <Card className="md:col-span-3 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
@@ -538,6 +668,48 @@ export function SavingsDefaultTheme({
               </Button>
             </CardHeader>
             <CardContent className="pt-0">
+              {/* Batch actions bar */}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 rounded-lg">
+                  <span className="text-sm text-blue-700">已选择 {selectedIds.size} 项</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => {
+                      if (onBatchArchive) {
+                        onBatchDelete?.(Array.from(selectedIds));
+                      } else {
+                        alert("批量归档功能开发中");
+                      }
+                    }}
+                  >
+                    <Archive className="h-4 w-4 mr-1" />
+                    批量归档
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-red-600 hover:text-red-700"
+                    onClick={() => {
+                      if (confirm(`确定要删除选中的 ${selectedIds.size} 个目标吗？`)) {
+                        onBatchDelete?.(Array.from(selectedIds));
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    批量删除
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setSelectedIds(new Set())}
+                  >
+                    取消
+                  </Button>
+                </div>
+              )}
               {filteredGoals.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 text-sm bg-gray-50/50 rounded-lg border border-dashed">
                   暂无目标，点击右上角新增
@@ -547,6 +719,24 @@ export function SavingsDefaultTheme({
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 text-gray-600">
                       <tr>
+                        <th className="text-left px-2 py-2 w-8">
+                          <button
+                            onClick={() => {
+                              if (selectedIds.size === filteredGoals.length) {
+                                setSelectedIds(new Set());
+                              } else {
+                                setSelectedIds(new Set(filteredGoals.map(i => i.id)));
+                              }
+                            }}
+                            className="p-1"
+                          >
+                            {selectedIds.size === filteredGoals.length && filteredGoals.length > 0 ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </button>
+                        </th>
                         <th className="text-left px-3 py-2 whitespace-nowrap">名称</th>
                         <th className="text-left px-3 py-2 whitespace-nowrap">模式</th>
                         <th className="text-left px-3 py-2 whitespace-nowrap">存款类型</th>
@@ -561,18 +751,49 @@ export function SavingsDefaultTheme({
                         const progress = item.targetAmount > 0
                           ? Math.min(100, (item.currentAmount / item.targetAmount) * 100)
                           : 0;
+                        const daysLeft = getDaysUntilDeadline(item.deadline);
+                        const behind = isBehindSchedule(item);
+                        const expectedDate = getExpectedCompletion(item);
                         return (
                           <tr key={item.id} className="hover:bg-gray-50/70">
+                            <td className="px-2 py-3">
+                              <button
+                                onClick={() => {
+                                  const newSet = new Set(selectedIds);
+                                  if (newSet.has(item.id)) {
+                                    newSet.delete(item.id);
+                                  } else {
+                                    newSet.add(item.id);
+                                  }
+                                  setSelectedIds(newSet);
+                                }}
+                                className="p-1"
+                              >
+                                {selectedIds.has(item.id) ? (
+                                  <CheckSquare className="h-4 w-4 text-blue-600" />
+                                ) : (
+                                  <Square className="h-4 w-4 text-gray-400" />
+                                )}
+                              </button>
+                            </td>
                             <td className="px-3 py-3 font-medium text-gray-900 whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                {behind && item.status === "ACTIVE" && (
+                                  <span title="进度落后"><AlertCircle className="h-4 w-4 text-orange-500" /></span>
+                                )}
+                                {item.status === "ARCHIVED" && (
+                                  <span title="已归档"><Archive className="h-4 w-4 text-gray-400" /></span>
+                                )}
                                 <button
                                   onClick={() => {
                                     onOpenPunch(item);
                                   }}
-                                className="hover:text-blue-600 transition-colors underline-offset-2 hover:underline"
-                                title="打开月度计划"
-                              >
-                                {item.name}
-                              </button>
+                                  className="hover:text-blue-600 transition-colors underline-offset-2 hover:underline"
+                                  title="打开月度计划"
+                                >
+                                  {item.name}
+                                </button>
+                              </div>
                             </td>
                             <td className="px-3 py-3 whitespace-nowrap">
                               {item.type === "BI_MONTHLY_ODD"
@@ -611,8 +832,20 @@ export function SavingsDefaultTheme({
                                 <span className="text-xs text-gray-500 w-10 text-right">{progress.toFixed(0)}%</span>
                               </div>
                             </td>
-                            <td className="px-3 py-3 whitespace-nowrap text-gray-500">
-                              {item.deadline ? item.deadline.slice(0, 10) : "—"}
+                            <td className="px-3 py-3 whitespace-nowrap">
+                              <div className="flex flex-col gap-0.5">
+                                <span className={clsx(
+                                  "text-gray-500",
+                                  daysLeft !== null && daysLeft < 0 && "text-gray-400 line-through",
+                                  daysLeft !== null && daysLeft >= 0 && daysLeft < 7 && "text-red-600 font-medium",
+                                  daysLeft !== null && daysLeft >= 7 && daysLeft < 30 && "text-orange-600"
+                                )}>
+                                  {item.deadline ? item.deadline.slice(0, 10) : "—"}
+                                </span>
+                                {expectedDate && progress < 100 && (
+                                  <span className="text-[10px] text-gray-400">预计 {expectedDate}</span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-3 py-3">
                               <div className="flex items-center justify-end gap-2">
@@ -645,11 +878,31 @@ export function SavingsDefaultTheme({
                                   <Target className="h-4 w-4" />
                                 </button>
                                 <button
-                                  onClick={() => onOpenEdit(item)}
+                                  onClick={() => {
+                                    if (onArchive && item.status === "ACTIVE") {
+                                      onArchive(item);
+                                    } else {
+                                      onOpenEdit(item);
+                                    }
+                                  }}
                                   className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
-                                  title="编辑"
+                                  title={item.status === "ACTIVE" ? "归档" : "编辑"}
                                 >
-                                  修改
+                                  {item.status === "ACTIVE" ? "归档" : "修改"}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (onCopy) {
+                                      onCopy(item);
+                                    } else {
+                                      // Default: open edit with copied data
+                                      onOpenEdit({ ...item, id: "", name: `${item.name} (副本)` });
+                                    }
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
+                                  title="复制"
+                                >
+                                  复制
                                 </button>
                                 <button
                                   onClick={() => onDelete(item)}

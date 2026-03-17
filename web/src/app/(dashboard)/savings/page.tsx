@@ -163,6 +163,54 @@ export default function SavingsPage() {
     }
   }
 
+  async function handleArchive(item: SavingsGoal) {
+    try {
+      await apiFetch(`/api/savings/${item.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...item, status: "ARCHIVED" }),
+      });
+      loadData();
+    } catch (e) {
+      alert("归档失败");
+      throw e;
+    }
+  }
+
+  async function handleBatchDelete(ids: string[]) {
+    try {
+      await Promise.all(ids.map(id => apiFetch(`/api/savings/${id}`, { method: "DELETE" })));
+      loadData();
+    } catch (e) {
+      alert("批量删除失败");
+      throw e;
+    }
+  }
+
+  async function handleBatchArchive(ids: string[]) {
+    try {
+      await Promise.all(ids.map(id => {
+        const item = items.find(i => i.id === id);
+        if (item) {
+          return apiFetch(`/api/savings/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({ ...item, status: "ARCHIVED" }),
+          });
+        }
+        return Promise.resolve();
+      }));
+      loadData();
+    } catch (e) {
+      alert("批量归档失败");
+      throw e;
+    }
+  }
+
+  function handleCopy(item: SavingsGoal) {
+    // Open create dialog with copied data (empty id means create new)
+    setEditingItem({ ...item, id: "", name: `${item.name} (副本)`, currentAmount: 0 });
+    setIsModalOpen(true);
+  }
+
   const totalSaved = items.reduce((acc, item) => acc + item.currentAmount, 0);
   const totalTarget = items.reduce((acc, item) => acc + item.targetAmount, 0);
   const overallProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
@@ -181,6 +229,10 @@ export default function SavingsPage() {
         onOpenPunch={openPunch}
         onOpenWithdrawal={openWithdrawal}
         onDelete={(item) => handleDelete(item.id)}
+        onArchive={handleArchive}
+        onBatchDelete={handleBatchDelete}
+        onBatchArchive={handleBatchArchive}
+        onCopy={handleCopy}
       />
 
       <SavingsGoalDialog
