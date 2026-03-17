@@ -215,7 +215,7 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">关于</h1>
         <p className="text-sm text-gray-600 mt-1">了解 XFDashboard 项目</p>
