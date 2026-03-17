@@ -551,48 +551,48 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
-          <ShoppingBag className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
+          <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
-            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-orange-100/90 ring-2 sm:ring-4 ring-orange-50/80 flex items-center justify-center">
-              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-orange-100/90 ring-1 sm:ring-4 ring-orange-50/80 flex items-center justify-center">
+              <ShoppingBag className="h-3 w-3 sm:h-5 sm:w-5 text-orange-600" />
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
+          <CardContent className="p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
             <div className="text-lg sm:text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
-            <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">共 {data.summary.expenseCount} 笔支出</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-0 sm:mt-1">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-          <Wallet className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
+          <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
-            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-blue-100/90 ring-2 sm:ring-4 ring-blue-50/80 flex items-center justify-center">
-              <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-blue-100/90 ring-1 sm:ring-4 ring-blue-50/80 flex items-center justify-center">
+              <Wallet className="h-3 w-3 sm:h-5 sm:w-5 text-blue-600" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-2 p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
               <div className="text-sm sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
+              <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
               <div className="text-sm sm:text-lg font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow">
-          <WechatOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
+          <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
-            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#07C160]/15 ring-2 sm:ring-4 ring-[#07C160]/10 flex items-center justify-center">
-              <WechatOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-[#07C160]/15 ring-1 sm:ring-4 ring-[#07C160]/10 flex items-center justify-center">
+              <WechatOfficialIcon className="h-3 w-3 sm:h-5 sm:w-5" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-2 p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
             <div>
               <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
@@ -605,14 +605,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
 
         <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow">
-          <AlipayOfficialIcon className="absolute -right-3 -bottom-4 h-16 sm:h-24 w-16 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-3 sm:p-4 md:p-4">
+          <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-2 sm:p-3 md:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-            <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-[#1677FF]/15 ring-2 sm:ring-4 ring-[#1677FF]/10 flex items-center justify-center">
-              <AlipayOfficialIcon className="h-4 w-4 sm:h-5 sm:w-5 rounded-sm" />
+            <div className="h-5 w-5 sm:h-9 sm:w-9 rounded-full bg-[#1677FF]/15 ring-1 sm:ring-4 ring-[#1677FF]/10 flex items-center justify-center">
+              <AlipayOfficialIcon className="h-3 w-3 sm:h-5 sm:w-5 rounded-sm" />
             </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-1 sm:gap-2 p-3 sm:p-4 md:p-4 pt-0 pb-3 sm:pb-4">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-2 p-2 sm:p-3 md:p-2 pt-0 pb-2 sm:pb-3 md:pb-2">
             <div>
               <div className="text-[10px] sm:text-xs text-gray-500">收入</div>
               <div className="text-sm sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
@@ -631,13 +631,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader className="items-center pb-0 p-2 sm:p-4 md:p-6">
             <CardTitle className="text-xs sm:text-sm md:text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-2 pt-0 px-2 sm:px-4 md:px-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-4 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
             <DelayedRender 
               delay={80}
-              className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[220px] md:w-[220px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[220px] md:w-[220px] rounded-full" />}
+              className="mx-auto h-[120px] w-[120px] flex items-center justify-center md:h-[200px] md:w-[200px]"
+              fallback={<Skeleton className="h-[120px] w-[120px] md:h-[200px] md:w-[200px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[220px] md:w-[220px]">
+              <ChartContainer config={emptyChartConfig} className="h-[120px] w-[120px] md:h-[200px] md:w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
@@ -661,11 +661,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="w-full flex justify-center mt-0">
-              <div className="flex flex-col gap-0.5 text-xs md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-1">
+            <div className="w-full flex justify-center mt-2 md:absolute md:bottom-4 md:right-4 md:w-auto md:mt-0 md:justify-end">
+              <div className="flex flex-col gap-1 text-[10px] md:text-xs">
                  {data.platformDistribution.map((item, index) => (
-                   <div key={index} className="flex items-center gap-2">
-                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                   <div key={index} className="flex items-center gap-1.5">
+                     <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
                      <span className="text-gray-500">{item.name}</span>
                      <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
                    </div>
@@ -676,24 +676,24 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </Card>
 
         <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0 p-2 sm:p-4 md:p-6">
-            <CardTitle className="text-xs sm:text-sm md:text-base">收支分析</CardTitle>
+          <CardHeader className="items-center pb-0 p-4 md:p-6">
+            <CardTitle className="text-sm md:text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-2 pt-0 px-2 sm:px-4 md:px-4 relative flex flex-col items-center justify-center">
+          <CardContent className="flex-1 pb-4 pt-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
             <DelayedRender 
               delay={220}
-              className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[220px] md:w-[220px] flex items-center justify-center"
-              fallback={<Skeleton className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[220px] md:w-[220px] rounded-full border-4 border-white" />}
+              className="mx-auto h-[120px] w-[120px] flex items-center justify-center md:h-[200px] md:w-[200px]"
+              fallback={<Skeleton className="h-[120px] w-[120px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[80px] w-[80px] sm:h-[120px] sm:w-[120px] md:h-[220px] md:w-[220px]">
+              <ChartContainer config={commonConfig} className="h-[120px] w-[120px] md:h-[200px] md:w-[200px]">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
                     data={data.incomeExpense}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={pieInnerRadius}
-                    strokeWidth={pieStrokeWidth}
+                    innerRadius="55%"
+                    strokeWidth={4}
                     labelLine={false}
                     isAnimationActive
                     animationDuration={750}
@@ -710,12 +710,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 </PieChart>
               </ChartContainer>
             </DelayedRender>
-            <div className="w-full flex justify-center mt-0">
-              <div className="flex flex-col gap-0.5 text-xs md:grid md:grid-cols-2 md:gap-x-4 md:gap-y-1">
+            <div className="w-full flex justify-center mt-2 md:absolute md:bottom-4 md:right-4 md:w-auto md:mt-0 md:justify-end">
+              <div className="flex flex-col gap-1 text-[10px] md:text-xs">
                  {data.incomeExpense.map((item, index) => {
                    return (
-                     <div key={index} className="flex items-center gap-2">
-                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                     <div key={index} className="flex items-center gap-1.5">
+                       <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
                        <span className="text-gray-500">{item.name}</span>
                        <span className="font-medium">{(item.value / incomeExpenseTotal * 100).toFixed(0)}%</span>
                      </div>
