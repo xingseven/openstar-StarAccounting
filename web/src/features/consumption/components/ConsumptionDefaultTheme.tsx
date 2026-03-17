@@ -330,17 +330,26 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     if (!mainContent) return;
 
     let ticking = false;
+    let lastScrollTop = mainContent.scrollTop;
+
     const handleScroll = () => {
+      lastScrollTop = mainContent.scrollTop;
+      
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          setShowFloatingFilter(mainContent.scrollTop > 200);
+          setShowFloatingFilter(lastScrollTop > 200);
           ticking = false;
         });
         ticking = true;
       }
     };
 
-    mainContent.addEventListener("scroll", handleScroll);
+    // Use passive event listener for better scrolling performance
+    mainContent.addEventListener("scroll", handleScroll, { passive: true });
+    
+    // Initial check
+    handleScroll();
+    
     return () => mainContent.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -441,17 +450,19 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       <div 
         className={cn(
           "fixed bottom-8 right-8 z-50 transition-all duration-300 transform",
-          showFloatingFilter ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
+          showFloatingFilter ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0 pointer-events-none"
         )}
+        style={{ willChange: 'transform, opacity' }}
       >
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-          <button 
-            type="button" 
-            className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center"
-            onClick={() => setFilterOpen(!filterOpen)}
-          >
-            <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
+          <PopoverTrigger asChild>
+            <button 
+              type="button" 
+              className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg bg-black text-white hover:bg-gray-800 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            >
+              <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          </PopoverTrigger>
           <PopoverContent className="w-72 sm:w-80 p-3 sm:p-4 mr-4 sm:mr-8 mb-4" side="top" align="end">
             <div className="space-y-3 sm:space-y-4">
               <h4 className="font-medium leading-none text-sm sm:text-base">快捷筛选</h4>

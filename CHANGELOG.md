@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.29 - 2026-03-17
+
+### Performance Improvements
+- **悬浮筛选按钮渲染优化**:
+  - 修复了向下滚动时悬浮筛选按钮出现导致页面卡顿的问题。
+  - 为滚动事件监听器添加了 `{ passive: true }` 选项，提升滚动性能。
+  - 优化了悬浮按钮的动画逻辑，使用 `willChange: 'transform, opacity'` 提示浏览器进行硬件加速 (GPU 渲染)。
+  - 缩短了悬浮按钮的垂直移动距离（从 `translate-y-20` 优化为 `translate-y-10`），减少重绘负担。
+  - 使用 `PopoverTrigger asChild` 替换了手动 onClick 绑定，使组件层级更符合 Shadcn/UI 规范，避免多余的事件处理开销。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 优化 `handleScroll`，添加 `passive: true`。
+   - 优化浮动按钮的 `className` 和 `style`。
+
 ## 1.8.28 - 2026-03-17
 
 ### Fixes
