@@ -550,7 +550,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
+        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">总消费金额</CardTitle>
@@ -559,12 +559,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </div>
           </CardHeader>
           <CardContent className="p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
-            <div className="text-sm sm:text-lg font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
-            <p className="text-[9px] sm:text-[10px] text-gray-500">共 {data.summary.expenseCount} 笔支出</p>
+            <div className="text-sm sm:text-2xl font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
+            <p className="text-[9px] sm:text-sm text-gray-500">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">本月收支</CardTitle>
@@ -574,17 +574,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
-              <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowDownIcon className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-green-500" /> 收入</div>
-              <div className="text-xs sm:text-sm font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-sm text-gray-500 flex items-center gap-0.5"><ArrowDownIcon className="h-2 w-2 sm:h-3 sm:w-3 text-green-500" /> 收入</div>
+              <div className="text-xs sm:text-2xl font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[9px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowUpIcon className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-red-500" /> 支出</div>
-              <div className="text-xs sm:text-sm font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-sm text-gray-500 flex items-center gap-0.5"><ArrowUpIcon className="h-2 w-2 sm:h-3 sm:w-3 text-red-500" /> 支出</div>
+              <div className="text-xs sm:text-2xl font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
+        <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">微信收支</CardTitle>
@@ -594,17 +594,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
-              <div className="text-[9px] sm:text-[10px] text-gray-500">收入</div>
-              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-sm text-gray-500">收入</div>
+              <div className="text-xs sm:text-2xl font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[9px] sm:text-[10px] text-gray-500">支出</div>
-              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-sm text-gray-500">支出</div>
+              <div className="text-xs sm:text-2xl font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[90px]">
+        <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-[10px] sm:text-xs font-medium text-gray-500">支付宝收支</CardTitle>
@@ -614,12 +614,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
             <div>
-              <div className="text-[9px] sm:text-[10px] text-gray-500">收入</div>
-              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-sm text-gray-500">收入</div>
+              <div className="text-xs sm:text-2xl font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[9px] sm:text-[10px] text-gray-500">支出</div>
-              <div className="text-xs sm:text-sm font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
+              <div className="text-[9px] sm:text-sm text-gray-500">支出</div>
+              <div className="text-xs sm:text-2xl font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
@@ -1010,12 +1010,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     trigger: 'item',
                     triggerOn: 'mousemove',
                   },
-                  grid: {
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                  },
                   series: [
                     {
                       type: 'sankey',
@@ -1024,10 +1018,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         focus: 'adjacency',
                       },
                       nodeAlign: 'left',
-                      left: 10,
-                      right: 140,
-                      top: 5,
-                      bottom: 5,
+                      left: '2%',
+                      right: '10%',
+                      top: '5%',
+                      bottom: '5%',
                       nodeWidth: 22,
                       nodeGap: 12,
                       layoutIterations: 32,
