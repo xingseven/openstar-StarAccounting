@@ -604,7 +604,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 2: Charts (3 cols) */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="col-span-1 flex flex-col h-[180px] md:h-auto">
+        <Card className="col-span-1 flex flex-col">
           <CardHeader className="items-center pb-0 p-1 md:p-6">
             <CardTitle className="text-xs sm:text-sm md:text-base">支付平台分布</CardTitle>
           </CardHeader>
@@ -652,7 +652,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 flex flex-col h-[180px] md:h-auto">
+        <Card className="col-span-1 flex flex-col">
           <CardHeader className="items-center pb-0 p-1 md:p-6">
             <CardTitle className="text-xs sm:text-sm md:text-base">收支分析</CardTitle>
           </CardHeader>
