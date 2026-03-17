@@ -281,15 +281,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [isMobile, setIsMobile] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
 
-  const commonConfig = useMemo(() => ({
-    expense: { label: "支出", color: "var(--color-chart-1)" },
-    income: { label: "收入", color: "var(--color-chart-2)" },
-  } satisfies ChartConfig), []);
-  const emptyChartConfig = useMemo(() => ({} as ChartConfig), []);
-  const trendChartConfig = useMemo(() => ({
-    total: { label: "支出", color: "hsl(var(--chart-1))" },
-  } satisfies ChartConfig), []);
-  const lowerSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
   const incomeExpenseTotal = useMemo(
     () => data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0),
     [data.incomeExpense]
@@ -410,14 +401,23 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return dates;
   };
 
-  const echartsRef = useRef<any>(null);
+  const lowerSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
+
+  // Refs for ECharts instances
+  const chartsRef = useRef<any[]>([]);
+  const addChartRef = (el: any) => {
+    if (el && !chartsRef.current.includes(el)) {
+      chartsRef.current.push(el);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
-      if (echartsRef.current) {
-        const instance = echartsRef.current.getEchartsInstance();
-        instance.resize();
-      }
+      chartsRef.current.forEach((chart) => {
+        if (chart?.getEchartsInstance) {
+          chart.getEchartsInstance().resize();
+        }
+      });
     };
 
     let timeoutId: NodeJS.Timeout;
@@ -626,29 +626,26 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
               fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full" />}
             >
-              <ChartContainer config={emptyChartConfig} className="h-[125px] w-[125px] md:h-[200px] md:w-[200px]">
-                <PieChart>
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Pie
-                    data={data.platformDistribution}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={0}
-                    labelLine={false}
-                    isAnimationActive
-                    animationDuration={700}
-                    animationEasing="ease-out"
-                  >
-                    {data.platformDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <ChartLegend 
-                    content={<ChartLegendContent />} 
-                    className="hidden" 
-                  />
-                </PieChart>
-              </ChartContainer>
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: { trigger: 'item' },
+                  series: [{
+                    name: '平台分布',
+                    type: 'pie',
+                    radius: ['0%', '70%'],
+                    label: { show: false },
+                    data: data.platformDistribution.map(item => ({
+                      value: item.value,
+                      name: item.name,
+                      itemStyle: { color: item.fill }
+                    })),
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+                  }]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
             <div className="w-full flex justify-center mt-2 md:absolute md:bottom-4 md:right-4 md:w-auto md:mt-0 md:justify-end">
               <div className="flex flex-col gap-1 text-[10px] md:text-xs">
@@ -674,30 +671,26 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
               fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
             >
-              <ChartContainer config={commonConfig} className="h-[125px] w-[125px] md:h-[200px] md:w-[200px]">
-                <PieChart>
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Pie
-                    data={data.incomeExpense}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius="55%"
-                    strokeWidth={2}
-                    labelLine={false}
-                    isAnimationActive
-                    animationDuration={750}
-                    animationEasing="ease-out"
-                  >
-                    {data.incomeExpense.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <ChartLegend 
-                    content={<ChartLegendContent />} 
-                    className="hidden" 
-                  />
-                </PieChart>
-              </ChartContainer>
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: { trigger: 'item' },
+                  series: [{
+                    name: '收支分析',
+                    type: 'pie',
+                    radius: ['50%', '70%'],
+                    label: { show: false },
+                    data: data.incomeExpense.map(item => ({
+                      value: item.value,
+                      name: item.name,
+                      itemStyle: { color: item.fill }
+                    })),
+                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+                  }]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
             <div className="w-full flex justify-center mt-2 md:absolute md:bottom-4 md:right-4 md:w-auto md:mt-0 md:justify-end">
               <div className="flex flex-col gap-1 text-[10px] md:text-xs">
@@ -721,31 +714,33 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent>
             <DelayedRender delay={360} className="h-[200px] w-full">
-              <ChartContainer config={emptyChartConfig} className="h-[200px] w-full">
-                <BarChart
-                  accessibilityLayer
-                  data={data.merchants}
-                  layout="vertical"
-                  margin={{ left: 0, right: 0 }}
-                >
-                  <YAxis
-                    dataKey="merchant"
-                    type="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    width={100}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <XAxis dataKey="total" type="number" hide />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Bar dataKey="total" layout="vertical" radius={4} barSize={20} isAnimationActive animationDuration={650} animationEasing="ease-out">
-                    {data.merchants.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                  grid: { left: '3%', right: '4%', bottom: '3%', top: '3%', containLabel: true },
+                  xAxis: { type: 'value', show: false },
+                  yAxis: { 
+                    type: 'category', 
+                    data: data.merchants.map(m => m.merchant),
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    axisLabel: { fontSize: 12, color: '#666' }
+                  },
+                  series: [{
+                    name: '消费金额',
+                    type: 'bar',
+                    data: data.merchants.map(m => ({
+                      value: m.total,
+                      itemStyle: { color: m.fill, borderRadius: [0, 4, 4, 0] }
+                    })),
+                    barWidth: 12,
+                    label: { show: true, position: 'right', formatter: '¥{c}' }
+                  }]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
           </CardContent>
         </Card>
@@ -760,33 +755,31 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="overflow-x-auto">
             <div className="w-[1200px] md:w-full">
               <DelayedRender delay={120} lazy className="h-[250px] w-full">
-                <ChartContainer config={trendChartConfig} className="h-[250px] w-full">
-                  <LineChart
-                    accessibilityLayer
-                    data={data.trend}
-                    margin={{ left: 12, right: 12 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="day"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tickFormatter={(value) => value.slice(5)}
-                    />
-                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                    <Line
-                      dataKey="total"
-                      type="monotone"
-                      stroke="var(--color-chart-1)"
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive
-                      animationDuration={900}
-                      animationEasing="ease-out"
-                    />
-                  </LineChart>
-                </ChartContainer>
+                <ReactECharts
+                  ref={addChartRef}
+                  autoResize={false}
+                  option={{
+                    tooltip: { trigger: 'axis' },
+                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                    xAxis: { 
+                      type: 'category', 
+                      boundaryGap: false, 
+                      data: data.trend.map(t => t.day.slice(5)),
+                      axisLine: { show: false },
+                      axisTick: { show: false }
+                    },
+                    yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                    series: [{
+                      name: '支出',
+                      type: 'line',
+                      data: data.trend.map(t => t.total),
+                      smooth: true,
+                      itemStyle: { color: 'var(--color-chart-1)' },
+                      areaStyle: { opacity: 0.1 }
+                    }]
+                  }}
+                  style={{ height: '100%', width: '100%' }}
+                />
               </DelayedRender>
             </div>
           </CardContent>
@@ -799,32 +792,30 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="overflow-x-auto">
             <div className="w-[750px] md:w-full">
               <DelayedRender delay={240} lazy className="h-[250px] w-full">
-                <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
-                  <BarChart accessibilityLayer data={data.stackedBar}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="day"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      tickFormatter={(value) => value.slice(8)}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    {["餐饮", "购物", "交通", "娱乐"].map((key, i, arr) => (
-                      <Bar
-                        key={key}
-                        dataKey={key}
-                        stackId="a"
-                        fill={`var(--color-chart-${(i % 5) + 1})`}
-                        radius={i === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                        isAnimationActive
-                        animationDuration={700}
-                        animationBegin={i * 120}
-                        animationEasing="ease-out"
-                      />
-                    ))}
-                  </BarChart>
-                </ChartContainer>
+                <ReactECharts
+                  ref={addChartRef}
+                  autoResize={false}
+                  option={{
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    legend: { data: ["餐饮", "购物", "交通", "娱乐"], bottom: 0 },
+                    grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                    xAxis: { 
+                      type: 'category', 
+                      data: data.stackedBar.map(t => t.day.slice(8)),
+                      axisLine: { show: false },
+                      axisTick: { show: false }
+                    },
+                    yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                    series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => ({
+                      name: key,
+                      type: 'bar',
+                      stack: 'total',
+                      data: data.stackedBar.map(t => t[key]),
+                      itemStyle: { borderRadius: i === 3 ? [4, 4, 0, 0] : [0, 0, 0, 0] }
+                    }))
+                  }}
+                  style={{ height: '100%', width: '100%' }}
+                />
               </DelayedRender>
             </div>
           </CardContent>
@@ -840,21 +831,42 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="flex-1 pb-2">
             <DelayedRender delay={360} lazy className="h-[250px] w-full">
-              <ChartContainer config={emptyChartConfig} className="h-[250px] w-full">
-                  <ComposedChart data={data.pareto} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="name" scale="band" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} tickMargin={0} />
-                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" axisLine={false} tickLine={false} width={40} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" unit="%" axisLine={false} tickLine={false} width={40} />
-                    <ChartTooltip />
-                    <Bar yAxisId="left" dataKey="value" barSize={60} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
-                      {data.pareto.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                    <Line yAxisId="right" type="monotone" dataKey="cumulativePercentage" stroke="var(--color-chart-2)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive animationDuration={900} animationEasing="ease-out" />
-                  </ComposedChart>
-                </ChartContainer>
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+                  grid: { left: '3%', right: '3%', bottom: '3%', containLabel: true },
+                  xAxis: { 
+                    type: 'category', 
+                    data: data.pareto.map(t => t.name),
+                    axisLine: { show: false },
+                    axisTick: { show: false }
+                  },
+                  yAxis: [
+                    { type: 'value', name: '金额', position: 'left', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                    { type: 'value', name: '占比', min: 0, max: 100, position: 'right', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { formatter: '{value} %' } }
+                  ],
+                  series: [
+                    {
+                      name: '金额',
+                      type: 'bar',
+                      data: data.pareto.map(t => ({ value: t.value, itemStyle: { color: t.fill } })),
+                      barWidth: '60%',
+                      itemStyle: { borderRadius: [4, 4, 0, 0] }
+                    },
+                    {
+                      name: '累计占比',
+                      type: 'line',
+                      yAxisIndex: 1,
+                      data: data.pareto.map(t => t.cumulativePercentage),
+                      smooth: true,
+                      itemStyle: { color: 'var(--color-chart-2)' }
+                    }
+                  ]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
           </CardContent>
         </Card>
@@ -948,37 +960,39 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent>
             <DelayedRender delay={720} lazy className="h-[250px] w-full">
-              <ChartContainer config={commonConfig} className="h-[250px] w-full">
-                <BarChart accessibilityLayer data={data.weekdayWeekend}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis 
-                    dataKey="name" 
-                    tickLine={false} 
-                    axisLine={false}
-                    tickMargin={0}
-                    height={50}
-                    tick={({ x, y, payload }) => {
-                      const dayIndex = payload.index;
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                  grid: { left: '3%', right: '3%', bottom: '10%', top: '15%', containLabel: true },
+                  xAxis: { 
+                    type: 'category', 
+                    data: data.weekdayWeekend.map((item, index) => {
                       const weekDates = getWeekDates(selectedWeek);
-                      const dateInfo = weekDates[dayIndex];
-                      return (
-                        <g transform={`translate(${x},${y})`}>
-                          <text x={0} y={0} dy={10} textAnchor="middle" fill="#666" fontSize={12}>
-                            {payload.value}
-                          </text>
-                          <text x={0} y={0} dy={26} textAnchor="middle" fill="#999" fontSize={10}>
-                            {dateInfo ? `${dateInfo.month}月${dateInfo.day}日` : ''}
-                          </text>
-                        </g>
-                      );
-                    }}
-                  />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="var(--color-chart-1)" isAnimationActive animationDuration={700} animationEasing="ease-out">
-                    <LabelList dataKey="value" position="top" formatter={(v: number) => `¥${v.toFixed(0)}`} fontSize={12} />
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+                      const dateInfo = weekDates[index];
+                      return `${item.name}\n${dateInfo ? `${dateInfo.month}月${dateInfo.day}日` : ''}`;
+                    }),
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    axisLabel: { 
+                      interval: 0,
+                      lineHeight: 16,
+                      color: '#666',
+                      fontSize: 12
+                    }
+                  },
+                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                  series: [{
+                    name: '平均消费',
+                    type: 'bar',
+                    data: data.weekdayWeekend.map(t => t.value),
+                    itemStyle: { color: 'var(--color-chart-1)', borderRadius: [4, 4, 0, 0] },
+                    label: { show: true, position: 'top', formatter: '¥{c}' }
+                  }]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
           </CardContent>
         </Card>
@@ -994,7 +1008,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <div className="min-w-[900px] md:w-full">
             <DelayedRender delay={960} className="h-[450px] w-full">
               <ReactECharts
-                ref={echartsRef}
+                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: {
@@ -1088,34 +1102,30 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent>
             <DelayedRender delay={1080} lazy className="h-[300px] w-full">
-              <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
-                <ScatterChart margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis 
-                    type="number" 
-                    dataKey="hour" 
-                    name="时间" 
-                    unit="h" 
-                    domain={[0, 24]} 
-                    tickCount={7}
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    type="number" 
-                    dataKey="amount" 
-                    name="金额" 
-                    unit="¥" 
-                    tick={{ fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <ZAxis type="number" dataKey="amount" range={[50, 400]} />
-                  <ChartTooltip cursor={{ strokeDasharray: '3 3' }} content={<ChartTooltipContent />} />
-                  <Scatter name="消费记录" data={data.scatter} fill="var(--color-chart-2)" isAnimationActive animationDuration={800} />
-                </ScatterChart>
-              </ChartContainer>
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: {
+                    trigger: 'item',
+                    formatter: (params: any) => {
+                      const v = params.value;
+                      return `${v[0]}点<br/>金额: ¥${v[1]}<br/>分类: ${v[2]}`;
+                    }
+                  },
+                  grid: { left: '3%', right: '7%', bottom: '3%', top: '10%', containLabel: true },
+                  xAxis: { type: 'value', min: 0, max: 24, name: '时间', splitLine: { show: false } },
+                  yAxis: { type: 'value', name: '金额', splitLine: { lineStyle: { type: 'dashed' } } },
+                  series: [{
+                    name: '消费记录',
+                    type: 'scatter',
+                    data: data.scatter.map(item => [item.hour, item.amount, item.category]),
+                    symbolSize: (val: any[]) => Math.max(Math.min(val[1] / 10, 20), 5),
+                    itemStyle: { color: 'var(--color-chart-2)', opacity: 0.7 }
+                  }]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
           </CardContent>
         </Card>
@@ -1127,20 +1137,29 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent>
             <DelayedRender delay={1200} lazy className="h-[300px] w-full">
-              <ChartContainer config={emptyChartConfig} className="h-[300px] w-full">
-                <BarChart data={data.histogram} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis dataKey="range" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out">
-                    {data.histogram.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                    <LabelList dataKey="count" position="top" fontSize={12} />
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+              <ReactECharts
+                ref={addChartRef}
+                autoResize={false}
+                option={{
+                  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                  grid: { left: '3%', right: '3%', bottom: '3%', top: '10%', containLabel: true },
+                  xAxis: { 
+                    type: 'category', 
+                    data: data.histogram.map(h => h.range),
+                    axisLine: { show: false },
+                    axisTick: { show: false }
+                  },
+                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                  series: [{
+                    name: '笔数',
+                    type: 'bar',
+                    data: data.histogram.map(h => ({ value: h.count, itemStyle: { color: h.fill, borderRadius: [4, 4, 0, 0] } })),
+                    label: { show: true, position: 'top' },
+                    barWidth: '60%'
+                  }]
+                }}
+                style={{ height: '100%', width: '100%' }}
+              />
             </DelayedRender>
           </CardContent>
         </Card>

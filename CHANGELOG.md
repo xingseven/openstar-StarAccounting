@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.8.27 - 2026-03-17
+
+### Features
+- **消费页图表引擎全面升级**:
+  - 将消费页面 (`ConsumptionDefaultTheme.tsx`) 中的所有 Recharts 图表（Pie, Bar, Line, Scatter, Composed）全部替换为 ECharts (Canvas 渲染)。
+  - 解决了由于 Recharts (SVG) 节点过多导致的页面滚动严重卡顿问题，实现了丝滑的滚动体验。
+  - 为所有 ECharts 图表实现了统一的防抖 (200ms) resize 监听，禁用了默认的 `autoResize`，进一步优化了窗口拖拽时的性能。
+  - 优化了滚动事件监听器，使用 `requestAnimationFrame` 进行节流处理，减少主线程占用。
+
+### Modified Files
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 移除 Recharts 相关依赖。
+   - 使用 `ReactECharts` 替换所有图表组件。
+   - 实现了统一的 `chartsRef` 管理和 resize 逻辑。
+   - 优化 `handleScroll` 为 RAF 节流模式。
+
 ## 1.8.26 - 2026-03-17
 
 ### Features
