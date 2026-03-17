@@ -341,14 +341,23 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [showFloatingFilter, setShowFloatingFilter] = useState(false);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     
+    const debouncedCheckMobile = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkMobile, 200);
+    };
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
+    window.addEventListener('resize', debouncedCheckMobile);
     
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', debouncedCheckMobile);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {
@@ -421,6 +430,30 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     
     return dates;
   };
+
+  const echartsRef = useRef<any>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (echartsRef.current) {
+        const instance = echartsRef.current.getEchartsInstance();
+        instance.resize();
+      }
+    };
+
+    let timeoutId: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleResize, 200);
+    };
+
+    window.addEventListener("resize", debouncedResize);
+
+    return () => {
+      window.removeEventListener("resize", debouncedResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
 
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -605,8 +638,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       {/* Row 2: Charts (3 cols) */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="col-span-1 flex flex-col">
-          <CardHeader className="items-center pb-0 p-1 md:p-6">
-            <CardTitle className="text-xs sm:text-sm md:text-base">支付平台分布</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">支付平台分布</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
             <DelayedRender
@@ -982,6 +1015,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <div className="min-w-[900px] md:w-full">
             <DelayedRender delay={960} className="h-[450px] w-full">
               <ReactECharts
+                ref={echartsRef}
+                autoResize={false}
                 option={{
                   tooltip: {
                     trigger: 'item',

@@ -39,9 +39,11 @@ function ChartContainer({
   className,
   children,
   config,
+  debounce = 200,
   ...props
 }: React.ComponentProps<"div"> & {
   config: ChartConfig
+  debounce?: number
   children: React.ComponentProps<
     typeof RechartsPrimitive.ResponsiveContainer
   >["children"]
@@ -61,7 +63,7 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
+        <RechartsPrimitive.ResponsiveContainer debounce={debounce}>
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>

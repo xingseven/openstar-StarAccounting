@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.8.26 - 2026-03-17
+
+### Features
+- **消费页面性能优化**:
+  - 修复了拖拽调整窗口大小时页面严重卡顿的问题。
+  - 为所有 Recharts 图表容器 (`ChartContainer`) 添加了默认的防抖 (debounce) 处理 (200ms)，避免频繁重绘。
+  - 为 ECharts 图表添加了手动防抖 resize 监听，并禁用了自动 resize，显著降低了 resize 时的计算负载。
+  - 优化了移动端检测 (`isMobile`) 的 resize 监听器，添加了防抖处理。
+
+### Modified Files
+1. `web/src/components/ui/chart.tsx`
+   - `ChartContainer` 新增 `debounce` 属性，默认值为 200ms。
+   - 将 `debounce` 属性传递给 `RechartsPrimitive.ResponsiveContainer`。
+2. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+   - 优化 `checkMobile` 函数，添加 resize 防抖。
+   - 优化 ECharts 桑基图，禁用 `autoResize`，使用自定义的防抖 resize 逻辑。
+
 ## 1.8.25 - 2026-03-17
 
 ### Features
