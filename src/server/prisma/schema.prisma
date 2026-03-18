@@ -7,92 +7,104 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// 用户主表：账号信息与所有业务数据的归属主体
-model User {
-  id              String            @id @default(cuid())
-  email           String            @unique
-  password        String
-  name            String?
-  role            UserRole          @default(USER)
-  transactions    Transaction[]
-  loans           Loan[]
-  savingsGoals    SavingsGoal[]
-  assets          Asset[]
-  budgets         Budget[]
-  settings        ThemeConfig?
-  connections     AppConnection[]
-  importErrorLogs ImportErrorLog[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+model aimodelconfig {
+  id          String   @id
+  userId      String
+  name        String
+  provider    String
+  type        String   @default("vision")
+  apiKey      String?
+  endpoint    String?
+  modelId     String?
+  description String?
+  status      String   @default("inactive")
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "aimodelconfig_ibfk_1")
+
+  @@index([userId], map: "AIModelConfig_userId_idx")
 }
 
-/// 用户角色枚举
-enum UserRole {
-  USER
-  ADMIN
-}
-
-/// 汇率表：维护币种兑换比率（from -> to）
-model ExchangeRate {
-  id        String   @id @default(cuid())
-  from      String
-  to        String
-  rate      Decimal
-  updatedAt DateTime @updatedAt
-
-  @@unique([from, to])
-}
-
-/// 设备连接验证表：用于多端绑定、OTP 校验与设备追踪
-model AppConnection {
-  id         String   @id @default(cuid())
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model appconnection {
+  id         String    @id
   userId     String
   deviceId   String?
   deviceName String?
   ipAddress  String?
   otpCode    String
-  isVerified Boolean  @default(false)
+  isVerified Boolean   @default(false)
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   verifiedAt DateTime?
+  user       user      @relation(fields: [userId], references: [id], map: "AppConnection_userId_fkey")
 
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([otpCode])
-  @@index([userId, isVerified])
-  @@unique([otpCode, isVerified])
+  @@unique([otpCode, isVerified], map: "AppConnection_otpCode_isVerified_key")
+  @@index([otpCode], map: "AppConnection_otpCode_idx")
+  @@index([userId, isVerified], map: "AppConnection_userId_isVerified_idx")
 }
 
-/// 交易流水表：收入/支出/转账/还款记录
-model Transaction {
-  id            String          @id @default(cuid())
-  userId        String
-  amount        Decimal
-  type          TransactionType
-  category      String
-  platform      String
-  merchant      String?
-  date          DateTime
-  description   String?
-  orderId       String?         @unique
-  paymentMethod String?
-  status        String?
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset {
+  id        String     @id
+  userId    String
+  name      String
+  type      asset_type
+  balance   Decimal    @default(0.000000000000000000000000000000)
+  currency  String     @default("CNY")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  user      user       @relation(fields: [userId], references: [id], map: "Asset_userId_fkey")
 
-  loanId String?
-  loan   Loan? @relation(fields: [loanId], references: [id])
-
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, date])
-  @@index([userId, loanId])
+  @@index([userId, type], map: "Asset_userId_type_idx")
 }
 
-/// 贷款主表：记录每笔贷款及其还款进度
-model Loan {
-  id              String      @id @default(cuid())
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model budget {
+  id           String           @id
+  userId       String
+  amount       Decimal
+  category     String           @default("ALL")
+  period       budget_period    @default(MONTHLY)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime
+  alertPercent Int              @default(80)
+  platform     String?
+  scopeType    budget_scopeType @default(GLOBAL)
+
+  @@unique([userId, category, period, scopeType, platform], map: "Budget_userId_category_period_scopeType_platform_key")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model exchangerate {
+  id        String   @id
+  from      String
+  to        String
+  rate      Decimal
+  updatedAt DateTime
+
+  @@unique([from, to], map: "ExchangeRate_from_to_key")
+}
+
+model importerrorlog {
+  id           String   @id
+  userId       String
+  fileName     String
+  lineNumber   Int
+  rawData      String   @db.Text
+  errorMessage String   @db.Text
+  errorType    String
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([userId], map: "ImportErrorLog_userId_idx")
+  @@index([userId, resolved], map: "ImportErrorLog_userId_resolved_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model loan {
+  id              String        @id
   userId          String
   platform        String
   totalAmount     Decimal
@@ -101,145 +113,112 @@ model Loan {
   paidPeriods     Int
   monthlyPayment  Decimal
   dueDate         Int
-  status          LoanStatus  @default(ACTIVE)
+  status          loan_status   @default(ACTIVE)
   matchKeywords   Json?
-  transactions    Transaction[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime
+  user            user          @relation(fields: [userId], references: [id], map: "Loan_userId_fkey")
+  transaction     transaction[]
 
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, status])
+  @@index([userId, status], map: "Loan_userId_status_idx")
 }
 
-/// 储蓄目标表：定义储蓄目标及目标级配置
-model SavingsGoal {
-  id            String     @id @default(cuid())
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model savingsgoal {
+  id            String                  @id
   userId        String
   name          String
   targetAmount  Decimal
-  currentAmount Decimal    @default(0)
+  currentAmount Decimal                 @default(0.000000000000000000000000000000)
   deadline      DateTime?
-  type          GoalType   @default(LONG_TERM)
-  depositType   DepositType @default(CASH)
-  status        GoalStatus @default(ACTIVE)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  type          savingsgoal_type        @default(LONG_TERM)
+  status        savingsgoal_status      @default(ACTIVE)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime
+  depositType   savingsgoal_depositType @default(CASH)
+  planConfig    Json?
+  user          user                    @relation(fields: [userId], references: [id], map: "SavingsGoal_userId_fkey")
+  savingsplan   savingsplan[]
 
-  plans SavingsPlan[]
-  /// 计划配置快照（示例：{ salary, expenseDefs, depositDay, duration }）
-  planConfig Json?
-  user User @relation(fields: [userId], references: [id])
+  @@index([userId], map: "SavingsGoal_userId_fkey")
 }
 
-/// 储蓄计划明细表：按月存储计划数据，可支持动态支出列
-model SavingsPlan {
-  id        String   @id @default(cuid())
-  goalId    String
-  amount    Decimal
-  status    PlanStatus @default(PENDING)
-  /// 计划月份，格式：YYYY-MM
-  month     String
-  
-  /// 扩展字段：用于隔月存/高级模式
-  salary    Decimal? @default(0)
-  /// 动态支出列 JSON（示例：{ "房租": 2000, "水电": 300 }）
-  expenses  Json?
-  remark    String?
-  /// 打卡凭证图片（Data URL 或可访问 URL）
-  proofImage String? @db.Text
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model savingsplan {
+  id          String             @id
+  goalId      String
+  amount      Decimal
+  status      savingsplan_status @default(PENDING)
+  month       String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime
+  expenses    Json?
+  remark      String?
+  salary      Decimal?           @default(0.000000000000000000000000000000)
+  proofImage  String?            @db.Text
+  savingsgoal savingsgoal        @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "SavingsPlan_goalId_fkey")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  goal SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
-
-  @@index([goalId])
+  @@index([goalId], map: "SavingsPlan_goalId_idx")
 }
 
-/// 主题配置表：存储用户的界面主题与图表样式偏好
-model ThemeConfig {
-  id           String   @id @default(cuid())
-  userId       String   @unique
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model themeconfig {
+  id           String   @id
+  userId       String   @unique(map: "ThemeConfig_userId_key")
   themeId      String   @default("default")
   primaryColor String?
   radius       Float?
   isDarkMode   Boolean  @default(false)
   chartStyle   Json?
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
+  updatedAt    DateTime
+  user         user     @relation(fields: [userId], references: [id], map: "ThemeConfig_userId_fkey")
 }
 
-/// 资产账户表：现金、银行卡、支付平台与投资账户余额
-model Asset {
-  id        String      @id @default(cuid())
-  userId    String
-  name      String
-  type      AssetType
-  balance   Decimal     @default(0)
-  currency  String      @default("CNY")
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model transaction {
+  id            String           @id
+  userId        String
+  amount        Decimal
+  type          transaction_type
+  category      String
+  platform      String
+  merchant      String?
+  date          DateTime
+  description   String?
+  orderId       String?          @unique(map: "Transaction_orderId_key")
+  paymentMethod String?
+  status        String?
+  loanId        String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime
+  loan          loan?            @relation(fields: [loanId], references: [id], map: "Transaction_loanId_fkey")
+  user          user             @relation(fields: [userId], references: [id], map: "Transaction_userId_fkey")
 
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([userId, type])
+  @@index([loanId], map: "Transaction_loanId_fkey")
+  @@index([userId, date], map: "Transaction_userId_date_idx")
+  @@index([userId, loanId], map: "Transaction_userId_loanId_idx")
 }
 
-/// 预算表：按周期与分类记录预算额度
-model Budget {
-  id           String        @id @default(cuid())
-  userId       String
-  amount       Decimal
-  category     String        @default("ALL") // "ALL" for total budget, or specific category name
-  platform     String?       // 平台名称（当 scopeType 为 PLATFORM 时使用）
-  period       BudgetPeriod  @default(MONTHLY)
-  scopeType    BudgetScope   @default(GLOBAL) // 预算作用域：全局/分类/平台
-  alertPercent Int           @default(80) // 预警阈值百分比，默认 80%
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@unique([userId, category, period, scopeType, platform])
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user {
+  id            String          @id
+  email         String          @unique(map: "User_email_key")
+  password      String
+  name          String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime
+  role          user_role       @default(USER)
+  aimodelconfig aimodelconfig[]
+  appconnection appconnection[]
+  asset         asset[]
+  loan          loan[]
+  savingsgoal   savingsgoal[]
+  themeconfig   themeconfig?
+  transaction   transaction[]
 }
 
-/// 预算周期枚举
-enum BudgetPeriod {
-  MONTHLY
-  YEARLY
-}
-
-/// 预算作用域枚举
-enum BudgetScope {
-  GLOBAL     // 全局预算
-  CATEGORY   // 分类预算
-  PLATFORM   // 平台预算
-}
-
-/// 导入错误日志表：记录账单导入时的异常行数据
-model ImportErrorLog {
-  id           String   @id @default(cuid())
-  userId       String
-  fileName     String   // 导入的文件名
-  lineNumber   Int      // 错误行号
-  rawData      String   @db.Text // 原始行数据
-  errorMessage String   @db.Text // 错误原因
-  errorType    String   // 错误类型：PARSE_ERROR, VALIDATION_ERROR, DUPLICATE
-  resolved     Boolean  @default(false) // 是否已处理
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([userId, resolved])
-}
-
-/// 资产类型枚举
-enum AssetType {
+enum asset_type {
   CASH
   BANK_CARD
   ALIPAY
@@ -248,23 +227,25 @@ enum AssetType {
   OTHER
 }
 
-/// 交易类型枚举
-enum TransactionType {
+enum savingsplan_status {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum transaction_type {
   INCOME
   EXPENSE
   TRANSFER
   REPAYMENT
 }
 
-/// 贷款状态枚举
-enum LoanStatus {
-  ACTIVE
-  PAID_OFF
-  OVERDUE
+enum budget_period {
+  MONTHLY
+  YEARLY
 }
 
-/// 储蓄目标类型枚举
-enum GoalType {
+enum savingsgoal_type {
   MONTHLY
   YEARLY
   LONG_TERM
@@ -272,23 +253,31 @@ enum GoalType {
   BI_MONTHLY_EVEN
 }
 
-/// 存款来源/性质枚举
-enum DepositType {
-  CASH
-  FIXED_TERM
-  HELP_DEPOSIT
+enum user_role {
+  USER
+  ADMIN
 }
 
-/// 储蓄目标状态枚举
-enum GoalStatus {
+enum savingsgoal_status {
   ACTIVE
   COMPLETED
   ARCHIVED
 }
 
-/// 储蓄计划状态枚举
-enum PlanStatus {
-  PENDING
-  COMPLETED
-  SKIPPED
+enum budget_scopeType {
+  GLOBAL
+  CATEGORY
+  PLATFORM
+}
+
+enum loan_status {
+  ACTIVE
+  PAID_OFF
+  OVERDUE
+}
+
+enum savingsgoal_depositType {
+  CASH
+  FIXED_TERM
+  HELP_DEPOSIT
 }

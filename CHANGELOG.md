@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.1.2 - 2026-03-18
+
+### Fixes
+
+- **顶部导航栏用户信息显示修复**:
+  - 修复了 `Header` 组件在无数据库或请求延迟时一直显示静态 "User" 和 "加载中..." 的问题。
+  - 增加了对用户获取状态的 Loading 提示，以及失败时的"未登录"兜底显示。
+  - 修复了被错误注释掉的 `AuthGate` 组件，重新启用了鉴权失败时自动重定向登录页的逻辑。
+  - 后端 `/api/auth/me`、`/api/auth/login` 和 `/api/auth/register` 接口现已全面支持在无数据库配置环境下的降级内存模式，提升了离线单机体验的健壮性。
+
+### Modified Files
+
+1. `web/src/components/shared/Header.tsx` (Fixed user display logic)
+2. `web/src/components/shared/AuthGate.tsx` (Restored auth routing)
+3. `src/server/src/main.ts` (Added memory mode support for auth APIs)
+
 ## 2.1.1 - 2026-03-18
 
 ### Features

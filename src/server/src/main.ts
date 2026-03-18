@@ -274,19 +274,16 @@ async function requireAdmin(req: Request, res: Response): Promise<string | null>
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 app.get("/api/health", (_req, res) => {
   jsonOk(res, { status: "ok" });
 });
 
 app.post("/api/auth/register", async (req, res) => {
-  const prisma = getPrisma();
-  if (!prisma) {
-    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "未配置数据库");
-    return;
-  }
-
   const { email, password, name } = req.body ?? {};
   if (typeof email !== "string" || !email.includes("@")) {
     jsonFail(res, 400, 50000, "INTERNAL_ERROR", "email 不合法");
@@ -294,6 +291,17 @@ app.post("/api/auth/register", async (req, res) => {
   }
   if (typeof password !== "string" || password.length < 6) {
     jsonFail(res, 400, 50000, "INTERNAL_ERROR", "password 至少 6 位");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    const token = signAccessToken({ userId: memoryUserId(email) });
+    if (!token) {
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", "JWT_SECRET 未配置");
+      return;
+    }
+    jsonOk(res, { accessToken: token, user: { id: memoryUserId(email), email, name: typeof name === "string" ? name : email.split("@")[0] } });
     return;
   }
 
@@ -318,15 +326,20 @@ app.post("/api/auth/register", async (req, res) => {
 });
 
 app.post("/api/auth/login", async (req, res) => {
-  const prisma = getPrisma();
-  if (!prisma) {
-    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "未配置数据库");
-    return;
-  }
-
   const { email, password } = req.body ?? {};
   if (typeof email !== "string" || typeof password !== "string") {
     jsonFail(res, 400, 10001, "INVALID_CREDENTIALS", "账号或密码错误");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    const token = signAccessToken({ userId: memoryUserId(email) });
+    if (!token) {
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", "JWT_SECRET 未配置");
+      return;
+    }
+    jsonOk(res, { accessToken: token, user: { id: memoryUserId(email), email, name: email.split("@")[0] } });
     return;
   }
 
@@ -357,7 +370,14 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/auth/me", async (req, res) => {
   const prisma = getPrisma();
   if (!prisma) {
-    jsonFail(res, 500, 50000, "INTERNAL_ERROR", "未配置数据库");
+    const userId = await requireUserId(req, res);
+    if (!userId) return;
+    
+    let email = "dev@local";
+    if (userId.startsWith("mem-")) {
+      email = userId.replace("mem-", "");
+    }
+    jsonOk(res, { user: { id: userId, email, name: email.split("@")[0] } });
     return;
   }
 
@@ -3070,8 +3090,33 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
     // 将图片转为 Base64
     const imageBase64 = req.file.buffer.toString("base64");
 
-    // 调用豆包 AI 进行识别
-    const result = await scanReceipt(imageBase64);
+    // 从数据库获取用户配置的大模型
+    const prisma = getPrisma();
+    let modelConfig: { apiKey?: string; endpoint?: string; modelId?: string } | null = null;
+
+    if (prisma) {
+      // 优先使用默认模型，否则使用第一个可用的活跃模型
+      let model = await prisma.aIModelConfig.findFirst({
+        where: { userId, status: "active", isDefault: true }
+      });
+
+      if (!model) {
+        model = await prisma.aIModelConfig.findFirst({
+          where: { userId, status: "active" }
+        });
+      }
+
+      if (model) {
+        modelConfig = {
+          apiKey: model.apiKey || undefined,
+          endpoint: model.endpoint || undefined,
+          modelId: model.modelId || undefined
+        };
+      }
+    }
+
+    // 调用 AI 进行识别（传入配置）
+    const result = await scanReceipt(imageBase64, modelConfig || undefined);
 
     jsonOk(res, {
       amount: result.amount,
@@ -3083,7 +3128,175 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
     });
   } catch (error) {
     console.error("AI Scan Receipt Error:", error);
-    jsonFail(res, 500, 50001, "AI_PROCESSING_ERROR", "AI 识别失败，请重试");
+    const message = error instanceof Error ? error.message : "AI 识别失败，请重试";
+    jsonFail(res, 500, 50001, "AI_PROCESSING_ERROR", message);
+  }
+});
+
+// ========== AI 大模型配置 CRUD ==========
+
+// 获取用户的大模型配置列表
+app.get("/api/ai/models", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    // 内存模式返回空数组
+    jsonOk(res, { items: [] });
+    return;
+  }
+
+  try {
+    const models = await prisma.aIModelConfig.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" }
+    });
+    // 不返回 apiKey
+    const safeModels = models.map(m => ({
+      id: m.id,
+      name: m.name,
+      provider: m.provider,
+      type: m.type,
+      endpoint: m.endpoint,
+      modelId: m.modelId,
+      description: m.description,
+      status: m.status,
+      isDefault: m.isDefault,
+      apiKeyConfigured: !!m.apiKey
+    }));
+    jsonOk(res, { items: safeModels });
+  } catch (error) {
+    console.error("Get AI models error:", error);
+    jsonFail(res, 500, 50002, "GET_MODELS_ERROR", "获取模型列表失败");
+  }
+});
+
+// 创建大模型配置
+app.post("/api/ai/models", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { name, provider, type, apiKey, endpoint, modelId, description } = req.body;
+
+  if (!name || !provider) {
+    jsonFail(res, 400, 40003, "VALIDATION_ERROR", "名称和提供商不能为空");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    jsonFail(res, 500, 50003, "DATABASE_ERROR", "数据库未连接");
+    return;
+  }
+
+  try {
+    const newModel = await prisma.aIModelConfig.create({
+      data: {
+        userId,
+        name,
+        provider,
+        type: type || "vision",
+        apiKey: apiKey || null,
+        endpoint: endpoint || null,
+        modelId: modelId || null,
+        description: description || null,
+        status: apiKey ? "active" : "inactive"
+      }
+    });
+    jsonOk(res, {
+      id: newModel.id,
+      name: newModel.name,
+      provider: newModel.provider,
+      type: newModel.type,
+      endpoint: newModel.endpoint,
+      modelId: newModel.modelId,
+      description: newModel.description,
+      status: newModel.status,
+      apiKeyConfigured: !!newModel.apiKey
+    });
+  } catch (error) {
+    console.error("Create AI model error:", error);
+    jsonFail(res, 500, 50004, "CREATE_MODEL_ERROR", "创建模型失败");
+  }
+});
+
+// 更新大模型配置
+app.put("/api/ai/models/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { id } = req.params;
+  const { name, provider, type, apiKey, endpoint, modelId, description, status, isDefault } = req.body;
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    jsonFail(res, 500, 50003, "DATABASE_ERROR", "数据库未连接");
+    return;
+  }
+
+  // 如果设置默认模型，先取消其他默认
+  if (isDefault) {
+    await prisma.aIModelConfig.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false }
+    });
+  }
+
+  try {
+    const updated = await prisma.aIModelConfig.update({
+      where: { id, userId },
+      data: {
+        ...(name && { name }),
+        ...(provider && { provider }),
+        ...(type && { type }),
+        ...(endpoint !== undefined && { endpoint }),
+        ...(modelId !== undefined && { modelId }),
+        ...(description !== undefined && { description }),
+        ...(status && { status }),
+        ...(isDefault !== undefined && { isDefault }),
+        ...(apiKey !== undefined && { apiKey: apiKey || null })
+      }
+    });
+    jsonOk(res, {
+      id: updated.id,
+      name: updated.name,
+      provider: updated.provider,
+      type: updated.type,
+      endpoint: updated.endpoint,
+      modelId: updated.modelId,
+      description: updated.description,
+      status: updated.status,
+      isDefault: updated.isDefault,
+      apiKeyConfigured: !!updated.apiKey
+    });
+  } catch (error) {
+    console.error("Update AI model error:", error);
+    jsonFail(res, 500, 50005, "UPDATE_MODEL_ERROR", "更新模型失败");
+  }
+});
+
+// 删除大模型配置
+app.delete("/api/ai/models/:id", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { id } = req.params;
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    jsonFail(res, 500, 50003, "DATABASE_ERROR", "数据库未连接");
+    return;
+  }
+
+  try {
+    await prisma.aIModelConfig.delete({
+      where: { id, userId }
+    });
+    jsonOk(res, { message: "删除成功" });
+  } catch (error) {
+    console.error("Delete AI model error:", error);
+    jsonFail(res, 500, 50006, "DELETE_MODEL_ERROR", "删除模型失败");
   }
 });
 

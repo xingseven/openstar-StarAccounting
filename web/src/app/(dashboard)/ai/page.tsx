@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Brain,
   CheckCircle2,
@@ -14,7 +14,8 @@ import {
   ChevronDown,
   ChevronRight,
   Sparkles,
-  Key
+  Key,
+  Loader2
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
@@ -34,6 +35,7 @@ import {
   BottomSheetTitle,
   BottomSheetFooter,
 } from "@/components/ui/bottomsheet";
+import { apiFetch } from "@/lib/api";
 
 // 大模型类型定义
 interface AIModel {
@@ -89,6 +91,24 @@ export default function AIPage() {
 
   // 筛选状态
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [loading, setLoading] = useState(true);
+
+  // 加载数据
+  useEffect(() => {
+    loadModels();
+  }, []);
+
+  async function loadModels() {
+    setLoading(true);
+    try {
+      const data = await apiFetch<{ items: AIModel[] }>("/api/ai/models");
+      setModels(data.items || []);
+    } catch (error) {
+      console.error("Failed to load models:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filteredModels = models.filter(m => {
     if (filterStatus === "all") return true;
@@ -139,54 +159,78 @@ export default function AIPage() {
     setIsConfigModalOpen(true);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const provider = PROVIDERS.find(p => p.id === formData.provider);
 
-    const newModel: AIModel = {
-      id: editingModel?.id || Date.now().toString(),
-      name: formData.name,
-      provider: provider?.name || formData.provider,
-      type: formData.type,
-      status: "inactive",
-      apiKeyConfigured: false,
-      endpoint: formData.endpoint || provider?.baseUrl,
-      modelId: formData.modelId,
-      description: formData.description
-    };
-
-    if (editingModel) {
-      setModels(models.map(m => m.id === editingModel.id ? newModel : m));
-    } else {
-      setModels([...models, newModel]);
+    try {
+      if (editingModel) {
+        // 更新
+        await apiFetch(`/api/ai/models/${editingModel.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            name: formData.name,
+            provider: provider?.name || formData.provider,
+            type: formData.type,
+            endpoint: formData.endpoint || provider?.baseUrl,
+            modelId: formData.modelId,
+            description: formData.description
+          })
+        });
+      } else {
+        // 创建
+        await apiFetch("/api/ai/models", {
+          method: "POST",
+          body: JSON.stringify({
+            name: formData.name,
+            provider: provider?.name || formData.provider,
+            type: formData.type,
+            endpoint: formData.endpoint || provider?.baseUrl,
+            modelId: formData.modelId,
+            description: formData.description
+          })
+        });
+      }
+      await loadModels();
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Save model error:", error);
+      alert("保存失败");
     }
-
-    setIsModalOpen(false);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!confirm("确定要删除这个模型吗？")) return;
-    setModels(models.filter(m => m.id !== id));
+    try {
+      await apiFetch(`/api/ai/models/${id}`, { method: "DELETE" });
+      await loadModels();
+    } catch (error) {
+      console.error("Delete model error:", error);
+      alert("删除失败");
+    }
   }
 
-  function handleConfigSave() {
+  async function handleConfigSave() {
     if (!configModel) return;
 
-    setModels(models.map(m =>
-      m.id === configModel.id
-        ? {
-            ...m,
-            name: configForm.name,
-            provider: configForm.provider,
-            endpoint: configForm.endpoint || undefined,
-            modelId: configForm.modelId || undefined,
-            apiKeyConfigured: !!apiKey,
-            status: apiKey ? "active" : "inactive"
-          }
-        : m
-    ));
-
-    setIsConfigModalOpen(false);
+    try {
+      await apiFetch(`/api/ai/models/${configModel.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: configForm.name,
+          provider: configForm.provider,
+          endpoint: configForm.endpoint || undefined,
+          modelId: configForm.modelId || undefined,
+          apiKey: apiKey || undefined,
+          status: apiKey ? "active" : "inactive"
+        })
+      });
+      await loadModels();
+      setIsConfigModalOpen(false);
+    } catch (error) {
+      console.error("Save config error:", error);
+      alert("保存配置失败");
+    }
   }
 
   function toggleSection(section: string) {

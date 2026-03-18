@@ -26,12 +26,21 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<MeResponse["user"] | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     apiFetch<MeResponse>("/api/auth/me")
-      .then((data) => setUser(data.user))
-      .catch(() => {});
+      .then((data) => {
+        setUser(data.user);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch user:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   function logout() {
@@ -68,10 +77,10 @@ export function Header() {
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
             <div className="text-sm font-medium text-gray-900">
-              {user?.name || user?.email?.split("@")[0] || "User"}
+              {loading ? "加载中..." : user ? (user.name || user.email.split("@")[0]) : "未登录"}
             </div>
             <div className="text-xs text-gray-500">
-              {user?.email || "加载中..."}
+              {loading ? "获取信息中..." : user ? user.email : "请重新登录"}
             </div>
           </div>
           
@@ -95,8 +104,8 @@ export function Header() {
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-100 py-1 z-50">
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-xs text-gray-500">已登录</p>
-                  <p className="text-sm font-medium truncate">{user?.email}</p>
+                  <p className="text-xs text-gray-500">{user ? "已登录" : "未登录"}</p>
+                  <p className="text-sm font-medium truncate">{user ? user.email : "请点击重新登录"}</p>
                 </div>
                 <a href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                   个人设置
