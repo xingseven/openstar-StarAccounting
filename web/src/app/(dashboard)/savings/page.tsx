@@ -13,7 +13,7 @@ const SavingsDefaultTheme = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto p-4 md:p-6">
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto min-h-[101vh]">
         <div className="grid gap-2 sm:gap-4 grid-cols-3">
           <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[100px] animate-pulse" />
           <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[100px] animate-pulse" />
@@ -24,7 +24,7 @@ const SavingsDefaultTheme = dynamic(
           <div className="md:col-span-1 flex flex-col min-h-[350px] rounded-xl bg-white border p-4 animate-pulse" />
           <div className="md:col-span-3 overflow-hidden rounded-xl bg-white border min-h-[350px] animate-pulse" />
         </div>
-        <div className="rounded-xl bg-white border p-4 min-h-[300px] animate-pulse" />
+        <div className="rounded-xl bg-white border min-h-[258px] animate-pulse mt-6" />
       </div>
     )
   }
