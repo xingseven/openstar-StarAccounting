@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 import {
   Plus,
   Target,
@@ -43,18 +44,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-
-export type SavingsGoal = {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline: string | null;
-  type: "MONTHLY" | "YEARLY" | "LONG_TERM" | "BI_MONTHLY_ODD" | "BI_MONTHLY_EVEN";
-  depositType: "CASH" | "FIXED_TERM" | "HELP_DEPOSIT";
-  status: "ACTIVE" | "COMPLETED" | "ARCHIVED";
-  createdAt: string;
-};
+import type { SavingsGoal } from "@/types";
+export type { SavingsGoal };
 
 export type TransactionItem = {
   id: string;
@@ -208,72 +199,6 @@ function TransactionsSkeleton() {
       </CardContent>
     </Card>
   );
-}
-
-// Helper component for staggered animation and lazy loading
-function DelayedRender({ children, delay, lazy = false, skeleton }: { 
-  children: React.ReactNode; 
-  delay: number; 
-  lazy?: boolean;
-  skeleton?: React.ReactNode;
-}) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // If lazy, wait for intersection
-    if (lazy) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            // Add a small delay even after intersection to prevent jank during scroll
-            setTimeout(() => setShouldRender(true), delay);
-            observer.disconnect();
-          }
-        },
-        { rootMargin: "50px" } // Start loading slightly before view
-      );
-      
-      if (ref.current) {
-        observer.observe(ref.current);
-      }
-      
-      return () => observer.disconnect();
-    } 
-    // If not lazy, just use timeout
-    else {
-      const timer = setTimeout(() => setShouldRender(true), delay);
-      return () => clearTimeout(timer);
-    }
-  }, [delay, lazy]);
-
-  if (!shouldRender) {
-    return (
-      <div ref={ref}>
-        {skeleton || (
-          <div className="h-[250px] w-full flex flex-col items-center justify-center bg-white border rounded-xl animate-pulse space-y-4 p-6">
-            <div className="w-full flex justify-between items-center">
-              <div className="h-5 w-32 bg-gray-200 rounded"></div>
-              <div className="h-5 w-5 bg-gray-200 rounded-full"></div>
-            </div>
-            <div className="flex-1 w-full flex items-end justify-between gap-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-gray-200 rounded-t w-full" style={{ height: `${40 + i * 20}%` }}></div>
-              ))}
-            </div>
-            <div className="h-4 w-full bg-gray-100 rounded"></div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // When not lazy, render content immediately without skeleton to prevent layout shift on refresh
-  if (!lazy && !skeleton) {
-    return <>{children}</>;
-  }
-
-  return <div className="animate-in fade-in duration-700 slide-in-from-bottom-4">{children}</div>;
 }
 
 export function SavingsDefaultTheme({
@@ -934,7 +859,7 @@ export function SavingsDefaultTheme({
       <DelayedRender 
         delay={100} 
         lazy
-        skeleton={<TransactionsSkeleton />}
+        fallback={<TransactionsSkeleton />}
       >
         <Card>
           <CardHeader className="flex flex-row items-center justify-between py-4">

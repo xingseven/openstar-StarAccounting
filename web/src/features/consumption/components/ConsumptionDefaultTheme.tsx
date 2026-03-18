@@ -104,116 +104,7 @@ function AlipayOfficialIcon({ className }: { className?: string }) {
   );
 }
 
-// Helper component for staggered animation and lazy loading
-function DelayedRender({ 
-  children, 
-  delay, 
-  lazy = false,
-  className,
-  fallback
-}: { 
-  children: React.ReactNode; 
-  delay: number; 
-  lazy?: boolean;
-  className?: string;
-  fallback?: React.ReactNode;
-}) {
-  const [shouldRender, setShouldRender] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let timerId: number | undefined;
-    let idleId: number | undefined;
-    let observer: IntersectionObserver | undefined;
-    let rafId: number | undefined;
-
-    const renderWithDelay = () => {
-      if (delay > 0) {
-        timerId = window.setTimeout(() => {
-          setShouldRender(true);
-          rafId = window.requestAnimationFrame(() => setIsVisible(true));
-        }, delay);
-        return;
-      }
-      setShouldRender(true);
-      rafId = window.requestAnimationFrame(() => setIsVisible(true));
-    };
-
-    const scheduleRender = () => {
-      if ("requestIdleCallback" in window) {
-        const requestIdle = window.requestIdleCallback as (
-          callback: IdleRequestCallback,
-          options?: IdleRequestOptions
-        ) => number;
-        idleId = requestIdle(() => renderWithDelay(), { timeout: 600 });
-        return;
-      }
-      renderWithDelay();
-    };
-
-    if (lazy) {
-      observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            scheduleRender();
-            observer.disconnect();
-          }
-        },
-        { rootMargin: "120px" }
-      );
-      
-      if (ref.current) {
-        observer.observe(ref.current);
-      }
-      
-      return () => {
-        observer?.disconnect();
-        if (timerId !== undefined) {
-          window.clearTimeout(timerId);
-        }
-        if (idleId !== undefined && "cancelIdleCallback" in window) {
-          const cancelIdle = window.cancelIdleCallback as (handle: number) => void;
-          cancelIdle(idleId);
-        }
-        if (rafId !== undefined) {
-          window.cancelAnimationFrame(rafId);
-        }
-      };
-    } 
-    else {
-      timerId = window.setTimeout(() => {
-        setShouldRender(true);
-        rafId = window.requestAnimationFrame(() => setIsVisible(true));
-      }, delay);
-      return () => {
-        if (timerId !== undefined) {
-          window.clearTimeout(timerId);
-        }
-        if (rafId !== undefined) {
-          window.cancelAnimationFrame(rafId);
-        }
-      };
-    }
-  }, [delay, lazy]);
-
-  return (
-    <div ref={ref} className={className}>
-      {shouldRender ? (
-        <div
-          className={cn(
-            "h-full w-full transition-opacity duration-500 ease-out",
-            isVisible ? "opacity-100" : "opacity-0"
-          )}
-        >
-          {children}
-        </div>
-      ) : fallback ? (
-        fallback
-      ) : null}
-    </div>
-  );
-}
+import { DelayedRender } from "@/components/shared/DelayedRender";
 
 function AnimatedCalendarGrid({ calendar }: { calendar: ConsumptionData["calendar"] }) {
   const [visibleCount, setVisibleCount] = useState(0);
@@ -599,7 +490,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-[#07C160] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
+        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
@@ -616,7 +507,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-[#1677FF] shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>

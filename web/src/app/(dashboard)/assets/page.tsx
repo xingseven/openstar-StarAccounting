@@ -141,12 +141,13 @@ export default function AssetsPage() {
 
   return (
     <>
-      <AssetsDefaultTheme 
+      <AssetsDefaultTheme
         items={items}
         totalAssets={totalAssets}
         displayCurrency={displayCurrency}
         onCurrencyChange={setDisplayCurrency}
         supportedCurrencies={SUPPORTED_CURRENCIES}
+        loading={loading}
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
         onDelete={handleDelete}

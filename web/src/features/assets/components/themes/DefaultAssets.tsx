@@ -1,8 +1,8 @@
-import { 
-  ArrowUpRight, 
-  Wallet, 
-  CreditCard, 
-  Banknote, 
+import {
+  ArrowUpRight,
+  Wallet,
+  CreditCard,
+  Banknote,
   TrendingUp,
   MoreHorizontal,
   Calendar,
@@ -11,7 +11,27 @@ import {
   Landmark,
   Smartphone
 } from "lucide-react";
+import { siAlipay, siWechat } from "simple-icons";
 import { clsx } from "clsx";
+
+// Simple-icons 官方图标组件
+function AlipayIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`#${siAlipay.hex}`} />
+      <path d={siAlipay.path} fill="#FFFFFF" transform="translate(1.5 1.5) scale(0.875)" />
+    </svg>
+  );
+}
+
+function WechatIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`#${siWechat.hex}`} />
+      <path d={siWechat.path} fill="#FFFFFF" transform="translate(1.5 1.5) scale(0.875)" />
+    </svg>
+  );
+}
 import {
   Card,
   CardContent,
@@ -27,15 +47,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-export type Asset = {
-  id: string;
-  name: string;
-  type: string;
-  balance: number;
-  currency: string;
-  estimatedValue: number;
-};
+import { Skeleton, CardListSkeleton } from "@/components/shared/Skeletons";
+import { EmptyState } from "@/components/shared/EmptyState";
+import type { Asset } from "@/types";
+export type { Asset };
 
 interface AssetsViewProps {
   items: Asset[];
@@ -43,6 +58,7 @@ interface AssetsViewProps {
   displayCurrency: string;
   onCurrencyChange: (currency: string) => void;
   supportedCurrencies: string[];
+  loading?: boolean;
   onOpenCreate: () => void;
   onOpenEdit: (item: Asset) => void;
   onDelete: (id: string) => void;
@@ -54,17 +70,18 @@ export function AssetsDefaultTheme({
   displayCurrency,
   onCurrencyChange,
   supportedCurrencies,
+  loading = false,
   onOpenCreate,
   onOpenEdit,
   onDelete,
 }: AssetsViewProps) {
-  
+
   const getIcon = (type: string) => {
     switch(type) {
       case 'CASH': return <Coins className="h-5 w-5 text-orange-500" />;
       case 'BANK_CARD': return <CreditCard className="h-5 w-5 text-blue-500" />;
-      case 'ALIPAY': return <Smartphone className="h-5 w-5 text-cyan-500" />;
-      case 'WECHAT': return <Smartphone className="h-5 w-5 text-green-500" />;
+      case 'ALIPAY': return <AlipayIcon className="h-5 w-5" />;
+      case 'WECHAT': return <WechatIcon className="h-5 w-5" />;
       case 'INVESTMENT': return <TrendingUp className="h-5 w-5 text-purple-500" />;
       default: return <Wallet className="h-5 w-5 text-gray-500" />;
     }
@@ -124,13 +141,14 @@ export function AssetsDefaultTheme({
         <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-gray-800/20 to-transparent pointer-events-none" />
       </div>
 
-      {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 sm:p-12 text-center text-gray-500 bg-gray-50/50">
-          <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white border shadow-sm flex items-center justify-center mb-2 sm:mb-3">
-            <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
-          </div>
-          <p className="text-xs sm:text-sm">暂无资产记录，开始添加你的第一笔资产吧</p>
-        </div>
+      {loading ? (
+        <CardListSkeleton count={6} />
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Wallet}
+          title="暂无资产记录"
+          description="开始添加你的第一笔资产吧"
+        />
       ) : (
         <div className="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
