@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.1 - 2026-03-18
+
+### Fixes
+
+- **修复全局滚动条白边问题**:
+  - 移除了 `globals.css` 中 `html` 元素的 `scrollbar-gutter: stable` 全局样式。
+  - 保留了 `.scrollbar-stable` 类的定义，仅在需要防止布局抖动的特定滚动容器（如 `<main>`）上局部应用，从而消除了浏览器窗口最右侧不必要的空白滚动条占位。
+
+### Modified Files
+
+1. `web/src/app/globals.css`
+   - 移除了 `html` 选择器中的 `scrollbar-gutter` 样式。
+
 ## 2.0.0 - 2026-03-17
 
 ### Features
