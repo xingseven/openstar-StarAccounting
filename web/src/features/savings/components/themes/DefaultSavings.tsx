@@ -113,7 +113,7 @@ function DistributionChartSkeleton() {
 
 function GoalsTableSkeleton() {
   return (
-    <Card className="md:col-span-3 overflow-hidden min-h-[200px]">
+    <Card className="md:col-span-3 overflow-hidden min-h-[350px]">
       <CardHeader className="flex flex-row items-center justify-between py-4">
         <div className="space-y-1">
           <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
@@ -134,7 +134,7 @@ function GoalsTableSkeleton() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(3)].map((_, i) => (
                 <tr key={i} className="hover:bg-gray-50/70">
                   <td className="px-3 py-3">
                     <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
@@ -183,7 +183,7 @@ function TransactionsSkeleton() {
       </CardHeader>
       <CardContent>
         <div className="space-y-0 divide-y">
-          {[...Array(5)].map((_, i) => (
+          {[...Array(1)].map((_, i) => (
             <div key={i} className="flex items-center justify-between p-3 -mx-6 px-6">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
