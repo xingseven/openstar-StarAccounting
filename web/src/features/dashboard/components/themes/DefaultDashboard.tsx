@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   ArrowUpRight, 
   ArrowDownLeft,
@@ -14,6 +14,8 @@ import {
   AlertCircle,
   X,
   Plus,
+  ArrowUp,
+  ArrowDown,
   type LucideIcon
 } from "lucide-react";
 import { 
@@ -21,7 +23,10 @@ import {
   Bar, 
   XAxis, 
   YAxis, 
-  Cell
+  Cell,
+  PieChart,
+  Pie,
+  ResponsiveContainer
 } from 'recharts';
 import { cn, formatCurrency } from "@/lib/utils";
 import {
@@ -53,11 +58,27 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   const netWorth = data.totalAssets - data.totalDebt;
   const balance = data.monthIncome - data.monthExpense;
 
+  // 模拟趋势数据 (实际开发中应从后端获取)
+  const trends = {
+    expense: 12.5,
+    income: -5.2,
+    savings: 8.4
+  };
+
   const chartData = [
     { name: '支出', value: data.monthExpense, color: '#ef4444' },
     { name: '收入', value: data.monthIncome, color: '#22c55e' },
     { name: '结余', value: Math.max(0, balance), color: '#3b82f6' },
   ];
+
+  // 模拟消费分类占比数据
+  const categoryDistribution = useMemo(() => [
+    { name: '餐饮美食', value: 2450, color: '#3b82f6' },
+    { name: '购物消费', value: 1800, color: '#ef4444' },
+    { name: '日常缴费', value: 1200, color: '#f59e0b' },
+    { name: '交通出行', value: 800, color: '#10b981' },
+    { name: '休闲娱乐', value: 600, color: '#8b5cf6' },
+  ], []);
 
   const chartConfig = {
     expense: {
@@ -90,7 +111,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden p-1">
       {/* Budget Alerts Banner */}
       {data.budgetAlerts.length > 0 && !alertsDismissed && (
         <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 sm:p-6 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
@@ -198,7 +219,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           subtitle="本月"
           value={data.monthExpense} 
           icon={CreditCard}
-          trend="up"
+          trend={trends.expense > 0 ? "up" : "down"}
+          trendValue={trends.expense}
           color="red"
         />
 
@@ -207,7 +229,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           subtitle="本月"
           value={data.monthIncome} 
           icon={Banknote}
-          trend="up"
+          trend={trends.income > 0 ? "up" : "down"}
+          trendValue={trends.income}
           color="green"
         />
 
@@ -216,7 +239,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           subtitle="存入"
           value={data.monthSavingsIncome} 
           icon={TrendingUp}
-          trend={data.monthSavingsIncome >= 0 ? "up" : "down"}
+          trend={trends.savings > 0 ? "up" : "down"}
+          trendValue={trends.savings}
           color="amber"
         />
       </div>
@@ -224,43 +248,85 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
-          <Card className="border border-gray-200 shadow-sm overflow-hidden group">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
-              <div className="space-y-1">
-                <CardTitle className="text-lg font-bold text-gray-900">收支概览</CardTitle>
-                <CardDescription>本月资金流动统计</CardDescription>
-              </div>
-              <button className="p-2 hover:bg-gray-50 rounded-lg text-gray-400">
-                <MoreHorizontal className="h-5 w-5" />
-              </button>
-            </CardHeader>
-            <CardContent className="relative z-10">
-              <ChartContainer config={chartConfig} className="h-[120px] w-full">
-                <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    width={40}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <XAxis dataKey="value" type="number" hide />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar dataKey="value" layout="vertical" radius={5} barSize={32}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-            <GridDecoration mode="light" className="opacity-[0.01]" />
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+                <div className="space-y-1">
+                  <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
+                  <CardDescription>本月收支状态对比</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10 h-[200px] flex items-center">
+                <ChartContainer config={chartConfig} className="h-[150px] w-full">
+                  <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      tickLine={false}
+                      tickMargin={10}
+                      axisLine={false}
+                      width={40}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                    />
+                    <XAxis dataKey="value" type="number" hide />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Bar dataKey="value" layout="vertical" radius={5} barSize={32}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+              <GridDecoration mode="light" className="opacity-[0.01]" />
+            </Card>
+
+            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+                <div className="space-y-1">
+                  <CardTitle className="text-base font-bold text-gray-900">消费占比</CardTitle>
+                  <CardDescription>按消费分类统计占比</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10 h-[200px] flex items-center justify-center">
+                <div className="w-full h-full relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {categoryDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-[10px] text-gray-400 font-medium">总支出</span>
+                    <span className="text-sm font-bold text-gray-900">{formatCurrency(data.monthExpense, { compact: true })}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5 ml-2">
+                  {categoryDistribution.slice(0, 3).map((item) => (
+                    <div key={item.name} className="flex items-center gap-1.5">
+                      <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-[10px] text-gray-500 whitespace-nowrap">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              <GridDecoration mode="light" className="opacity-[0.01]" />
+            </Card>
+          </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative group">
             <GridDecoration mode="light" />
@@ -358,12 +424,13 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   );
 }
 
-function StatCard({ title, subtitle, value, icon: Icon, color, className }: { 
+function StatCard({ title, subtitle, value, icon: Icon, trend, trendValue, color, className }: { 
   title: string;
   subtitle?: string;
   value: number; 
   icon: LucideIcon; 
   trend: "up" | "down";
+  trendValue?: number;
   color: "red" | "green" | "blue" | "amber";
   className?: string;
 }) {
@@ -373,6 +440,8 @@ function StatCard({ title, subtitle, value, icon: Icon, color, className }: {
     blue: "text-blue-600 bg-blue-50",
     amber: "text-amber-600 bg-amber-50",
   };
+
+  const isPositive = trend === "up";
 
   return (
     <div className={cn(
@@ -391,6 +460,15 @@ function StatCard({ title, subtitle, value, icon: Icon, color, className }: {
             {subtitle && <span className="text-[9px] sm:text-[10px] lg:text-xs text-gray-400 ml-0.5 sm:ml-1">({subtitle})</span>}
           </div>
         </div>
+        {trendValue !== undefined && (
+          <div className={cn(
+            "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold",
+            isPositive ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+          )}>
+            {isPositive ? <ArrowUp className="h-2 w-2 sm:h-2.5 sm:w-2.5" /> : <ArrowDown className="h-2 w-2 sm:h-2.5 sm:w-2.5" />}
+            {Math.abs(trendValue)}%
+          </div>
+        )}
       </div>
       <div className="flex items-end justify-between">
         <div className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 truncate">

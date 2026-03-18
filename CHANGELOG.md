@@ -4,16 +4,18 @@
 
 ### Features & Refactoring
 
-- **Dashboard 架构重构与视觉一致性优化**:
-  - **GridDecoration 组件**: 将重复的网格装饰背景样式提取为 `web/src/components/shared/GridDecoration.tsx` 通用组件，支持 `light` 和 `dark` 模式，提升了代码的复用性和视觉表现的一致性。
-  - **货币格式化工具**: 在 `web/src/lib/utils.ts` 中封装了通用的 `formatCurrency` 函数，统一了全站的金额展示逻辑（千分位、货币符号、小数位数）。
-  - **预算预警交互**: 为首页预算预警 Banner 增加了“暂时忽略”按钮，提升了用户在处理完预警后的视觉清洁度。
-  - **快捷操作增强**: 在首页快捷入口新增了“记一笔”占位按钮，优化了操作项的布局。
-  - **类型安全**: 规范了 `DefaultDashboard.tsx` 中 `StatCard` 和 `QuickAction` 的图标类型定义，移除了 `any` 类型。
+- **Dashboard 架构重构与数据可视化增强**:
+  - **GridDecoration 组件**: 将重复的网格装饰背景样式提取为 `web/src/components/shared/GridDecoration.tsx` 通用组件，支持 `light` 和 `dark` 模式。
+  - **货币格式化工具**: 在 `web/src/lib/utils.ts` 中封装了通用的 `formatCurrency` 函数，统一了全站的金额展示逻辑。
+  - **收支趋势对比**: 在首页统计卡片中引入了微型趋势指示器，直观展示本月数据波动。
+  - **消费占比环形图**: 新增消费分类占比图表，支持按比例查看核心支出类别。
+  - **响应式布局升级**: 重构图表展示区为响应式网格布局，优化了大屏下的信息展示效率。
+  - **预算预警交互**: 为首页预算预警 Banner 增加了“暂时忽略”按钮。
+  - **类型安全**: 规范了图标类型定义，移除了 `any` 类型。
 
 ### Modified Files
 
-1. `web/src/components/shared/GridDecoration.tsx` (New)
+1. `web/src/components/shared/GridDecoration.tsx`
 2. `web/src/lib/utils.ts`
 3. `web/src/features/dashboard/components/themes/DefaultDashboard.tsx`
 
