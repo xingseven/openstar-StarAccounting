@@ -923,7 +923,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <div className="min-w-[900px] md:w-full">
-            <DelayedRender delay={960} className="h-[450px] w-full">
+            <DelayedRender delay={960} lazy className="h-[450px] w-full">
               <ReactECharts
                 ref={addChartRef}
                 autoResize={false}
