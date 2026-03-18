@@ -3,8 +3,7 @@ import { DelayedRender } from "@/components/shared/DelayedRender";
 import {
   StatsCardSkeleton,
   ChartSkeleton,
-  ListTableSkeleton,
-  CardListSkeleton
+  ListTableSkeleton
 } from "@/components/shared/Skeletons";
 import {
   Plus,
@@ -109,8 +108,12 @@ export function SavingsDefaultTheme({
 
   // Debug log
   useEffect(() => {
-    console.log('SavingsDefaultTheme 收到 transactions:', transactions);
-    console.log('transactions.length:', transactions.length);
+    if (transactions) {
+      console.log('SavingsDefaultTheme 收到 transactions:', transactions);
+      console.log('transactions.length:', transactions.length);
+    } else {
+      console.log('SavingsDefaultTheme 收到 transactions: undefined');
+    }
   }, [transactions]);
 
   // Filtered and sorted goals
