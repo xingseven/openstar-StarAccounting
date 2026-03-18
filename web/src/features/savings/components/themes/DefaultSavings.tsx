@@ -751,50 +751,6 @@ export function SavingsDefaultTheme({
         )}
       </div>
 
-      {/* Row 3: Transactions */}
-      <DelayedRender delay={200} fallback={<CardListSkeleton count={2} />}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-4">
-            <div className="space-y-1">
-              <CardTitle className="text-base">存取记录</CardTitle>
-              <CardDescription>包含"储蓄"、"存款"、"理财"等分类的流水</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" className="text-xs text-gray-500 hover:text-black">
-              查看全部 <ArrowRight className="ml-1 h-3 w-3" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {transactions.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 text-sm bg-gray-50/50 rounded-lg border border-dashed">
-                <PiggyBank className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                暂无相关记录
-              </div>
-            ) : (
-              <div className="space-y-0 divide-y">
-                {transactions.map(t => (
-                  <div key={t.id} className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors -mx-6 px-6 first:border-t">
-                    <div className="flex items-center gap-4">
-                      <div className={clsx(
-                        "h-10 w-10 rounded-full flex items-center justify-center border",
-                        t.type === "EXPENSE" ? "bg-red-50 border-red-100 text-red-600" : "bg-green-50 border-green-100 text-green-600"
-                      )}>
-                        {t.type === "EXPENSE" ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm text-gray-900">{t.description || t.category}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{new Date(t.date).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                    <div className={clsx("font-bold text-sm", t.type === "EXPENSE" ? "text-gray-900" : "text-green-600")}>
-                      {t.type === "EXPENSE" ? "-" : "+"}¥{Number(t.amount).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </DelayedRender>
 
     </div>
   );

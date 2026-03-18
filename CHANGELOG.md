@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.5 - 2026-03-18
+
+### Fixes
+
+- **精准匹配骨架屏高度以消除最终的轻微跳变**:
+  - 发现储蓄页面存取记录的真实组件头部边距（`p-6`）和内容边距与通用的 `CardListSkeleton` 存在几像素的误差，这几像素的差异在数据渲染瞬间仍会引发轻微的高度拉伸。
+  - 精确调整了 `Skeletons.tsx` 中 `CardListSkeleton` 的 `padding` 参数和 `div` 结构，并同步对齐了真实卡片的 `CardHeader` 边距（改为 `p-6 pb-4`）。
+  - 使得骨架屏状态和真实数据状态在 DOM 盒子模型上达到 1:1 像素级匹配，真正实现了无感过渡。
+
+### Modified Files
+
+1. `web/src/components/shared/Skeletons.tsx`
+   - 更新了 `CardListSkeleton` 的内部 `padding` 和 `margin`。
+2. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 对齐了存取记录 `CardHeader` 的内边距。
+
 ## 2.0.4 - 2026-03-18
 
 ### Fixes

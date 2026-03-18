@@ -104,19 +104,19 @@ export function ListTableSkeleton({
  */
 export function CardListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="rounded-xl bg-white border p-4 min-h-[300px]">
-      <div className="flex flex-row items-center justify-between p-4">
-        <div className="space-y-1">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-3 w-48" />
+    <div className="rounded-xl bg-white border h-full">
+      <div className="flex flex-row items-center justify-between p-6 pb-4">
+        <div className="space-y-1.5">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-4 w-48" />
         </div>
-        <Skeleton className="h-6 w-20" />
+        <Skeleton className="h-8 w-20" />
       </div>
-      <div className="space-y-0 divide-y">
+      <div className="space-y-0 divide-y px-6">
         {[...Array(count)].map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between p-3"
+            className="flex items-center justify-between py-3 -mx-6 px-6"
           >
             <div className="flex items-center gap-4">
               <Skeleton className="h-10 w-10 rounded-full" />
