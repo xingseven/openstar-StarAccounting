@@ -130,6 +130,12 @@ export default function AIPage() {
     setConfigModel(model);
     setApiKey("");
     setShowApiKey(false);
+    setConfigForm({
+      name: model.name,
+      provider: model.provider,
+      endpoint: model.endpoint || "",
+      modelId: model.modelId || ""
+    });
     setIsConfigModalOpen(true);
   }
 
@@ -168,7 +174,15 @@ export default function AIPage() {
 
     setModels(models.map(m =>
       m.id === configModel.id
-        ? { ...m, apiKeyConfigured: !!apiKey, status: apiKey ? "active" : "inactive" }
+        ? {
+            ...m,
+            name: configForm.name,
+            provider: configForm.provider,
+            endpoint: configForm.endpoint || undefined,
+            modelId: configForm.modelId || undefined,
+            apiKeyConfigured: !!apiKey,
+            status: apiKey ? "active" : "inactive"
+          }
         : m
     ));
 
@@ -345,16 +359,14 @@ export default function AIPage() {
                 </select>
               </div>
             </div>
-            {formData.provider === "custom" && (
-              <div className="space-y-2">
-                <Label>API 端点</Label>
-                <Input
-                  value={formData.endpoint}
-                  onChange={e => setFormData({ ...formData, endpoint: e.target.value })}
-                  placeholder="https://api.example.com/v1"
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label>API 端点</Label>
+              <Input
+                value={formData.endpoint}
+                onChange={e => setFormData({ ...formData, endpoint: e.target.value })}
+                placeholder="https://ark.cn-beijing.volces.com/api/v3"
+              />
+            </div>
             <div className="space-y-2">
               <Label>模型 ID</Label>
               <Input
@@ -387,9 +399,45 @@ export default function AIPage() {
       <BottomSheet open={isConfigModalOpen} onOpenChange={setIsConfigModalOpen}>
         <BottomSheetContent className="max-w-md">
           <BottomSheetHeader>
-            <BottomSheetTitle>配置 {configModel?.name}</BottomSheetTitle>
+            <BottomSheetTitle>配置大模型</BottomSheetTitle>
           </BottomSheetHeader>
           <div className="space-y-4">
+            {/* 模型基本信息 */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-sm">模型名称</Label>
+                <Input
+                  value={configForm.name}
+                  onChange={e => setConfigForm({ ...configForm, name: e.target.value })}
+                  placeholder="例如：豆包视觉模型"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">提供商</Label>
+                <Input
+                  value={configForm.provider}
+                  onChange={e => setConfigForm({ ...configForm, provider: e.target.value })}
+                  placeholder="例如：火山引擎"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">API 端点</Label>
+                <Input
+                  value={configForm.endpoint}
+                  onChange={e => setConfigForm({ ...configForm, endpoint: e.target.value })}
+                  placeholder="https://ark.cn-beijing.volces.com/api/v3"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-sm">模型 ID</Label>
+                <Input
+                  value={configForm.modelId}
+                  onChange={e => setConfigForm({ ...configForm, modelId: e.target.value })}
+                  placeholder="例如：doubao-1-5-vision-v2"
+                />
+              </div>
+            </div>
+
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Key className="h-4 w-4" />
@@ -412,19 +460,9 @@ export default function AIPage() {
                 </button>
               </div>
               <p className="text-xs text-gray-500">
-                API Key 将安全存储，用于调用 {configModel?.provider} 服务
+                API Key 将安全存储，用于调用 AI 服务
               </p>
             </div>
-            {configModel?.endpoint && (
-              <div className="text-xs text-gray-500">
-                端点：{configModel.endpoint}
-              </div>
-            )}
-            {configModel?.modelId && (
-              <div className="text-xs text-gray-500">
-                模型：{configModel.modelId}
-              </div>
-            )}
           </div>
           <BottomSheetFooter>
             <Button type="button" variant="outline" onClick={() => setIsConfigModalOpen(false)}>

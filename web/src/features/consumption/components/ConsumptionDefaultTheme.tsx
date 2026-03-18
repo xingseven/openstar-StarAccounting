@@ -1357,14 +1357,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       </div>
 
       {/* AI 记账对话框 */}
-      <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      <BottomSheet open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
+        <BottomSheetContent className="max-w-md">
+          <BottomSheetHeader>
+            <BottomSheetTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-blue-600" />
               AI 拍照记账
-            </DialogTitle>
-          </DialogHeader>
+            </BottomSheetTitle>
+          </BottomSheetHeader>
           <div className="space-y-4">
             {!selectedImage ? (
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
@@ -1449,17 +1449,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             ) : null}
           </div>
           {scanResult && (
-            <DialogFooter>
+            <BottomSheetFooter>
               <Button variant="outline" onClick={() => { setSelectedImage(null); setScanResult(null); }}>
                 重新拍照
               </Button>
               <Button onClick={handleAIConfirm}>
                 确认记账
               </Button>
-            </DialogFooter>
+            </BottomSheetFooter>
           )}
-        </DialogContent>
-      </Dialog>
+        </BottomSheetContent>
+      </BottomSheet>
     </>
   );
 }

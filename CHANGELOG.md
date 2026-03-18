@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.1.1 - 2026-03-18
+
+### Features
+
+- **大模型管理页面上线**:
+  - 新增侧边栏"大模型"菜单入口
+  - 创建 `web/src/app/(dashboard)/ai/page.tsx` 页面
+  - 支持添加、编辑、删除自定义大模型配置
+  - 支持配置 API Key、提供商、端点、模型 ID
+  - 已配置/未配置模型分组展示，状态一目了然
+
+- **AI 拍照记账功能上线**:
+  - 消费分析页面新增"AI 记账"按钮（渐变色设计）
+  - 点击弹出 BottomSheet，可上传小票/账单照片
+  - 调用 AI 视觉模型自动识别金额、商户、日期、分类
+  - 用户可微调识别结果后一键确认记账
+  - 记账成功后自动创建交易记录
+
+- **统一页面背景装饰**:
+  - 简化 `GridDecoration` 组件，只保留底部一根曲线
+  - 将背景装饰移至 dashboard layout 层
+  - 所有页面统一展示固定底部的线条背景
+  - 使用 `fixed` 定位，滚动时背景保持静止
+
+### Modified Files
+
+1. `web/src/components/shared/Sidebar.tsx` (Added AI menu)
+2. `web/src/app/(dashboard)/ai/page.tsx` (New)
+3. `web/src/app/(dashboard)/layout.tsx` (Added GridDecoration)
+4. `web/src/components/shared/GridDecoration.tsx` (Simplified to single line)
+5. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (Added AI scan)
+6. `src/server/src/main.ts` (Added `/api/ai/scan-receipt`)
+
 ## 2.1.0 - 2026-03-18
 
 ### Features
