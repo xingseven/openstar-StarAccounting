@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.0.2 - 2026-03-18
+
+### Fixes & Improvements
+
+- **修复储蓄页面加载时的视觉闪烁问题并统一架构**:
+  - 移除了 `DefaultSavings.tsx` 中的冗余自定义骨架屏组件，全面引入了 `Skeletons.tsx` 中标准的 `ChartSkeleton`、`ListTableSkeleton` 和 `CardListSkeleton`。
+  - 为存取记录的骨架屏（`CardListSkeleton`）指定了匹配真实数据的项数和高度，消除了由此导致的滚动条闪烁和页面跳动。
+  - 学习了消费页面的加载架构，为储蓄页面的图表和表格统一引入了 `DelayedRender` 组件，并配置了阶梯式的延迟加载时间（50ms, 100ms, 150ms），实现了平滑的渐次入场动画效果。
+
+### Modified Files
+
+1. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 移除了 `StatsCardSkeleton`、`DistributionChartSkeleton`、`GoalsTableSkeleton`、`TransactionsSkeleton`。
+   - 引入并使用了 `@/components/shared/Skeletons` 中的通用组件。
+   - 在主网格布局中为图表和表格添加了 `DelayedRender` 组件包裹。
+   - 更新了存取记录的 `fallback` 为 `<CardListSkeleton count={2} />`。
+
 ## 2.0.1 - 2026-03-18
 
 ### Fixes

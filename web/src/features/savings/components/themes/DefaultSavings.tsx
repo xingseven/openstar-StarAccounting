@@ -1,6 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import {
+  StatsCardSkeleton,
+  ChartSkeleton,
+  ListTableSkeleton,
+  CardListSkeleton
+} from "@/components/shared/Skeletons";
+import {
   Plus,
   Target,
   TrendingUp,
@@ -77,129 +83,7 @@ interface SavingsViewProps {
   onCopy?: (item: SavingsGoal) => void;
 }
 
-// Skeleton loader components
-function StatsCardSkeleton() {
-  return (
-    <Card className="border-l-4 border-l-gray-300 shadow-sm min-h-[100px]">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">
-          <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-        </CardTitle>
-        <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
-      </CardHeader>
-      <CardContent>
-        <div className="h-8 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
-        <div className="h-3 w-40 bg-gray-200 rounded animate-pulse"></div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DistributionChartSkeleton() {
-  return (
-    <Card className="md:col-span-1 flex flex-col min-h-[200px]">
-      <CardHeader className="items-center pb-0">
-        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
-        <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0 relative min-h-[140px]">
-        <div className="mx-auto aspect-square max-h-[120px] flex items-center justify-center">
-          <div className="h-28 w-28 rounded-full border-8 border-gray-200 animate-pulse"></div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function GoalsTableSkeleton() {
-  return (
-    <Card className="md:col-span-3 overflow-hidden min-h-[350px]">
-      <CardHeader className="flex flex-row items-center justify-between py-4">
-        <div className="space-y-1">
-          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-3 w-40 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-        <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="overflow-x-auto md:overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
-              <tr>
-                {["名称", "模式", "存款类型", "当前/目标", "进度", "截止日期", "操作"].map((header, i) => (
-                  <th key={i} className="text-left px-3 py-2 whitespace-nowrap">
-                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {[...Array(3)].map((_, i) => (
-                <tr key={i} className="hover:bg-gray-50/70">
-                  <td className="px-3 py-3">
-                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse ml-auto"></div>
-                  </td>
-                  <td className="px-3 py-3 min-w-[180px]">
-                    <div className="h-2 w-full bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function TransactionsSkeleton() {
-  return (
-    <Card className="min-h-[150px]">
-      <CardHeader className="flex flex-row items-center justify-between py-4">
-        <div className="space-y-1">
-          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-3 w-48 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-        <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-0 divide-y">
-          {[...Array(1)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-3 -mx-6 px-6">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
-                <div>
-                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-1"></div>
-                  <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
-              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+// Types and interfaces
 
 export function SavingsDefaultTheme({
   items,
@@ -493,373 +377,385 @@ export function SavingsDefaultTheme({
       </div>
 
       {/* Row 2: Distribution Chart & Goals Grid */}
-      {loading ? (
-        <div className="grid gap-6 md:grid-cols-5">
-          <DistributionChartSkeleton />
-          <div className="md:col-span-1">
-            <DistributionChartSkeleton />
-          </div>
-          <GoalsTableSkeleton />
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-5">
-          {/* Chart Column 1: 储蓄模式分布 */}
-          <Card className="md:col-span-1 flex flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle className="text-base">储蓄分布</CardTitle>
-              <CardDescription>按模式统计</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0 relative min-h-[200px]">
-              {distributionData.length > 0 ? (
-                <>
-                  <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
-                    <PieChart>
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                      <Pie
-                        data={distributionData}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={40}
-                        strokeWidth={5}
-                      >
-                        {distributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-                    {distributionData.map((item, index) => (
-                      <div key={index} className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                        <span className="text-gray-500">{item.name}</span>
-                        <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Chart Column 2: 存款类型分布 */}
-          <Card className="md:col-span-1 flex flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle className="text-base">存款类型</CardTitle>
-              <CardDescription>按方式统计</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0 relative min-h-[200px]">
-              {depositTypeData.length > 0 ? (
-                <>
-                  <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
-                    <PieChart>
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                      <Pie
-                        data={depositTypeData}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={40}
-                        strokeWidth={5}
-                      >
-                        {depositTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-                    {depositTypeData.map((item, index) => (
-                      <div key={index} className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                        <span className="text-gray-500">{item.name}</span>
-                        <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Goals Table Column */}
-          <Card className="md:col-span-3 overflow-hidden min-h-[350px]">
-            <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
-              <div className="space-y-0 sm:space-y-1">
-                <CardTitle className="text-sm sm:text-base">目标列表</CardTitle>
-                <CardDescription className="hidden sm:block">按行展示每个储蓄目标</CardDescription>
-              </div>
-              <Button onClick={onOpenCreate} size="sm" className="h-8 text-xs">
-                <Plus className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">新增目标</span>
-              </Button>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {/* Batch actions bar */}
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-blue-700">已选择 {selectedIds.size} 项</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => {
-                      if (onBatchArchive) {
-                        onBatchDelete?.(Array.from(selectedIds));
-                      } else {
-                        alert("批量归档功能开发中");
-                      }
-                    }}
-                  >
-                    <Archive className="h-4 w-4 mr-1" />
-                    批量归档
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-red-600 hover:text-red-700"
-                    onClick={() => {
-                      if (confirm(`确定要删除选中的 ${selectedIds.size} 个目标吗？`)) {
-                        onBatchDelete?.(Array.from(selectedIds));
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    批量删除
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => setSelectedIds(new Set())}
-                  >
-                    取消
-                  </Button>
-                </div>
-              )}
-              {filteredGoals.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 text-sm bg-gray-50/50 rounded-lg border border-dashed">
-                  暂无目标，点击右上角新增
-                </div>
-              ) : (
-                <div className="overflow-x-auto md:overflow-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-600">
-                      <tr>
-                        <th className="text-left px-2 py-2 w-8">
-                          <button
-                            onClick={() => {
-                              if (selectedIds.size === filteredGoals.length) {
-                                setSelectedIds(new Set());
-                              } else {
-                                setSelectedIds(new Set(filteredGoals.map(i => i.id)));
-                              }
-                            }}
-                            className="p-1"
+      <div className="grid gap-6 md:grid-cols-5">
+        {loading ? (
+          <>
+            <div className="md:col-span-1">
+              <ChartSkeleton />
+            </div>
+            <div className="md:col-span-1">
+              <ChartSkeleton />
+            </div>
+            <div className="md:col-span-3">
+              <ListTableSkeleton rows={3} columns={7} />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Chart Column 1: 储蓄模式分布 */}
+            <DelayedRender delay={50} className="md:col-span-1 h-full" fallback={<ChartSkeleton />}>
+              <Card className="flex flex-col h-full">
+                <CardHeader className="items-center pb-0">
+                  <CardTitle className="text-base">储蓄分布</CardTitle>
+                  <CardDescription>按模式统计</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 pb-0 relative min-h-[200px]">
+                  {distributionData.length > 0 ? (
+                    <>
+                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
+                        <PieChart>
+                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                          <Pie
+                            data={distributionData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={40}
+                            strokeWidth={5}
                           >
-                            {selectedIds.size === filteredGoals.length && filteredGoals.length > 0 ? (
-                              <CheckSquare className="h-4 w-4" />
-                            ) : (
-                              <Square className="h-4 w-4" />
-                            )}
-                          </button>
-                        </th>
-                        <th className="text-left px-3 py-2 whitespace-nowrap">名称</th>
-                        <th className="text-left px-3 py-2 whitespace-nowrap">模式</th>
-                        <th className="text-left px-3 py-2 whitespace-nowrap">存款类型</th>
-                        <th className="text-right px-3 py-2 whitespace-nowrap">当前/目标</th>
-                        <th className="text-left px-3 py-2 whitespace-nowrap">进度</th>
-                        <th className="text-left px-3 py-2 whitespace-nowrap">截止日期</th>
-                        <th className="text-right px-3 py-2 whitespace-nowrap">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {filteredGoals.map((item) => {
-                        const progress = item.targetAmount > 0
-                          ? Math.min(100, (item.currentAmount / item.targetAmount) * 100)
-                          : 0;
-                        const daysLeft = getDaysUntilDeadline(item.deadline);
-                        const behind = isBehindSchedule(item);
-                        const expectedDate = getExpectedCompletion(item);
-                        return (
-                          <tr key={item.id} className="hover:bg-gray-50/70">
-                            <td className="px-2 py-3">
+                            {distributionData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
+                      <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+                        {distributionData.map((item, index) => (
+                          <div key={index} className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                            <span className="text-gray-500">{item.name}</span>
+                            <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
+                  )}
+                </CardContent>
+              </Card>
+            </DelayedRender>
+
+            {/* Chart Column 2: 存款类型分布 */}
+            <DelayedRender delay={100} className="md:col-span-1 h-full" fallback={<ChartSkeleton />}>
+              <Card className="flex flex-col h-full">
+                <CardHeader className="items-center pb-0">
+                  <CardTitle className="text-base">存款类型</CardTitle>
+                  <CardDescription>按方式统计</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 pb-0 relative min-h-[200px]">
+                  {depositTypeData.length > 0 ? (
+                    <>
+                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
+                        <PieChart>
+                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                          <Pie
+                            data={depositTypeData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={40}
+                            strokeWidth={5}
+                          >
+                            {depositTypeData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
+                      <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
+                        {depositTypeData.map((item, index) => (
+                          <div key={index} className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                            <span className="text-gray-500">{item.name}</span>
+                            <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
+                  )}
+                </CardContent>
+              </Card>
+            </DelayedRender>
+
+            {/* Goals Table Column */}
+            <DelayedRender delay={150} className="md:col-span-3 h-full" fallback={<ListTableSkeleton rows={3} columns={7} />}>
+              <Card className="overflow-hidden min-h-[350px] h-full">
+                <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
+                  <div className="space-y-0 sm:space-y-1">
+                    <CardTitle className="text-sm sm:text-base">目标列表</CardTitle>
+                    <CardDescription className="hidden sm:block">按行展示每个储蓄目标</CardDescription>
+                  </div>
+                  <Button onClick={onOpenCreate} size="sm" className="h-8 text-xs">
+                    <Plus className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">新增目标</span>
+                  </Button>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {/* Batch actions bar */}
+                  {selectedIds.size > 0 && (
+                    <div className="flex items-center gap-2 mb-3 p-2 bg-blue-50 rounded-lg">
+                      <span className="text-sm text-blue-700">已选择 {selectedIds.size} 项</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => {
+                          if (onBatchArchive) {
+                            onBatchArchive?.(Array.from(selectedIds));
+                          } else {
+                            alert("批量归档功能开发中");
+                          }
+                        }}
+                      >
+                        <Archive className="h-4 w-4 mr-1" />
+                        批量归档
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-red-600 hover:text-red-700"
+                        onClick={() => {
+                          if (confirm(`确定要删除选中的 ${selectedIds.size} 个目标吗？`)) {
+                            onBatchDelete?.(Array.from(selectedIds));
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        批量删除
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => setSelectedIds(new Set())}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  )}
+                  {filteredGoals.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 text-sm bg-gray-50/50 rounded-lg border border-dashed">
+                      暂无目标，点击右上角新增
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto md:overflow-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-gray-600">
+                          <tr>
+                            <th className="text-left px-2 py-2 w-8">
                               <button
                                 onClick={() => {
-                                  const newSet = new Set(selectedIds);
-                                  if (newSet.has(item.id)) {
-                                    newSet.delete(item.id);
+                                  if (selectedIds.size === filteredGoals.length) {
+                                    setSelectedIds(new Set());
                                   } else {
-                                    newSet.add(item.id);
+                                    setSelectedIds(new Set(filteredGoals.map(i => i.id)));
                                   }
-                                  setSelectedIds(newSet);
                                 }}
                                 className="p-1"
                               >
-                                {selectedIds.has(item.id) ? (
-                                  <CheckSquare className="h-4 w-4 text-blue-600" />
+                                {selectedIds.size === filteredGoals.length && filteredGoals.length > 0 ? (
+                                  <CheckSquare className="h-4 w-4" />
                                 ) : (
-                                  <Square className="h-4 w-4 text-gray-400" />
+                                  <Square className="h-4 w-4" />
                                 )}
                               </button>
-                            </td>
-                            <td className="px-3 py-3 font-medium text-gray-900 whitespace-nowrap">
-                              <div className="flex items-center gap-1">
-                                {behind && item.status === "ACTIVE" && (
-                                  <span title="进度落后"><AlertCircle className="h-4 w-4 text-orange-500" /></span>
-                                )}
-                                {item.status === "ARCHIVED" && (
-                                  <span title="已归档"><Archive className="h-4 w-4 text-gray-400" /></span>
-                                )}
-                                <button
-                                  onClick={() => {
-                                    onOpenPunch(item);
-                                  }}
-                                  className="hover:text-blue-600 transition-colors underline-offset-2 hover:underline"
-                                  title="打开月度计划"
-                                >
-                                  {item.name}
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 whitespace-nowrap">
-                              {item.type === "BI_MONTHLY_ODD"
-                                ? "隔月 (单)"
-                                : item.type === "BI_MONTHLY_EVEN"
-                                ? "隔月 (双)"
-                                : item.type === "MONTHLY"
-                                ? "每月存"
-                                : item.type === "YEARLY"
-                                ? "年度"
-                                : "长期"}
-                            </td>
-                            <td className="px-3 py-3 whitespace-nowrap">
-                              {item.depositType === "CASH"
-                                ? "现金"
-                                : item.depositType === "FIXED_TERM"
-                                ? "死期"
-                                : "他人帮存"}
-                            </td>
-                            <td className="px-3 py-3 text-right whitespace-nowrap text-gray-700">
-                              ¥{item.currentAmount.toLocaleString()} / ¥{item.targetAmount.toLocaleString()}
-                            </td>
-                            <td className="px-3 py-3 min-w-[180px]">
-                              <div className="flex items-center gap-2">
-                                <Progress
-                                  value={progress}
-                                  className="h-2"
-                                  indicatorClassName={clsx(
-                                    progress >= 100 ? "bg-green-500" :
-                                    item.type === "LONG_TERM" ? "bg-blue-500" :
-                                    item.type === "YEARLY" ? "bg-purple-500" :
-                                    item.type === "MONTHLY" ? "bg-amber-500" :
-                                    "bg-emerald-500"
-                                  )}
-                                />
-                                <span className="text-xs text-gray-500 w-10 text-right">{progress.toFixed(0)}%</span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 whitespace-nowrap">
-                              <div className="flex flex-col gap-0.5">
-                                <span className={clsx(
-                                  "text-gray-500",
-                                  daysLeft !== null && daysLeft < 0 && "text-gray-400 line-through",
-                                  daysLeft !== null && daysLeft >= 0 && daysLeft < 7 && "text-red-600 font-medium",
-                                  daysLeft !== null && daysLeft >= 7 && daysLeft < 30 && "text-orange-600"
-                                )}>
-                                  {item.deadline ? item.deadline.slice(0, 10) : "—"}
-                                </span>
-                                {expectedDate && progress < 100 && (
-                                  <span className="text-[10px] text-gray-400">预计 {expectedDate}</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => {
-                                    onOpenPunch(item);
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
-                                  title="打开并勾选每月已存款"
-                                >
-                                  每月打卡
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    onOpenWithdrawal(item);
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
-                                  title="从该目标取款"
-                                  disabled={item.currentAmount <= 0}
-                                >
-                                  取款
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    onOpenPunch(item);
-                                  }}
-                                  className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
-                                  title="指定计划"
-                                >
-                                  <Target className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (onArchive && item.status === "ACTIVE") {
-                                      onArchive(item);
-                                    } else {
-                                      onOpenEdit(item);
-                                    }
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
-                                  title={item.status === "ACTIVE" ? "归档" : "编辑"}
-                                >
-                                  {item.status === "ACTIVE" ? "归档" : "修改"}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (onCopy) {
-                                      onCopy(item);
-                                    } else {
-                                      // Default: open edit with copied data
-                                      onOpenEdit({ ...item, id: "", name: `${item.name} (副本)` });
-                                    }
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
-                                  title="复制"
-                                >
-                                  复制
-                                </button>
-                                <button
-                                  onClick={() => onDelete(item)}
-                                  className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
-                                  title="删除"
-                                >
-                                  删除
-                                </button>
-                              </div>
-                            </td>
+                            </th>
+                            <th className="text-left px-3 py-2 whitespace-nowrap">名称</th>
+                            <th className="text-left px-3 py-2 whitespace-nowrap">模式</th>
+                            <th className="text-left px-3 py-2 whitespace-nowrap">存款类型</th>
+                            <th className="text-right px-3 py-2 whitespace-nowrap">当前/目标</th>
+                            <th className="text-left px-3 py-2 whitespace-nowrap">进度</th>
+                            <th className="text-left px-3 py-2 whitespace-nowrap">截止日期</th>
+                            <th className="text-right px-3 py-2 whitespace-nowrap">操作</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                        </thead>
+                        <tbody className="divide-y">
+                          {filteredGoals.map((item) => {
+                            const progress = item.targetAmount > 0
+                              ? Math.min(100, (item.currentAmount / item.targetAmount) * 100)
+                              : 0;
+                            const daysLeft = getDaysUntilDeadline(item.deadline);
+                            const behind = isBehindSchedule(item);
+                            const expectedDate = getExpectedCompletion(item);
+                            return (
+                              <tr key={item.id} className="hover:bg-gray-50/70">
+                                <td className="px-2 py-3">
+                                  <button
+                                    onClick={() => {
+                                      const newSet = new Set(selectedIds);
+                                      if (newSet.has(item.id)) {
+                                        newSet.delete(item.id);
+                                      } else {
+                                        newSet.add(item.id);
+                                      }
+                                      setSelectedIds(newSet);
+                                    }}
+                                    className="p-1"
+                                  >
+                                    {selectedIds.has(item.id) ? (
+                                      <CheckSquare className="h-4 w-4 text-blue-600" />
+                                    ) : (
+                                      <Square className="h-4 w-4 text-gray-400" />
+                                    )}
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                  <div className="flex items-center gap-1">
+                                    {behind && item.status === "ACTIVE" && (
+                                      <span title="进度落后"><AlertCircle className="h-4 w-4 text-orange-500" /></span>
+                                    )}
+                                    {item.status === "ARCHIVED" && (
+                                      <span title="已归档"><Archive className="h-4 w-4 text-gray-400" /></span>
+                                    )}
+                                    <button
+                                      onClick={() => {
+                                        onOpenPunch(item);
+                                      }}
+                                      className="hover:text-blue-600 transition-colors underline-offset-2 hover:underline"
+                                      title="打开月度计划"
+                                    >
+                                      {item.name}
+                                    </button>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-3 whitespace-nowrap">
+                                  {item.type === "BI_MONTHLY_ODD"
+                                    ? "隔月 (单)"
+                                    : item.type === "BI_MONTHLY_EVEN"
+                                    ? "隔月 (双)"
+                                    : item.type === "MONTHLY"
+                                    ? "每月存"
+                                    : item.type === "YEARLY"
+                                    ? "年度"
+                                    : "长期"}
+                                </td>
+                                <td className="px-3 py-3 whitespace-nowrap">
+                                  {item.depositType === "CASH"
+                                    ? "现金"
+                                    : item.depositType === "FIXED_TERM"
+                                    ? "死期"
+                                    : "他人帮存"}
+                                </td>
+                                <td className="px-3 py-3 text-right whitespace-nowrap text-gray-700">
+                                  ¥{item.currentAmount.toLocaleString()} / ¥{item.targetAmount.toLocaleString()}
+                                </td>
+                                <td className="px-3 py-3 min-w-[180px]">
+                                  <div className="flex items-center gap-2">
+                                    <Progress
+                                      value={progress}
+                                      className="h-2"
+                                      indicatorClassName={clsx(
+                                        progress >= 100 ? "bg-green-500" :
+                                        item.type === "LONG_TERM" ? "bg-blue-500" :
+                                        item.type === "YEARLY" ? "bg-purple-500" :
+                                        item.type === "MONTHLY" ? "bg-amber-500" :
+                                        "bg-emerald-500"
+                                      )}
+                                    />
+                                    <span className="text-xs text-gray-500 w-10 text-right">{progress.toFixed(0)}%</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-3 whitespace-nowrap">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className={clsx(
+                                      "text-gray-500",
+                                      daysLeft !== null && daysLeft < 0 && "text-gray-400 line-through",
+                                      daysLeft !== null && daysLeft >= 0 && daysLeft < 7 && "text-red-600 font-medium",
+                                      daysLeft !== null && daysLeft >= 7 && daysLeft < 30 && "text-orange-600"
+                                    )}>
+                                      {item.deadline ? item.deadline.slice(0, 10) : "—"}
+                                    </span>
+                                    {expectedDate && progress < 100 && (
+                                      <span className="text-[10px] text-gray-400">预计 {expectedDate}</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-3">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => {
+                                        onOpenPunch(item);
+                                      }}
+                                      className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
+                                      title="打开并勾选每月已存款"
+                                    >
+                                      每月打卡
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        onOpenWithdrawal(item);
+                                      }}
+                                      className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                      title="从该目标取款"
+                                      disabled={item.currentAmount <= 0}
+                                    >
+                                      取款
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        onOpenPunch(item);
+                                      }}
+                                      className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors"
+                                      title="指定计划"
+                                    >
+                                      <Target className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (onArchive && item.status === "ACTIVE") {
+                                          onArchive(item);
+                                        } else {
+                                          onOpenEdit(item);
+                                        }
+                                      }}
+                                      className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+                                      title={item.status === "ACTIVE" ? "归档" : "编辑"}
+                                    >
+                                      {item.status === "ACTIVE" ? "归档" : "修改"}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (onCopy) {
+                                          onCopy(item);
+                                        } else {
+                                          // Default: open edit with copied data
+                                          onOpenEdit({ ...item, id: "", name: `${item.name} (副本)` });
+                                        }
+                                      }}
+                                      className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap"
+                                      title="复制"
+                                    >
+                                      复制
+                                    </button>
+                                    <button
+                                      onClick={() => onDelete(item)}
+                                      className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap"
+                                      title="删除"
+                                    >
+                                      删除
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </DelayedRender>
+          </>
+        )}
+      </div>
 
       {/* Row 3: Transactions - Lazy Load */}
       <DelayedRender 
         delay={100} 
         lazy
-        fallback={<TransactionsSkeleton />}
+        fallback={<CardListSkeleton count={2} />}
       >
         <Card>
           <CardHeader className="flex flex-row items-center justify-between py-4">
