@@ -37,24 +37,16 @@ import {
   Home
 } from "lucide-react";
 import { clsx } from "clsx";
-
-export type Loan = {
-  id: string;
-  platform: string;
-  totalAmount: number;
-  remainingAmount: number;
-  periods: number;
-  paidPeriods: number;
-  monthlyPayment: number;
-  dueDate: number;
-  status: "ACTIVE" | "COMPLETED" | "DEFAULT";
-  createdAt: string;
-};
+import { Skeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
+import { EmptyState } from "@/components/shared/EmptyState";
+import type { Loan } from "@/types";
+export type { Loan };
 
 interface LoansViewProps {
   items: Loan[];
   platformData: Array<{ name: string; value: number; fill: string }>;
   paidVsRemainingData: Array<{ platform: string; paid: number; remaining: number }>;
+  loading?: boolean;
   onOpenCreate: () => void;
   onOpenEdit: (item: Loan) => void;
   onOpenSchedule: (item: Loan) => void;
@@ -65,6 +57,7 @@ export function LoansDefaultTheme({
   items,
   platformData,
   paidVsRemainingData,
+  loading = false,
   onOpenCreate,
   onOpenEdit,
   onOpenSchedule,
@@ -153,10 +146,32 @@ export function LoansDefaultTheme({
 
       {/* Loan List */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {items.length === 0 ? (
-          <div className="col-span-full rounded border p-12 text-center text-gray-500 bg-gray-50/50 border-dashed">
-            <Landmark className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-            暂无贷款记录
+        {loading ? (
+          <>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-xl bg-white border p-4 min-h-[200px]">
+                <div className="flex gap-3 mb-4">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              </div>
+            ))}
+          </>
+        ) : items.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState
+              icon={Landmark}
+              title="暂无贷款记录"
+              description="开始添加你的第一笔贷款吧"
+            />
           </div>
         ) : (
           items.map((item) => {

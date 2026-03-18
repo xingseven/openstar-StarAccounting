@@ -32,38 +32,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-
-export type BudgetAlert = {
-  id: string;
-  category: string;
-  platform?: string | null;
-  period: string;
-  scopeType: string;
-  amount: string;
-  used: string;
-  percent: number;
-  status: "normal" | "warning" | "overdue";
-  alertPercent: number;
-};
-
-export type DashboardData = {
-  totalAssets: number;
-  totalDebt: number;
-  monthExpense: number;
-  monthIncome: number;
-  monthSavingsIncome: number;
-  monthSavingsExpense: number;
-  recentTransactions: Array<{
-    id: string;
-    date: string;
-    type: "EXPENSE" | "INCOME";
-    amount: string;
-    category: string;
-    platform: string;
-    merchant?: string;
-  }>;
-  budgetAlerts: BudgetAlert[];
-};
+import { Skeleton, StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
+import type { BudgetAlert, DashboardData } from "@/types";
 
 interface DashboardViewProps {
   data: DashboardData;
@@ -97,8 +67,18 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto">
+        {/* Stats Cards Skeleton */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+        {/* Chart Skeleton */}
+        <ChartSkeleton />
+        {/* List Skeleton */}
+        <CardListSkeleton count={5} />
       </div>
     );
   }

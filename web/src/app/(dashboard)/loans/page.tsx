@@ -229,10 +229,11 @@ export default function LoansPage() {
 
   return (
     <>
-      <LoansDefaultTheme 
+      <LoansDefaultTheme
         items={items}
         platformData={platformData}
         paidVsRemainingData={paidVsRemainingData}
+        loading={loading}
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
         onOpenSchedule={openSchedule}
