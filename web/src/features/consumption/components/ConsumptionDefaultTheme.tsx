@@ -267,6 +267,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [dateFilter, setDateFilter] = useState("month");
   const [isMobile, setIsMobile] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
   const incomeExpenseTotal = useMemo(
     () => data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0),
@@ -306,6 +307,34 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return () => {
       window.removeEventListener('resize', debouncedCheckMobile);
       clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+
+    const STORAGE_KEY = 'consumption-scroll-position';
+
+    const handleScroll = () => {
+      sessionStorage.setItem(STORAGE_KEY, mainContent.scrollTop.toString());
+    };
+
+    const restoreScrollPosition = () => {
+      const savedPosition = sessionStorage.getItem(STORAGE_KEY);
+      if (savedPosition) {
+        const position = parseInt(savedPosition, 10);
+        if (!isNaN(position) && position > 0) {
+          mainContent.scrollTop = position;
+        }
+      }
+    };
+
+    mainContent.addEventListener('scroll', handleScroll, { passive: true });
+    restoreScrollPosition();
+
+    return () => {
+      mainContent.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
