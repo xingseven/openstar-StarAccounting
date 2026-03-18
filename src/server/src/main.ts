@@ -11,6 +11,7 @@ import { convertCurrency, type ExchangeRate as CurrencyExchangeRate } from "./li
 import { calculateBudgetUsage, calculateBudgetHealth, type BudgetStatus } from "./logic/budget.js";
 import { calculateAssetValue } from "./logic/asset.js";
 import { fetchExchangeRates } from "./services/exchangeRate.js";
+import { scanReceipt, type ReceiptData } from "./services/doubaoAi.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -3038,6 +3039,51 @@ app.get("/api/changelog", async (_req, res) => {
   } catch (e) {
     console.error("Parse changelog error:", e);
     jsonOk(res, { versions: [] });
+  }
+});
+
+// AI 视觉记账 - 扫描小票
+// 使用 multer.memoryStorage 处理文件上传，不占用磁盘
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB 限制
+});
+
+app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
+  try {
+    // 验证用户
+    const userId = await requireUserId(req, res);
+    if (!userId) return;
+
+    if (!req.file) {
+      jsonFail(res, 400, 40001, "MISSING_FILE", "请上传图片文件");
+      return;
+    }
+
+    // 验证文件类型
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      jsonFail(res, 400, 40002, "INVALID_FILE_TYPE", "仅支持 JPEG、PNG、WebP 格式图片");
+      return;
+    }
+
+    // 将图片转为 Base64
+    const imageBase64 = req.file.buffer.toString("base64");
+
+    // 调用豆包 AI 进行识别
+    const result = await scanReceipt(imageBase64);
+
+    jsonOk(res, {
+      amount: result.amount,
+      currency: result.currency,
+      merchant: result.merchant,
+      date: result.date,
+      category: result.category,
+      description: result.description
+    });
+  } catch (error) {
+    console.error("AI Scan Receipt Error:", error);
+    jsonFail(res, 500, 50001, "AI_PROCESSING_ERROR", "AI 识别失败，请重试");
   }
 });
 

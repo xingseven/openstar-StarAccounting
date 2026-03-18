@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { X, LogOut } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+} from "@/components/ui/bottomsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,14 +99,14 @@ export function SavingsWithdrawalDialog({
   if (!goal) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      <BottomSheetContent className="max-w-md">
+        <BottomSheetHeader>
+          <BottomSheetTitle className="flex items-center gap-2">
             <LogOut className="h-5 w-5 text-red-500" />
             取款 - {goal.name}
-          </DialogTitle>
-        </DialogHeader>
+          </BottomSheetTitle>
+        </BottomSheetHeader>
 
         <div className="space-y-4 py-4">
           {/* Current Amount Display */}
@@ -183,7 +183,7 @@ export function SavingsWithdrawalDialog({
             </div>
           </form>
         </div>
-      </DialogContent>
-    </Dialog>
+      </BottomSheetContent>
+    </BottomSheet>
   );
 }

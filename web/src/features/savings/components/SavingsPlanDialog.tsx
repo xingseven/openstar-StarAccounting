@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { BottomSheet, BottomSheetContent, BottomSheetHeader, BottomSheetTitle, BottomSheetDescription } from "@/components/ui/bottomsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SavingsGoal } from "./themes/DefaultSavings";
@@ -184,12 +184,12 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[920px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>每月打卡 - {goal?.name}</DialogTitle>
-          <DialogDescription>卡片式打卡视图：仅显示存款月份，支持状态切换与凭证上传。</DialogDescription>
-        </DialogHeader>
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      <BottomSheetContent className="max-w-[920px] max-h-[90vh] flex flex-col">
+        <BottomSheetHeader>
+          <BottomSheetTitle>每月打卡 - {goal?.name}</BottomSheetTitle>
+          <BottomSheetDescription>卡片式打卡视图：仅显示存款月份，支持状态切换与凭证上传。</BottomSheetDescription>
+        </BottomSheetHeader>
 
         <div className="flex-1 overflow-auto pr-1 space-y-3">
           {loading ? (
@@ -312,7 +312,7 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </BottomSheetContent>
+    </BottomSheet>
   );
 }

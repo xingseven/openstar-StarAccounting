@@ -10,12 +10,15 @@ import {
 import { cn } from "@/lib/utils";
 import { siAlipay, siWechat } from "simple-icons";
 import dynamic from "next/dynamic";
-import { 
-    ArrowDownIcon, 
-    ArrowUpIcon, 
+import {
+    ArrowDownIcon,
+    ArrowUpIcon,
     Wallet,
     ShoppingBag,
-    Search
+    Search,
+    Sparkles,
+    Camera,
+    Loader2
   } from "lucide-react";
   import { Input } from "@/components/ui/input";
   import {
@@ -33,6 +36,14 @@ import {
   import { Button } from "@/components/ui/button";
   import { Filter } from "lucide-react";
   import { Label } from "@/components/ui/label";
+  import { apiFetch } from "@/lib/api";
+  import {
+    BottomSheet,
+    BottomSheetContent,
+    BottomSheetHeader,
+    BottomSheetTitle,
+    BottomSheetFooter,
+  } from "@/components/ui/bottomsheet";
 
   const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 
@@ -269,6 +280,26 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
+  // AI 记账相关状态
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<{
+    amount: number;
+    currency: string;
+    merchant: string;
+    date: string;
+    category: string;
+    description: string;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    amount: "",
+    merchant: "",
+    date: "",
+    category: "",
+    description: ""
+  });
+
   const incomeExpenseTotal = useMemo(
     () => data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0),
     [data.incomeExpense]
@@ -281,6 +312,92 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     });
     return map;
   }, [data.heatmap.data]);
+
+  // AI 扫描处理函数
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 预览图片
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSelectedImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // 开始扫描
+    setIsScanning(true);
+    setScanResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await apiFetch<{
+        amount: number;
+        currency: string;
+        merchant: string;
+        date: string;
+        category: string;
+        description: string;
+      }>("/api/ai/scan-receipt", {
+        method: "POST",
+        body: formData,
+      });
+
+      setScanResult(response);
+      setEditForm({
+        amount: String(response.amount),
+        merchant: response.merchant,
+        date: response.date,
+        category: response.category,
+        description: response.description
+      });
+    } catch (error) {
+      console.error("AI scan error:", error);
+      alert("AI 识别失败，请重试");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleAIConfirm = async () => {
+    if (!editForm.amount || !editForm.merchant) {
+      alert("请填写金额和商户");
+      return;
+    }
+
+    try {
+      await apiFetch("/api/transactions", {
+        method: "POST",
+        body: JSON.stringify({
+          amount: parseFloat(editForm.amount),
+          type: "EXPENSE",
+          category: editForm.category || "其他",
+          platform: "alipay",
+          merchant: editForm.merchant,
+          description: editForm.description,
+          date: editForm.date
+        }),
+      });
+
+      alert("记账成功！");
+      setIsAIDialogOpen(false);
+      setSelectedImage(null);
+      setScanResult(null);
+      // 可以在这里触发页面刷新
+      window.location.reload();
+    } catch (error) {
+      console.error("Save transaction error:", error);
+      alert("保存失败，请重试");
+    }
+  };
+
+  const openAIDialog = () => {
+    setIsAIDialogOpen(true);
+    setSelectedImage(null);
+    setScanResult(null);
+  };
 
   const filteredTransactions = useMemo(() => data.transactions.filter((t) => {
     const matchesSearch = lowerSearchTerm === "" || 
@@ -444,9 +561,18 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
         <div className="flex flex-col gap-3 sm:gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
+            </div>
+            <Button
+              onClick={openAIDialog}
+              className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">AI 记账</span>
+            </Button>
           </div>
           
           {/* 原始的顶部过滤模块 (非吸顶状态) */}
@@ -1229,6 +1355,111 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         </CardContent>
       </Card>
       </div>
+
+      {/* AI 记账对话框 */}
+      <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-600" />
+              AI 拍照记账
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {!selectedImage ? (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-sm text-gray-600 mb-4">上传小票/账单照片，AI 自动识别</p>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <span className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                    选择图片
+                  </span>
+                </label>
+              </div>
+            ) : isScanning ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
+                <p className="text-sm text-gray-600">AI 正在识别中...</p>
+              </div>
+            ) : scanResult ? (
+              <div className="space-y-4">
+                <div className="rounded-lg overflow-hidden border">
+                  <img src={selectedImage} alt="Receipt" className="w-full h-48 object-contain bg-gray-50" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">金额</Label>
+                    <Input
+                      type="number"
+                      value={editForm.amount}
+                      onChange={e => setEditForm({ ...editForm, amount: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">日期</Label>
+                    <Input
+                      type="date"
+                      value={editForm.date}
+                      onChange={e => setEditForm({ ...editForm, date: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-xs text-gray-500">商户</Label>
+                    <Input
+                      value={editForm.merchant}
+                      onChange={e => setEditForm({ ...editForm, merchant: e.target.value })}
+                      placeholder="商户名称"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-xs text-gray-500">分类</Label>
+                    <select
+                      className="w-full rounded-md border border-input px-3 py-2 text-sm"
+                      value={editForm.category}
+                      onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                    >
+                      <option value="">选择分类</option>
+                      <option value="餐饮">餐饮</option>
+                      <option value="购物">购物</option>
+                      <option value="交通">交通</option>
+                      <option value="娱乐">娱乐</option>
+                      <option value="生活">生活</option>
+                      <option value="医疗">医疗</option>
+                      <option value="教育">教育</option>
+                      <option value="其他">其他</option>
+                    </select>
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-xs text-gray-500">描述</Label>
+                    <Input
+                      value={editForm.description}
+                      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                      placeholder="备注描述"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          {scanResult && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setSelectedImage(null); setScanResult(null); }}>
+                重新拍照
+              </Button>
+              <Button onClick={handleAIConfirm}>
+                确认记账
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

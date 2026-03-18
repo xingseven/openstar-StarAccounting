@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Wallet, 
-  CreditCard, 
-  PiggyBank, 
-  Landmark, 
-  Link as LinkIcon, 
+import {
+  LayoutDashboard,
+  Wallet,
+  CreditCard,
+  PiggyBank,
+  Landmark,
+  Link as LinkIcon,
   Settings,
   Palette,
-  Info
+  Info,
+  Brain
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -22,6 +23,7 @@ const items = [
   { href: "/savings", label: "储蓄", icon: PiggyBank },
   { href: "/loans", label: "贷款", icon: Landmark },
   { href: "/connections", label: "连接", icon: LinkIcon },
+  { href: "/ai", label: "大模型", icon: Brain },
   { href: "/themes", label: "主题", icon: Palette },
   { href: "/settings", label: "设置", icon: Settings },
   { href: "/about", label: "关于", icon: Info },
