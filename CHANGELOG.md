@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.3 - 2026-03-18
+
+### Fixes
+
+- **终极修复储蓄页面布局抖动与滚动条闪现**:
+  - 针对页面刷新时因异步数据加载导致内容高度变化，从而引发滚动条突然出现（导致页面整体水平偏移和视觉闪烁）的问题，为 `DefaultSavings.tsx` 的根容器重新添加了 `min-h-[101vh]`。
+  - 该改动强制页面始终保留垂直滚动条轨道，确保了从骨架屏切换到真实数据时页面布局的绝对稳定，配合之前的渐入动画，实现了完美的加载体验。
+
+### Modified Files
+
+1. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 为根容器 `div` 添加了 `min-h-[101vh]` 类。
+
 ## 2.0.2 - 2026-03-18
 
 ### Fixes & Improvements
