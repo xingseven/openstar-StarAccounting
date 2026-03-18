@@ -919,7 +919,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       <Card>
         <CardHeader>
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
-          <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向</CardDescription>
+          <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向（支持拖拽节点调整布局）</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <div className="min-w-[900px] md:w-full">
@@ -931,13 +931,32 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   tooltip: {
                     trigger: 'item',
                     triggerOn: 'mousemove',
+                    formatter: (params: any) => {
+                      if (params.dataType === 'edge') {
+                        return `${params.data.source} → ${params.data.target}<br/>金额: ¥${params.data.value.toLocaleString()}`;
+                      }
+                      return `${params.name}<br/>金额: ¥${params.value.toLocaleString()}`;
+                    }
                   },
+                  animation: true,
+                  animationDuration: 1500,
+                  animationEasing: 'cubicOut',
+                  animationDurationUpdate: 1000,
+                  animationEasingUpdate: 'quinticInOut',
                   series: [
                     {
                       type: 'sankey',
                       layout: 'sankey',
                       emphasis: {
                         focus: 'adjacency',
+                        itemStyle: {
+                          shadowBlur: 10,
+                          shadowColor: 'rgba(0, 0, 0, 0.3)'
+                        },
+                        lineStyle: {
+                          width: 4,
+                          opacity: 0.8
+                        }
                       },
                       nodeAlign: 'left',
                       left: '2%',
@@ -947,7 +966,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       nodeWidth: 22,
                       nodeGap: 12,
                       layoutIterations: 32,
-                      draggable: false,
+                      draggable: true,
+                      progressive: 200,
+                      progressiveThreshold: 500,
                       data: data.sankey.nodes.map((node, index) => {
                            const colors = [
                              '#166534', // 0: 工资收入 - 深绿
@@ -979,18 +1000,56 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                              name: node.name,
                              itemStyle: {
                                color: colors[index] || '#4ADE80',
+                               borderColor: 'transparent',
+                               borderWidth: 0
                              },
+                             label: {
+                               show: true,
+                               position: 'right',
+                               fontSize: 12,
+                               color: '#333'
+                             }
                            };
                          }),
-                      links: data.sankey.links.map(link => ({
-                        source: data.sankey.nodes[link.source].name,
-                        target: data.sankey.nodes[link.target].name,
-                        value: link.value,
-                      })),
+                      links: data.sankey.links.map((link, index) => {
+                        const sourceNode = data.sankey.nodes[link.source];
+                        const targetNode = data.sankey.nodes[link.target];
+                        return {
+                          source: sourceNode.name,
+                          target: targetNode.name,
+                          value: link.value,
+                          lineStyle: {
+                            color: {
+                              type: 'linear',
+                              x: 0,
+                              y: 0,
+                              x2: 1,
+                              y2: 0,
+                              colorStops: [
+                                {
+                                  offset: 0,
+                                  color: 'rgba(22, 101, 52, 0.3)'
+                                },
+                                {
+                                  offset: 0.5,
+                                  color: 'rgba(22, 163, 74, 0.6)'
+                                },
+                                {
+                                  offset: 1,
+                                  color: 'rgba(34, 197, 94, 0.3)'
+                                }
+                              ]
+                            },
+                            curveness: 0.5,
+                            opacity: 0.4
+                          }
+                        };
+                      }),
                       lineStyle: {
                         color: 'gradient',
                         curveness: 0.5,
                         opacity: 0.4,
+                        width: 2
                       },
                       label: {
                         show: true,
@@ -1004,6 +1063,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 }}
                 style={{ height: '100%', width: '100%' }}
                 opts={{ renderer: 'svg' }}
+                onEvents={{
+                  'sankeyDragEnd': (params: any) => {
+                    console.log('节点拖拽结束:', params);
+                  },
+                  'mouseover': (params: any) => {
+                    console.log('鼠标悬停:', params);
+                  }
+                }}
               />
             </DelayedRender>
           </div>
