@@ -2972,6 +2972,90 @@ app.put("/api/admin/users/:id/role", async (req, res) => {
 });
 
 const port = Number(process.env.PORT ?? 3004);
+
+app.get("/api/changelog", async (_req, res) => {
+  const fs = await import("fs");
+  const path = await import("path");
+
+  const changelogPath = path.join(process.cwd(), "..", "..", "CHANGELOG.md");
+
+  try {
+    const content = fs.readFileSync(changelogPath, "utf-8");
+    const versionRegex = /##\s+(\d+\.\d+\.\d+)\s+-\s+(\d{4}-\d{2}-\d{2})/g;
+    const typeRegex = /(###\s+(Features|Fixes & Improvements|Fixes|UI\/UX Improvements|Performance|Performance Improvements|Architecture|Changed|Added|Bug Fixes|Dependencies))/i;
+
+    const versions: Array<{
+      version: string;
+      date: string;
+      type: string;
+      highlights: string[];
+    }> = [];
+
+    const lines = content.split("\n");
+    let currentVersion = "";
+    let currentDate = "";
+    let currentSection = "";
+    let currentHighlights: string[] = [];
+
+    for (const line of lines) {
+      const versionMatch = line.match(/^##\s+(\d+\.\d+\.\d+)\s+-\s+(\d{4}-\d{2}-\d{2})/);
+      if (versionMatch) {
+        if (currentVersion) {
+          versions.push({
+            version: currentVersion,
+            date: currentDate,
+            type: currentSection || "feature",
+            highlights: currentHighlights,
+          });
+        }
+        currentVersion = versionMatch[1];
+        currentDate = versionMatch[2];
+        currentSection = "";
+        currentHighlights = [];
+        continue;
+      }
+
+      const sectionMatch = line.match(/^###\s+(.+)$/);
+      if (sectionMatch && versionRegex.test(line) === false) {
+        const sectionTitle = sectionMatch[1].toLowerCase();
+        if (sectionTitle.includes("feature") || sectionTitle.includes("added")) {
+          currentSection = "feature";
+        } else if (sectionTitle.includes("fix") || sectionTitle.includes("bug")) {
+          currentSection = "bugfix";
+        } else if (sectionTitle.includes("major") || sectionTitle.includes("architecture")) {
+          currentSection = "major";
+        } else {
+          currentSection = "feature";
+        }
+        continue;
+      }
+
+      const bulletMatch = line.match(/^[-*]\s+(.+)$/);
+      if (bulletMatch && currentVersion) {
+        let text = bulletMatch[1].trim();
+        text = text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/`(.+?)`/g, "$1");
+        if (text && text.length > 2) {
+          currentHighlights.push(text);
+        }
+      }
+    }
+
+    if (currentVersion) {
+      versions.push({
+        version: currentVersion,
+        date: currentDate,
+        type: currentSection || "feature",
+        highlights: currentHighlights,
+      });
+    }
+
+    jsonOk(res, { versions });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown";
+    jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+  }
+});
+
 app.listen(port, () => {
   process.stdout.write(`server listening on http://localhost:${port}\n`);
 });

@@ -19,20 +19,24 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const CURRENT_VERSION = "1.8.25";
+const DEFAULT_VERSION = "2.0.3";
 
-const versionHistory = [
+type VersionItem = {
+  version: string;
+  date: string;
+  type: string;
+  highlights: string[];
+};
+
+const fallbackVersionHistory: VersionItem[] = [
   {
-    version: "1.8.25",
-    date: "2026-03-17",
-    type: "feature",
+    version: "2.0.3",
+    date: "2026-03-18",
+    type: "bugfix",
     highlights: [
-      "新增关于页面",
-      "项目介绍模块：展示项目名称、版本、技术栈和主要功能",
-      "版本更新记录模块：可展开/收起的版本历史列表",
-      "更新版本模块：显示当前版本信息，提供下载链接",
-      "贡献者模块：展示核心开发团队和社区贡献者",
-      "网站模块：提供 GitHub 仓库、问题反馈等链接",
+      "终极修复储蓄页面布局抖动与滚动条闪现问题",
+      "为 DefaultSavings.tsx 根容器重新添加 min-h-[101vh]",
+      "强制页面始终保留垂直滚动条轨道，确保布局稳定",
     ],
   },
   {
@@ -188,8 +192,35 @@ type Contributor = {
 };
 
 export default function AboutPage() {
-  const [expandedVersions, setExpandedVersions] = useState<string[]>(["1.8.25"]);
+  const [expandedVersions, setExpandedVersions] = useState<string[]>([DEFAULT_VERSION]);
+  const [currentVersion, setCurrentVersion] = useState(DEFAULT_VERSION);
   const [githubContributors, setGithubContributors] = useState<Contributor[]>([]);
+  const [versionHistory, setVersionHistory] = useState<VersionItem[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(true);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006'}/api/changelog`)
+      .then((res) => res.json())
+      .then((data) => {
+        // 兼容后端返回 code: 200 或 code: 0 的情况
+        if ((data.code === 200 || data.code === 0) && data.data?.versions) {
+          setVersionHistory(data.data.versions);
+          if (data.data.versions.length > 0) {
+            const latestVersion = data.data.versions[0].version;
+            setCurrentVersion(latestVersion);
+            setExpandedVersions([latestVersion]);
+          }
+        } else {
+          setVersionHistory(fallbackVersionHistory);
+        }
+      })
+      .catch(() => {
+        setVersionHistory(fallbackVersionHistory);
+      })
+      .finally(() => {
+        setLoadingVersions(false);
+      });
+  }, []);
 
   useEffect(() => {
     fetch("https://api.github.com/repos/xingseven/openstar-xfdashborad/contributors")
@@ -235,7 +266,7 @@ export default function AboutPage() {
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium border border-white/30">
               <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
-              v{CURRENT_VERSION}
+              v{currentVersion}
             </span>
             <span className="inline-flex items-center gap-1.5 bg-white/10 text-white/80 px-3 py-1.5 rounded-full text-sm">
               Next.js + Express + Prisma
@@ -268,7 +299,7 @@ export default function AboutPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">当前版本</h2>
-              <p className="text-sm text-gray-500">v{CURRENT_VERSION} · 2026-03-17</p>
+              <p className="text-sm text-gray-500">v{currentVersion} · {versionHistory[0]?.date || '2026-03-17'}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
@@ -384,7 +415,7 @@ export default function AboutPage() {
             <div
               key={item.version}
               className={`border rounded-xl overflow-hidden transition-all duration-200 ${
-                item.version === CURRENT_VERSION 
+                item.version === currentVersion 
                   ? "border-blue-200 bg-blue-50/50" 
                   : "border-gray-100 hover:border-gray-200"
               }`}
@@ -397,7 +428,7 @@ export default function AboutPage() {
                   <VersionTypeBadge type={item.type} />
                   <span className="font-semibold text-gray-900">v{item.version}</span>
                   <span className="text-xs text-gray-400">{item.date}</span>
-                  {item.version === CURRENT_VERSION && (
+                  {item.version === currentVersion && (
                     <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
                       当前
                     </span>
@@ -462,7 +493,7 @@ export default function AboutPage() {
       </div>
 
       <div className="text-center py-6">
-        <p className="text-sm text-gray-400">OpenStar XFDashboard v{CURRENT_VERSION}</p>
+        <p className="text-sm text-gray-400">OpenStar XFDashboard v{currentVersion}</p>
         <p className="text-xs text-gray-300 mt-1">Made with ❤️ by OpenStar Team</p>
       </div>
     </div>

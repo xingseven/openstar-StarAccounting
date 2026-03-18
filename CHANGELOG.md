@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.4 - 2026-03-18
+
+### Fixes
+
+- **修复储蓄页面存取记录模块高度跳变**:
+  - 发现底部“存取记录”模块丢失了 `DelayedRender` 的包裹，导致在数据加载完成瞬间直接渲染真实数据卡片，引起局部高度的突然改变和滚动条的瞬间闪现。
+  - 重新为该模块添加了 `<DelayedRender delay={200} fallback={<CardListSkeleton count={2} />}>`，确保加载期间有正确高度的骨架屏占位，加载完成后平滑过渡，不再引起任何高度突变。
+
+### Modified Files
+
+1. `web/src/features/savings/components/themes/DefaultSavings.tsx`
+   - 恢复了存取记录 `Card` 组件外层的 `DelayedRender` 包装。
+
 ## 2.0.3 - 2026-03-18
 
 ### Fixes
