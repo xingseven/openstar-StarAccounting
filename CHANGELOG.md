@@ -1,17 +1,39 @@
 # Changelog
 
+## 2.1.0 - 2026-03-18
+
+### Features
+
+- **AI 智能视觉记账后端基础设施上线**:
+  - **AI 引擎接入**: 集成 `openai` SDK，成功对接字节跳动火山引擎（Volcengine）的 **Doubao-vision-pro** 视觉大模型。
+  - **服务封装**: 创建了 `doubaoAi.ts` 服务模块，封装了图片 Base64 转换、Prompt 构造、JSON 严格解析与错误回退机制。
+  - **API 接口**: 新增 `POST /api/ai/scan-receipt` 接口，支持图片流上传，并返回结构化消费数据（金额/商户/日期/分类/描述）。
+  - **隐私保护**: 采用内存流式处理 (`multer.memoryStorage`)，图片数据即用即焚，不在服务器磁盘留存。
+
+### Fixes
+
+- **版本日志接口修复**:
+  - 修复了后端 `/api/changelog` 读取 `CHANGELOG.md` 时的路径计算错误（`path.join` 层级修正）。
+  - 优化了 Markdown 解析正则表达式，增强了对多段式版本号（如 `1.8.36`）和加粗文本的兼容性，确保前端“关于”页面能正确展示所有历史记录。
+
+### Modified Files
+
+1. `src/server/package.json` (Added `openai`)
+2. `src/server/src/services/doubaoAi.ts` (New)
+3. `src/server/src/main.ts` (Added `/api/ai/scan-receipt` & Fixed `/api/changelog`)
+4. `docs/AI智能记账开发文档.md` (New)
+
 ## 2.0.6 - 2026-03-18
 
 ### Features & Refactoring
 
-- **Dashboard 架构重构与数据可视化增强**:
-  - **GridDecoration 组件**: 将重复的网格装饰背景样式提取为 `web/src/components/shared/GridDecoration.tsx` 通用组件，支持 `light` 和 `dark` 模式。
-  - **货币格式化工具**: 在 `web/src/lib/utils.ts` 中封装了通用的 `formatCurrency` 函数，统一了全站的金额展示逻辑。
-  - **收支趋势对比**: 在首页统计卡片中引入了微型趋势指示器，直观展示本月数据波动。
-  - **消费占比环形图**: 新增消费分类占比图表，支持按比例查看核心支出类别。
-  - **响应式布局升级**: 重构图表展示区为响应式网格布局，优化了大屏下的信息展示效率。
-  - **预算预警交互**: 为首页预算预警 Banner 增加了“暂时忽略”按钮。
-  - **类型安全**: 规范了图标类型定义，移除了 `any` 类型。
+- **Dashboard 架构重构与视觉风格升级**:
+  - **移除网格背景**: 废弃了原本规整的网格线条 (`repeating-linear-gradient`)。
+  - **极简线条装饰**: 重构了 `GridDecoration` 组件，改为使用 `SVG` 绘制的 3-4 条具有抽象感、交叉感的不规则细线背景。这种风格更加现代、轻盈，且具备呼吸感。
+  - **货币格式化工具**: 封装了通用的 `formatCurrency` 函数。
+  - **收支趋势对比**: 在首页统计卡片中引入了微型趋势指示器。
+  - **消费占比环形图**: 新增消费分类占比图表。
+  - **预算预警交互**: 增加了“暂时忽略”按钮。
 
 ### Modified Files
 
