@@ -20,20 +20,27 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    // 获取表单实际的值（解决浏览器自动填充可能未触发 onChange 的问题）
+    const formData = new FormData(e.currentTarget);
+    const actualEmail = formData.get("email")?.toString() || email;
+    const actualPassword = formData.get("password")?.toString() || password;
+
     try {
       const data = await apiFetch<LoginResponse>("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: actualEmail, password: actualPassword }),
       });
       setAccessToken(data.accessToken);
       router.replace(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "登录失败");
+      // 登录失败不清除表单状态，让用户可以继续修改
     } finally {
       setLoading(false);
     }
@@ -55,7 +62,7 @@ function LoginForm() {
             name="email"
             type="email"
             autoComplete="email"
-            value={email}
+            defaultValue={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
@@ -66,7 +73,7 @@ function LoginForm() {
             name="password"
             type="password"
             autoComplete="current-password"
-            value={password}
+            defaultValue={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>

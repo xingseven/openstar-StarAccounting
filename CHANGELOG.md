@@ -10,11 +10,16 @@
   - 修复了被错误注释掉的 `AuthGate` 组件，重新启用了鉴权失败时自动重定向登录页的逻辑。
   - 后端 `/api/auth/me`、`/api/auth/login` 和 `/api/auth/register` 接口现已全面支持在无数据库配置环境下的降级内存模式，提升了离线单机体验的健壮性。
 
+- **登录页面自动填充与状态清空修复**:
+  - 修复了浏览器（或密码管理器）自动填充账号密码时，未触发 React `onChange` 事件导致提交空数据（提示账号或密码错误）的问题，现改为通过 `FormData` 直接获取 DOM 实际值。
+  - 将受控输入框（`value`）修改为非受控组件（`defaultValue`），解决了登录失败后状态被意外重置导致输入框被清空的问题，让用户可以继续修改而无需重新输入。
+
 ### Modified Files
 
 1. `web/src/components/shared/Header.tsx` (Fixed user display logic)
 2. `web/src/components/shared/AuthGate.tsx` (Restored auth routing)
 3. `src/server/src/main.ts` (Added memory mode support for auth APIs)
+4. `web/src/app/auth/login/page.tsx` (Fixed form autofill & state clear issues)
 
 ## 2.1.1 - 2026-03-18
 

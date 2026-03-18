@@ -3064,10 +3064,6 @@ app.get("/api/changelog", async (_req, res) => {
 
 // AI 视觉记账 - 扫描小票
 // 使用 multer.memoryStorage 处理文件上传，不占用磁盘
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB 限制
-});
 
 app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
   try {
