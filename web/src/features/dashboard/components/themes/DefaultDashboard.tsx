@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { 
   ArrowUpRight, 
   ArrowDownLeft,
@@ -8,7 +11,10 @@ import {
   MoreHorizontal,
   Calendar,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  X,
+  Plus,
+  type LucideIcon
 } from "lucide-react";
 import { 
   BarChart, 
@@ -17,7 +23,7 @@ import {
   YAxis, 
   Cell
 } from 'recharts';
-import { clsx } from "clsx";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   ChartConfig,
   ChartContainer,
@@ -32,8 +38,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { Skeleton, StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
-import type { BudgetAlert, DashboardData } from "@/types";
+import { StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
+import { GridDecoration } from "@/components/shared/GridDecoration";
+import type { DashboardData } from "@/types";
 
 interface DashboardViewProps {
   data: DashboardData;
@@ -41,6 +48,8 @@ interface DashboardViewProps {
 }
 
 export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
+  const [alertsDismissed, setAlertsDismissed] = useState(false);
+  
   const netWorth = data.totalAssets - data.totalDebt;
   const balance = data.monthIncome - data.monthExpense;
 
@@ -68,16 +77,13 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   if (loading) {
     return (
       <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto">
-        {/* Stats Cards Skeleton */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatsCardSkeleton />
           <StatsCardSkeleton />
           <StatsCardSkeleton />
           <StatsCardSkeleton />
         </div>
-        {/* Chart Skeleton */}
         <ChartSkeleton />
-        {/* List Skeleton */}
         <CardListSkeleton count={5} />
       </div>
     );
@@ -86,25 +92,34 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   return (
     <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden">
       {/* Budget Alerts Banner */}
-      {data.budgetAlerts.length > 0 && (
-        <div className="rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 sm:p-6 shadow-sm">
-          <div className="flex items-start gap-3 sm:gap-4">
+      {data.budgetAlerts.length > 0 && !alertsDismissed && (
+        <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 sm:p-6 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-start gap-3 sm:gap-4 relative z-10">
             <div className="p-2 sm:p-3 rounded-xl bg-red-100 shrink-0">
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-red-900 mb-1 sm:mb-2">
-                预算预警 ({data.budgetAlerts.length})
-              </h3>
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <h3 className="text-base sm:text-lg font-bold text-red-900">
+                  预算预警 ({data.budgetAlerts.length})
+                </h3>
+                <button 
+                  onClick={() => setAlertsDismissed(true)}
+                  className="p-1 hover:bg-red-200/50 rounded-full text-red-400 hover:text-red-600 transition-colors"
+                  title="暂时忽略"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
               <div className="space-y-2">
                 {data.budgetAlerts.slice(0, 3).map((alert) => (
                   <div key={alert.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/60 border border-red-100">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                      <div className={clsx(
+                      <div className={cn(
                         "p-1.5 sm:p-2 rounded-lg shrink-0",
                         alert.status === "overdue" ? "bg-red-100" : "bg-yellow-100"
                       )}>
-                        <AlertCircle className={clsx(
+                        <AlertCircle className={cn(
                           "h-3 w-3 sm:h-4 sm:w-4",
                           alert.status === "overdue" ? "text-red-600" : "text-yellow-600"
                         )} />
@@ -116,18 +131,18 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                         </div>
                         <div className="text-[10px] sm:text-xs text-gray-500">
                           {alert.period === "MONTHLY" ? "月度" : "年度"} · 
-                          已用 ¥{Number(alert.used).toFixed(0)} / ¥{Number(alert.amount).toFixed(0)}
+                          已用 {formatCurrency(Number(alert.used))} / {formatCurrency(Number(alert.amount))}
                         </div>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={clsx(
+                      <div className={cn(
                         "text-sm sm:text-base font-bold",
                         alert.status === "overdue" ? "text-red-600" : "text-yellow-600"
                       )}>
                         {alert.percent.toFixed(0)}%
                       </div>
-                      <div className={clsx(
+                      <div className={cn(
                         "text-[10px] sm:text-xs",
                         alert.status === "overdue" ? "text-red-500" : "text-yellow-500"
                       )}>
@@ -147,57 +162,55 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </div>
             </div>
           </div>
+          <GridDecoration mode="light" opacity={0.03} />
         </div>
       )}
 
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {/* Net Worth Card */}
-        <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-3 sm:p-6 text-white shadow-xl">
-          <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.3) 10px, rgba(255,255,255,0.3) 11px), repeating-linear-gradient(-45deg, transparent, transparent 15px, rgba(255,255,255,0.2) 15px, rgba(255,255,255,0.2) 16px)' }}></div>
+        <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-3 sm:p-6 text-white shadow-xl group">
+          <GridDecoration mode="dark" />
           <div className="relative z-10">
             <div className="flex items-center gap-2 text-gray-300 mb-1 sm:mb-2">
               <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="text-xs sm:text-sm font-medium">净资产</span>
             </div>
             <div className="text-xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
-              ¥ {netWorth.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              {formatCurrency(netWorth)}
             </div>
             <div className="mt-2 sm:mt-4 flex items-center justify-between text-[10px] sm:text-xs lg:text-sm text-gray-400">
               <div>
                 <p>总资产</p>
-                <p className="text-gray-200 font-medium text-xs sm:text-sm">¥{data.totalAssets.toFixed(0)}</p>
+                <p className="text-gray-200 font-medium text-xs sm:text-sm">{formatCurrency(data.totalAssets)}</p>
               </div>
               <div className="text-right">
                 <p>负债</p>
-                <p className="text-red-300 font-medium text-xs sm:text-sm">-¥{data.totalDebt.toFixed(0)}</p>
+                <p className="text-red-300 font-medium text-xs sm:text-sm">-{formatCurrency(data.totalDebt)}</p>
               </div>
             </div>
           </div>
-          <div className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 h-16 sm:h-24 lg:h-32 w-16 sm:w-24 lg:w-32 rounded-full bg-white/5 blur-2xl sm:blur-3xl"></div>
+          <div className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 h-16 sm:h-24 lg:h-32 w-16 sm:w-24 lg:w-32 rounded-full bg-white/5 blur-2xl sm:blur-3xl group-hover:bg-white/10 transition-colors duration-500"></div>
         </div>
         
-        {/* Monthly Expense */}
         <StatCard 
           title="支出" 
-          subtitle="消费"
+          subtitle="本月"
           value={data.monthExpense} 
           icon={CreditCard}
           trend="up"
           color="red"
         />
 
-        {/* Monthly Income */}
         <StatCard 
           title="收入" 
-          subtitle="消费"
+          subtitle="本月"
           value={data.monthIncome} 
           icon={Banknote}
           trend="up"
           color="green"
         />
 
-        {/* Monthly Savings Income */}
         <StatCard 
           title="储蓄" 
           subtitle="存入"
@@ -211,8 +224,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
-          <Card className="border border-gray-200 shadow-sm overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Card className="border border-gray-200 shadow-sm overflow-hidden group">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
               <div className="space-y-1">
                 <CardTitle className="text-lg font-bold text-gray-900">收支概览</CardTitle>
                 <CardDescription>本月资金流动统计</CardDescription>
@@ -221,7 +234,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 <MoreHorizontal className="h-5 w-5" />
               </button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <ChartContainer config={chartConfig} className="h-[120px] w-full">
                 <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
                   <YAxis
@@ -246,10 +259,11 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </BarChart>
               </ChartContainer>
             </CardContent>
+            <GridDecoration mode="light" className="opacity-[0.01]" />
           </Card>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative group">
+            <GridDecoration mode="light" />
             <div className="relative z-10">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
@@ -268,9 +282,9 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </div>
               ) : (
                 data.recentTransactions.map((t) => (
-                  <div key={t.id} className="group flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                  <div key={t.id} className="group/item flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
                     <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className={clsx(
+                      <div className={cn(
                         "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border shadow-sm shrink-0",
                         t.type === "EXPENSE" ? "bg-white border-gray-100" : "bg-green-50 border-green-100"
                       )}>
@@ -281,7 +295,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-sm sm:text-base text-gray-900 truncate">{t.category || "未分类"}</div>
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 truncate group-hover/item:text-blue-600 transition-colors">{t.category || "未分类"}</div>
                         <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1 truncate">
                           <span>{new Date(t.date).toLocaleDateString()}</span>
                           <span>·</span>
@@ -289,12 +303,12 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                         </div>
                       </div>
                     </div>
-                    <div className={clsx(
+                    <div className={cn(
                       "font-bold text-sm sm:text-base tabular-nums shrink-0 whitespace-nowrap",
                       t.type === "INCOME" ? "text-green-600" : "text-gray-900"
                     )}>
                       {t.type === "EXPENSE" ? "-" : "+"}
-                      {Number(t.amount).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+                      {formatCurrency(Number(t.amount), { withSymbol: false, decimals: 2 })}
                     </div>
                   </div>
                 ))
@@ -306,31 +320,37 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative">
-            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative group">
+            <GridDecoration mode="light" />
             <div className="relative z-10">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷入口</h3>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
-              <QuickAction href="/budgets" icon={CreditCard} label="预算管理" color="red" />
-              <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
-              <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
-            </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷操作</h3>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <QuickAction 
+                  icon={Plus} 
+                  label="记一笔" 
+                  color="indigo" 
+                  onClick={() => alert("记一笔功能即将上线！")}
+                />
+                <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
+                <QuickAction href="/budgets" icon={CreditCard} label="预算管理" color="red" />
+                <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
+                <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden z-0">
-            <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 11px), repeating-linear-gradient(-45deg, transparent, transparent 15px, rgba(255,255,255,0.15) 15px, rgba(255,255,255,0.15) 16px)' }}></div>
+          <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden group">
+            <GridDecoration mode="dark" opacity={0.08} />
             <div className="relative z-10">
               <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">需要帮助？</h3>
               <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
                 查看文档了解如何更好地管理您的财务。
               </p>
-              <button className="bg-white text-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-50 transition-colors">
+              <button className="bg-white text-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-50 transition-colors shadow-sm">
                 查看文档
               </button>
             </div>
-            <div className="absolute right-0 bottom-0 h-24 w-24 sm:h-32 sm:w-32 bg-white/10 rounded-full blur-2xl translate-x-8 translate-y-8 sm:translate-x-10 sm:translate-y-10 pointer-events-none"></div>
+            <div className="absolute right-0 bottom-0 h-24 w-24 sm:h-32 sm:w-32 bg-white/10 rounded-full blur-2xl translate-x-8 translate-y-8 sm:translate-x-10 sm:translate-y-10 group-hover:bg-white/20 transition-colors duration-500"></div>
           </div>
         </div>
       </div>
@@ -338,11 +358,11 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   );
 }
 
-function StatCard({ title, subtitle, value, icon: Icon, trend, color, className }: { 
+function StatCard({ title, subtitle, value, icon: Icon, color, className }: { 
   title: string;
   subtitle?: string;
   value: number; 
-  icon: any; 
+  icon: LucideIcon; 
   trend: "up" | "down";
   color: "red" | "green" | "blue" | "amber";
   className?: string;
@@ -355,26 +375,26 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
   };
 
   return (
-    <div className={clsx(
-      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md relative overflow-hidden",
+    <div className={cn(
+      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md relative overflow-hidden group",
       className
     )}>
-      <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'repeating-linear-gradient(30deg, transparent, transparent 20px, #000 20px, #000 21px), repeating-linear-gradient(150deg, transparent, transparent 25px, #000 25px, #000 26px)' }}></div>
+      <GridDecoration mode="light" className="opacity-[0.01]" />
       <div className="relative z-10">
       <div className="flex items-center justify-between mb-1 sm:mb-2 lg:mb-4">
         <div className="flex items-center gap-2 text-gray-500">
-          <div className={clsx("p-1.5 sm:p-2 rounded-lg", colorStyles[color])}>
+          <div className={cn("p-1.5 sm:p-2 rounded-lg transition-colors", colorStyles[color])}>
             <Icon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
           </div>
           <div>
-            <span className="text-[10px] sm:text-xs lg:text-sm font-medium">{title}</span>
+            <span className="text-[10px] sm:text-xs lg:text-sm font-medium group-hover:text-gray-900 transition-colors">{title}</span>
             {subtitle && <span className="text-[9px] sm:text-[10px] lg:text-xs text-gray-400 ml-0.5 sm:ml-1">({subtitle})</span>}
           </div>
         </div>
       </div>
       <div className="flex items-end justify-between">
         <div className="text-sm sm:text-lg lg:text-2xl font-bold text-gray-900 truncate">
-          ¥ {Math.abs(value).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          {formatCurrency(Math.abs(value), { decimals: 0 })}
         </div>
       </div>
       </div>
@@ -382,7 +402,13 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, color, className 
   );
 }
 
-function QuickAction({ href, icon: Icon, label, color }: { href: string; icon: any; label: string; color: string }) {
+function QuickAction({ href, icon: Icon, label, color, onClick }: { 
+  href?: string; 
+  icon: LucideIcon; 
+  label: string; 
+  color: string;
+  onClick?: () => void;
+}) {
   const bgColors: Record<string, string> = {
     blue: "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
     purple: "bg-purple-50 text-purple-600 group-hover:bg-purple-100",
@@ -391,12 +417,29 @@ function QuickAction({ href, icon: Icon, label, color }: { href: string; icon: a
     indigo: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
   };
 
-  return (
-    <Link href={href} className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all hover:shadow-sm">
-      <div className={clsx("h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center mb-1.5 sm:mb-2 transition-colors", bgColors[color])}>
+  const content = (
+    <>
+      <div className={cn("h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center mb-1.5 sm:mb-2 transition-colors", bgColors[color])}>
         <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
       <span className="text-xs sm:text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
-    </Link>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all hover:shadow-sm bg-white">
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button 
+      onClick={onClick}
+      className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all hover:shadow-sm bg-white w-full"
+    >
+      {content}
+    </button>
   );
 }

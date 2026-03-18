@@ -115,10 +115,11 @@ async function networkFirst(request) {
 async function staleWhileRevalidate(request) {
   const cached = await caches.match(request);
   
-  const fetchPromise = fetch(request).then((response) => {
-    if (response.ok) {
-      const cache = caches.open(DYNAMIC_CACHE_NAME);
-      cache.then(c => c.put(request, response.clone()));
+  const fetchPromise = fetch(request).then(async (response) => {
+    if (response && response.status === 200 && response.type === 'basic') {
+      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      // 必须在这里克隆，因为 response 只能被读取一次
+      cache.put(request, response.clone());
     }
     return response;
   }).catch((error) => {

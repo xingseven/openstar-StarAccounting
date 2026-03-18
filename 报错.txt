@@ -1,0 +1,20 @@
+## Error Type
+Console Error
+
+## Error Message
+请先登录
+
+
+    at apiFetch (src/lib/api.ts:30:17)
+    at async loadData (src/app/(dashboard)/savings/page.tsx:55:25)
+
+## Code Frame
+  28 |   if (!res.ok || !("data" in json)) {
+  29 |     const msg = "detail" in json && json.detail ? json.detail : "请求失败";
+> 30 |     const err = new Error(msg);
+     |                 ^
+  31 |     (err as { status?: number; code?: number }).status = res.status;
+  32 |     if ("code" in json) (err as { code?: number }).code = json.code;
+  33 |     throw err;
+
+Next.js version: 16.1.6 (Turbopack)

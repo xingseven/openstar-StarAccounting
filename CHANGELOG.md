@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.0.6 - 2026-03-18
+
+### Features & Refactoring
+
+- **Dashboard 架构重构与视觉一致性优化**:
+  - **GridDecoration 组件**: 将重复的网格装饰背景样式提取为 `web/src/components/shared/GridDecoration.tsx` 通用组件，支持 `light` 和 `dark` 模式，提升了代码的复用性和视觉表现的一致性。
+  - **货币格式化工具**: 在 `web/src/lib/utils.ts` 中封装了通用的 `formatCurrency` 函数，统一了全站的金额展示逻辑（千分位、货币符号、小数位数）。
+  - **预算预警交互**: 为首页预算预警 Banner 增加了“暂时忽略”按钮，提升了用户在处理完预警后的视觉清洁度。
+  - **快捷操作增强**: 在首页快捷入口新增了“记一笔”占位按钮，优化了操作项的布局。
+  - **类型安全**: 规范了 `DefaultDashboard.tsx` 中 `StatCard` 和 `QuickAction` 的图标类型定义，移除了 `any` 类型。
+
+### Modified Files
+
+1. `web/src/components/shared/GridDecoration.tsx` (New)
+2. `web/src/lib/utils.ts`
+3. `web/src/features/dashboard/components/themes/DefaultDashboard.tsx`
+
 ## 2.0.5 - 2026-03-18
 
 ### Fixes

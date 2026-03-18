@@ -2977,82 +2977,67 @@ app.get("/api/changelog", async (_req, res) => {
   const fs = await import("fs");
   const path = await import("path");
 
+  // CHANGELOG.md 位于项目根目录，即相对于 src/server/src/main.ts 的两层父目录
   const changelogPath = path.join(process.cwd(), "..", "..", "CHANGELOG.md");
 
   try {
+    if (!fs.existsSync(changelogPath)) {
+      console.warn("Changelog file not found:", changelogPath);
+      return jsonOk(res, { versions: [] });
+    }
+
     const content = fs.readFileSync(changelogPath, "utf-8");
-    const versionRegex = /##\s+(\d+\.\d+\.\d+)\s+-\s+(\d{4}-\d{2}-\d{2})/g;
-    const typeRegex = /(###\s+(Features|Fixes & Improvements|Fixes|UI\/UX Improvements|Performance|Performance Improvements|Architecture|Changed|Added|Bug Fixes|Dependencies))/i;
-
-    const versions: Array<{
-      version: string;
-      date: string;
-      type: string;
-      highlights: string[];
-    }> = [];
-
     const lines = content.split("\n");
-    let currentVersion = "";
-    let currentDate = "";
-    let currentSection = "";
-    let currentHighlights: string[] = [];
+    
+    const versions: any[] = [];
+    let currentVersion: any = null;
 
     for (const line of lines) {
-      const versionMatch = line.match(/^##\s+(\d+\.\d+\.\d+)\s+-\s+(\d{4}-\d{2}-\d{2})/);
+      const trimmed = line.trim();
+      
+      // 匹配版本标题: ## 1.8.36 - 2026-03-17
+      const versionMatch = trimmed.match(/^##\s+([\d\.]+)\s+-\s+(\d{4}-\d{2}-\d{2})/);
+      
       if (versionMatch) {
-        if (currentVersion) {
-          versions.push({
-            version: currentVersion,
-            date: currentDate,
-            type: currentSection || "feature",
-            highlights: currentHighlights,
-          });
-        }
-        currentVersion = versionMatch[1];
-        currentDate = versionMatch[2];
-        currentSection = "";
-        currentHighlights = [];
+        if (currentVersion) versions.push(currentVersion);
+        currentVersion = {
+          version: versionMatch[1],
+          date: versionMatch[2],
+          type: "feature",
+          highlights: []
+        };
         continue;
       }
 
-      const sectionMatch = line.match(/^###\s+(.+)$/);
-      if (sectionMatch && versionRegex.test(line) === false) {
-        const sectionTitle = sectionMatch[1].toLowerCase();
-        if (sectionTitle.includes("feature") || sectionTitle.includes("added")) {
-          currentSection = "feature";
-        } else if (sectionTitle.includes("fix") || sectionTitle.includes("bug")) {
-          currentSection = "bugfix";
-        } else if (sectionTitle.includes("major") || sectionTitle.includes("architecture")) {
-          currentSection = "major";
-        } else {
-          currentSection = "feature";
-        }
+      if (!currentVersion) continue;
+
+      // 匹配类型标题: ### Features
+      const typeMatch = trimmed.match(/^###\s+(.+)$/);
+      if (typeMatch) {
+        const title = typeMatch[1].toLowerCase();
+        if (title.includes("bug") || title.includes("fix")) currentVersion.type = "bugfix";
+        else if (title.includes("major")) currentVersion.type = "major";
         continue;
       }
 
-      const bulletMatch = line.match(/^[-*]\s+(.+)$/);
-      if (bulletMatch && currentVersion) {
-        let text = bulletMatch[1].trim();
-        text = text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/`(.+?)`/g, "$1");
-        if (text && text.length > 2) {
-          currentHighlights.push(text);
+      // 匹配列表项: - 修复了 xxx
+      const listMatch = trimmed.match(/^[-*]\s+(.+)$/);
+      if (listMatch) {
+        let text = listMatch[1].trim();
+        // 移除 Markdown 加粗和代码块语法
+        text = text.replace(/\*\*(.+?)\*\*:\s*/g, "").replace(/\*\*/g, "").replace(/`/g, "");
+        if (text && currentVersion.highlights.length < 10) {
+          currentVersion.highlights.push(text);
         }
       }
     }
 
-    if (currentVersion) {
-      versions.push({
-        version: currentVersion,
-        date: currentDate,
-        type: currentSection || "feature",
-        highlights: currentHighlights,
-      });
-    }
+    if (currentVersion) versions.push(currentVersion);
 
-    jsonOk(res, { versions });
+    jsonOk(res, { versions: versions.slice(0, 50) });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "unknown";
-    jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+    console.error("Parse changelog error:", e);
+    jsonOk(res, { versions: [] });
   }
 });
 

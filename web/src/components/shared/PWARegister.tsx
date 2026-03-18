@@ -5,6 +5,12 @@ import { useEffect } from "react";
 export function PWARegister() {
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // 开发环境下禁用 PWA 功能，防止 Service Worker 缓存导致的开发调试延迟
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PWA] Development mode: Service Worker registration and PWA prompt skipped.');
+      return;
+    }
     
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker

@@ -22,6 +22,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.19.1",
+    "openai": "^6.32.0",
     "papaparse": "^5.5.3"
   },
   "devDependencies": {

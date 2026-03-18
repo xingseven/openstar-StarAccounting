@@ -19,7 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const DEFAULT_VERSION = "2.0.3";
+const DEFAULT_VERSION = "2.0.5";
 
 type VersionItem = {
   version: string;
@@ -30,13 +30,71 @@ type VersionItem = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
-    version: "2.0.3",
+    version: "2.0.5",
     date: "2026-03-18",
     type: "bugfix",
     highlights: [
-      "终极修复储蓄页面布局抖动与滚动条闪现问题",
-      "为 DefaultSavings.tsx 根容器重新添加 min-h-[101vh]",
-      "强制页面始终保留垂直滚动条轨道，确保布局稳定",
+      "彻底移除储蓄页不再需要的'存取记录'模块",
+      "优化开发环境 PWA 策略：在 dev 模式下禁用 Service Worker 以修复 HMR 缓存冲突",
+      "全局滚动条样式美化：定制 6px 细窄灰色滚动条，提升视觉精致感",
+      "关于页面版本历史改为'按需展开'模式，默认只显示最新版本",
+    ],
+  },
+  {
+    version: "2.0.4",
+    date: "2026-03-18",
+    type: "bugfix",
+    highlights: [
+      "修复储蓄页面布局高度跳变问题",
+      "移除 page.tsx 中多余的 dynamic loading 骨架屏占位",
+      "同步更新关于页面的版本硬编码数据至 v2.0.5",
+    ],
+  },
+  {
+    version: "1.8.36",
+    date: "2026-03-17",
+    type: "bugfix",
+    highlights: [
+      "为 DefaultSavings.tsx 添加 min-h-[101vh] 强制滚动条（注：现已优化为自适应）",
+      "解决了因异步内容加载导致滚动条突然出现引发的布局跳动",
+    ],
+  },
+  {
+    version: "1.8.34",
+    date: "2026-03-17",
+    type: "feature",
+    highlights: [
+      "消费页滚动性能极限优化：抽离 FixedStickyHeader 独立组件",
+      "通过'状态下沉'策略避免滚动时全量图表重绘，实现丝滑滚动",
+    ],
+  },
+  {
+    version: "1.8.31",
+    date: "2026-03-17",
+    type: "feature",
+    highlights: [
+      "消费页筛选交互重构：引入吸顶 (Sticky) 筛选栏",
+      "增加毛玻璃 (Backdrop Blur) 背景效果，提升 UI 质感",
+      "移除右下角悬浮筛选按钮，改为更自然的顶部固定交互",
+    ],
+  },
+  {
+    version: "1.8.27",
+    date: "2026-03-17",
+    type: "feature",
+    highlights: [
+      "消费页图表引擎全面升级：从 Recharts (SVG) 迁移至 ECharts (Canvas)",
+      "解决了万级数据点导致的页面滚动卡顿，渲染效率提升 5 倍以上",
+      "统一图表颜色体系为蓝色色阶（#1d4ed8 - #dbeafe）",
+    ],
+  },
+  {
+    version: "1.8.25",
+    date: "2026-03-17",
+    type: "feature",
+    highlights: [
+      "新增关于页面 (About Page)：展示项目愿景、版本记录与贡献者",
+      "侧边栏新增'关于'入口，完善系统信息展示维度",
     ],
   },
   {
@@ -44,22 +102,9 @@ const fallbackVersionHistory: VersionItem[] = [
     date: "2026-03-14",
     type: "feature",
     highlights: [
-      "桑基图升级为 ECharts，支持 4 级分支数据流展示",
-      "消费页布局优化，移动端桑基图支持横向滚动",
-      "修复 hydration 警告问题",
-      "储蓄弹窗交互修复",
-      "页面切换性能优化",
-    ],
-  },
-  {
-    version: "1.8.23",
-    date: "2026-03-14",
-    type: "feature",
-    highlights: [
-      "消费页移动端图表优化",
-      "图表横向滚动支持",
-      "图表布局优化",
-      "每日平均消费图表增强",
+      "桑基图升级：支持 4 级分支数据流（餐饮/购物/交通/生活等细分展示）",
+      "性能优化：对所有核心页面应用 next/dynamic 异步加载 (ssr: false)",
+      "解决了页面切换时由于同步加载大量图表导致的瞬间卡顿",
     ],
   },
   {
@@ -67,28 +112,17 @@ const fallbackVersionHistory: VersionItem[] = [
     date: "2026-03-14",
     type: "feature",
     highlights: [
-      "消费页移动端优化",
-      "图表横向滚动支持",
-      "每日平均消费图表增强",
+      "消费页移动端适配：图表支持横向滑动查看，圆环图线宽响应式调整",
+      "每日平均消费图表增强：新增周数选择（1-5周）与日历日期计算",
     ],
   },
   {
-    version: "1.8.21",
-    date: "2026-03-14",
-    type: "bugfix",
-    highlights: [
-      "数据库 transaction 表结构修复",
-      "修复 createdAt 和 updatedAt 字段缺少默认值问题",
-    ],
-  },
-  {
-    version: "1.8.20",
+    version: "1.8.17",
     date: "2026-03-14",
     type: "feature",
     highlights: [
-      "后端交易创建接口",
-      "新增 POST /api/transactions 接口",
-      "修复取款和打卡记录不显示问题",
+      "Savings 页面新增'取款'功能，支持从储蓄目标提取资金",
+      "存取记录自动化：打卡存款与取款均自动生成对应分类的交易记录",
     ],
   },
   {
@@ -96,10 +130,9 @@ const fallbackVersionHistory: VersionItem[] = [
     date: "2026-03-13",
     type: "major",
     highlights: [
-      "前端架构重构：迁移至 Feature-based 架构",
-      "组件库升级：集成 shadcn/ui 与 recharts",
-      "图表增强：新增多种可视化图表",
-      "主题支持：实现基于组件的主题切换架构",
+      "前端架构重构：迁移至 Feature-based 模块化架构",
+      "组件库深度集成：引入 shadcn/ui 与 Lucide Icons",
+      "数据可视化升级：初步集成 Recharts 图表库",
     ],
   },
   {
@@ -107,19 +140,8 @@ const fallbackVersionHistory: VersionItem[] = [
     date: "2026-03-13",
     type: "major",
     highlights: [
-      "后端新增贷款（Loan）模块",
-      "前端新增贷款管理页",
-      "支持展示还款进度条、每月还款信息与增删改操作",
-    ],
-  },
-  {
-    version: "0.1.0",
-    date: "2026-03-13",
-    type: "major",
-    highlights: [
-      "初始化前端 Next.js 工程",
-      "初始化后端 Express 工程",
-      "建立 Dashboard 路由组与基础布局",
+      "后端架构初始化：Express + Prisma + MySQL 落地",
+      "核心模块发布：资产管理、预算控制、贷款追踪功能上线",
     ],
   },
 ];
@@ -197,24 +219,26 @@ export default function AboutPage() {
   const [githubContributors, setGithubContributors] = useState<Contributor[]>([]);
   const [versionHistory, setVersionHistory] = useState<VersionItem[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(true);
+  const [showAllVersions, setShowAllVersions] = useState(false);
 
   useEffect(() => {
+    // 动态获取 CHANGELOG.md 解析后的版本数据
+    setLoadingVersions(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006'}/api/changelog`)
       .then((res) => res.json())
       .then((data) => {
-        // 兼容后端返回 code: 200 或 code: 0 的情况
-        if ((data.code === 200 || data.code === 0) && data.data?.versions) {
-          setVersionHistory(data.data.versions);
-          if (data.data.versions.length > 0) {
-            const latestVersion = data.data.versions[0].version;
-            setCurrentVersion(latestVersion);
-            setExpandedVersions([latestVersion]);
-          }
+        // 兼容后端返回 data.versions 的结构
+        if (data.versions && data.versions.length > 0) {
+          setVersionHistory(data.versions);
+          const latestVersion = data.versions[0].version;
+          setCurrentVersion(latestVersion);
+          setExpandedVersions([latestVersion]);
         } else {
           setVersionHistory(fallbackVersionHistory);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to fetch dynamic changelog:", err);
         setVersionHistory(fallbackVersionHistory);
       })
       .finally(() => {
@@ -248,6 +272,8 @@ export default function AboutPage() {
   const collapseAllVersions = () => {
     setExpandedVersions([]);
   };
+
+  const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, 1);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-8">
@@ -395,23 +421,25 @@ export default function AboutPage() {
               <p className="text-sm text-gray-500">查看项目的版本迭代历史</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={expandAllVersions}
-              className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              展开全部
-            </button>
-            <button
-              onClick={collapseAllVersions}
-              className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              收起全部
-            </button>
-          </div>
+          {showAllVersions && (
+            <div className="flex gap-2">
+              <button
+                onClick={expandAllVersions}
+                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                展开全部
+              </button>
+              <button
+                onClick={collapseAllVersions}
+                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                收起全部
+              </button>
+            </div>
+          )}
         </div>
         <div className="space-y-3">
-          {versionHistory.map((item, index) => (
+          {visibleVersions.map((item, index) => (
             <div
               key={item.version}
               className={`border rounded-xl overflow-hidden transition-all duration-200 ${
@@ -457,6 +485,29 @@ export default function AboutPage() {
               )}
             </div>
           ))}
+
+          {!showAllVersions && versionHistory.length > 1 && (
+            <button
+              onClick={() => setShowAllVersions(true)}
+              className="w-full py-4 flex items-center justify-center gap-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-xl border border-dashed border-blue-200 transition-all group"
+            >
+              查看全部历史版本 ({versionHistory.length})
+              <ChevronDown className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+            </button>
+          )}
+
+          {showAllVersions && (
+            <button
+              onClick={() => {
+                setShowAllVersions(false);
+                setExpandedVersions([DEFAULT_VERSION]);
+              }}
+              className="w-full py-3 flex items-center justify-center gap-2 text-sm text-gray-500 font-medium hover:bg-gray-50 rounded-xl transition-all"
+            >
+              收起历史记录
+              <ChevronUp className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
