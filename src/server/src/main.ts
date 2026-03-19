@@ -3120,7 +3120,12 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
       merchant: result.merchant,
       date: result.date,
       category: result.category,
-      description: result.description
+      description: result.description,
+      billCategory: result.billCategory,
+      paymentMethod: result.paymentMethod,
+      paymentTime: result.paymentTime,
+      payeeFullName: result.payeeFullName,
+      remark: result.remark
     });
   } catch (error) {
     console.error("AI Scan Receipt Error:", error);

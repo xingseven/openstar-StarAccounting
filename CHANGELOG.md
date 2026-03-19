@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.1.6 - 2026-03-19
+
+### Features
+
+- **AI 记账功能数据维度扩充**:
+  - 增强了豆包视觉模型的 Prompt 提示词，使其能从账单截图中提取更多详细信息。
+  - 新增支持提取：**账单分类** (如: 爱车养车)、**付款方式** (如: 储蓄卡/零钱)、**支付时间** (精确到秒)、**收款方全称** (如: **秋(个人)) 以及 **备注** 信息。
+  - 优化了前端 AI 拍照记账弹窗的表单，支持展示和编辑这些新增字段。
+  - 在保存交易时，自动将这些额外信息拼接到交易描述 (Description) 中，确保信息不丢失。
+
+### Modified Files
+
+1. `src/server/src/services/doubaoAi.ts` (Updated prompt and return types for more fields)
+2. `src/server/src/main.ts` (Updated API response to include new fields)
+3. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (Added new fields to form and logic)
+
 ## 2.1.5 - 2026-03-19
 
 ### Fixes

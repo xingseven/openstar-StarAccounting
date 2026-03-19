@@ -292,13 +292,23 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     date: string;
     category: string;
     description: string;
+    billCategory?: string;
+    paymentMethod?: string;
+    paymentTime?: string;
+    payeeFullName?: string;
+    remark?: string;
   } | null>(null);
   const [editForm, setEditForm] = useState({
     amount: "",
     merchant: "",
     date: "",
     category: "",
-    description: ""
+    description: "",
+    billCategory: "",
+    paymentMethod: "",
+    paymentTime: "",
+    payeeFullName: "",
+    remark: ""
   });
 
   const incomeExpenseTotal = useMemo(
@@ -350,6 +360,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         date: string;
         category: string;
         description: string;
+        billCategory?: string;
+        paymentMethod?: string;
+        paymentTime?: string;
+        payeeFullName?: string;
+        remark?: string;
       }>("/api/ai/scan-receipt", {
         method: "POST",
         body: formData,
@@ -361,7 +376,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         merchant: response.merchant,
         date: response.date,
         category: response.category,
-        description: response.description
+        description: response.description,
+        billCategory: response.billCategory || "",
+        paymentMethod: response.paymentMethod || "",
+        paymentTime: response.paymentTime || "",
+        payeeFullName: response.payeeFullName || "",
+        remark: response.remark || ""
       });
     } catch (error) {
       console.error("AI scan error:", error);
@@ -386,15 +406,28 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     }
 
     try {
+      // 构建要保存的描述信息，如果有额外信息则拼接到 description 中
+      let finalDescription = editForm.description || "";
+      const extraInfos = [];
+      if (editForm.billCategory) extraInfos.push(`账单分类: ${editForm.billCategory}`);
+      if (editForm.paymentMethod) extraInfos.push(`付款方式: ${editForm.paymentMethod}`);
+      if (editForm.paymentTime) extraInfos.push(`支付时间: ${editForm.paymentTime}`);
+      if (editForm.payeeFullName) extraInfos.push(`收款方: ${editForm.payeeFullName}`);
+      if (editForm.remark) extraInfos.push(`备注: ${editForm.remark}`);
+      
+      if (extraInfos.length > 0) {
+        finalDescription += (finalDescription ? " | " : "") + extraInfos.join(", ");
+      }
+
       await apiFetch("/api/transactions", {
         method: "POST",
         body: JSON.stringify({
           amount: parseFloat(editForm.amount),
           type: "EXPENSE",
           category: editForm.category || "其他",
-          platform: "alipay",
+          platform: "alipay", // 默认支付宝，也可以考虑从付款方式推断
           merchant: editForm.merchant,
-          description: editForm.description,
+          description: finalDescription,
           date: editForm.date
         }),
       });
@@ -1472,7 +1505,49 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     <Input
                       value={editForm.description}
                       onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                      placeholder="备注描述"
+                      placeholder="商品说明 / 简短描述"
+                    />
+                  </div>
+                  
+                  {/* 新增的扩展字段 */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">账单分类</Label>
+                    <Input
+                      value={editForm.billCategory}
+                      onChange={e => setEditForm({ ...editForm, billCategory: e.target.value })}
+                      placeholder="如: 爱车养车"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">付款方式</Label>
+                    <Input
+                      value={editForm.paymentMethod}
+                      onChange={e => setEditForm({ ...editForm, paymentMethod: e.target.value })}
+                      placeholder="如: 储蓄卡"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">支付时间</Label>
+                    <Input
+                      value={editForm.paymentTime}
+                      onChange={e => setEditForm({ ...editForm, paymentTime: e.target.value })}
+                      placeholder="如: 2026-03-18 19:32:00"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">收款方全称</Label>
+                    <Input
+                      value={editForm.payeeFullName}
+                      onChange={e => setEditForm({ ...editForm, payeeFullName: e.target.value })}
+                      placeholder="如: **秋(个人)"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-xs text-gray-500">备注</Label>
+                    <Input
+                      value={editForm.remark}
+                      onChange={e => setEditForm({ ...editForm, remark: e.target.value })}
+                      placeholder="补充备注信息"
                     />
                   </div>
                 </div>
