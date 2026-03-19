@@ -1169,7 +1169,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <div className="overflow-x-auto">
             <div className="min-w-[900px] md:w-full">
               <DelayedRender delay={960} lazy className="h-[450px] w-full">
-              <ReactECharts
+                <ReactECharts
                 ref={addChartRef}
                 autoResize={false}
                 option={{
@@ -1317,10 +1317,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   }
                 }}
               />
-            </DelayedRender>
-          </div>
-        </CardContent>
-      </Card>
+                </DelayedRender>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Row 8: Scatter & Histogram - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
