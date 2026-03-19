@@ -1,28 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import type { ConsumptionData } from "@/features/consumption/components/ConsumptionDefaultTheme";
-import {
-  MOCK_SUMMARY,
-  MOCK_PLATFORM_DISTRIBUTION,
-  MOCK_INCOME_EXPENSE,
-  MOCK_MERCHANTS,
-  MOCK_TREND,
-  MOCK_STACKED_BAR,
-  MOCK_PARETO,
-  MOCK_WEEKDAY_WEEKEND,
-  MOCK_CALENDAR,
-  MOCK_HEATMAP,
-  MOCK_SANKEY,
-  MOCK_SCATTER,
-  MOCK_HISTOGRAM,
-  MOCK_TRANSACTIONS
-} from "@/features/consumption/mockData";
+import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
+import { MockDataBanner } from "@/features/shared/useRealData";
+import { fetchConsumptionData } from "@/features/consumption/api";
 
 const ConsumptionDefaultTheme = dynamic(
   () => import("@/features/consumption/components/ConsumptionDefaultTheme").then(mod => mod.ConsumptionDefaultTheme),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="flex h-[50vh] w-full items-center justify-center">
@@ -33,30 +19,62 @@ const ConsumptionDefaultTheme = dynamic(
 );
 
 export default function ConsumptionPage() {
-  // In a real application, you would fetch data here and pass it to the theme component.
-  // This separates the data fetching/logic from the presentation/layout.
-  
-  const consumptionData = useMemo<ConsumptionData>(() => ({
-    summary: MOCK_SUMMARY,
-    platformDistribution: MOCK_PLATFORM_DISTRIBUTION,
-    incomeExpense: MOCK_INCOME_EXPENSE,
-    merchants: MOCK_MERCHANTS,
-    trend: MOCK_TREND,
-    stackedBar: MOCK_STACKED_BAR,
-    pareto: MOCK_PARETO,
-    weekdayWeekend: MOCK_WEEKDAY_WEEKEND,
-    calendar: MOCK_CALENDAR,
-    heatmap: MOCK_HEATMAP,
-    sankey: MOCK_SANKEY,
-    scatter: MOCK_SCATTER,
-    histogram: MOCK_HISTOGRAM,
-    transactions: MOCK_TRANSACTIONS,
-  }), []);
+  const [consumptionData, setConsumptionData] = useState(MOCK_CONSUMPTION);
+  const [loading, setLoading] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(false);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const realData = await fetchConsumptionData();
+        // 如果 API 返回空数据（没有交易记录），使用 mock 数据用于展示
+        const hasNoData =
+          realData.transactions.length === 0 &&
+          realData.summary.totalExpense === 0 &&
+          realData.summary.totalIncome === 0;
+        if (hasNoData) {
+          setConsumptionData(MOCK_CONSUMPTION);
+          setUsingMockData(true);
+        } else {
+          setConsumptionData(realData);
+          setUsingMockData(false);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch consumption data, using mock data:", error);
+        setConsumptionData(MOCK_CONSUMPTION);
+        setUsingMockData(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const dateRangeLabel = useMemo(() => {
+    if (consumptionData.trend.length > 0) {
+      const firstDay = consumptionData.trend[0].day;
+      const lastDay = consumptionData.trend[consumptionData.trend.length - 1].day;
+      return `${firstDay} - ${lastDay}`;
+    }
+    return "2024-03-01 - 2024-03-31";
+  }, [consumptionData.trend]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
-    <ConsumptionDefaultTheme 
-      data={consumptionData} 
-      dateRangeLabel="2024-03-01 - 2024-03-31" 
-    />
+    <div>
+      <MockDataBanner usingMockData={usingMockData} />
+      <ConsumptionDefaultTheme
+        data={consumptionData}
+        dateRangeLabel={dateRangeLabel}
+      />
+    </div>
   );
 }

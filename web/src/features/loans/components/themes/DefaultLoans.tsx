@@ -97,21 +97,32 @@ export function LoansDefaultTheme({
               <CardTitle>贷款分布 (剩余金额)</CardTitle>
               <CardDescription>各平台待还金额占比</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="mx-auto aspect-square max-h-[300px]">
+            <CardContent className="p-0">
+              <ChartContainer config={{}} className="mx-auto aspect-square max-h-[380px] border-0">
                 <PieChart>
                   <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                   <Pie
                     data={platformData}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={60}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
                     strokeWidth={5}
+                    labelLine={true}
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
                   >
-                    <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" verticalAlign="bottom" align="right" />
+                    {platformData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
                   </Pie>
+                  <ChartLegend
+                    content={<ChartLegendContent />}
+                    className="flex-wrap gap-2"
+                    verticalAlign="bottom"
+                    align="center"
+                  />
                 </PieChart>
               </ChartContainer>
             </CardContent>
@@ -124,7 +135,7 @@ export function LoansDefaultTheme({
               <CardDescription>已还本金 vs 剩余本金</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+              <ChartContainer config={chartConfig} className="min-h-[320px] w-full">
                 <BarChart accessibilityLayer data={paidVsRemainingData}>
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -132,9 +143,12 @@ export function LoansDefaultTheme({
                     tickLine={false}
                     tickMargin={10}
                     axisLine={false}
+                    angle={-15}
+                    textAnchor="end"
+                    height={60}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} verticalAlign="bottom" align="right" />
+                  <ChartLegend content={<ChartLegendContent />} verticalAlign="bottom" align="center" />
                   <Bar dataKey="paid" stackId="a" fill="var(--color-chart-1)" radius={[0, 0, 4, 4]} />
                   <Bar dataKey="remaining" stackId="a" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} />
                 </BarChart>

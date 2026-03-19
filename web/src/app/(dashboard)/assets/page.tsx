@@ -3,11 +3,13 @@
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import type { Asset } from "@/features/assets/components/themes/DefaultAssets";
+import type { Asset } from "@/types";
+import { MOCK_ASSETS } from "@/features/shared/mockData";
+import { MockDataBanner } from "@/features/shared/useRealData";
 
 const AssetsDefaultTheme = dynamic(
   () => import("@/features/assets/components/themes/DefaultAssets").then(mod => mod.AssetsDefaultTheme),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="flex h-[50vh] w-full items-center justify-center">
@@ -17,30 +19,19 @@ const AssetsDefaultTheme = dynamic(
   }
 );
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  BottomSheet,
-  BottomSheetContent,
-  BottomSheetHeader,
-  BottomSheetTitle,
-} from "@/components/ui/bottomsheet";
-import { 
-  Plus,
-  Wallet,
-  TrendingUp,
-  ArrowUpRight,
-  Edit,
-  Trash2,
-} from "lucide-react";
-
-import { clsx } from "clsx";
-
 const SUPPORTED_CURRENCIES = ["CNY", "USD", "EUR", "HKD", "JPY", "GBP"];
 
+async function fetchAssetsData(currency: string): Promise<Asset[]> {
+  const data = await apiFetch<{ items: Asset[] }>(`/api/assets?currency=${currency}`);
+  return data.items.map((i) => ({
+    ...i,
+    balance: Number(i.balance),
+    estimatedValue: Number(i.estimatedValue ?? i.balance),
+  }));
+}
+
 export default function AssetsPage() {
-  const [items, setItems] = useState<Asset[]>([]);
+  const [items, setItems] = useState<Asset[]>(MOCK_ASSETS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Asset | null>(null);
 
@@ -52,21 +43,28 @@ export default function AssetsPage() {
   const [type, setType] = useState("CASH");
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState("CNY");
-  
-  const [loading, setLoading] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function loadItems() {
     try {
-      const data = await apiFetch<{ items: Asset[] }>(`/api/assets?currency=${displayCurrency}`);
-      const list = data.items.map((i) => ({
-        ...i,
-        balance: Number(i.balance),
-        estimatedValue: Number(i.estimatedValue ?? i.balance),
-      }));
-      setItems(list);
+      const data = await fetchAssetsData(displayCurrency);
+      // 如果 API 返回空数据，使用 mock 数据用于展示
+      if (data.length === 0) {
+        setItems(MOCK_ASSETS);
+        setUsingMockData(true);
+      } else {
+        setItems(data);
+        setUsingMockData(false);
+      }
     } catch (e) {
-      console.error(e);
+      console.warn("Failed to fetch assets data, using mock data:", e);
+      setItems(MOCK_ASSETS);
+      setUsingMockData(true);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -141,6 +139,7 @@ export default function AssetsPage() {
 
   return (
     <>
+      <MockDataBanner usingMockData={usingMockData} />
       <AssetsDefaultTheme
         items={items}
         totalAssets={totalAssets}
@@ -175,7 +174,7 @@ export default function AssetsPage() {
                   placeholder="例如：招商银行储蓄卡"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">类型</label>

@@ -3,11 +3,13 @@
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import type { Loan } from "@/features/loans/components/themes/DefaultLoans";
+import type { Loan } from "@/types";
+import { MOCK_LOANS, MOCK_LOANS_PLATFORM_DATA, MOCK_LOANS_PAID_VS_REMAINING } from "@/features/shared/mockData";
+import { MockDataBanner } from "@/features/shared/useRealData";
 
 const LoansDefaultTheme = dynamic(
   () => import("@/features/loans/components/themes/DefaultLoans").then(mod => mod.LoansDefaultTheme),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="flex h-[50vh] w-full items-center justify-center">
@@ -23,51 +25,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function LoansPage() {
-  const [items, setItems] = useState<Loan[]>([]);
-  const [loading, setLoading] = useState(true);
+async function fetchLoansData(): Promise<Loan[]> {
+  const data = await apiFetch<{ items: any[] }>("/api/loans");
+  return data.items.map((i) => ({
+    ...i,
+    totalAmount: Number(i.totalAmount),
+    remainingAmount: Number(i.remainingAmount),
+    monthlyPayment: Number(i.monthlyPayment),
+  }));
+}
 
-  // Form states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Loan | null>(null);
-  const [platform, setPlatform] = useState("");
-  const [totalAmount, setTotalAmount] = useState("");
-  const [remainingAmount, setRemainingAmount] = useState("");
-  const [periods, setPeriods] = useState("12");
-  const [paidPeriods, setPaidPeriods] = useState("0");
-  const [monthlyPayment, setMonthlyPayment] = useState("0");
-  const [dueDate, setDueDate] = useState("1");
-  const [status, setStatus] = useState("ACTIVE");
-  const [error, setError] = useState<string | null>(null);
-
-  // Schedule modal
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-  const [scheduleItem, setScheduleItem] = useState<Loan | null>(null);
-  const [schedule, setSchedule] = useState<{ index: number; date: string; amount: number; remaining: number }[]>([]);
-
-  useEffect(() => {
-    loadItems();
-  }, []);
-
-  async function loadItems() {
-    setLoading(true);
-    try {
-      const data = await apiFetch<{ items: any[] }>("/api/loans");
-      const list = data.items.map((i) => ({
-        ...i,
-        totalAmount: Number(i.totalAmount),
-        remainingAmount: Number(i.remainingAmount),
-        monthlyPayment: Number(i.monthlyPayment),
-      }));
-      setItems(list);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // --- Charts Data Preparation ---
+function computeLoansDerivedData(items: Loan[]) {
   const platformData = items.reduce((acc, item) => {
     const existing = acc.find(p => p.name === item.platform);
     if (existing) {
@@ -87,7 +55,65 @@ export default function LoansPage() {
     remaining: item.remainingAmount,
   }));
 
-  // ... (CRUD Logic)
+  return { platformData, paidVsRemainingData };
+}
+
+export default function LoansPage() {
+  const [items, setItems] = useState<Loan[]>(MOCK_LOANS);
+  const [platformData, setPlatformData] = useState(MOCK_LOANS_PLATFORM_DATA);
+  const [paidVsRemainingData, setPaidVsRemainingData] = useState(MOCK_LOANS_PAID_VS_REMAINING);
+  const [loading, setLoading] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(false);
+
+  // Form states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Loan | null>(null);
+  const [platform, setPlatform] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
+  const [remainingAmount, setRemainingAmount] = useState("");
+  const [periods, setPeriods] = useState("12");
+  const [paidPeriods, setPaidPeriods] = useState("0");
+  const [monthlyPayment, setMonthlyPayment] = useState("0");
+  const [dueDate, setDueDate] = useState("1");
+  const [status, setStatus] = useState("ACTIVE");
+  const [error, setError] = useState<string | null>(null);
+
+  // Schedule modal
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleItem, setScheduleItem] = useState<Loan | null>(null);
+  const [schedule, setSchedule] = useState<{ index: number; date: string; amount: number; remaining: number }[]>([]);
+
+  async function loadItems() {
+    try {
+      const data = await fetchLoansData();
+      const derived = computeLoansDerivedData(data);
+      // 如果 API 返回空数据，使用 mock 数据用于展示
+      if (data.length === 0) {
+        setItems(MOCK_LOANS);
+        setPlatformData(MOCK_LOANS_PLATFORM_DATA);
+        setPaidVsRemainingData(MOCK_LOANS_PAID_VS_REMAINING);
+        setUsingMockData(true);
+      } else {
+        setItems(data);
+        setPlatformData(derived.platformData);
+        setPaidVsRemainingData(derived.paidVsRemainingData);
+        setUsingMockData(false);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch loans data, using mock data:", e);
+      setItems(MOCK_LOANS);
+      setPlatformData(MOCK_LOANS_PLATFORM_DATA);
+      setPaidVsRemainingData(MOCK_LOANS_PAID_VS_REMAINING);
+      setUsingMockData(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadItems();
+  }, []);
+
   function openCreate() {
     setEditingItem(null);
     setPlatform("");
@@ -186,20 +212,20 @@ export default function LoansPage() {
 
   function openSchedule(item: Loan) {
     setScheduleItem(item);
-    
+
     // Generate simple schedule
     const list = [];
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); 
+    const currentMonth = now.getMonth();
     const currentDay = now.getDate();
-    
+
     let year = currentYear;
     let month = currentDay <= item.dueDate ? currentMonth : currentMonth + 1;
-    
+
     let remaining = item.remainingAmount;
     const count = item.periods - item.paidPeriods;
-    
+
     for (let i = 1; i <= count; i++) {
       if (remaining <= 0) break;
       if (month > 11) {
@@ -210,10 +236,10 @@ export default function LoansPage() {
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, "0");
       const d = String(dateObj.getDate()).padStart(2, "0");
-      
+
       const amount = Math.min(remaining, item.monthlyPayment);
       remaining -= amount;
-      
+
       list.push({
         index: i,
         date: `${y}-${m}-${d}`,
@@ -222,13 +248,14 @@ export default function LoansPage() {
       });
       month++;
     }
-    
+
     setSchedule(list);
     setIsScheduleOpen(true);
   }
 
   return (
     <>
+      <MockDataBanner usingMockData={usingMockData} />
       <LoansDefaultTheme
         items={items}
         platformData={platformData}

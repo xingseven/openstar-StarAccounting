@@ -3,10 +3,9 @@
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import type { 
-  SavingsGoal, 
-  TransactionItem 
-} from "@/features/savings/components/themes/DefaultSavings";
+import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
+import { MOCK_SAVINGS, MOCK_SAVINGS_TRANSACTIONS } from "@/features/shared/mockData";
+import { MockDataBanner } from "@/features/shared/useRealData";
 
 const SavingsDefaultTheme = dynamic(
   () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
@@ -32,9 +31,26 @@ import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDial
 import { SavingsPlanDialog } from "@/features/savings/components/SavingsPlanDialog";
 import { SavingsWithdrawalDialog } from "@/features/savings/components/SavingsWithdrawalDialog";
 
+async function fetchSavingsData() {
+  const [goalsData, transactionsData] = await Promise.all([
+    apiFetch<{ items: any[] }>("/api/savings"),
+    apiFetch<{ items: TransactionItem[] }>("/api/transactions?pageSize=100"),
+  ]);
+
+  const list: SavingsGoal[] = goalsData.items.map((i) => ({
+    ...i,
+    targetAmount: Number(i.targetAmount),
+    currentAmount: Number(i.currentAmount),
+  }));
+
+  return { items: list, transactions: transactionsData.items };
+}
+
 export default function SavingsPage() {
-  const [items, setItems] = useState<SavingsGoal[]>([]);
+  const [items, setItems] = useState<SavingsGoal[]>(MOCK_SAVINGS);
+  const [transactions, setTransactions] = useState<TransactionItem[]>(MOCK_SAVINGS_TRANSACTIONS);
   const [loading, setLoading] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,28 +60,33 @@ export default function SavingsPage() {
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
   const [withdrawalItem, setWithdrawalItem] = useState<SavingsGoal | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   async function loadData() {
-    setLoading(true);
     try {
-      // 1. Load Goals
-      const goalsData = await apiFetch<{ items: any[] }>("/api/savings");
-      const list = goalsData.items.map((i) => ({
-        ...i,
-        targetAmount: Number(i.targetAmount),
-        currentAmount: Number(i.currentAmount),
-      }));
-      setItems(list);
-
+      setLoading(true);
+      const data = await fetchSavingsData();
+      // 如果 API 返回空数据，使用 mock 数据用于展示
+      if (data.items.length === 0) {
+        setItems(MOCK_SAVINGS);
+        setTransactions(MOCK_SAVINGS_TRANSACTIONS);
+        setUsingMockData(true);
+      } else {
+        setItems(data.items);
+        setTransactions(data.transactions);
+        setUsingMockData(false);
+      }
     } catch (e) {
-      console.error(e);
+      console.warn("Failed to fetch savings data, using mock data:", e);
+      setItems(MOCK_SAVINGS);
+      setTransactions(MOCK_SAVINGS_TRANSACTIONS);
+      setUsingMockData(true);
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   function openCreate() {
     setEditingItem(null);
@@ -174,8 +195,10 @@ export default function SavingsPage() {
 
   return (
     <>
+      <MockDataBanner usingMockData={usingMockData} />
       <SavingsDefaultTheme
         items={items}
+        transactions={transactions}
         totalSaved={totalSaved}
         totalTarget={totalTarget}
         overallProgress={overallProgress}
