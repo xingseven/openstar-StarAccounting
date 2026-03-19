@@ -95,9 +95,11 @@ export const MOCK_LOANS: Loan[] = [
 ];
 
 export const MOCK_LOANS_PLATFORM_DATA = [
-  { name: "房贷", value: 1250000, fill: "hsl(var(--chart-1))" },
-  { name: "车贷", value: 85000, fill: "hsl(var(--chart-2))" },
-  { name: "花呗", value: 2500, fill: "hsl(var(--chart-3))" },
+  { name: "房贷", value: 1250000, fill: "#1d4ed8" },
+  { name: "车贷", value: 85000, fill: "#3b82f6" },
+  { name: "花呗", value: 2500, fill: "#60a5fa" },
+  { name: "信用贷", value: 0, fill: "#93c5fd" },
+  { name: "其他", value: 0, fill: "#dbeafe" },
 ];
 
 export const MOCK_LOANS_PAID_VS_REMAINING = [

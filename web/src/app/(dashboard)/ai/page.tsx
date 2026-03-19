@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PageContainer } from "@/components/shared/PageContainer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,7 +94,7 @@ export default function AIPage() {
 
   // 筛选状态
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
   // 加载数据
@@ -260,7 +261,7 @@ export default function AIPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <PageContainer>
       {/* 页面标题 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -612,7 +613,7 @@ export default function AIPage() {
           </BottomSheetFooter>
         </BottomSheetContent>
       </BottomSheet>
-    </div>
+    </PageContainer>
   );
 }
 

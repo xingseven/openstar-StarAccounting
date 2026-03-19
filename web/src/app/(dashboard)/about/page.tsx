@@ -18,6 +18,8 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
+import { PageContainer } from "@/components/shared/PageContainer";
+import { CardContainer } from "@/components/shared/CardContainer";
 
 const DEFAULT_VERSION = "2.0.5";
 
@@ -200,7 +202,7 @@ function VersionTypeBadge({ type }: { type: string }) {
   };
   const { label, className } = config[type] || config.feature;
   return (
-    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${className}`}>
+    <span className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${className}`}>
       {label}
     </span>
   );
@@ -276,20 +278,20 @@ export default function AboutPage() {
   const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, 1);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-8">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-slate-800 p-8 md:p-12">
+    <PageContainer className="pb-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-slate-800 p-3 md:p-5 lg:p-7">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjMCAwIDItMiAyLTRzLTItMi0yLTJoLThjMCAwIDIgMiAyIDRzLTIgMi0yIDJjMCAwIDIgMiAyIDRzLTIgMi0yIDJoOGMwIDAtMi0yLTItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
         <div className="relative z-10">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="h-16 w-16 md:h-20 md:w-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white font-bold text-3xl md:text-4xl shadow-xl border border-white/30">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
+            <div className="h-12 w-12 md:h-20 md:w-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white font-bold text-2xl md:text-4xl shadow-xl border border-white/30">
               X
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">XFDashboard</h1>
-              <p className="text-blue-100 mt-1">OpenStar 开源个人财务管理面板</p>
+              <h1 className="text-2xl md:text-4xl font-bold text-white">XFDashboard</h1>
+              <p className="text-blue-100 text-sm md:mt-1">OpenStar 开源个人财务管理面板</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium border border-white/30">
               <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
               v{currentVersion}
@@ -301,34 +303,34 @@ export default function AboutPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {features.map((feature, idx) => (
           <div
             key={idx}
-            className="group relative overflow-hidden rounded-xl bg-white border border-gray-100 p-4 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
+            className="group relative overflow-hidden rounded-xl bg-white border border-gray-100 p-3 md:p-4 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
           >
             <div className="flex flex-col items-center text-center">
-              <div className={`h-10 w-10 rounded-lg bg-gray-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${feature.color}`}>
-                <feature.icon className="h-5 w-5" />
+              <div className={`h-9 w-9 md:h-10 md:w-10 rounded-lg bg-gray-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${feature.color}`}>
+                <feature.icon className="h-4 w-4 md:h-5 md:w-5" />
               </div>
-              <span className="text-sm font-medium text-gray-700">{feature.label}</span>
+              <span className="text-xs md:text-sm font-medium text-gray-700">{feature.label}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-              <Download className="h-5 w-5 text-white" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <CardContainer>
+          <div className="flex items-center gap-3 mb-3 md:mb-4">
+            <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+              <Download className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">当前版本</h2>
-              <p className="text-sm text-gray-500">v{currentVersion} · {versionHistory[0]?.date || '2026-03-17'}</p>
+              <h2 className="text-base md:text-lg font-semibold text-gray-900">当前版本</h2>
+              <p className="text-xs md:text-sm text-gray-500">v{currentVersion} · {versionHistory[0]?.date || '2026-03-17'}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+          <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="text-sm text-green-700 font-medium">已是最新版本</span>
           </div>
@@ -336,28 +338,28 @@ export default function AboutPage() {
             href="https://github.com/openstar-project/xfdashboard/releases"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 flex items-center justify-center gap-2 w-full py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors group"
+            className="mt-3 md:mt-4 flex items-center justify-center gap-2 w-full py-2.5 md:py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors group"
           >
             <Github className="h-4 w-4" />
             查看所有版本
             <ExternalLink className="h-3.5 w-3.5 opacity-60" />
           </a>
-        </div>
+        </CardContainer>
 
-        <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center">
-              <Users className="h-5 w-5 text-white" />
+        <CardContainer>
+          <div className="flex items-center gap-3 mb-3 md:mb-4">
+            <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center">
+              <Users className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">贡献者</h2>
+            <h2 className="text-base md:text-lg font-semibold text-gray-900">贡献者</h2>
           </div>
-          
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-              <Github className="h-4 w-4" />
+
+          <div className="mb-3 md:mb-4">
+            <h3 className="text-xs md:text-sm font-medium text-gray-700 mb-2 md:mb-3 flex items-center gap-2">
+              <Github className="h-3.5 w-3.5 md:h-4 md:w-4" />
               GitHub Contributors
             </h3>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 md:gap-3">
               {githubContributors.map((contributor) => (
                 <a
                   key={contributor.login}
@@ -371,13 +373,13 @@ export default function AboutPage() {
                     <img
                       src={contributor.avatar_url}
                       alt={contributor.login}
-                      className="h-10 w-10 rounded-full border-2 border-white shadow-sm group-hover:scale-110 transition-transform"
+                      className="h-9 w-9 md:h-10 md:w-10 rounded-full border-2 border-white shadow-sm group-hover:scale-110 transition-transform"
                     />
                     <div className="absolute -bottom-1 -right-1 bg-blue-100 text-blue-700 text-[10px] px-1 rounded-full font-medium border border-white">
                       {contributor.contributions}
                     </div>
                   </div>
-                  <span className="text-[10px] text-gray-500 truncate max-w-full group-hover:text-blue-600 transition-colors">
+                  <span className="text-[9px] md:text-[10px] text-gray-500 truncate max-w-full group-hover:text-blue-600 transition-colors">
                     {contributor.login}
                   </span>
                 </a>
@@ -390,74 +392,74 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="space-y-3 border-t border-gray-100 pt-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Core Team</h3>
+          <div className="space-y-2 md:space-y-3 border-t border-gray-100 pt-3 md:pt-4">
+            <h3 className="text-xs md:text-sm font-medium text-gray-700 mb-2">Core Team</h3>
             {contributors.map((contributor, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
               >
-                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${contributor.gradient} flex items-center justify-center text-white font-bold text-sm`}>
+                <div className={`h-9 w-9 md:h-10 md:w-10 rounded-full bg-gradient-to-br ${contributor.gradient} flex items-center justify-center text-white font-bold text-xs md:text-sm`}>
                   {contributor.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm">{contributor.name}</p>
-                  <p className="text-xs text-gray-500">{contributor.role}</p>
+                  <p className="font-medium text-gray-900 text-xs md:text-sm">{contributor.name}</p>
+                  <p className="text-[10px] md:text-xs text-gray-500">{contributor.role}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </CardContainer>
       </div>
 
-      <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <History className="h-5 w-5 text-white" />
+      <CardContainer>
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <History className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">版本更新记录</h2>
-              <p className="text-sm text-gray-500">查看项目的版本迭代历史</p>
+              <h2 className="text-base md:text-lg font-semibold text-gray-900">版本更新记录</h2>
+              <p className="text-xs md:text-sm text-gray-500 hidden sm:block">查看项目的版本迭代历史</p>
             </div>
           </div>
           {showAllVersions && (
             <div className="flex gap-2">
               <button
                 onClick={expandAllVersions}
-                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 展开全部
               </button>
               <button
                 onClick={collapseAllVersions}
-                className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 收起全部
               </button>
             </div>
           )}
         </div>
-        <div className="space-y-3">
+        <div className="space-y-1 md:space-y-3">
           {visibleVersions.map((item, index) => (
             <div
               key={item.version}
               className={`border rounded-xl overflow-hidden transition-all duration-200 ${
-                item.version === currentVersion 
-                  ? "border-blue-200 bg-blue-50/50" 
+                item.version === currentVersion
+                  ? "border-blue-200 bg-blue-50/50"
                   : "border-gray-100 hover:border-gray-200"
               }`}
             >
               <button
                 onClick={() => toggleVersion(item.version)}
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors"
+                className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-gray-50/50 transition-colors"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 md:gap-3">
                   <VersionTypeBadge type={item.type} />
-                  <span className="font-semibold text-gray-900">v{item.version}</span>
-                  <span className="text-xs text-gray-400">{item.date}</span>
+                  <span className="font-semibold text-gray-900 text-xs md:text-sm">v{item.version}</span>
+                  <span className="text-[10px] md:text-xs text-gray-400 hidden sm:inline">{item.date}</span>
                   {item.version === currentVersion && (
-                    <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] md:text-xs bg-blue-600 text-white px-1.5 md:px-2 py-0.5 rounded-full">
                       当前
                     </span>
                   )}
@@ -469,14 +471,14 @@ export default function AboutPage() {
                 )}
               </button>
               {expandedVersions.includes(item.version) && (
-                <div className="px-4 pb-4 pt-0 border-t border-gray-100">
-                  <ul className="space-y-2 mt-3">
+                <div className="px-3 md:px-4 pb-3 md:pb-4 pt-0 border-t border-gray-100">
+                  <ul className="space-y-1.5 md:space-y-2 mt-3">
                     {item.highlights.map((highlight, idx) => (
                       <li
                         key={idx}
-                        className="flex items-start gap-2.5 text-sm text-gray-600"
+                        className="flex items-start gap-2 text-xs md:text-sm text-gray-600"
                       >
-                        <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                        <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-500 mt-0.5 shrink-0" />
                         {highlight}
                       </li>
                     ))}
@@ -489,10 +491,10 @@ export default function AboutPage() {
           {!showAllVersions && versionHistory.length > 1 && (
             <button
               onClick={() => setShowAllVersions(true)}
-              className="w-full py-4 flex items-center justify-center gap-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-xl border border-dashed border-blue-200 transition-all group"
+              className="w-full py-3 md:py-4 flex items-center justify-center gap-2 text-xs md:text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-xl border border-dashed border-blue-200 transition-all group"
             >
               查看全部历史版本 ({versionHistory.length})
-              <ChevronDown className="h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+              <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4 group-hover:translate-y-0.5 transition-transform" />
             </button>
           )}
 
@@ -502,51 +504,51 @@ export default function AboutPage() {
                 setShowAllVersions(false);
                 setExpandedVersions([DEFAULT_VERSION]);
               }}
-              className="w-full py-3 flex items-center justify-center gap-2 text-sm text-gray-500 font-medium hover:bg-gray-50 rounded-xl transition-all"
+              className="w-full py-2.5 md:py-3 flex items-center justify-center gap-2 text-xs md:text-sm text-gray-500 font-medium hover:bg-gray-50 rounded-xl transition-all"
             >
               收起历史记录
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </button>
           )}
         </div>
-      </div>
+      </CardContainer>
 
-      <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Globe className="h-5 w-5 text-white" />
+      <CardContainer>
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+          <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Globe className="h-4 w-4 md:h-5 md:w-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">相关链接</h2>
-            <p className="text-sm text-gray-500">访问以下网站获取更多信息</p>
+            <h2 className="text-base md:text-lg font-semibold text-gray-900">相关链接</h2>
+            <p className="text-xs md:text-sm text-gray-500 hidden sm:block">访问以下网站获取更多信息</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
           {websites.map((site, idx) => (
             <a
               key={idx}
               href={site.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative overflow-hidden rounded-xl border border-gray-100 p-5 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
+              className="group relative overflow-hidden rounded-xl border border-gray-100 p-4 md:p-5 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
             >
-              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${site.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                <site.icon className="h-6 w-6 text-white" />
+              <div className={`h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br ${site.gradient} flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform`}>
+                <site.icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">{site.name}</h3>
-              <p className="text-xs text-gray-500 mb-3">{site.description}</p>
+              <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1">{site.name}</h3>
+              <p className="text-[10px] md:text-xs text-gray-500 mb-2 md:mb-3">{site.description}</p>
               <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
                 访问 <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </a>
           ))}
         </div>
-      </div>
+      </CardContainer>
 
-      <div className="text-center py-6">
-        <p className="text-sm text-gray-400">OpenStar XFDashboard v{currentVersion}</p>
-        <p className="text-xs text-gray-300 mt-1">Made with ❤️ by OpenStar Team</p>
+      <div className="text-center py-4 md:py-6">
+        <p className="text-xs md:text-sm text-gray-400">OpenStar XFDashboard v{currentVersion}</p>
+        <p className="text-[10px] md:text-xs text-gray-300 mt-1">Made with ❤️ by OpenStar Team</p>
       </div>
-    </div>
+    </PageContainer>
   );
 }

@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   TrendingUp,
 } from "lucide-react";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 type AdminStats = {
   users: number;
@@ -66,7 +67,7 @@ function StatCard({
 export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<UserItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -141,7 +142,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <div>
         <h1 className="text-xl font-semibold">后台管理</h1>
         <p className="text-sm text-gray-600">系统运行状态与用户管理</p>
@@ -241,6 +242,6 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

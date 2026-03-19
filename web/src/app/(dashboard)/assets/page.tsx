@@ -6,6 +6,13 @@ import dynamic from "next/dynamic";
 import type { Asset } from "@/types";
 import { MOCK_ASSETS } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  BottomSheetFooter,
+} from "@/components/ui/bottomsheet";
 
 const AssetsDefaultTheme = dynamic(
   () => import("@/features/assets/components/themes/DefaultAssets").then(mod => mod.AssetsDefaultTheme),
@@ -34,6 +41,8 @@ export default function AssetsPage() {
   const [items, setItems] = useState<Asset[]>(MOCK_ASSETS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Asset | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<Asset | null>(null);
 
   // Display settings
   const [displayCurrency, setDisplayCurrency] = useState("CNY");
@@ -44,9 +53,10 @@ export default function AssetsPage() {
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState("CNY");
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   async function loadItems() {
     try {
@@ -65,10 +75,12 @@ export default function AssetsPage() {
       setUsingMockData(true);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   }
 
   useEffect(() => {
+    setLoading(true);
     loadItems();
   }, [displayCurrency]);
 
@@ -125,10 +137,17 @@ export default function AssetsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("确定要删除这个资产吗？")) return;
+  function openDeleteDialog(item: Asset) {
+    setDeletingItem(item);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function handleDelete() {
+    if (!deletingItem) return;
     try {
-      await apiFetch(`/api/assets/${id}`, { method: "DELETE" });
+      await apiFetch(`/api/assets/${deletingItem.id}`, { method: "DELETE" });
+      setIsDeleteDialogOpen(false);
+      setDeletingItem(null);
       loadItems();
     } catch (e) {
       alert("删除失败");
@@ -152,99 +171,127 @@ export default function AssetsPage() {
         onDelete={handleDelete}
       />
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="mb-6 text-lg font-bold">
+      <BottomSheet open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <BottomSheetContent>
+          <BottomSheetHeader>
+            <BottomSheetTitle className="text-center sm:text-left">
               {editingItem ? "编辑资产" : "新增资产"}
-            </h2>
-            {error && (
-              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
-                {error}
+            </BottomSheetTitle>
+          </BottomSheetHeader>
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">名称</label>
+              <input
+                required
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="例如：招商银行储蓄卡"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">类型</label>
+                <select
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                >
+                  <option value="CASH">现金</option>
+                  <option value="BANK_CARD">银行卡</option>
+                  <option value="ALIPAY">支付宝</option>
+                  <option value="WECHAT">微信</option>
+                  <option value="INVESTMENT">投资</option>
+                  <option value="OTHER">其他</option>
+                </select>
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">币种</label>
+                <input
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">余额</label>
+              <input
+                required
+                type="number"
+                step="0.01"
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                value={balance}
+                onChange={(e) => setBalance(e.target.value)}
+              />
+            </div>
+
+            <BottomSheetFooter className="flex-row justify-end gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              >
+                {loading ? "保存中..." : "保存"}
+              </button>
+            </BottomSheetFooter>
+            {editingItem && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  openDeleteDialog(editingItem);
+                }}
+                className="w-full text-center text-xs text-red-500 hover:underline pt-2"
+              >
+                删除此资产
+              </button>
             )}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">名称</label>
-                <input
-                  required
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="例如：招商银行储蓄卡"
-                />
-              </div>
+          </form>
+        </BottomSheetContent>
+      </BottomSheet>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">类型</label>
-                  <select
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                  >
-                    <option value="CASH">现金</option>
-                    <option value="BANK_CARD">银行卡</option>
-                    <option value="ALIPAY">支付宝</option>
-                    <option value="WECHAT">微信</option>
-                    <option value="INVESTMENT">投资</option>
-                    <option value="OTHER">其他</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">币种</label>
-                  <input
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">余额</label>
-                <input
-                  required
-                  type="number"
-                  step="0.01"
-                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                  value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {loading ? "保存中..." : "保存"}
-                </button>
-              </div>
-              {editingItem && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    handleDelete(editingItem.id);
-                  }}
-                  className="w-full text-center text-xs text-red-500 hover:underline pt-2"
-                >
-                  删除此资产
-                </button>
-              )}
-            </form>
+      {/* Delete Confirmation BottomSheet */}
+      <BottomSheet open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <BottomSheetContent>
+          <BottomSheetHeader>
+            <BottomSheetTitle className="text-center">确认删除</BottomSheetTitle>
+          </BottomSheetHeader>
+          <div className="py-6 text-center text-gray-600">
+            确定要删除资产「{deletingItem?.name}」吗？此操作不可撤销。
           </div>
-        </div>
-      )}
+          <BottomSheetFooter className="flex-row justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600"
+            >
+              删除
+            </button>
+          </BottomSheetFooter>
+        </BottomSheetContent>
+      </BottomSheet>
     </>
   );
 }

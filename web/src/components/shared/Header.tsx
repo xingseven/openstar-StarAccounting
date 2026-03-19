@@ -1,14 +1,11 @@
 "use client";
 
-import { apiFetch } from "@/lib/api";
 import { clearAccessToken } from "@/lib/auth";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Bell, Search, User as UserIcon, LogOut } from "lucide-react";
-
-type MeResponse = {
-  user: { id: string; email: string; name: string | null };
-};
+import { MobileSidebar } from "@/components/shared/MobileSidebar";
+import { useUser } from "@/components/shared/UserContext";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "仪表盘",
@@ -20,28 +17,10 @@ const PAGE_TITLES: Record<string, string> = {
   "/settings": "系统设置",
 };
 
-import { MobileSidebar } from "@/components/shared/MobileSidebar";
-
 export function Header() {
-  const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<MeResponse["user"] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useUser();
   const [showDropdown, setShowDropdown] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    apiFetch<MeResponse>("/api/auth/me")
-      .then((data) => {
-        setUser(data.user);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch user:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
 
   function logout() {
     clearAccessToken();
@@ -77,10 +56,10 @@ export function Header() {
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
             <div className="text-sm font-medium text-gray-900">
-              {loading ? "加载中..." : user ? (user.name || user.email.split("@")[0]) : "未登录"}
+              {user ? (user.name || user.email.split("@")[0]) : "未登录"}
             </div>
             <div className="text-xs text-gray-500">
-              {loading ? "获取信息中..." : user ? user.email : "请重新登录"}
+              {user ? user.email : "请重新登录"}
             </div>
           </div>
           

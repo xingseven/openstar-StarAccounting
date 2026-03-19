@@ -279,6 +279,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [isMobile, setIsMobile] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // AI 记账相关状态
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
@@ -307,7 +308,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     billCategory: "",
     paymentMethod: "",
     payeeFullName: "",
-    remark: ""
+    remark: "",
+    platform: "alipay" as "alipay" | "wechat" | "unionpay",
+    // 云闪付字段
+    tradeName: "",
+    cardNo: "",
+    tradeTime: "",
+    tradeCategory: "",
+    // 微信字段
+    product: "",
   });
 
   const incomeExpenseTotal = useMemo(
@@ -351,6 +360,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     try {
       const formData = new FormData();
       formData.append("image", selectedFile);
+      formData.append("platform", editForm.platform || "alipay");
 
       const response = await apiFetch<{
         amount: number;
@@ -359,35 +369,49 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         date: string;
         category: string;
         description: string;
+        platform: string;
+        tradeName?: string;
+        cardNo?: string;
+        tradeTime?: string;
+        tradeCategory?: string;
+        product?: string;
+        payeeFullName?: string;
         billCategory?: string;
         paymentMethod?: string;
         paymentTime?: string;
-        payeeFullName?: string;
         remark?: string;
       }>("/api/ai/scan-receipt", {
         method: "POST",
         body: formData,
       });
 
-      // 将 paymentTime 或 date 格式化为 datetime-local 需要的格式 (YYYY-MM-DDThh:mm:ss)
+      // 格式化时间
       let formattedDate = response.date;
-      if (response.paymentTime) {
-        // 尝试解析支付时间，例如 "2026-03-18 19:32:00" -> "2026-03-18T19:32:00"
-        formattedDate = response.paymentTime.replace(' ', 'T');
+      const timeToFormat = response.tradeTime || response.paymentTime;
+      if (timeToFormat) {
+        formattedDate = timeToFormat.replace(' ', 'T');
       }
 
       setScanResult(response);
-      setEditForm({
+      setEditForm(prev => ({
         amount: String(response.amount),
-        merchant: response.merchant,
+        merchant: response.merchant || prev.merchant,
         date: formattedDate,
-        category: response.category,
-        description: response.description,
+        category: response.category || prev.category,
+        description: response.description || prev.description,
         billCategory: response.billCategory || "",
         paymentMethod: response.paymentMethod || "",
         payeeFullName: response.payeeFullName || "",
-        remark: response.remark || ""
-      });
+        remark: response.remark || "",
+        platform: response.platform as "alipay" | "wechat" | "unionpay" || prev.platform,
+        // 云闪付字段
+        tradeName: response.tradeName || "",
+        cardNo: response.cardNo || "",
+        tradeTime: response.tradeTime || "",
+        tradeCategory: response.tradeCategory || "",
+        // 微信字段
+        product: response.product || "",
+      }));
     } catch (error) {
       console.error("AI scan error:", error);
       // 提供更友好的错误提示
@@ -433,7 +457,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           amount: parseFloat(editForm.amount),
           type: "EXPENSE",
           category: editForm.category || "其他",
-          platform: "alipay", // 默认支付宝，也可以考虑从付款方式推断
+          platform: editForm.platform || "alipay",
           merchant: editForm.merchant,
           description: finalDescription,
           date: apiDate
@@ -678,23 +702,23 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
+        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
           </CardHeader>
-          <CardContent className="p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
+          <CardContent className="pt-0">
             <div className="text-lg sm:text-lg font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
             <p className="text-[10px] sm:text-[10px] text-gray-500">共 {data.summary.expenseCount} 笔支出</p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
           <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 pt-0">
             <div>
               <div className="text-[10px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowDownIcon className="h-2 w-2 sm:h-2 sm:w-2 text-green-500" /> 收入</div>
               <div className="text-base sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
@@ -706,12 +730,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
+        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 pt-0">
             <div>
               <div className="text-[10px] sm:text-[10px] text-gray-500">收入</div>
               <div className="text-base sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
@@ -723,12 +747,12 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 p-1 sm:p-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 p-1 sm:p-2 pt-0 pb-1 sm:pb-2">
+          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 pt-0">
             <div>
               <div className="text-[10px] sm:text-[10px] text-gray-500">收入</div>
               <div className="text-base sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
@@ -743,11 +767,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 2: Charts (3 cols) */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="col-span-1 flex flex-col">
+        <Card className="col-span-1 flex flex-col p-3 md:p-5 lg:p-7">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">支付平台分布</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
+          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block">
             <DelayedRender
               delay={80}
               className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
@@ -788,11 +812,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 flex flex-col">
+        <Card className="col-span-1 flex flex-col p-3 md:p-5 lg:p-7">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">收支分析</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block md:p-6 md:pt-0">
+          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block">
             <DelayedRender
               delay={220}
               className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
@@ -835,7 +859,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-2">
+        <Card className="col-span-2 p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">热门商家 Top 10</CardTitle>
           </CardHeader>
@@ -875,13 +899,14 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 3: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2 items-start">
-        <Card>
+        <Card className="p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <div className="w-[1200px] md:w-full">
-              <DelayedRender delay={120} lazy className="h-[250px] w-full">
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="w-[1200px] md:w-full">
+                <DelayedRender delay={120} lazy className="h-[250px] w-full">
                 <ReactECharts
                   ref={addChartRef}
                   autoResize={false}
@@ -912,44 +937,46 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <div className="w-[750px] md:w-full">
-              <DelayedRender delay={240} lazy className="h-[250px] w-full">
-                <ReactECharts
-                  ref={addChartRef}
-                  autoResize={false}
-                  option={{
-                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                    legend: { data: ["餐饮", "购物", "交通", "娱乐"], bottom: 0 },
-                    grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
-                    xAxis: { 
-                      type: 'category', 
-                      data: data.stackedBar.map(t => t.day.slice(8)),
-                      axisLine: { show: false },
-                      axisTick: { show: false }
-                    },
-                    yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
-                    series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => {
-                      const colors = ['#1d4ed8', '#3b82f6', '#93c5fd', '#dbeafe'];
-                      return {
-                        name: key,
-                        type: 'bar',
-                        stack: 'total',
-                        data: data.stackedBar.map(t => t[key]),
-                        itemStyle: { 
-                          color: colors[i],
-                          borderRadius: i === 3 ? [4, 4, 0, 0] : [0, 0, 0, 0] 
-                        }
-                      };
-                    })
-                  }}
-                  style={{ height: '100%', width: '100%' }}
-                />
-              </DelayedRender>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="w-[750px] md:w-full">
+                <DelayedRender delay={240} lazy className="h-[250px] w-full">
+                  <ReactECharts
+                    ref={addChartRef}
+                    autoResize={false}
+                    option={{
+                      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                      legend: { data: ["餐饮", "购物", "交通", "娱乐"], bottom: 0 },
+                      grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                      xAxis: { 
+                        type: 'category', 
+                        data: data.stackedBar.map(t => t.day.slice(8)),
+                        axisLine: { show: false },
+                        axisTick: { show: false }
+                      },
+                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                      series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => {
+                        const colors = ['#1d4ed8', '#3b82f6', '#93c5fd', '#dbeafe'];
+                        return {
+                          name: key,
+                          type: 'bar',
+                          stack: 'total',
+                          data: data.stackedBar.map(t => t[key]),
+                          itemStyle: { 
+                            color: colors[i],
+                            borderRadius: i === 3 ? [4, 4, 0, 0] : [0, 0, 0, 0] 
+                          }
+                        };
+                      })
+                    }}
+                    style={{ height: '100%', width: '100%' }}
+                  />
+                </DelayedRender>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -957,7 +984,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 4: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="flex flex-col">
+        <Card className="flex flex-col p-3 md:p-5 lg:p-7">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
             <CardDescription>识别主要支出分类</CardDescription>
@@ -1004,7 +1031,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col">
+        <Card className="flex flex-col p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">消费日历</CardTitle>
             <CardDescription>每日消费强度分布</CardDescription>
@@ -1019,13 +1046,13 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 5: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
           </CardHeader>
           <CardContent>
             <DelayedRender delay={600} lazy className="h-[250px] w-full">
-              <div className="overflow-x-auto h-[250px]">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm text-center border-collapse">
                   <thead>
                     <tr>
@@ -1067,7 +1094,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="p-3 md:p-5 lg:p-7">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -1132,14 +1159,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       </div>
 
       {/* Row 7: Sankey Diagram - ECharts */}
-      <Card>
+      <Card className="p-3 md:p-5 lg:p-7">
         <CardHeader>
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向（支持拖拽节点调整布局）</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <div className="min-w-[900px] md:w-full">
-            <DelayedRender delay={960} lazy className="h-[450px] w-full">
+        <CardContent>
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px] md:w-full">
+              <DelayedRender delay={960} lazy className="h-[450px] w-full">
               <ReactECharts
                 ref={addChartRef}
                 autoResize={false}
@@ -1431,17 +1459,20 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-sm text-gray-600 mb-4">上传小票/账单照片，AI 自动识别</p>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
-                  <span className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                    选择图片
-                  </span>
-                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                >
+                  选择图片
+                </button>
               </div>
             ) : selectedImage && !scanResult && !isScanning ? (
               // 图片已选择，等待点击识别
@@ -1464,7 +1495,22 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 <div className="rounded-lg overflow-hidden border">
                   <img src={selectedImage} alt="Receipt" className="w-full h-48 object-contain bg-gray-50" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
+                  {/* 平台选择 - 始终显示在最顶部 */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">平台</Label>
+                    <select
+                      className="w-full rounded-md border border-input px-3 py-2 text-sm bg-white"
+                      value={editForm.platform}
+                      onChange={e => setEditForm({ ...editForm, platform: e.target.value as "alipay" | "wechat" | "unionpay" })}
+                    >
+                      <option value="alipay">支付宝</option>
+                      <option value="wechat">微信</option>
+                      <option value="unionpay">云闪付</option>
+                    </select>
+                  </div>
+
+                  {/* 金额 - 始终显示 */}
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-500">金额</Label>
                     <Input
@@ -1474,83 +1520,165 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       placeholder="0.00"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">支付时间</Label>
-                    <Input
-                      type="datetime-local"
-                      step="1"
-                      value={editForm.date.includes('T') ? editForm.date : `${editForm.date}T00:00:00`}
-                      onChange={e => setEditForm({ ...editForm, date: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs text-gray-500">商户</Label>
-                    <Input
-                      value={editForm.merchant}
-                      onChange={e => setEditForm({ ...editForm, merchant: e.target.value })}
-                      placeholder="商户名称"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs text-gray-500">分类</Label>
-                    <select
-                      className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                      value={editForm.category}
-                      onChange={e => setEditForm({ ...editForm, category: e.target.value })}
-                    >
-                      <option value="">选择分类</option>
-                      <option value="餐饮">餐饮</option>
-                      <option value="购物">购物</option>
-                      <option value="交通">交通</option>
-                      <option value="娱乐">娱乐</option>
-                      <option value="生活">生活</option>
-                      <option value="医疗">医疗</option>
-                      <option value="教育">教育</option>
-                      <option value="其他">其他</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs text-gray-500">描述</Label>
-                    <Input
-                      value={editForm.description}
-                      onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                      placeholder="商品说明 / 简短描述"
-                    />
-                  </div>
-                  
-                  {/* 新增的扩展字段 */}
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">账单分类</Label>
-                    <Input
-                      value={editForm.billCategory}
-                      onChange={e => setEditForm({ ...editForm, billCategory: e.target.value })}
-                      placeholder="如: 爱车养车"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">付款方式</Label>
-                    <Input
-                      value={editForm.paymentMethod}
-                      onChange={e => setEditForm({ ...editForm, paymentMethod: e.target.value })}
-                      placeholder="如: 储蓄卡"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">收款方全称</Label>
-                    <Input
-                      value={editForm.payeeFullName}
-                      onChange={e => setEditForm({ ...editForm, payeeFullName: e.target.value })}
-                      placeholder="如: **秋(个人)"
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs text-gray-500">备注</Label>
-                    <Input
-                      value={editForm.remark}
-                      onChange={e => setEditForm({ ...editForm, remark: e.target.value })}
-                      placeholder="补充备注信息"
-                    />
-                  </div>
+
+                  {/* 云闪付专属字段 */}
+                  {editForm.platform === "unionpay" && (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">消费名称</Label>
+                        <Input
+                          value={editForm.tradeName}
+                          onChange={e => setEditForm({ ...editForm, tradeName: e.target.value })}
+                          placeholder="如: 消费"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">卡号</Label>
+                        <Input
+                          value={editForm.cardNo}
+                          onChange={e => setEditForm({ ...editForm, cardNo: e.target.value })}
+                          placeholder="如: ****1234"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">交易时间</Label>
+                        <Input
+                          type="datetime-local"
+                          step="1"
+                          value={editForm.tradeTime?.includes('T') ? editForm.tradeTime : editForm.date}
+                          onChange={e => setEditForm({ ...editForm, tradeTime: e.target.value, date: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">交易类别</Label>
+                        <Input
+                          value={editForm.tradeCategory}
+                          onChange={e => setEditForm({ ...editForm, tradeCategory: e.target.value })}
+                          placeholder="如: 消费"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* 微信专属字段 */}
+                  {editForm.platform === "wechat" && (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">商品</Label>
+                        <Input
+                          value={editForm.product}
+                          onChange={e => setEditForm({ ...editForm, product: e.target.value })}
+                          placeholder="如: 拿铁咖啡"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">商户全称</Label>
+                        <Input
+                          value={editForm.payeeFullName}
+                          onChange={e => setEditForm({ ...editForm, payeeFullName: e.target.value })}
+                          placeholder="如: 星巴克咖啡专营店"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">支付时间</Label>
+                        <Input
+                          type="datetime-local"
+                          step="1"
+                          value={editForm.date.includes('T') ? editForm.date : `${editForm.date}T00:00:00`}
+                          onChange={e => setEditForm({ ...editForm, date: e.target.value })}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* 通用字段 - 支付宝 */}
+                  {editForm.platform === "alipay" && (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">商户</Label>
+                        <Input
+                          value={editForm.merchant}
+                          onChange={e => setEditForm({ ...editForm, merchant: e.target.value })}
+                          placeholder="商户名称"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">支付时间</Label>
+                        <Input
+                          type="datetime-local"
+                          step="1"
+                          value={editForm.date.includes('T') ? editForm.date : `${editForm.date}T00:00:00`}
+                          onChange={e => setEditForm({ ...editForm, date: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">账单分类</Label>
+                        <Input
+                          value={editForm.billCategory}
+                          onChange={e => setEditForm({ ...editForm, billCategory: e.target.value })}
+                          placeholder="如: 爱车养车"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">付款方式</Label>
+                        <Input
+                          value={editForm.paymentMethod}
+                          onChange={e => setEditForm({ ...editForm, paymentMethod: e.target.value })}
+                          placeholder="如: 储蓄卡"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">收款方全称</Label>
+                        <Input
+                          value={editForm.payeeFullName}
+                          onChange={e => setEditForm({ ...editForm, payeeFullName: e.target.value })}
+                          placeholder="如: **秋(个人)"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">备注</Label>
+                        <Input
+                          value={editForm.remark}
+                          onChange={e => setEditForm({ ...editForm, remark: e.target.value })}
+                          placeholder="补充备注信息"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* 分类 - 云闪付和微信显示 */}
+                  {editForm.platform !== "alipay" && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-500">分类</Label>
+                      <select
+                        className="w-full rounded-md border border-input px-3 py-2 text-sm"
+                        value={editForm.category}
+                        onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                      >
+                        <option value="">选择分类</option>
+                        <option value="餐饮">餐饮</option>
+                        <option value="购物">购物</option>
+                        <option value="交通">交通</option>
+                        <option value="娱乐">娱乐</option>
+                        <option value="生活">生活</option>
+                        <option value="医疗">医疗</option>
+                        <option value="教育">教育</option>
+                        <option value="其他">其他</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* 支付宝的描述字段 */}
+                  {editForm.platform === "alipay" && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-500">描述</Label>
+                      <Input
+                        value={editForm.description}
+                        onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                        placeholder="商品说明 / 简短描述"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}

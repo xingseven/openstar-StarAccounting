@@ -3083,6 +3083,14 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
       return;
     }
 
+    // 获取平台参数（默认支付宝）
+    const platform = (req.body?.platform as string) || "alipay";
+    const validPlatforms = ["alipay", "wechat", "unionpay"];
+    if (!validPlatforms.includes(platform)) {
+      jsonFail(res, 400, 40003, "INVALID_PLATFORM", "平台类型无效");
+      return;
+    }
+
     // 将图片转为 Base64
     const imageBase64 = req.file.buffer.toString("base64");
 
@@ -3111,9 +3119,10 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
       }
     }
 
-    // 调用 AI 进行识别（传入配置）
-    const result = await scanReceipt(imageBase64, modelConfig || undefined);
+    // 调用 AI 进行识别（传入配置和平台）
+    const result = await scanReceipt(imageBase64, modelConfig || undefined, platform as "alipay" | "wechat" | "unionpay");
 
+    // 返回结果，包含平台特有字段
     jsonOk(res, {
       amount: result.amount,
       currency: result.currency,
@@ -3121,10 +3130,19 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
       date: result.date,
       category: result.category,
       description: result.description,
+      platform: result.platform,
+      // 云闪付字段
+      tradeName: result.tradeName,
+      cardNo: result.cardNo,
+      tradeTime: result.tradeTime,
+      tradeCategory: result.tradeCategory,
+      // 微信字段
+      product: result.product,
+      payeeFullName: result.payeeFullName,
+      // 支付宝字段
       billCategory: result.billCategory,
       paymentMethod: result.paymentMethod,
       paymentTime: result.paymentTime,
-      payeeFullName: result.payeeFullName,
       remark: result.remark
     });
   } catch (error) {

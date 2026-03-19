@@ -4,11 +4,19 @@ import { useEffect, useState } from "react";
 import { getAccessToken, clearAccessToken } from "@/lib/auth";
 import { useRouter, usePathname } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { UserProvider } from "@/components/shared/UserContext";
+
+type User = {
+  id: string;
+  email: string;
+  name: string | null;
+};
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const token = getAccessToken();
@@ -18,8 +26,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    apiFetch("/api/auth/me")
-      .then(() => setReady(true))
+    apiFetch<{ user: User }>("/api/auth/me")
+      .then((data) => {
+        setUser(data.user);
+        setReady(true);
+      })
       .catch((err) => {
         console.error("AuthGate failed:", err);
         clearAccessToken();
@@ -39,5 +50,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <UserProvider initialUser={user}>
+      {children}
+    </UserProvider>
+  );
 }

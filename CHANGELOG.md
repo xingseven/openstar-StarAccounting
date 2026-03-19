@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.1.8 - 2026-03-19
+
+### Features
+
+- **AI 识别平台选择功能上线**:
+  - 在消费页 AI 记账功能中新增平台选择下拉框，支持切换三个支付平台：**支付宝**、**微信支付**、**云闪付**。
+  - 切换平台后，识别结果表单会动态显示该平台特有的字段。
+
+- **平台特定 AI 识别优化**:
+  - **支付宝 (Alipay)**: 提取商户名称、消费日期、账单分类、付款方式、收款方全称、支付时间、备注等字段。
+  - **微信支付 (WeChat)**: 提取商户名称、商品描述、支付时间、商户全称等字段。
+  - **云闪付 (UnionPay)**: 提取消费名称、卡号（尾号）、交易时间（精确到秒）、交易类别、分类等字段。
+  - 为每个平台定制了独立的 AI Prompt 提示词，确保模型能准确识别不同平台账单小票的格式和字段位置。
+
+### Modified Files
+
+1. `src/server/src/services/doubaoAi.ts` (Added platform-specific prompts and new field types)
+2. `src/server/src/main.ts` (Updated `/api/ai/scan-receipt` to accept platform parameter)
+3. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (Added platform selector and dynamic form fields)
+
 ## 2.1.7 - 2026-03-19
 
 ### Features

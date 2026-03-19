@@ -1,11 +1,13 @@
+import { PageContainer } from "@/components/shared/PageContainer";
+
 export default function ThemesPage() {
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">主题中心</h1>
         <p className="text-gray-500 mt-1">管理和切换系统主题</p>
       </div>
-      
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="group relative overflow-hidden rounded-xl border bg-white shadow-sm transition-all hover:shadow-md cursor-pointer ring-2 ring-blue-600">
           <div className="aspect-video bg-gray-100 p-4">
@@ -42,6 +44,6 @@ export default function ThemesPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

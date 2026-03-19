@@ -62,7 +62,7 @@ export default function LoansPage() {
   const [items, setItems] = useState<Loan[]>(MOCK_LOANS);
   const [platformData, setPlatformData] = useState(MOCK_LOANS_PLATFORM_DATA);
   const [paidVsRemainingData, setPaidVsRemainingData] = useState(MOCK_LOANS_PAID_VS_REMAINING);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
 
   // Form states
@@ -84,6 +84,7 @@ export default function LoansPage() {
   const [schedule, setSchedule] = useState<{ index: number; date: string; amount: number; remaining: number }[]>([]);
 
   async function loadItems() {
+    setLoading(true);
     try {
       const data = await fetchLoansData();
       const derived = computeLoansDerivedData(data);

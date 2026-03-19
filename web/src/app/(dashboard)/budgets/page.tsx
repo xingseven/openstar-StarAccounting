@@ -2,6 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 type BudgetStatus = "normal" | "warning" | "overdue";
 
@@ -192,7 +193,7 @@ export default function BudgetsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">预算管理</h1>
@@ -410,6 +411,6 @@ export default function BudgetsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

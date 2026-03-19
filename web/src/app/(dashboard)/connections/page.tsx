@@ -2,6 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 type GenerateData = {
   otpCode: string;
@@ -86,7 +87,7 @@ export default function ConnectionsPage() {
   const expired = generateData ? remainingSeconds <= 0 : false;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <PageContainer maxWidth="2xl">
       <div className="space-y-2 text-center">
         <h1 className="text-xl font-semibold">连接管理</h1>
         <p className="text-sm text-gray-600">用于 APP 通过公网 IP + 一次性验证码建立安全绑定</p>
@@ -191,7 +192,7 @@ export default function ConnectionsPage() {
           </div>
         )}
       </section>
-    </div>
+    </PageContainer>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { PageContainer } from "@/components/shared/PageContainer";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<{ id: string; email: string; name: string | null } | null>(null);
@@ -69,7 +70,7 @@ export default function SettingsPage() {
   if (!user) return <div className="p-8 text-center text-gray-500">加载中...</div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <PageContainer maxWidth="2xl">
       <div className="text-center">
         <h1 className="text-xl font-semibold">设置</h1>
         <p className="text-sm text-gray-600">管理你的个人资料与安全设置</p>
@@ -157,6 +158,6 @@ export default function SettingsPage() {
       <div className="text-center text-xs text-gray-400">
         OpenStar XFDashboard v1.4.0
       </div>
-    </div>
+    </PageContainer>
   );
 }

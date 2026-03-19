@@ -49,7 +49,7 @@ async function fetchSavingsData() {
 export default function SavingsPage() {
   const [items, setItems] = useState<SavingsGoal[]>(MOCK_SAVINGS);
   const [transactions, setTransactions] = useState<TransactionItem[]>(MOCK_SAVINGS_TRANSACTIONS);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
 
   // Modal & Form states
@@ -61,8 +61,8 @@ export default function SavingsPage() {
   const [withdrawalItem, setWithdrawalItem] = useState<SavingsGoal | null>(null);
 
   async function loadData() {
+    setLoading(true);
     try {
-      setLoading(true);
       const data = await fetchSavingsData();
       // 如果 API 返回空数据，使用 mock 数据用于展示
       if (data.items.length === 0) {

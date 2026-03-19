@@ -45,6 +45,8 @@ import {
 import Link from "next/link";
 import { StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
 import { GridDecoration } from "@/components/shared/GridDecoration";
+import { CardContainer } from "@/components/shared/CardContainer";
+import { CardItem } from "@/components/shared/CardItem";
 import type { DashboardData } from "@/types";
 
 interface DashboardViewProps {
@@ -97,7 +99,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
   if (loading) {
     return (
-      <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatsCardSkeleton />
           <StatsCardSkeleton />
@@ -111,10 +113,10 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto overflow-x-hidden p-1">
+    <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto overflow-x-hidden">
       {/* Budget Alerts Banner */}
       {data.budgetAlerts.length > 0 && !alertsDismissed && (
-        <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 sm:p-6 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-3 md:p-5 lg:p-7 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-start gap-3 sm:gap-4 relative z-10">
             <div className="p-2 sm:p-3 rounded-xl bg-red-100 shrink-0">
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
@@ -249,14 +251,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full p-3 md:p-5 lg:p-7">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
                   <CardDescription>本月收支状态对比</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10 h-[200px] flex items-center">
+              <CardContent className="relative z-10 h-[200px] flex items-center px-0">
                 <ChartContainer config={chartConfig} className="h-[150px] w-full">
                   <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
                     <YAxis
@@ -284,14 +286,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <GridDecoration mode="light" className="opacity-[0.01]" />
             </Card>
 
-            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full p-3 md:p-5 lg:p-7">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">消费占比</CardTitle>
                   <CardDescription>按消费分类统计占比</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10 h-[200px] flex items-center justify-center">
+              <CardContent className="relative z-10 h-[200px] flex items-center justify-center px-0">
                 <div className="w-full h-full relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -328,16 +330,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </Card>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative group">
-            <GridDecoration mode="light" />
-            <div className="relative z-10">
+          <CardContainer className="p-3 md:p-5 lg:p-7">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
               <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 查看全部 <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Link>
             </div>
-            
+
             <div className="space-y-1">
               {data.recentTransactions.length === 0 ? (
                 <div className="py-8 sm:py-12 text-center">
@@ -380,44 +380,36 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 ))
               )}
             </div>
-            </div>
-          </div>
+          </CardContainer>
         </div>
 
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm overflow-hidden relative group">
-            <GridDecoration mode="light" />
-            <div className="relative z-10">
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷操作</h3>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <QuickAction 
-                  icon={Plus} 
-                  label="记一笔" 
-                  color="indigo" 
-                  onClick={() => alert("记一笔功能即将上线！")}
-                />
-                <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
-                <QuickAction href="/budgets" icon={CreditCard} label="预算管理" color="red" />
-                <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
-                <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
-              </div>
+          <CardContainer className="p-3 md:p-5 lg:p-7">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷操作</h3>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <QuickAction
+                icon={Plus}
+                label="记一笔"
+                color="indigo"
+                onClick={() => alert("记一笔功能即将上线！")}
+              />
+              <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
+              <QuickAction href="/budgets" icon={CreditCard} label="预算管理" color="red" />
+              <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
+              <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
             </div>
-          </div>
+          </CardContainer>
 
-          <div className="rounded-2xl bg-blue-600 p-4 sm:p-6 text-white shadow-lg relative overflow-hidden group">
-            <GridDecoration mode="dark" opacity={0.08} />
-            <div className="relative z-10">
-              <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">需要帮助？</h3>
-              <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
-                查看文档了解如何更好地管理您的财务。
-              </p>
-              <button className="bg-white text-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-50 transition-colors shadow-sm">
-                查看文档
-              </button>
-            </div>
-            <div className="absolute right-0 bottom-0 h-24 w-24 sm:h-32 sm:w-32 bg-white/10 rounded-full blur-2xl translate-x-8 translate-y-8 sm:translate-x-10 sm:translate-y-10 group-hover:bg-white/20 transition-colors duration-500"></div>
-          </div>
+          <CardContainer variant="blue">
+            <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2">需要帮助？</h3>
+            <p className="text-blue-100 text-xs sm:text-sm mb-3 sm:mb-4">
+              查看文档了解如何更好地管理您的财务。
+            </p>
+            <button className="bg-white text-blue-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-50 transition-colors shadow-sm">
+              查看文档
+            </button>
+          </CardContainer>
         </div>
       </div>
     </div>
@@ -480,10 +472,10 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, trendValue, color
   );
 }
 
-function QuickAction({ href, icon: Icon, label, color, onClick }: { 
-  href?: string; 
-  icon: LucideIcon; 
-  label: string; 
+function QuickAction({ href, icon: Icon, label, color, onClick }: {
+  href?: string;
+  icon: LucideIcon;
+  label: string;
   color: string;
   onClick?: () => void;
 }) {
@@ -504,20 +496,9 @@ function QuickAction({ href, icon: Icon, label, color, onClick }: {
     </>
   );
 
-  if (href) {
-    return (
-      <Link href={href} className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all hover:shadow-sm bg-white">
-        {content}
-      </Link>
-    );
-  }
-
   return (
-    <button 
-      onClick={onClick}
-      className="group flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-all hover:shadow-sm bg-white w-full"
-    >
+    <CardItem href={href} onClick={onClick}>
       {content}
-    </button>
+    </CardItem>
   );
 }

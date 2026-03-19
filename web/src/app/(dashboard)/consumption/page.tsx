@@ -20,11 +20,12 @@ const ConsumptionDefaultTheme = dynamic(
 
 export default function ConsumptionPage() {
   const [consumptionData, setConsumptionData] = useState(MOCK_CONSUMPTION);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
 
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
       try {
         const realData = await fetchConsumptionData();
         // 如果 API 返回空数据（没有交易记录），使用 mock 数据用于展示
@@ -60,7 +61,7 @@ export default function ConsumptionPage() {
     return "2024-03-01 - 2024-03-31";
   }, [consumptionData.trend]);
 
-  if (loading) {
+  if (loading && consumptionData.transactions.length === 0) {
     return (
       <div className="flex h-[50vh] w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
