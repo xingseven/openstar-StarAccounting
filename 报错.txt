@@ -1,20 +1,28 @@
 ## Error Type
-Console Error
+Build Error
 
 ## Error Message
-请先登录
+Parsing ecmascript source code failed
 
+## Build Output
+./src/features/consumption/components/ConsumptionDefaultTheme.tsx:1322:23
+Parsing ecmascript source code failed
+  1320 |             </DelayedRender>
+  1321 |           </div>
+> 1322 |         </CardContent>
+       |                       ^
+> 1323 |       </Card>
+       | ^^^^^^^
+  1324 |
+  1325 |       {/* Row 8: Scatter & Histogram - Lazy Load */}
+  1326 |       <div className="grid gap-4 md:grid-cols-2">
 
-    at apiFetch (src/lib/api.ts:30:17)
-    at async loadData (src/app/(dashboard)/savings/page.tsx:55:25)
+Expected '</', got 'jsx text'
 
-## Code Frame
-  28 |   if (!res.ok || !("data" in json)) {
-  29 |     const msg = "detail" in json && json.detail ? json.detail : "请求失败";
-> 30 |     const err = new Error(msg);
-     |                 ^
-  31 |     (err as { status?: number; code?: number }).status = res.status;
-  32 |     if ("code" in json) (err as { code?: number }).code = json.code;
-  33 |     throw err;
+Import trace:
+  Client Component Browser:
+    ./src/features/consumption/components/ConsumptionDefaultTheme.tsx [Client Component Browser]
+    ./src/app/(dashboard)/consumption/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/consumption/page.tsx [Server Component]
 
 Next.js version: 16.1.6 (Turbopack)
