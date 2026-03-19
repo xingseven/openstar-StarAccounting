@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.7 - 2026-03-19
+
+### Features
+
+- **AI 记账时间提取与展示优化**:
+  - 优化了前端 AI 拍照记账弹窗的时间展示逻辑，移除了单独的「支付时间」输入框，避免时间字段重复。
+  - 将原本顶部的「日期」字段升级为「支付时间」，并支持显示精确到秒的完整时间格式 (`YYYY-MM-DDThh:mm:ss`)。
+  - 智能合并 AI 提取结果：当 AI 成功提取到完整的支付时间时，会自动格式化并填充到主时间输入框中；在最终保存时，会自动截取所需的日期部分 (`YYYY-MM-DD`) 提交给后端。
+
+### Modified Files
+
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (Refactored date/time inputs and state merging logic)
+
 ## 2.1.6 - 2026-03-19
 
 ### Features

@@ -306,7 +306,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     description: "",
     billCategory: "",
     paymentMethod: "",
-    paymentTime: "",
     payeeFullName: "",
     remark: ""
   });
@@ -370,16 +369,22 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         body: formData,
       });
 
+      // 将 paymentTime 或 date 格式化为 datetime-local 需要的格式 (YYYY-MM-DDThh:mm:ss)
+      let formattedDate = response.date;
+      if (response.paymentTime) {
+        // 尝试解析支付时间，例如 "2026-03-18 19:32:00" -> "2026-03-18T19:32:00"
+        formattedDate = response.paymentTime.replace(' ', 'T');
+      }
+
       setScanResult(response);
       setEditForm({
         amount: String(response.amount),
         merchant: response.merchant,
-        date: response.date,
+        date: formattedDate,
         category: response.category,
         description: response.description,
         billCategory: response.billCategory || "",
         paymentMethod: response.paymentMethod || "",
-        paymentTime: response.paymentTime || "",
         payeeFullName: response.payeeFullName || "",
         remark: response.remark || ""
       });
@@ -411,13 +416,16 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       const extraInfos = [];
       if (editForm.billCategory) extraInfos.push(`账单分类: ${editForm.billCategory}`);
       if (editForm.paymentMethod) extraInfos.push(`付款方式: ${editForm.paymentMethod}`);
-      if (editForm.paymentTime) extraInfos.push(`支付时间: ${editForm.paymentTime}`);
       if (editForm.payeeFullName) extraInfos.push(`收款方: ${editForm.payeeFullName}`);
       if (editForm.remark) extraInfos.push(`备注: ${editForm.remark}`);
       
       if (extraInfos.length > 0) {
         finalDescription += (finalDescription ? " | " : "") + extraInfos.join(", ");
       }
+
+      // 后端 API 需要的 date 格式通常是 YYYY-MM-DD 或 ISO 字符串，这里保留原有的截取逻辑
+      // 或者如果有需要，可以将精确到秒的时间传过去
+      const apiDate = editForm.date.split('T')[0];
 
       await apiFetch("/api/transactions", {
         method: "POST",
@@ -428,7 +436,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           platform: "alipay", // 默认支付宝，也可以考虑从付款方式推断
           merchant: editForm.merchant,
           description: finalDescription,
-          date: editForm.date
+          date: apiDate
         }),
       });
 
@@ -1467,10 +1475,11 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">日期</Label>
+                    <Label className="text-xs text-gray-500">支付时间</Label>
                     <Input
-                      type="date"
-                      value={editForm.date}
+                      type="datetime-local"
+                      step="1"
+                      value={editForm.date.includes('T') ? editForm.date : `${editForm.date}T00:00:00`}
                       onChange={e => setEditForm({ ...editForm, date: e.target.value })}
                     />
                   </div>
@@ -1524,14 +1533,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       value={editForm.paymentMethod}
                       onChange={e => setEditForm({ ...editForm, paymentMethod: e.target.value })}
                       placeholder="如: 储蓄卡"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">支付时间</Label>
-                    <Input
-                      value={editForm.paymentTime}
-                      onChange={e => setEditForm({ ...editForm, paymentTime: e.target.value })}
-                      placeholder="如: 2026-03-18 19:32:00"
                     />
                   </div>
                   <div className="space-y-1">
