@@ -440,11 +440,11 @@ export default function AIPage() {
               <Input
                 value={formData.modelId}
                 onChange={e => setFormData({ ...formData, modelId: e.target.value })}
-                placeholder="如: doubao-1-5-vision-v2 (火山引擎请填 ep- 开头的接入点 ID)"
+                placeholder="如: doubao-vision-pro-xxx 或 ep-xxx"
               />
               {(formData.provider === "volcengine" || formData.endpoint?.includes("volces")) && (
                 <p className="text-xs text-orange-500 mt-1">
-                  注意：火山引擎(豆包)必须填写以 ep- 开头的「接入点 ID」，不能直接填模型名称。
+                  注意：火山引擎请复制控制台代码示例中自动生成的模型 ID（如 doubao-xxx 或 ep-xxx），不要直接填入下拉框的显示名称。
                 </p>
               )}
             </div>
@@ -525,11 +525,11 @@ export default function AIPage() {
                 <Input
                   value={configForm.modelId}
                   onChange={e => setConfigForm({ ...configForm, modelId: e.target.value })}
-                  placeholder="如: doubao-1-5-vision-v2 (火山引擎请填 ep- 开头的接入点 ID)"
+                  placeholder="如: doubao-vision-pro-xxx 或 ep-xxx"
                 />
                 {(configForm.provider?.includes("火山") || configForm.endpoint?.includes("volces")) && (
                   <p className="text-xs text-orange-500 mt-1">
-                    注意：火山引擎(豆包)必须填写以 ep- 开头的「接入点 ID」，不能直接填模型名称。
+                    注意：火山引擎请复制控制台代码示例中自动生成的模型 ID（如 doubao-xxx 或 ep-xxx），不要直接填入下拉框的显示名称。
                   </p>
                 )}
               </div>

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.5 - 2026-03-19
+
+### Fixes
+
+- **AI 模型配置表单提示二次优化**:
+  - 根据火山引擎最新的「快捷接入预置推理服务」规范，修改了前端的模型 ID 填写提示。
+  - 明确告知用户：不需要强制使用 `ep-` 开头，而是直接复制控制台代码示例中自动生成的模型 ID（如 `doubao-seed-2-0-mini-260215` 或 `ep-xxx`）。
+  - 避免用户误将下拉框的中文或大写显示名称（如 `Doubao-Seed-2.0-mini`）直接填入。
+
+### Modified Files
+
+1. `web/src/app/(dashboard)/ai/page.tsx` (Updated Volcengine model ID hint)
+
 ## 2.1.4 - 2026-03-19
 
 ### Fixes
