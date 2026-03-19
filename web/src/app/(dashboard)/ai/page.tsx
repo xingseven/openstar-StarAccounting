@@ -45,6 +45,7 @@ interface AIModel {
   type: "vision" | "text";
   status: "active" | "inactive";
   apiKeyConfigured: boolean;
+  isDefault: boolean;
   endpoint?: string;
   modelId?: string;
   description: string;
@@ -76,6 +77,7 @@ export default function AIPage() {
     type: "vision" as "vision" | "text",
     endpoint: "",
     modelId: "",
+    apiKey: "",
     description: ""
   });
 
@@ -92,6 +94,7 @@ export default function AIPage() {
   // 筛选状态
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
   const [loading, setLoading] = useState(true);
+  const [isTesting, setIsTesting] = useState(false);
 
   // 加载数据
   useEffect(() => {
@@ -126,6 +129,7 @@ export default function AIPage() {
       type: "vision",
       endpoint: "https://ark.cn-beijing.volces.com/api/v3",
       modelId: "",
+      apiKey: "",
       description: ""
     });
     setIsModalOpen(true);
@@ -141,6 +145,7 @@ export default function AIPage() {
       type: model.type,
       endpoint: model.endpoint || "",
       modelId: model.modelId || "",
+      apiKey: "",
       description: model.description
     });
     setIsModalOpen(true);
@@ -174,6 +179,8 @@ export default function AIPage() {
             type: formData.type,
             endpoint: formData.endpoint || provider?.baseUrl,
             modelId: formData.modelId,
+            apiKey: formData.apiKey || undefined,
+            status: formData.apiKey ? "active" : "inactive",
             description: formData.description
           })
         });
@@ -187,6 +194,8 @@ export default function AIPage() {
             type: formData.type,
             endpoint: formData.endpoint || provider?.baseUrl,
             modelId: formData.modelId,
+            apiKey: formData.apiKey || undefined,
+            status: formData.apiKey ? "active" : "inactive",
             description: formData.description
           })
         });
@@ -207,6 +216,19 @@ export default function AIPage() {
     } catch (error) {
       console.error("Delete model error:", error);
       alert("删除失败");
+    }
+  }
+
+  async function handleSetDefault(id: string) {
+    try {
+      await apiFetch(`/api/ai/models/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isDefault: true })
+      });
+      await loadModels();
+    } catch (error) {
+      console.error("Set default error:", error);
+      alert("设置默认模型失败");
     }
   }
 
@@ -308,6 +330,7 @@ export default function AIPage() {
                   onEdit={() => openEdit(model)}
                   onConfig={() => openConfig(model)}
                   onDelete={() => handleDelete(model.id)}
+                  onSetDefault={() => handleSetDefault(model.id)}
                 />
               ))}
             </CardContent>
@@ -348,6 +371,7 @@ export default function AIPage() {
                   onEdit={() => openEdit(model)}
                   onConfig={() => openConfig(model)}
                   onDelete={() => handleDelete(model.id)}
+                  onSetDefault={() => handleSetDefault(model.id)}
                 />
               ))}
             </CardContent>
@@ -416,8 +440,32 @@ export default function AIPage() {
               <Input
                 value={formData.modelId}
                 onChange={e => setFormData({ ...formData, modelId: e.target.value })}
-                placeholder="例如：doubao-1-5-vision-v2"
+                placeholder="如: doubao-1-5-vision-v2 (火山引擎请填 ep- 开头的接入点 ID)"
               />
+              {(formData.provider === "volcengine" || formData.endpoint?.includes("volces")) && (
+                <p className="text-xs text-orange-500 mt-1">
+                  注意：火山引擎(豆包)必须填写以 ep- 开头的「接入点 ID」，不能直接填模型名称。
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>API Key</Label>
+              <div className="relative">
+                <Input
+                  type={showApiKey ? "text" : "password"}
+                  value={formData.apiKey || ""}
+                  onChange={e => setFormData({ ...formData, apiKey: e.target.value })}
+                  placeholder="请输入 API Key"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>描述</Label>
@@ -477,8 +525,13 @@ export default function AIPage() {
                 <Input
                   value={configForm.modelId}
                   onChange={e => setConfigForm({ ...configForm, modelId: e.target.value })}
-                  placeholder="例如：doubao-1-5-vision-v2"
+                  placeholder="如: doubao-1-5-vision-v2 (火山引擎请填 ep- 开头的接入点 ID)"
                 />
+                {(configForm.provider?.includes("火山") || configForm.endpoint?.includes("volces")) && (
+                  <p className="text-xs text-orange-500 mt-1">
+                    注意：火山引擎(豆包)必须填写以 ep- 开头的「接入点 ID」，不能直接填模型名称。
+                  </p>
+                )}
               </div>
             </div>
 
@@ -507,6 +560,47 @@ export default function AIPage() {
                 API Key 将安全存储，用于调用 AI 服务
               </p>
             </div>
+
+            {/* 测试连接按钮 */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isTesting}
+              onClick={async () => {
+                if (!configForm.endpoint || !configForm.modelId || !apiKey) {
+                  alert("请填写完整的端点、模型ID和API Key");
+                  return;
+                }
+                setIsTesting(true);
+                try {
+                  const response = await apiFetch<{ success: boolean; message: string }>("/api/ai/models/test", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      endpoint: configForm.endpoint,
+                      modelId: configForm.modelId,
+                      apiKey: apiKey,
+                      provider: configForm.provider
+                    })
+                  });
+                  alert(response.message || "连接成功！");
+                } catch (error) {
+                  const msg = error instanceof Error ? error.message : "连接失败";
+                  alert("连接失败：" + msg);
+                } finally {
+                  setIsTesting(false);
+                }
+              }}
+            >
+              {isTesting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  测试中...
+                </>
+              ) : (
+                "测试连接"
+              )}
+            </Button>
           </div>
           <BottomSheetFooter>
             <Button type="button" variant="outline" onClick={() => setIsConfigModalOpen(false)}>
@@ -527,12 +621,14 @@ function ModelCard({
   model,
   onEdit,
   onConfig,
-  onDelete
+  onDelete,
+  onSetDefault
 }: {
   model: AIModel;
   onEdit: () => void;
   onConfig: () => void;
   onDelete: () => void;
+  onSetDefault: () => void;
 }) {
   const [showActions, setShowActions] = useState(false);
 
@@ -563,6 +659,11 @@ function ModelCard({
             ) : (
               <AlertCircle className="h-4 w-4 text-yellow-600" />
             )}
+            {model.isDefault && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                默认
+              </span>
+            )}
           </div>
           <div className="text-xs text-gray-500 flex items-center gap-2">
             <span>{model.provider}</span>
@@ -592,6 +693,18 @@ function ModelCard({
           </Button>
           {showActions && (
             <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg py-1 z-10 min-w-[100px]">
+              {!model.isDefault && (
+                <button
+                  onClick={() => {
+                    onSetDefault();
+                    setShowActions(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  设为默认
+                </button>
+              )}
               <button
                 onClick={() => {
                   onEdit();

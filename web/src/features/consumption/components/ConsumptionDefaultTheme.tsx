@@ -284,6 +284,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanResult, setScanResult] = useState<{
     amount: number;
     currency: string;
@@ -313,17 +314,26 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return map;
   }, [data.heatmap.data]);
 
-  // AI 扫描处理函数
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // AI 扫描处理函数 - 选择图片后只做预览
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 存储文件
+    setSelectedFile(file);
 
     // 预览图片
     const reader = new FileReader();
     reader.onload = (event) => {
       setSelectedImage(event.target?.result as string);
+      setScanResult(null); // 清空之前的结果
     };
     reader.readAsDataURL(file);
+  };
+
+  // 点击识别按钮后执行 AI 扫描
+  const handleAIScan = async () => {
+    if (!selectedImage || !selectedFile) return;
 
     // 开始扫描
     setIsScanning(true);
@@ -331,7 +341,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("image", selectedFile);
 
       const response = await apiFetch<{
         amount: number;
@@ -355,7 +365,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       });
     } catch (error) {
       console.error("AI scan error:", error);
-      alert("AI 识别失败，请重试");
+      // 提供更友好的错误提示
+      const errorMessage = error instanceof Error ? error.message : "AI 识别失败，请重试";
+      if (errorMessage.includes("API Key") || errorMessage.includes("Missing API Key")) {
+        alert("请先在「侧边栏 > 大模型」页面配置 API Key 后再使用 AI 记账功能");
+      } else if (errorMessage.includes("请先登录") || errorMessage.includes("TOKEN")) {
+        alert("请先登录后再使用 AI 记账功能");
+      } else {
+        alert(errorMessage || "AI 识别失败，请重试");
+      }
     } finally {
       setIsScanning(false);
     }
@@ -384,6 +402,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       alert("记账成功！");
       setIsAIDialogOpen(false);
       setSelectedImage(null);
+      setSelectedFile(null);
       setScanResult(null);
       // 可以在这里触发页面刷新
       window.location.reload();
@@ -396,6 +415,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
   const openAIDialog = () => {
     setIsAIDialogOpen(true);
     setSelectedImage(null);
+    setSelectedFile(null);
     setScanResult(null);
   };
 
@@ -1382,6 +1402,17 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   </span>
                 </label>
               </div>
+            ) : selectedImage && !scanResult && !isScanning ? (
+              // 图片已选择，等待点击识别
+              <div className="space-y-4">
+                <div className="rounded-lg overflow-hidden border">
+                  <img src={selectedImage} alt="Receipt" className="w-full h-48 object-contain bg-gray-50" />
+                </div>
+                <Button onClick={handleAIScan} className="w-full gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  开始识别
+                </Button>
+              </div>
             ) : isScanning ? (
               <div className="text-center py-8">
                 <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
@@ -1450,7 +1481,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </div>
           {scanResult && (
             <BottomSheetFooter>
-              <Button variant="outline" onClick={() => { setSelectedImage(null); setScanResult(null); }}>
+              <Button variant="outline" onClick={() => { setSelectedImage(null); setSelectedFile(null); setScanResult(null); }}>
                 重新拍照
               </Button>
               <Button onClick={handleAIConfirm}>

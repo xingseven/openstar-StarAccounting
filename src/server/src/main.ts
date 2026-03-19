@@ -3092,12 +3092,12 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
 
     if (prisma) {
       // 优先使用默认模型，否则使用第一个可用的活跃模型
-      let model = await prisma.aIModelConfig.findFirst({
+      let model = await prisma.aimodelconfig.findFirst({
         where: { userId, status: "active", isDefault: true }
       });
 
       if (!model) {
-        model = await prisma.aIModelConfig.findFirst({
+        model = await prisma.aimodelconfig.findFirst({
           where: { userId, status: "active" }
         });
       }
@@ -3129,6 +3129,41 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
   }
 });
 
+// 测试 AI 模型连接
+app.post("/api/ai/models/test", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { apiKey, endpoint, modelId, provider } = req.body;
+
+  if (!apiKey || !endpoint || !modelId) {
+    jsonFail(res, 400, 40001, "MISSING_PARAMS", "API Key、端点和模型ID不能为空");
+    return;
+  }
+
+  try {
+    // 尝试调用 AI API 验证连接
+    const OpenAI = (await import("openai")).default;
+    const client = new OpenAI({ apiKey, baseURL: endpoint });
+
+    const response = await client.chat.completions.create({
+      model: modelId,
+      messages: [{ role: "user", content: "Hi" }],
+      max_tokens: 5,
+    });
+
+    jsonOk(res, {
+      success: true,
+      message: "连接成功！",
+      response: response.choices[0]?.message?.content
+    });
+  } catch (error) {
+    console.error("AI connection test error:", error);
+    const message = error instanceof Error ? error.message : "连接失败";
+    jsonFail(res, 500, 50002, "CONNECTION_FAILED", message);
+  }
+});
+
 // ========== AI 大模型配置 CRUD ==========
 
 // 获取用户的大模型配置列表
@@ -3144,7 +3179,7 @@ app.get("/api/ai/models", async (req, res) => {
   }
 
   try {
-    const models = await prisma.aIModelConfig.findMany({
+    const models = await prisma.aimodelconfig.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" }
     });
@@ -3187,8 +3222,9 @@ app.post("/api/ai/models", async (req, res) => {
   }
 
   try {
-    const newModel = await prisma.aIModelConfig.create({
+    const newModel = await prisma.aimodelconfig.create({
       data: {
+        id: crypto.randomUUID(),
         userId,
         name,
         provider,
@@ -3197,7 +3233,8 @@ app.post("/api/ai/models", async (req, res) => {
         endpoint: endpoint || null,
         modelId: modelId || null,
         description: description || null,
-        status: apiKey ? "active" : "inactive"
+        status: apiKey ? "active" : "inactive",
+        updatedAt: new Date()
       }
     });
     jsonOk(res, {
@@ -3209,6 +3246,7 @@ app.post("/api/ai/models", async (req, res) => {
       modelId: newModel.modelId,
       description: newModel.description,
       status: newModel.status,
+      isDefault: newModel.isDefault,
       apiKeyConfigured: !!newModel.apiKey
     });
   } catch (error) {
@@ -3233,14 +3271,14 @@ app.put("/api/ai/models/:id", async (req, res) => {
 
   // 如果设置默认模型，先取消其他默认
   if (isDefault) {
-    await prisma.aIModelConfig.updateMany({
+    await prisma.aimodelconfig.updateMany({
       where: { userId, isDefault: true },
       data: { isDefault: false }
     });
   }
 
   try {
-    const updated = await prisma.aIModelConfig.update({
+    const updated = await prisma.aimodelconfig.update({
       where: { id, userId },
       data: {
         ...(name && { name }),
@@ -3286,7 +3324,7 @@ app.delete("/api/ai/models/:id", async (req, res) => {
   }
 
   try {
-    await prisma.aIModelConfig.delete({
+    await prisma.aimodelconfig.delete({
       where: { id, userId }
     });
     jsonOk(res, { message: "删除成功" });

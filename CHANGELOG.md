@@ -1,5 +1,54 @@
 # Changelog
 
+## 2.1.4 - 2026-03-19
+
+### Fixes
+
+- **AI 模型配置表单提示优化**:
+  - 针对使用火山引擎（豆包）模型时，测试连接报错 `NotFoundError: 404 The model or endpoint ... does not exist` 的问题。
+  - 在大模型配置页面的「模型 ID」输入框下方新增了针对火山引擎的动态提示信息。
+  - 明确告知用户：当提供商为火山引擎或 API 端点包含 volces 时，必须填写以 `ep-` 开头的「接入点 ID」，而不能直接填写模型名称。
+  - 优化了模型 ID 输入框的 placeholder。
+
+### Modified Files
+
+1. `web/src/app/(dashboard)/ai/page.tsx` (Added endpoint ID hint for Volcengine)
+
+## 2.1.3 - 2026-03-19
+
+### Fixes
+
+- **API 端口配置修复**:
+  - 前端 API 请求端口从错误的 3006 修正为正确的 3004
+  - 创建 `web/.env.local` 文件持久化配置
+  - 解决了 AI 记账功能无法调用后端 API 的问题
+
+### Features
+
+- **设为默认模型功能**:
+  - 大模型管理页面支持"设为默认"选项
+  - 默认模型在卡片上显示蓝色"默认"标签
+  - AI 记账时优先使用默认模型
+  - 设为默认后会取消其他模型的默认状态
+
+- **AI 识别交互优化**:
+  - 上传图片后不再自动识别，改为显示"开始识别"按钮
+  - 用户主动点击识别按钮后才触发 AI 识别
+  - 识别过程中显示 loading 状态
+  - 识别完成后显示结果供用户确认或修改
+
+- **AI 识别错误提示优化**:
+  - 改进消费页面 AI 识别的错误处理
+  - 未配置 API Key 时提示用户前往大模型页面配置
+  - 未登录时提示用户先登录
+  - 提供更友好的错误文案，而非笼统的"识别失败"
+
+### Modified Files
+
+1. `web/.env.local` (New file - API port configuration)
+2. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (Added manual scan button, better error handling)
+3. `web/src/app/(dashboard)/ai/page.tsx` (Added set default model feature)
+
 ## 2.1.2 - 2026-03-18
 
 ### Fixes
