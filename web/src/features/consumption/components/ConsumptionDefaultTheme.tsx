@@ -907,32 +907,33 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <div className="overflow-x-auto">
               <div className="w-[1200px] md:w-full">
                 <DelayedRender delay={120} lazy className="h-[250px] w-full">
-                <ReactECharts
-                  ref={addChartRef}
-                  autoResize={false}
-                  option={{
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                    xAxis: { 
-                      type: 'category', 
-                      boundaryGap: false, 
-                      data: data.trend.map(t => t.day.slice(5)),
-                      axisLine: { show: false },
-                      axisTick: { show: false }
-                    },
-                    yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
-                    series: [{
-                    name: '支出',
-                    type: 'line',
-                    data: data.trend.map(t => t.total),
-                    smooth: true,
-                    itemStyle: { color: '#3b82f6' },
-                    areaStyle: { opacity: 0.1, color: '#3b82f6' }
-                  }]
-                  }}
-                  style={{ height: '100%', width: '100%' }}
-                />
-              </DelayedRender>
+                  <ReactECharts
+                    ref={addChartRef}
+                    autoResize={false}
+                    option={{
+                      tooltip: { trigger: 'axis' },
+                      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                      xAxis: { 
+                        type: 'category', 
+                        boundaryGap: false, 
+                        data: data.trend.map(t => t.day.slice(5)),
+                        axisLine: { show: false },
+                        axisTick: { show: false }
+                      },
+                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                      series: [{
+                        name: '支出',
+                        type: 'line',
+                        data: data.trend.map(t => t.total),
+                        smooth: true,
+                        itemStyle: { color: '#3b82f6' },
+                        areaStyle: { opacity: 0.1, color: '#3b82f6' }
+                      }]
+                    }}
+                    style={{ height: '100%', width: '100%' }}
+                  />
+                </DelayedRender>
+              </div>
             </div>
           </CardContent>
         </Card>
