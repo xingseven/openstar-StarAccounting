@@ -870,7 +870,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '3%', right: '4%', bottom: '3%', top: '3%', containLabel: true },
+                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
                   xAxis: { type: 'value', show: false },
                   yAxis: { 
                     type: 'category', 
@@ -912,7 +912,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     autoResize={false}
                     option={{
                       tooltip: { trigger: 'axis' },
-                      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                      grid: { left: '0%', right: '0%', bottom: '0%', containLabel: false },
                       xAxis: { 
                         type: 'category', 
                         boundaryGap: false, 
@@ -952,7 +952,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     option={{
                       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
                       legend: { data: ["餐饮", "购物", "交通", "娱乐"], bottom: 0 },
-                      grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+                      grid: { left: '0%', right: '0%', bottom: '0%', containLabel: false },
                       xAxis: { 
                         type: 'category', 
                         data: data.stackedBar.map(t => t.day.slice(8)),
@@ -997,7 +997,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-                  grid: { left: '3%', right: '3%', bottom: '3%', containLabel: true },
+                  grid: { left: '0%', right: '0%', bottom: '0%', containLabel: false },
                   xAxis: { 
                     type: 'category', 
                     data: data.pareto.map(t => t.name),
@@ -1126,7 +1126,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '3%', right: '3%', bottom: '10%', top: '15%', containLabel: true },
+                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
                   xAxis: { 
                     type: 'category', 
                     data: data.weekdayWeekend.map((item, index) => {
@@ -1343,7 +1343,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       return `${v[0]}点<br/>金额: ¥${v[1]}<br/>分类: ${v[2]}`;
                     }
                   },
-                  grid: { left: '3%', right: '7%', bottom: '3%', top: '10%', containLabel: true },
+                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
                   xAxis: { type: 'value', min: 0, max: 24, name: '时间', splitLine: { show: false } },
                   yAxis: { type: 'value', name: '金额', splitLine: { lineStyle: { type: 'dashed' } } },
                   series: [{
@@ -1372,7 +1372,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '3%', right: '3%', bottom: '3%', top: '10%', containLabel: true },
+                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
                   xAxis: { 
                     type: 'category', 
                     data: data.histogram.map(h => h.range),
