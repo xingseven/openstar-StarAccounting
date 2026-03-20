@@ -8,7 +8,7 @@ import { fetchConsumptionData } from "@/features/consumption/api";
 import { StatsCardSkeleton, ChartSkeleton, PieChartSkeleton, ListTableSkeleton, Skeleton } from "@/components/shared/Skeletons";
 
 const SkeletonLoading = () => (
-  <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
+  <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8 min-h-screen">
     {/* 顶部标题与功能区骨架 */}
     <div className="flex flex-col gap-3 sm:gap-4">
       <div className="flex items-center justify-between gap-4">
@@ -125,17 +125,17 @@ export default function ConsumptionPage() {
     return "2024-03-01 - 2024-03-31";
   }, [consumptionData.trend]);
 
-  if (loading && consumptionData.transactions.length === 0) {
-    return <SkeletonLoading />;
-  }
-
   return (
-    <div>
+    <div className="w-full min-h-screen">
       <MockDataBanner usingMockData={usingMockData} />
-      <ConsumptionDefaultTheme
-        data={consumptionData}
-        dateRangeLabel={dateRangeLabel}
-      />
+      {loading && consumptionData.transactions.length === 0 ? (
+        <SkeletonLoading />
+      ) : (
+        <ConsumptionDefaultTheme
+          data={consumptionData}
+          dateRangeLabel={dateRangeLabel}
+        />
+      )}
     </div>
   );
 }

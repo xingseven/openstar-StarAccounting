@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.2.5 - 2026-03-20
+
+### Fixes
+
+- **彻底解决消费页面刷新滚动位置丢失问题**:
+  - 为 `page.tsx`、`SkeletonLoading` 以及 `ConsumptionDefaultTheme` 的最外层容器添加了 `min-h-screen` 样式。
+  - 解决了在 `next/dynamic` 异步加载期间 DOM 瞬间高度坍塌，导致浏览器 Scroll Restoration（滚动恢复）机制失效，被强制弹回顶部的问题。
+
+### Modified Files
+
+1. `web/src/app/(dashboard)/consumption/page.tsx`
+2. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+
 ## 2.2.4 - 2026-03-20
 
 ### Fixes
