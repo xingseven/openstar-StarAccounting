@@ -99,7 +99,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
   if (loading) {
     return (
-      <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatsCardSkeleton />
           <StatsCardSkeleton />
@@ -113,7 +113,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto overflow-x-hidden">
+    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto overflow-x-hidden">
       {/* Budget Alerts Banner */}
       {data.budgetAlerts.length > 0 && !alertsDismissed && (
         <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 lg:p-3 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
@@ -251,47 +251,49 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="shadow-sm overflow-hidden group h-full">
+            <Card className="shadow-sm overflow-hidden group h-full gap-0">
               <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
                   <CardDescription>本月收支状态对比</CardDescription>
                 </div>
               </CardHeader>
-              <ChartContainer config={chartConfig} className="h-[120px] sm:h-[200px] w-full [&_.recharts-surface]:border-none [&_.recharts-surface]:bg-transparent">
-                  <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }} className="outline-none focus:outline-none">
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      width={40}
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                    />
-                    <XAxis dataKey="value" type="number" hide />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent hideLabel />}
-                    />
-                    <Bar dataKey="value" layout="vertical" radius={5} barSize={16}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ChartContainer>
+              <CardContent className="p-0 -mt-2">
+                <ChartContainer config={chartConfig} className="h-[100px] sm:h-[160px] w-full [&_.recharts-surface]:border-none [&_.recharts-surface]:bg-transparent]">
+                    <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }} className="outline-none focus:outline-none">
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        width={40}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                      />
+                      <XAxis dataKey="value" type="number" hide />
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent hideLabel />}
+                      />
+                      <Bar dataKey="value" layout="vertical" radius={5} barSize={16}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ChartContainer>
+              </CardContent>
               <GridDecoration mode="light" className="opacity-[0.01]" />
             </Card>
 
-            <Card className="shadow-sm overflow-hidden group h-full">
+            <Card className="shadow-sm overflow-hidden group h-full gap-0">
               <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">消费占比</CardTitle>
                   <CardDescription>按消费分类统计占比</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10 h-[200px] flex items-center justify-center">
+              <CardContent className="relative z-10 h-[160px] flex items-center justify-center -mt-2">
                 <div className="w-full h-full relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -328,8 +330,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </Card>
           </div>
 
-          <CardContainer className="group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card p-4 text-sm text-card-foreground lg:p-3">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <CardContainer className="group/card flex flex-col gap-0 overflow-hidden rounded-xl bg-card p-4 text-sm text-card-foreground lg:p-3">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
               <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
                 查看全部 <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -346,21 +348,21 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </div>
               ) : (
                 data.recentTransactions.map((t) => (
-                  <div key={t.id} className="group/item flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
-                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div key={t.id} className="group/item flex items-center justify-between py-1.5 px-2 sm:py-2 sm:px-3 rounded-xl hover:bg-gray-50 transition-colors gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                       <div className={cn(
-                        "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border shadow-sm shrink-0",
+                        "flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full border shadow-sm shrink-0",
                         t.type === "EXPENSE" ? "bg-white border-gray-100" : "bg-green-50 border-green-100"
                       )}>
                         {t.type === "EXPENSE" ? (
-                          <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                          <ArrowUpRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                         ) : (
-                          <ArrowDownLeft className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                          <ArrowDownLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-sm sm:text-base text-gray-900 truncate group-hover/item:text-blue-600 transition-colors">{t.category || "未分类"}</div>
-                        <div className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1 truncate">
+                        <div className="font-semibold text-sm text-gray-900 truncate group-hover/item:text-blue-600 transition-colors">{t.category || "未分类"}</div>
+                        <div className="text-[10px] text-gray-500 flex items-center gap-1 truncate">
                           <span>{new Date(t.date).toLocaleDateString()}</span>
                           <span>·</span>
                           <span className="truncate">{t.merchant || t.platform}</span>
@@ -368,7 +370,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                       </div>
                     </div>
                     <div className={cn(
-                      "font-bold text-sm sm:text-base tabular-nums shrink-0 whitespace-nowrap",
+                      "font-bold text-sm tabular-nums shrink-0 whitespace-nowrap",
                       t.type === "INCOME" ? "text-green-600" : "text-gray-900"
                     )}>
                       {t.type === "EXPENSE" ? "-" : "+"}

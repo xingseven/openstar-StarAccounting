@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
 
+import { StatsCardSkeleton, ListTableSkeleton } from "@/components/shared/Skeletons";
+
 type AdminStats = {
   users: number;
   transactions: number;
@@ -126,9 +128,15 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-      </div>
+      <PageContainer>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+        <ListTableSkeleton rows={10} columns={8} />
+      </PageContainer>
     );
   }
 

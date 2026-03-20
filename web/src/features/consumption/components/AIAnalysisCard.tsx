@@ -95,7 +95,7 @@ function SkeletonLoader() {
     <div className="space-y-4">
       {/* Header skeleton */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-200 to-blue-200 animate-pulse" />
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-200 to-blue-200 animate-pulse" />
         <div className="space-y-2 flex-1">
           <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
           <div className="h-3 bg-gray-100 rounded animate-pulse w-40" />
@@ -117,9 +117,9 @@ function SkeletonLoader() {
       </div>
 
       {/* Chart skeleton */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4">
+      <div className="bg-gradient-to-r from-blue-50 to-blue-50 rounded-xl p-4">
         <div className="flex items-center justify-center gap-2 mb-3">
-          <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+          <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
           <div className="h-3 bg-gray-300 rounded animate-pulse w-20" />
         </div>
         <div className="space-y-2">
@@ -275,7 +275,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
       <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
         <div className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-500 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -287,7 +287,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
           <button
             onClick={handleAnalyze}
             disabled={transactions.length === 0}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium hover:from-purple-600 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-500 text-white font-medium hover:from-blue-600 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             开始 AI 分析
@@ -306,7 +306,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
       <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
         <div className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-500 flex items-center justify-center">
               <Loader2 className="w-5 h-5 text-white animate-spin" />
             </div>
             <div>
@@ -355,7 +355,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-500 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -393,15 +393,15 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
         </div>
 
         {/* Summary with typing effect */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4 min-h-[60px]">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-50 rounded-xl p-4 mb-4 min-h-[60px]">
           <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-purple-500" />
-            <span className="text-xs text-purple-600 font-medium">消费总结</span>
-            {isSummaryTyping && <Loader2 className="w-3 h-3 animate-spin text-purple-400" />}
+            <BarChart3 className="w-4 h-4 text-blue-500" />
+            <span className="text-xs text-blue-600 font-medium">消费总结</span>
+            {isSummaryTyping && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
           </div>
           <p className="text-sm text-gray-700">
             {summaryText}
-            {isSummaryTyping && <span className="inline-block w-1.5 h-4 bg-purple-400 ml-0.5 animate-pulse" />}
+            {isSummaryTyping && <span className="inline-block w-1.5 h-4 bg-blue-400 ml-0.5 animate-pulse" />}
           </p>
         </div>
 
@@ -430,10 +430,10 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
             {analysis.insights.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <Sparkles className="w-4 h-4 text-blue-500" />
                   关键洞察
                   {typingPhase === "insights" && visibleInsights < analysis.insights.length && (
-                    <Loader2 className="w-3 h-3 animate-spin text-purple-400 ml-auto" />
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-400 ml-auto" />
                   )}
                 </h4>
                 <div className="space-y-2">

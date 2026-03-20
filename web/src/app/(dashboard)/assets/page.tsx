@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import type { Asset } from "@/types";
 import { MOCK_ASSETS } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
+import { CardListSkeleton } from "@/components/shared/Skeletons";
 import {
   BottomSheet,
   BottomSheetContent,
@@ -19,8 +20,8 @@ const AssetsDefaultTheme = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+        <CardListSkeleton count={6} />
       </div>
     )
   }

@@ -5,14 +5,28 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_DASHBOARD } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
+import { StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
 
 const DashboardDefaultTheme = dynamic(
   () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+        <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <ChartSkeleton />
+          </div>
+          <div>
+            <CardListSkeleton count={5} />
+          </div>
+        </div>
       </div>
     )
   }

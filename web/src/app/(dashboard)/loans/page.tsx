@@ -6,16 +6,29 @@ import dynamic from "next/dynamic";
 import type { Loan } from "@/types";
 import { MOCK_LOANS, MOCK_LOANS_PLATFORM_DATA, MOCK_LOANS_PAID_VS_REMAINING } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
+import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton } from "@/components/shared/Skeletons";
+
+const SkeletonLoading = () => (
+  <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+    </div>
+    <div className="grid gap-4 md:grid-cols-2">
+      <ChartSkeleton />
+      <ChartSkeleton />
+    </div>
+    <ListTableSkeleton />
+  </div>
+);
 
 const LoansDefaultTheme = dynamic(
   () => import("@/features/loans/components/themes/DefaultLoans").then(mod => mod.LoansDefaultTheme),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-      </div>
-    )
+    loading: () => <SkeletonLoading />
   }
 );
 import {

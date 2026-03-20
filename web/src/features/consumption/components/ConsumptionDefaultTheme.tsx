@@ -614,33 +614,35 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
         <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
               <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
             </div>
+
+            {/* AI 智能分析卡片 - 长条形状 */}
+            <AIAnalysisCard
+              transactions={data.transactions.map(t => ({
+                id: t.id,
+                amount: parseFloat(t.amount) || 0,
+                category: t.category,
+                platform: t.platform,
+                date: t.date,
+                merchant: t.merchant,
+                description: "",
+              }))}
+              budgets={[]}
+              className="max-w-xl w-full"
+            />
+
             <Button
               onClick={openAIDialog}
-              className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
+              className="gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shrink-0"
             >
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">AI 记账</span>
             </Button>
           </div>
-
-          {/* AI 智能分析卡片 */}
-          <AIAnalysisCard
-            transactions={data.transactions.map(t => ({
-              id: t.id,
-              amount: parseFloat(t.amount) || 0,
-              category: t.category,
-              platform: t.platform,
-              date: t.date,
-              merchant: t.merchant,
-              description: "",
-            }))}
-            budgets={[]}
-          />
 
           {/* 原始的顶部过滤模块 (非吸顶状态) */}
           <div className="bg-white py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">

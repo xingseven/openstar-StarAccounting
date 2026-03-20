@@ -5,16 +5,26 @@ import dynamic from "next/dynamic";
 import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
 import { fetchConsumptionData } from "@/features/consumption/api";
+import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton } from "@/components/shared/Skeletons";
+
+const SkeletonLoading = () => (
+  <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+    </div>
+    <ChartSkeleton />
+    <ListTableSkeleton />
+  </div>
+);
 
 const ConsumptionDefaultTheme = dynamic(
   () => import("@/features/consumption/components/ConsumptionDefaultTheme").then(mod => mod.ConsumptionDefaultTheme),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-      </div>
-    )
+    loading: () => <SkeletonLoading />
   }
 );
 
@@ -62,11 +72,7 @@ export default function ConsumptionPage() {
   }, [consumptionData.trend]);
 
   if (loading && consumptionData.transactions.length === 0) {
-    return (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-      </div>
-    );
+    return <SkeletonLoading />;
   }
 
   return (
