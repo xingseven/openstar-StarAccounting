@@ -252,13 +252,13 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="shadow-sm overflow-hidden group h-full">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
                   <CardDescription>本月收支状态对比</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10 h-[200px] flex items-center px-0">
+              <CardContent className="relative z-10 h-[200px] flex items-center">
                 <ChartContainer config={chartConfig} className="h-[150px] w-full">
                   <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
                     <YAxis
@@ -293,7 +293,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   <CardDescription>按消费分类统计占比</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10 h-[200px] flex items-center justify-center px-0">
+              <CardContent className="relative z-10 h-[200px] flex items-center justify-center">
                 <div className="w-full h-full relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
