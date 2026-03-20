@@ -912,7 +912,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     autoResize={false}
                     option={{
                       tooltip: { trigger: 'axis' },
-                      grid: { left: '0%', right: '0%', bottom: '0%', containLabel: false },
+                      grid: { left: '0%', right: '0%', bottom: '15%', containLabel: false },
                       xAxis: { 
                         type: 'category', 
                         boundaryGap: false, 
@@ -1126,9 +1126,9 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
-                  xAxis: { 
-                    type: 'category', 
+                  grid: { left: '0%', right: '0%', bottom: '15%', top: '0%', containLabel: false },
+                  xAxis: {
+                    type: 'category',
                     data: data.weekdayWeekend.map((item, index) => {
                       const weekDates = getWeekDates(selectedWeek);
                       const dateInfo = weekDates[index];
@@ -1136,14 +1136,15 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     }),
                     axisLine: { show: false },
                     axisTick: { show: false },
-                    axisLabel: { 
+                    axisLabel: {
                       interval: 0,
                       lineHeight: 16,
                       color: '#666',
-                      fontSize: 12
+                      fontSize: 12,
+                      rotate: 45
                     }
                   },
-                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
                   series: [{
                     name: '平均消费',
                     type: 'bar',
