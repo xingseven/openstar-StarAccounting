@@ -437,7 +437,7 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, trendValue, color
 
   return (
     <div className={cn(
-      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-2 sm:p-4 lg:p-6 shadow-sm transition-all hover:shadow-md relative overflow-hidden group",
+      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-3 lg:p-4 shadow-sm transition-all hover:shadow-md relative overflow-hidden group",
       className
     )}>
       <GridDecoration mode="light" className="opacity-[0.01]" />
