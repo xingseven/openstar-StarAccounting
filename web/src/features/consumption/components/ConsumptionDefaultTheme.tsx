@@ -702,7 +702,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 1: Summary Cards (4 cols) - Instant Render */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-6">
+        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
@@ -713,7 +713,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
@@ -730,7 +730,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
+        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
@@ -747,7 +747,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2 p-3 md:p-5 lg:p-7">
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
             <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
@@ -767,7 +767,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 2: Charts (3 cols) */}
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="col-span-1 flex flex-col p-3 md:p-5 lg:p-7">
+        <Card className="col-span-1 flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">支付平台分布</CardTitle>
           </CardHeader>
@@ -812,7 +812,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 flex flex-col p-3 md:p-5 lg:p-7">
+        <Card className="col-span-1 flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">收支分析</CardTitle>
           </CardHeader>
@@ -859,7 +859,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 p-3 md:p-5 lg:p-7">
+        <Card className="col-span-2">
           <CardHeader>
             <CardTitle className="text-base">热门商家 Top 10</CardTitle>
           </CardHeader>
@@ -899,7 +899,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 3: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2 items-start">
-        <Card className="p-3 md:p-5 lg:p-7">
+        <Card
           <CardHeader>
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
@@ -938,7 +938,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="p-3 md:p-5 lg:p-7">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
@@ -985,7 +985,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 4: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="flex flex-col p-3 md:p-5 lg:p-7">
+        <Card className="flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
             <CardDescription>识别主要支出分类</CardDescription>
@@ -1032,7 +1032,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col p-3 md:p-5 lg:p-7">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-base">消费日历</CardTitle>
             <CardDescription>每日消费强度分布</CardDescription>
@@ -1047,7 +1047,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 5: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="p-3 md:p-5 lg:p-7">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
           </CardHeader>
@@ -1095,7 +1095,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="p-3 md:p-5 lg:p-7">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -1160,7 +1160,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
       </div>
 
       {/* Row 7: Sankey Diagram - ECharts */}
-      <Card className="p-3 md:p-5 lg:p-7">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向（支持拖拽节点调整布局）</CardDescription>
@@ -1325,7 +1325,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 8: Scatter & Histogram - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="p-3 md:p-5 lg:p-7">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">消费时段分布 (散点图)</CardTitle>
             <CardDescription>24 小时消费习惯透视</CardDescription>
@@ -1360,7 +1360,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card className="p-3 md:p-5 lg:p-7">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">单笔金额分布 (直方图)</CardTitle>
             <CardDescription>消费力度画像分析</CardDescription>
