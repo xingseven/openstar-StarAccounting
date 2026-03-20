@@ -633,6 +633,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               }))}
               budgets={[]}
               className="max-w-xl w-full"
+              compact
             />
 
             <Button

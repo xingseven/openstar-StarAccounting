@@ -52,6 +52,7 @@ interface AIAnalysisCardProps {
   transactions: TransactionItem[];
   budgets: BudgetItem[];
   className?: string;
+  compact?: boolean;
 }
 
 // 打字机效果 Hook
@@ -150,7 +151,7 @@ function SkeletonLoader() {
   );
 }
 
-export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnalysisCardProps) {
+export function AIAnalysisCard({ transactions, budgets, className = "", compact = false }: AIAnalysisCardProps) {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -343,6 +344,22 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
             重试
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Compact mode - 长条形状
+  if (compact && !loading && !error) {
+    return (
+      <div className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+        <button
+          onClick={handleAnalyze}
+          disabled={transactions.length === 0 || loading}
+          className="w-full px-4 py-2 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>{hasAnalyzed ? "重新分析" : "AI 智能分析"}</span>
+        </button>
       </div>
     );
   }
