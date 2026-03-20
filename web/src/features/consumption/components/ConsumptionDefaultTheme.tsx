@@ -990,7 +990,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
             <CardDescription>识别主要支出分类</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 pb-2">
+          <CardContent className="flex-1 p-0">
             <DelayedRender delay={360} lazy className="h-[250px] w-full">
               <ReactECharts
                 ref={addChartRef}
