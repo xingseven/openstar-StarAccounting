@@ -77,8 +77,6 @@ class NotificationService {
           badge: payload.badge || "/icons/badge-72x72.png",
           tag: payload.tag,
           data: payload.data,
-          actions: payload.actions,
-          vibrate: [100, 50, 100],
         });
       } else {
         new Notification(payload.title, {

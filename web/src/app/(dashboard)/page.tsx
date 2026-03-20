@@ -99,7 +99,7 @@ async function fetchDashboardData(): Promise<DashboardData> {
 
   const savingsKeywords = ["储蓄", "存款"];
   const savingsTxs = savingsTxData.items.filter(t =>
-    savingsKeywords.some(k => t.category?.includes(k) || t.description?.includes(k))
+    savingsKeywords.some(k => t.category?.includes(k) || t.merchant?.includes(k))
   );
   const monthSavingsIncome = savingsTxs
     .filter(t => t.type === "INCOME" && new Date(t.date) >= new Date(start))

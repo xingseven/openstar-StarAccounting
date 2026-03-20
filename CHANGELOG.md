@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.2.0 - 2026-03-20
+
+### Features
+
+- **消费页面移动端图表优化**:
+  - 「每日平均消费 (按周)」图表在移动端支持 X 轴标签 45 度旋转显示
+  - PC 端保持正常角度显示，根据 `isMobile` 状态动态切换
+
+### Fixes
+
+- **构建错误全面修复**:
+  - 修复 `ConsumptionDefaultTheme.tsx` 中 `<DelayedRender>` 标签未正确闭合导致 JSX 解析失败
+  - 修复 `ai/page.tsx` 中 Button 组件使用不存在的 `asChild` prop（base-ui 版本已移除）
+  - 修复 `page.tsx` 中 Transaction 类型缺少 `description` 字段导致 TypeScript 报错
+  - 修复 `notifications.ts` 中 `actions` 和 `vibrate` 属性不存在于 `NotificationOptions` 的类型错误
+  - 修复 `echarts-for-react` v3.x 移除 `ref` prop 导致的所有图表引用报错
+  - 安装 `@playwright/test` 依赖解决 Playwright 配置报错
+
+### Modified Files
+
+1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (修复 JSX 解析错误，优化移动端图表旋转)
+2. `web/src/app/(dashboard)/ai/page.tsx` (移除 asChild prop，改用原生锚点样式)
+3. `web/src/app/(dashboard)/page.tsx` (修复 Transaction 类型)
+4. `web/src/lib/notifications.ts` (移除无效的 Notification 选项)
+5. `web/package.json` (新增 @playwright/test 依赖)
+
 ## 2.1.8 - 2026-03-19
 
 ### Features

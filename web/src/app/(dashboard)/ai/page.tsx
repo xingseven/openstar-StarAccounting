@@ -292,9 +292,12 @@ export default function AIPage() {
                 配置大模型后，可在消费页面使用「AI 拍照记账」功能，自动识别小票、账单上的金额、商户、日期等信息。
               </p>
               <div className="flex gap-3">
-                <Button variant="outline" size="sm" asChild>
-                  <a href="/consumption">前往体验</a>
-                </Button>
+                <a
+                  href="/consumption"
+                  className="inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-sm h-7 gap-1 px-2.5"
+                >
+                  前往体验
+                </a>
               </div>
             </div>
           </div>

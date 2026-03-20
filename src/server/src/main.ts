@@ -11,7 +11,7 @@ import { convertCurrency, type ExchangeRate as CurrencyExchangeRate } from "./li
 import { calculateBudgetUsage, calculateBudgetHealth, type BudgetStatus } from "./logic/budget.js";
 import { calculateAssetValue } from "./logic/asset.js";
 import { fetchExchangeRates } from "./services/exchangeRate.js";
-import { scanReceipt, type ReceiptData } from "./services/doubaoAi.js";
+import { scanReceipt, type ReceiptData, analyzeConsumption, type TransactionInput, type BudgetInput } from "./services/doubaoAi.js";
 
 type ApiSuccess<T> = {
   code: 200;
@@ -3148,6 +3148,62 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
   } catch (error) {
     console.error("AI Scan Receipt Error:", error);
     const message = error instanceof Error ? error.message : "AI 识别失败，请重试";
+    jsonFail(res, 500, 50001, "AI_PROCESSING_ERROR", message);
+  }
+});
+
+// AI 消费分析
+app.post("/api/ai/analyze-consumption", async (req, res) => {
+  try {
+    const userId = await requireUserId(req, res);
+    if (!userId) return;
+
+    const { transactions, budgets, startDate, endDate } = req.body as {
+      transactions: TransactionInput[];
+      budgets: BudgetInput[];
+      startDate?: string;
+      endDate?: string;
+    };
+
+    if (!transactions || !Array.isArray(transactions)) {
+      jsonFail(res, 400, 40001, "INVALID_PARAMS", "transactions 参数无效");
+      return;
+    }
+
+    // 获取用户配置的大模型
+    const prisma = getPrisma();
+    let modelConfig: { apiKey?: string; endpoint?: string; modelId?: string } | null = null;
+
+    if (prisma) {
+      let model = await prisma.aimodelconfig.findFirst({
+        where: { userId, status: "active", isDefault: true }
+      });
+
+      if (!model) {
+        model = await prisma.aimodelconfig.findFirst({
+          where: { userId, status: "active" }
+        });
+      }
+
+      if (model) {
+        modelConfig = {
+          apiKey: model.apiKey || undefined,
+          endpoint: model.endpoint || undefined,
+          modelId: model.modelId || undefined
+        };
+      }
+    }
+
+    const result = await analyzeConsumption(
+      transactions,
+      budgets || [],
+      modelConfig || undefined
+    );
+
+    jsonOk(res, result);
+  } catch (error) {
+    console.error("AI Analyze Consumption Error:", error);
+    const message = error instanceof Error ? error.message : "AI 分析失败，请重试";
     jsonFail(res, 500, 50001, "AI_PROCESSING_ERROR", message);
   }
 });

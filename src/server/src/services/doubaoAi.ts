@@ -4,6 +4,7 @@ import OpenAI from "openai";
 const DEFAULT_API_KEY = process.env.VOLC_API_KEY || "";
 const DEFAULT_BASE_URL = process.env.VOLC_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
 const DEFAULT_MODEL_ID = process.env.VOLC_MODEL_ID || "doubao-1-5-vision-v2";
+const DEFAULT_ANALYSIS_MODEL = process.env.VOLC_ANALYSIS_MODEL || "doubao-seed-2-0-mini-260215";
 
 // 平台类型
 export type PlatformType = "alipay" | "wechat" | "unionpay";
@@ -191,5 +192,190 @@ export async function scanReceipt(
   } catch (error) {
     console.error("AI Scan Receipt Error:", error);
     throw new Error("Failed to analyze receipt image");
+  }
+}
+
+// 分析消费数据类型
+export type TransactionInput = {
+  id: string;
+  amount: number;
+  category: string;
+  platform: string;
+  date: string;
+  merchant?: string;
+  description?: string;
+};
+
+export type BudgetInput = {
+  category: string;
+  limit: number;
+  spent: number;
+  period?: string;
+};
+
+export type AnalysisInsight = {
+  type: "info" | "warning" | "success";
+  title: string;
+  description: string;
+};
+
+export type AnalysisSuggestion = {
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+};
+
+export type AnalysisResult = {
+  summary: string;
+  insights: AnalysisInsight[];
+  suggestions: AnalysisSuggestion[];
+  stats: {
+    totalExpense: number;
+    totalIncome: number;
+    avgDaily: number;
+    transactionCount: number;
+    topCategory: string;
+    topCategoryPercent: number;
+    expenseChangePercent: number; // 相比上期变化
+  };
+};
+
+/**
+ * 分析消费数据
+ * @param transactions 交易记录列表
+ * @param budgets 预算列表
+ * @param config 可选的大模型配置
+ */
+export async function analyzeConsumption(
+  transactions: TransactionInput[],
+  budgets: BudgetInput[],
+  config?: AIModelConfig
+): Promise<AnalysisResult> {
+  const apiKey = config?.apiKey || DEFAULT_API_KEY;
+  const baseURL = config?.endpoint || DEFAULT_BASE_URL;
+  const modelId = config?.modelId || DEFAULT_ANALYSIS_MODEL;
+
+  if (!apiKey) {
+    throw new Error("Missing API Key. Please configure a model in the AI settings page.");
+  }
+
+  // 计算基本统计
+  const totalExpense = transactions
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalIncome = transactions
+    .filter(t => t.amount < 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  const avgDaily = transactions.length > 0
+    ? totalExpense / Math.max(1, new Set(transactions.map(t => t.date.split('T')[0])).size)
+    : 0;
+
+  // 分类统计
+  const categoryStats = transactions.reduce((acc, t) => {
+    const cat = t.category || "其他";
+    acc[cat] = (acc[cat] || 0) + t.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const topCategory = Object.entries(categoryStats)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || "无";
+
+  const topCategoryPercent = totalExpense > 0
+    ? Math.round((categoryStats[topCategory] || 0) / totalExpense * 100)
+    : 0;
+
+  // 平台统计
+  const platformStats = transactions.reduce((acc, t) => {
+    const platform = t.platform || "未知";
+    acc[platform] = (acc[platform] || 0) + t.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // 生成交易列表摘要
+  const transactionsList = transactions.slice(0, 20).map(t =>
+    `- ${t.date.split('T')[0]} | ${t.category} | ¥${Math.abs(t.amount).toFixed(2)} | ${t.merchant || t.description || ""}`
+  ).join("\n");
+
+  // 预算状态
+  const budgetStatus = budgets.map(b =>
+    `- ${b.category}: 已 ¥${b.spent.toFixed(2)} / 预算 ¥${b.limit.toFixed(2)}`
+  ).join("\n");
+
+  // 构建 Prompt
+  const prompt = `你是一位专业的个人财务顾问。请分析以下消费数据，生成简洁、有用的分析报告。
+
+【消费概况】
+- 总消费：¥${totalExpense.toFixed(2)}
+- 总收入：¥${totalIncome.toFixed(2)}
+- 日均消费：¥${avgDaily.toFixed(2)}
+- 消费笔数：${transactions.length}
+- 主要消费类别：${topCategory} (占比 ${topCategoryPercent}%)
+
+【平台分布】
+${Object.entries(platformStats).map(([p, v]) => `- ${p}: ¥${v.toFixed(2)}`).join("\n")}
+
+【近期交易】(最多显示20笔)
+${transactionsList || "暂无交易记录"}
+
+【预算状态】
+${budgetStatus || "暂无预算设置"}
+
+请以严格的 JSON 格式返回分析报告，不要包含 markdown 代码块标记：
+{
+  "summary": "50字以内的月度消费总结",
+  "insights": [
+    {"type": "info/warning/success", "title": "洞察标题", "description": "详细描述"}
+  ],
+  "suggestions": [
+    {"title": "建议标题", "description": "具体可执行的建议", "priority": "high/medium/low"}
+  ]
+}`;
+
+  const client = new OpenAI({
+    apiKey: apiKey,
+    baseURL: baseURL,
+  });
+
+  try {
+    const response = await client.chat.completions.create({
+      model: modelId,
+      messages: [
+        {
+          role: "system",
+          content: "你是一个专业的个人财务顾问，擅长分析消费数据并提供优化建议。回答应该简洁、实用、有数据支撑。"
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+    });
+
+    const content = response.choices[0].message.content || "{}";
+
+    // 清理可能存在的 Markdown 标记
+    const cleanContent = content.replace(/```json\n|\n```|```/g, "").trim();
+
+    const data = JSON.parse(cleanContent);
+
+    return {
+      summary: data.summary || "暂无数据",
+      insights: Array.isArray(data.insights) ? data.insights : [],
+      suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+      stats: {
+        totalExpense,
+        totalIncome,
+        avgDaily,
+        transactionCount: transactions.length,
+        topCategory,
+        topCategoryPercent,
+        expenseChangePercent: 0, // 简化计算
+      }
+    };
+  } catch (error) {
+    console.error("AI Analyze Consumption Error:", error);
+    throw new Error("Failed to analyze consumption data");
   }
 }

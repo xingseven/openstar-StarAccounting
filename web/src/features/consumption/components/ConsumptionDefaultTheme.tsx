@@ -598,40 +598,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return dates;
   };
 
-  // Refs for ECharts instances
-  const chartsRef = useRef<any[]>([]);
-  const addChartRef = (el: any) => {
-    if (el && !chartsRef.current.includes(el)) {
-      chartsRef.current.push(el);
-    }
-  };
-
-  useEffect(() => {
-    const handleResize = () => {
-      // Use requestAnimationFrame to throttle resize events
-      window.requestAnimationFrame(() => {
-        chartsRef.current.forEach((chart) => {
-          if (chart?.getEchartsInstance) {
-            chart.getEchartsInstance().resize();
-          }
-        });
-      });
-    };
-
-    let timeoutId: NodeJS.Timeout;
-    const debouncedResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleResize, 200);
-    };
-
-    window.addEventListener("resize", debouncedResize);
-
-    return () => {
-      window.removeEventListener("resize", debouncedResize);
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
+  
   return (
     <>
       <FixedStickyHeader 
@@ -778,7 +745,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full" />}
             >
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'item' },
@@ -823,7 +789,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
             >
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'item' },
@@ -866,7 +831,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="p-0">
             <DelayedRender delay={360} className="h-[200px] w-full">
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -908,8 +872,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <div className="w-[1200px] md:w-full">
                 <DelayedRender delay={120} lazy className="h-[250px] w-full">
                   <ReactECharts
-                    ref={addChartRef}
-                    autoResize={false}
+                        autoResize={false}
                     option={{
                       tooltip: { trigger: 'axis' },
                       grid: { left: '0%', right: '0%', bottom: '20%', containLabel: false },
@@ -947,8 +910,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <div className="w-[750px] md:w-full">
                 <DelayedRender delay={240} lazy className="h-[250px] w-full">
                   <ReactECharts
-                    ref={addChartRef}
-                    autoResize={false}
+                        autoResize={false}
                     option={{
                       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
                       legend: { data: ["餐饮", "购物", "交通", "娱乐"], top: 0 },
@@ -993,7 +955,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="flex-1 p-0">
             <DelayedRender delay={360} lazy className="h-[250px] w-full">
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
@@ -1122,7 +1083,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="p-0">
             <DelayedRender delay={720} lazy className="h-[250px] w-full">
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -1171,7 +1131,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <div className="min-w-[900px] md:w-full">
               <DelayedRender delay={960} lazy className={isMobile ? 'h-[300px] w-full' : 'h-[450px] w-full'}>
                 <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: {
@@ -1334,7 +1293,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="p-0">
             <DelayedRender delay={1080} lazy className="h-[300px] w-full">
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: {
@@ -1369,7 +1327,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardContent className="p-0">
             <DelayedRender delay={1200} lazy className="h-[300px] w-full">
               <ReactECharts
-                ref={addChartRef}
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },

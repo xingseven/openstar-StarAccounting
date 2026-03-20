@@ -116,7 +116,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
     <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto overflow-x-hidden">
       {/* Budget Alerts Banner */}
       {data.budgetAlerts.length > 0 && !alertsDismissed && (
-        <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-3 md:p-5 lg:p-7 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 lg:p-3 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-start gap-3 sm:gap-4 relative z-10">
             <div className="p-2 sm:p-3 rounded-xl bg-red-100 shrink-0">
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
@@ -251,7 +251,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full p-3 md:p-5 lg:p-7">
+            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
               <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
@@ -286,7 +286,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <GridDecoration mode="light" className="opacity-[0.01]" />
             </Card>
 
-            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full p-3 md:p-5 lg:p-7">
+            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
               <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">消费占比</CardTitle>
@@ -330,7 +330,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             </Card>
           </div>
 
-          <CardContainer className="p-3 md:p-5 lg:p-7">
+          <CardContainer className="group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card p-4 text-sm text-card-foreground lg:p-3">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-bold text-gray-900">近期交易</h3>
               <Link href="/consumption" className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
@@ -385,7 +385,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
         {/* Sidebar / Quick Actions */}
         <div className="space-y-6 min-w-0">
-          <CardContainer className="p-3 md:p-5 lg:p-7">
+          <CardContainer className="group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card p-4 text-sm text-card-foreground lg:p-3">
             <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">快捷操作</h3>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <QuickAction
