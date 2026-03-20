@@ -912,7 +912,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     autoResize={false}
                     option={{
                       tooltip: { trigger: 'axis' },
-                      grid: { left: '0%', right: '0%', bottom: '15%', containLabel: false },
+                      grid: { left: '0%', right: '0%', bottom: '20%', containLabel: false },
                       xAxis: { 
                         type: 'category', 
                         boundaryGap: false, 
