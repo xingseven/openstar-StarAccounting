@@ -34,11 +34,11 @@ export function SidebarContent() {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-6 border-b flex items-center gap-3 shrink-0">
-        <div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
+      <div className="p-4 border-b flex items-center gap-2 shrink-0">
+        <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
           X
         </div>
-        <span className="font-bold text-xl text-gray-900 tracking-tight">XFDashboard</span>
+        <span className="font-bold text-sm text-gray-900 tracking-tight truncate">XFDashboard</span>
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
