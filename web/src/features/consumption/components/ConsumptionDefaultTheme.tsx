@@ -951,8 +951,8 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     autoResize={false}
                     option={{
                       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                      legend: { data: ["餐饮", "购物", "交通", "娱乐"], bottom: 0 },
-                      grid: { left: '0%', right: '0%', bottom: '0%', containLabel: false },
+                      legend: { data: ["餐饮", "购物", "交通", "娱乐"], top: 0 },
+                      grid: { left: '0%', right: '0%', bottom: '0%', top: '10%', containLabel: false },
                       xAxis: { 
                         type: 'category', 
                         data: data.stackedBar.map(t => t.day.slice(8)),
