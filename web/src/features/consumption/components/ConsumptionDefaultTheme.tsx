@@ -899,7 +899,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 3: Charts (2 cols) - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2 items-start">
-        <Card
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
