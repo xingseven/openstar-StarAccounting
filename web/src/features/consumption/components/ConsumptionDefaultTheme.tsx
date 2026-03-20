@@ -1206,7 +1206,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       },
                       nodeAlign: 'left',
                       left: '2%',
-                      right: '5%',
+                      right: isMobile ? '10%' : '5%',
                       top: '5%',
                       bottom: '5%',
                       nodeWidth: 22,
