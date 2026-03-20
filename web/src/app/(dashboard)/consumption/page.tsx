@@ -41,10 +41,33 @@ const SkeletonLoading = () => (
       <ChartSkeleton className="col-span-2 min-h-[250px] md:min-h-[280px]" />
     </div>
 
-    {/* Row 3 图表区骨架 */}
+    {/* Row 3 图表区骨架: 支出趋势 & 消费分类堆积 */}
     <div className="grid gap-4 md:grid-cols-2">
       <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
       <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
+    </div>
+
+    {/* Row 4 图表区骨架: 帕累托 & 消费日历 */}
+    <div className="grid gap-4 md:grid-cols-2">
+      <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
+      <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
+    </div>
+
+    {/* Row 5 图表区骨架: 热力分布 & 每日平均消费 */}
+    <div className="grid gap-4 md:grid-cols-2">
+      <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
+      <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
+    </div>
+
+    {/* Row 6 桑基图骨架 (全宽) */}
+    <div className="w-full">
+      <ChartSkeleton className="min-h-[300px] md:min-h-[450px]" />
+    </div>
+
+    {/* Row 7 图表区骨架: 散点图 & 直方图 */}
+    <div className="grid gap-4 md:grid-cols-2">
+      <ChartSkeleton className="min-h-[300px] md:min-h-[350px]" />
+      <ChartSkeleton className="min-h-[300px] md:min-h-[350px]" />
     </div>
 
     <ListTableSkeleton />
