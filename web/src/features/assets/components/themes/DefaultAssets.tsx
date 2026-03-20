@@ -184,12 +184,14 @@ export function AssetsDefaultTheme({
 
       {/* Asset List */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" style={{ minHeight: "300px" }}>
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-2xl bg-white p-4 md:p-5 lg:p-7 h-[120px]">
-              <div className="flex items-center gap-3 mb-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <Skeleton className="h-4 w-24" />
+            <div key={i} className="rounded-2xl bg-white border border-gray-100 shadow-sm p-3 md:p-5 lg:p-7 flex flex-col justify-between h-full min-h-[120px]">
+              <div className="flex items-start justify-between mb-2 md:mb-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
               </div>
               <Skeleton className="h-6 w-32" />
             </div>

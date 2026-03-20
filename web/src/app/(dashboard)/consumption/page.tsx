@@ -5,17 +5,48 @@ import dynamic from "next/dynamic";
 import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
 import { fetchConsumptionData } from "@/features/consumption/api";
-import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton } from "@/components/shared/Skeletons";
+import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton, Skeleton } from "@/components/shared/Skeletons";
 
 const SkeletonLoading = () => (
-  <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+  <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
+    {/* 顶部标题与功能区骨架 */}
+    <div className="flex flex-col gap-3 sm:gap-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <Skeleton className="h-7 sm:h-9 w-24 sm:w-32 mb-1 sm:mb-2" />
+          <Skeleton className="h-4 sm:h-5 w-36 sm:w-48" />
+        </div>
+        {/* AI 分析卡片占位 (仅 PC 端显示) */}
+        <Skeleton className="max-w-xl w-full hidden md:block h-[42px] rounded-xl" />
+        {/* AI 记账按钮占位 */}
+        <Skeleton className="h-10 w-[90px] sm:w-[100px] rounded-md shrink-0" />
+      </div>
+      
+      {/* 筛选栏占位 */}
+      <Skeleton className="h-[60px] sm:h-[66px] w-full rounded-xl" />
+    </div>
+
+    {/* 核心数据卡片骨架 */}
+    <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
       <StatsCardSkeleton />
       <StatsCardSkeleton />
       <StatsCardSkeleton />
       <StatsCardSkeleton />
     </div>
-    <ChartSkeleton />
+    
+    {/* Row 2 图表区骨架 */}
+    <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
+      <ChartSkeleton className="col-span-1 min-h-[250px]" />
+      <ChartSkeleton className="col-span-1 min-h-[250px]" />
+      <ChartSkeleton className="col-span-2 min-h-[250px]" />
+    </div>
+
+    {/* Row 3 图表区骨架 */}
+    <div className="grid gap-4 md:grid-cols-2">
+      <ChartSkeleton className="min-h-[300px]" />
+      <ChartSkeleton className="min-h-[300px]" />
+    </div>
+
     <ListTableSkeleton />
   </div>
 );

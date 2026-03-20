@@ -259,7 +259,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </div>
               </CardHeader>
               <CardContent className="p-0 -mt-2">
-                <ChartContainer config={chartConfig} className="h-[100px] sm:h-[160px] w-full [&_.recharts-surface]:border-none [&_.recharts-surface]:bg-transparent]">
+                <ChartContainer config={chartConfig} className="h-[100px] sm:h-[160px] w-full [&_.recharts-surface]:border-none [&_.recharts-surface]:bg-transparent">
                     <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }} className="outline-none focus:outline-none">
                       <YAxis
                         dataKey="name"

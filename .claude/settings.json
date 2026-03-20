@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx tailwindcss-cli@latest build src/app/globals.css --output /dev/null)"
     ]
   }
 }

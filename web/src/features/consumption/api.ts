@@ -68,8 +68,8 @@ export async function fetchConsumptionData(startDate?: string, endDate?: string)
     ? `?${startDate ? `start=${startDate}` : ""}${endDate ? `&end=${endDate}` : ""}`
     : "";
 
-  // Fetch all data in parallel
-  const [expenseSummary, incomeSummary, platformData, categoryData, merchantData, dailyData, dailyCategoryData, platformCategoryData, transactionsData] = await Promise.all([
+  // Fetch all data in parallel (11 API calls)
+  const [expenseSummary, incomeSummary, platformData, categoryData, merchantData, dailyData, dailyCategoryData, platformCategoryData, transactionsData, wechatIncomeData, alipayIncomeData] = await Promise.all([
     apiFetch<SummaryResponse>(`/api/metrics/consumption/summary?type=EXPENSE${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
     apiFetch<SummaryResponse>(`/api/metrics/consumption/summary?type=INCOME${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
     apiFetch<PlatformResponse>(`/api/metrics/consumption/by-platform?type=EXPENSE${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
@@ -79,14 +79,13 @@ export async function fetchConsumptionData(startDate?: string, endDate?: string)
     apiFetch<DailyCategoryResponse>(`/api/metrics/consumption/daily-category?type=EXPENSE${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
     apiFetch<PlatformCategoryResponse>(`/api/metrics/consumption/platform-category?type=EXPENSE${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
     apiFetch<TransactionsResponse>(`/api/transactions${queryParams ? `?start=${startDate}&end=${endDate}` : ""}`),
+    apiFetch<PlatformResponse>(`/api/metrics/consumption/by-platform?type=INCOME${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
+    apiFetch<PlatformResponse>(`/api/metrics/consumption/by-platform?type=INCOME${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`),
   ]);
 
-  // Calculate wechat and alipay expense/income
+  // Extract wechat/alipay expense and income
   const wechatExpense = platformData.items.find(p => p.platform === "wechat");
   const alipayExpense = platformData.items.find(p => p.platform === "alipay");
-  const wechatIncomeData = await apiFetch<PlatformResponse>(`/api/metrics/consumption/by-platform?type=INCOME${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`);
-  const alipayIncomeData = await apiFetch<PlatformResponse>(`/api/metrics/consumption/by-platform?type=INCOME${queryParams ? `&start=${startDate}&end=${endDate}` : ""}`);
-
   const wechatIncome = wechatIncomeData.items.find(p => p.platform === "wechat");
   const alipayIncome = alipayIncomeData.items.find(p => p.platform === "alipay");
 

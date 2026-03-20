@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.2.2 - 2026-03-20
+
+### Fixes
+
+- **修复消费页面布局偏移 (Layout Shift)**:
+  - 修复了 `consumption/page.tsx` 中骨架屏与真实组件不一致导致的布局跳动问题。
+  - 骨架屏新增了顶部标题、AI 智能分析卡片占位以及筛选栏占位。
+  - 调整了图表区域骨架屏的网格布局（1, 1, 2 col-spans），与真实页面的瀑布流完全对齐。
+  - 修复 `AIAnalysisCard.tsx` 中 `compact` 属性在初始状态失效导致的高度突变 Bug。
+
+### Modified Files
+
+1. `web/src/app/(dashboard)/consumption/page.tsx`
+2. `web/src/components/shared/Skeletons.tsx`
+3. `web/src/features/consumption/components/AIAnalysisCard.tsx`
+
 ## 2.2.1 - 2026-03-20
 
 ### UI/UX Improvements

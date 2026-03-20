@@ -12,27 +12,65 @@ type User = {
   name: string | null;
 };
 
+// 模块级缓存，避免每次导航重复鉴权
+let cachedUser: User | null = null;
+let authCheckPromise: Promise<User> | null = null;
+
+async function validateAuth(): Promise<User> {
+  // 如果已有缓存的用户，直接返回
+  if (cachedUser) {
+    return cachedUser;
+  }
+
+  // 如果已有正在进行的鉴权请求，等待它
+  if (authCheckPromise) {
+    return authCheckPromise;
+  }
+
+  authCheckPromise = apiFetch<{ user: User }>("/api/auth/me")
+    .then((data) => {
+      cachedUser = data.user;
+      authCheckPromise = null;
+      return data.user;
+    })
+    .catch((err) => {
+      authCheckPromise = null;
+      throw err;
+    });
+
+  return authCheckPromise;
+}
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(cachedUser);
 
   useEffect(() => {
     const token = getAccessToken();
     if (!token) {
+      cachedUser = null;
       const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
       router.replace(`/auth/login${next}`);
       return;
     }
 
-    apiFetch<{ user: User }>("/api/auth/me")
-      .then((data) => {
-        setUser(data.user);
+    // 已经有缓存用户，直接ready
+    if (cachedUser) {
+      setUser(cachedUser);
+      setReady(true);
+      return;
+    }
+
+    validateAuth()
+      .then((userData) => {
+        setUser(userData);
         setReady(true);
       })
       .catch((err) => {
         console.error("AuthGate failed:", err);
+        cachedUser = null;
         clearAccessToken();
         const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
         router.replace(`/auth/login${next}`);
@@ -44,7 +82,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       <div className="h-screen w-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-500 text-sm">正在验证登录状态...</p>
+          <p className="text-gray-500 text-sm"></p>
         </div>
       </div>
     );

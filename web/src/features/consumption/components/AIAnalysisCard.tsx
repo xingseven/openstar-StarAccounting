@@ -272,6 +272,21 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
   }
 
   if (!hasAnalyzed && !loading) {
+    if (compact) {
+      return (
+        <div className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+          <button
+            onClick={handleAnalyze}
+            disabled={transactions.length === 0 || loading}
+            className="w-full px-4 py-2 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>AI 智能分析</span>
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
         <div className="p-4 md:p-6">
@@ -349,21 +364,6 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
   }
 
   // Compact mode - 长条形状
-  if (compact && !loading && !error) {
-    return (
-      <div className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
-        <button
-          onClick={handleAnalyze}
-          disabled={transactions.length === 0 || loading}
-          className="w-full px-4 py-2 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>{hasAnalyzed ? "重新分析" : "AI 智能分析"}</span>
-        </button>
-      </div>
-    );
-  }
-
   if (!analysis) return null;
 
   return (

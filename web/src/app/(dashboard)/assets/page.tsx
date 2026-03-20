@@ -54,7 +54,7 @@ export default function AssetsPage() {
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState("CNY");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [usingMockData, setUsingMockData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);

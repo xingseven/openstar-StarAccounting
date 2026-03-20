@@ -36,9 +36,9 @@ export function StatsCardSkeleton() {
 /**
  * 图表骨架屏
  */
-export function ChartSkeleton() {
+export function ChartSkeleton({ className }: { className?: string }) {
   return (
-    <div className="flex flex-col min-h-[350px] rounded-xl bg-white border p-4">
+    <div className={cn("flex flex-col min-h-[350px] rounded-xl bg-white border p-4", className)}>
       <div className="flex items-center justify-center pb-0">
         <Skeleton className="h-4 w-24 mb-2" />
       </div>
