@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.2.3 - 2026-03-20
+
+### UI/UX Improvements
+
+- **骨架屏视觉体验深度还原**:
+  - 彻底重构了图表骨架屏组件，新增 `PieChartSkeleton` 用于饼图区域占位。
+  - 原有的 `ChartSkeleton` 改为包含随机高度柱状条的通用矩形图表占位，完美适配条形图、折线图和堆积图区域。
+  - 精简了顶部四个核心数据卡片 (`StatsCardSkeleton`) 的内部结构与高度，使其不再显得臃肿，贴近真实卡片的单行紧凑布局。
+  - 为顶部 AI 相关功能按钮占位符添加了匹配其真实状态的浅蓝色微光效果。
+  - 微调了所有图表区域的 `min-h` 参数，达到像素级占位对齐。
+
+### Modified Files
+
+1. `web/src/app/(dashboard)/consumption/page.tsx`
+2. `web/src/components/shared/Skeletons.tsx`
+
 ## 2.2.2 - 2026-03-20
 
 ### Fixes

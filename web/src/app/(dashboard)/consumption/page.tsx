@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
 import { MockDataBanner } from "@/features/shared/useRealData";
 import { fetchConsumptionData } from "@/features/consumption/api";
-import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton, Skeleton } from "@/components/shared/Skeletons";
+import { StatsCardSkeleton, ChartSkeleton, PieChartSkeleton, ListTableSkeleton, Skeleton } from "@/components/shared/Skeletons";
 
 const SkeletonLoading = () => (
   <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
@@ -17,9 +17,9 @@ const SkeletonLoading = () => (
           <Skeleton className="h-4 sm:h-5 w-36 sm:w-48" />
         </div>
         {/* AI 分析卡片占位 (仅 PC 端显示) */}
-        <Skeleton className="max-w-xl w-full hidden md:block h-[42px] rounded-xl" />
+        <Skeleton className="max-w-xl w-full hidden md:block h-[42px] rounded-xl bg-blue-50/50" />
         {/* AI 记账按钮占位 */}
-        <Skeleton className="h-10 w-[90px] sm:w-[100px] rounded-md shrink-0" />
+        <Skeleton className="h-10 w-[90px] sm:w-[100px] rounded-md shrink-0 bg-blue-500/20" />
       </div>
       
       {/* 筛选栏占位 */}
@@ -36,15 +36,15 @@ const SkeletonLoading = () => (
     
     {/* Row 2 图表区骨架 */}
     <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-      <ChartSkeleton className="col-span-1 min-h-[250px]" />
-      <ChartSkeleton className="col-span-1 min-h-[250px]" />
-      <ChartSkeleton className="col-span-2 min-h-[250px]" />
+      <PieChartSkeleton className="col-span-1 min-h-[250px] md:min-h-[280px]" />
+      <PieChartSkeleton className="col-span-1 min-h-[250px] md:min-h-[280px]" />
+      <ChartSkeleton className="col-span-2 min-h-[250px] md:min-h-[280px]" />
     </div>
 
     {/* Row 3 图表区骨架 */}
     <div className="grid gap-4 md:grid-cols-2">
-      <ChartSkeleton className="min-h-[300px]" />
-      <ChartSkeleton className="min-h-[300px]" />
+      <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
+      <ChartSkeleton className="min-h-[250px] md:min-h-[300px]" />
     </div>
 
     <ListTableSkeleton />

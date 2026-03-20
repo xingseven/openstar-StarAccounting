@@ -20,32 +20,47 @@ export function Skeleton({
  */
 export function StatsCardSkeleton() {
   return (
-    <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[100px]">
-      <div className="flex flex-row items-center justify-between pb-2">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-8 w-8 rounded-full" />
+    <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[80px] sm:min-h-[45px] py-2">
+      <div className="flex flex-row items-center justify-between pb-1">
+        <Skeleton className="h-3 sm:h-4 w-16 sm:w-20" />
       </div>
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-3 w-40" />
+      <div className="space-y-1">
+        <Skeleton className="h-6 sm:h-8 w-24 sm:w-32" />
+        <Skeleton className="h-2 sm:h-3 w-32 sm:w-40" />
       </div>
     </div>
   );
 }
 
 /**
- * 图表骨架屏
+ * 基础图表骨架屏 (默认矩形)
  */
 export function ChartSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("flex flex-col min-h-[350px] rounded-xl bg-white border p-4", className)}>
-      <div className="flex items-center justify-center pb-0">
+    <div className={cn("flex flex-col rounded-xl bg-white border p-4", className)}>
+      <div className="pb-2">
+        <Skeleton className="h-4 w-32 mb-2" />
+      </div>
+      <div className="flex-1 relative w-full h-full min-h-[150px] flex items-end justify-between gap-2">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="w-full rounded-t-md" style={{ height: `${20 + Math.random() * 60}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 饼图骨架屏
+ */
+export function PieChartSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex flex-col rounded-xl bg-white border p-4", className)}>
+      <div className="pb-2">
         <Skeleton className="h-4 w-24 mb-2" />
       </div>
-      <div className="flex-1 pb-0 relative min-h-[280px]">
-        <div className="mx-auto aspect-square max-h-[200px] flex items-center justify-center">
-          <Skeleton className="h-40 w-40 rounded-full" />
-        </div>
+      <div className="flex-1 relative w-full h-full min-h-[150px] flex items-center justify-center">
+        <Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full" />
       </div>
     </div>
   );
