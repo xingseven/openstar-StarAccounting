@@ -920,7 +920,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         axisLine: { show: false },
                         axisTick: { show: false }
                       },
-                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
                       series: [{
                         name: '支出',
                         type: 'line',
@@ -959,7 +959,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                         axisLine: { show: false },
                         axisTick: { show: false }
                       },
-                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
                       series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => {
                         const colors = ['#1d4ed8', '#3b82f6', '#93c5fd', '#dbeafe'];
                         return {
@@ -1126,7 +1126,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '0%', right: '0%', bottom: '15%', top: '0%', containLabel: false },
+                  grid: { left: '0%', right: '0%', bottom: isMobile ? '18%' : '3%', top: '0%', containLabel: false },
                   xAxis: {
                     type: 'category',
                     data: data.weekdayWeekend.map((item, index) => {
@@ -1141,7 +1141,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                       lineHeight: 16,
                       color: '#666',
                       fontSize: 12,
-                      rotate: 45
+                      rotate: isMobile ? 45 : 0
                     }
                   },
                   yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
@@ -1346,7 +1346,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                   },
                   grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
                   xAxis: { type: 'value', min: 0, max: 24, name: '时间', splitLine: { show: false } },
-                  yAxis: { type: 'value', name: '金额', splitLine: { lineStyle: { type: 'dashed' } } },
+                  yAxis: { type: 'value', name: '金额', splitLine: { show: false } },
                   series: [{
                     name: '消费记录',
                     type: 'scatter',
@@ -1380,7 +1380,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                     axisLine: { show: false },
                     axisTick: { show: false }
                   },
-                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
+                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
                   series: [{
                     name: '笔数',
                     type: 'bar',
