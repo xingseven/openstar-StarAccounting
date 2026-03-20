@@ -3,7 +3,7 @@
 import { clearAccessToken } from "@/lib/auth";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Bell, Search, User as UserIcon, LogOut } from "lucide-react";
+import { Bell, User as UserIcon, LogOut } from "lucide-react";
 import { MobileSidebar } from "@/components/shared/MobileSidebar";
 import { useUser } from "@/components/shared/UserContext";
 
@@ -31,22 +31,14 @@ export function Header() {
   const title = PAGE_TITLES[pathname] || "消费面板";
 
   return (
-    <header className="h-16 border-b bg-white px-4 md:px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+    <header className="h-16 px-3 md:px-4 flex items-center justify-between sticky top-0 z-10 bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100/80">
+      <div className="w-full h-full flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-2 md:gap-4">
         <MobileSidebar />
         <h1 className="text-lg md:text-xl font-semibold text-gray-800 truncate max-w-[200px] md:max-w-none">{title}</h1>
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="搜索..."
-            className="h-9 w-64 rounded-full border border-gray-200 bg-gray-50 pl-9 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-          />
-        </div>
-
         <button className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
           <Bell className="h-5 w-5" />
         </button>
@@ -100,6 +92,7 @@ export function Header() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </header>
   );

@@ -89,7 +89,7 @@ function useTypingEffect(text: string, speed: number = 30, startDelay: number = 
   return { displayedText, isTyping };
 }
 
-// 骨架屏动画组件
+// 骨架屏动画组件 - 优化动画节奏
 function SkeletonLoader() {
   return (
     <div className="space-y-4">
@@ -102,10 +102,14 @@ function SkeletonLoader() {
         </div>
       </div>
 
-      {/* Stats skeleton */}
+      {/* Stats skeleton - 错开动画延迟 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-gray-100 rounded-xl p-3 animate-pulse">
+          <div
+            key={i}
+            className="bg-gray-100 rounded-xl p-3 animate-pulse"
+            style={{ animationDelay: `${i * 100}ms`, animationDuration: '800ms' }}
+          >
             <div className="h-2 bg-gray-200 rounded w-12 mb-2" />
             <div className="h-5 bg-gray-200 rounded w-16" />
           </div>
@@ -115,7 +119,7 @@ function SkeletonLoader() {
       {/* Chart skeleton */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4">
         <div className="flex items-center justify-center gap-2 mb-3">
-          <BarChart3 className="w-4 h-4 text-purple-400 animate-pulse" />
+          <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
           <div className="h-3 bg-gray-300 rounded animate-pulse w-20" />
         </div>
         <div className="space-y-2">
@@ -129,8 +133,12 @@ function SkeletonLoader() {
       <div className="space-y-2">
         <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
         {[1, 2].map((i) => (
-          <div key={i} className="flex items-start gap-2 p-3 bg-gray-100 rounded-lg animate-pulse">
-            <div className="w-4 h-4 bg-gray-200 rounded-full" />
+          <div
+            key={i}
+            className="flex items-start gap-2 p-3 bg-gray-100 rounded-lg animate-pulse"
+            style={{ animationDelay: `${i * 150}ms`, animationDuration: '700ms' }}
+          >
+            <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse" />
             <div className="space-y-1 flex-1">
               <div className="h-3 bg-gray-200 rounded w-24" />
               <div className="h-2 bg-gray-100 rounded w-40" />
@@ -152,10 +160,10 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
   const [visibleInsights, setVisibleInsights] = useState(0);
   const [visibleSuggestions, setVisibleSuggestions] = useState(0);
 
-  // Summary 打字机效果
+  // Summary 打字机效果 - 优化速度
   const { displayedText: summaryText, isTyping: isSummaryTyping } = useTypingEffect(
     analysis?.summary || "",
-    25,
+    15,  // 加速：25ms -> 15ms 每字
     0
   );
 
@@ -166,13 +174,13 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
     }
   }, [isSummaryTyping, analysis?.summary, typingPhase]);
 
-  // Insights 逐个显示
+  // Insights 逐个显示 - 优化速度
   useEffect(() => {
     if (typingPhase === "insights" && analysis?.insights) {
       if (visibleInsights < analysis.insights.length) {
         const timer = setTimeout(() => {
           setVisibleInsights((prev) => prev + 1);
-        }, 300);
+        }, 150);  // 加速：300ms -> 150ms
         return () => clearTimeout(timer);
       } else {
         setTypingPhase("suggestions");
@@ -180,13 +188,13 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
     }
   }, [typingPhase, visibleInsights, analysis?.insights]);
 
-  // Suggestions 逐个显示
+  // Suggestions 逐个显示 - 优化速度
   useEffect(() => {
     if (typingPhase === "suggestions" && analysis?.suggestions) {
       if (visibleSuggestions < analysis.suggestions.length) {
         const timer = setTimeout(() => {
           setVisibleSuggestions((prev) => prev + 1);
-        }, 300);
+        }, 150);  // 加速：300ms -> 150ms
         return () => clearTimeout(timer);
       } else {
         setTypingPhase("done");

@@ -80,8 +80,10 @@ export function SidebarContent() {
 
 export function Sidebar() {
   return (
-    <aside className="w-64 border-r hidden md:flex shrink-0 h-full">
-      <SidebarContent />
+    <aside className="w-64 hidden md:flex shrink-0 h-full p-3">
+      <div className="w-full h-full rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100/80 bg-white overflow-hidden">
+        <SidebarContent />
+      </div>
     </aside>
   );
 }

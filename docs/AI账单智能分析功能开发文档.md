@@ -178,24 +178,26 @@ async function fetchAnalysisData() {
 
 ## 5. 实现步骤
 
-### Phase 1: 后端 API
+### Phase 1: 后端 API ✅
 
-- [ ] 创建 `/api/ai/analyze-consumption` 接口
-- [ ] 实现 AI Prompt 构造与调用
-- [ ] 定义响应类型
+- [x] 创建 `/api/ai/analyze-consumption` 接口
+- [x] 实现 AI Prompt 构造与调用
+- [x] 定义响应类型
 
-### Phase 2: 前端组件
+### Phase 2: 前端组件 ✅
 
-- [ ] 创建 `AIAnalysisCard` 组件
-- [ ] 实现数据获取与状态管理
-- [ ] 设计移动端适配布局
-- [ ] 集成到消费页面
+- [x] 创建 `AIAnalysisCard` 组件
+- [x] 实现数据获取与状态管理
+- [x] 设计移动端适配布局
+- [x] 集成到消费页面
 
-### Phase 3: 交互优化
+### Phase 3: 交互优化 ✅
 
-- [ ] 添加 loading 状态骨架屏
-- [ ] 实现展开/收起功能
-- [ ] 添加错误处理与重试
+- [x] 添加 loading 状态骨架屏
+- [x] 实现展开/收起功能
+- [x] 添加错误处理与重试
+- [x] 打字机效果与逐条弹出动画
+- [x] 修复打字阶段转换 bug
 
 ## 6. 注意事项
 

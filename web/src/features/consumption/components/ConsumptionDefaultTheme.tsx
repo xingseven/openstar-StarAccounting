@@ -223,14 +223,14 @@ function FixedStickyHeader({
   }, []);
 
   return (
-    <div 
+    <div
       className={cn(
-        "fixed top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 transition-all duration-300 ease-in-out px-4 py-3 flex justify-center",
+        "fixed top-0 z-[100] backdrop-blur-md transition-all duration-300 ease-in-out px-3 md:px-4 h-16",
         isStickyVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
       )}
       style={{ willChange: 'transform, opacity' }}
     >
-      <div className="w-full max-w-[1600px] flex flex-wrap items-center gap-2 sm:gap-4">
+      <div className="w-full h-full rounded-2xl flex flex-wrap items-center gap-2 sm:gap-4 px-4 md:px-6">
         <div className="font-bold text-gray-900 hidden md:block mr-4">消费分析</div>
         
         {/* Search */}
@@ -849,7 +849,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
                 autoResize={false}
                 option={{
                   tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
+                  grid: { left: '0%', right: '15%', bottom: '0%', top: '0%', containLabel: false },
                   xAxis: { type: 'value', show: false },
                   yAxis: { 
                     type: 'category', 

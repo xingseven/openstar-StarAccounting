@@ -14,7 +14,7 @@ export default function DashboardLayout({
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden relative">
           <Header />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-stable p-2 md:p-6">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-stable pt-16 px-2 md:px-6 pb-6">
             {children}
           </main>
           {/* 固定在底部的背景装饰 */}

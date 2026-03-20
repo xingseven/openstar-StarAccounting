@@ -35,6 +35,9 @@
   - 修复 `echarts-for-react` v3.x 移除 `ref` prop 导致的所有图表引用报错
   - 安装 `@playwright/test` 依赖解决 Playwright 配置报错
 
+- **AI 分析阶段转换 bug 修复**:
+  - 修复打字阶段转换逻辑，Summary 完成后正确进入 insights 和 suggestions 阶段
+
 ### Modified Files
 
 **New Files:**
