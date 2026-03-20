@@ -251,15 +251,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="shadow-sm overflow-hidden group h-full outline-none ring-0 focus:outline-none focus:ring-0 border-0">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 border-0 outline-none">
+            <Card className="shadow-sm overflow-hidden group h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
                 <div className="space-y-1">
-                  <CardTitle className="text-base font-bold text-gray-900 outline-none ring-0 focus:outline-none focus:ring-0">收支概览</CardTitle>
+                  <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
                   <CardDescription>本月收支状态对比</CardDescription>
                 </div>
               </CardHeader>
-              <CardContent className="relative z-10 h-[120px] sm:h-[200px] flex items-center border-0 outline-none">
-                <ChartContainer config={chartConfig} className="h-[80px] sm:h-[150px] w-full [&_.recharts-surface]:border-none [&_.recharts-surface]:bg-transparent outline-none ring-0">
+              <ChartContainer config={chartConfig} className="h-[120px] sm:h-[200px] w-full [&_.recharts-surface]:border-none [&_.recharts-surface]:bg-transparent">
                   <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }} className="outline-none focus:outline-none">
                     <YAxis
                       dataKey="name"
@@ -282,7 +281,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     </Bar>
                   </BarChart>
                 </ChartContainer>
-              </CardContent>
               <GridDecoration mode="light" className="opacity-[0.01]" />
             </Card>
 
