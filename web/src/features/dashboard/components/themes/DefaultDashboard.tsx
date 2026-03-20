@@ -251,7 +251,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
+            <Card className="shadow-sm overflow-hidden group h-full">
               <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">收支概览</CardTitle>
@@ -286,7 +286,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <GridDecoration mode="light" className="opacity-[0.01]" />
             </Card>
 
-            <Card className="border border-gray-200 shadow-sm overflow-hidden group h-full">
+            <Card className="shadow-sm overflow-hidden group h-full">
               <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10 px-0">
                 <div className="space-y-1">
                   <CardTitle className="text-base font-bold text-gray-900">消费占比</CardTitle>
@@ -437,7 +437,7 @@ function StatCard({ title, subtitle, value, icon: Icon, trend, trendValue, color
 
   return (
     <div className={cn(
-      "rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-3 lg:p-4 shadow-sm transition-all hover:shadow-md relative overflow-hidden group",
+      "rounded-xl sm:rounded-2xl bg-white p-3 lg:p-4 shadow-sm transition-all hover:shadow-md relative overflow-hidden group",
       className
     )}>
       <GridDecoration mode="light" className="opacity-[0.01]" />

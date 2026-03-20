@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api";
-import { Sparkles, TrendingUp, TrendingDown, AlertCircle, Lightbulb, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { Sparkles, TrendingUp, TrendingDown, AlertCircle, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Loader2, BarChart3 } from "lucide-react";
 
 type Insight = {
   type: "info" | "warning" | "success";
@@ -54,16 +54,160 @@ interface AIAnalysisCardProps {
   className?: string;
 }
 
+// 打字机效果 Hook
+function useTypingEffect(text: string, speed: number = 30, startDelay: number = 0) {
+  const [displayedText, setDisplayedText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (!text) {
+      setDisplayedText("");
+      return;
+    }
+
+    setDisplayedText("");
+    setIsTyping(true);
+
+    const delayTimeout = setTimeout(() => {
+      let currentIndex = 0;
+      const interval = setInterval(() => {
+        if (currentIndex <= text.length) {
+          setDisplayedText(text.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(interval);
+          setIsTyping(false);
+        }
+      }, speed);
+
+      return () => clearInterval(interval);
+    }, startDelay);
+
+    return () => clearTimeout(delayTimeout);
+  }, [text, speed, startDelay]);
+
+  return { displayedText, isTyping };
+}
+
+// 骨架屏动画组件
+function SkeletonLoader() {
+  return (
+    <div className="space-y-4">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-200 to-blue-200 animate-pulse" />
+        <div className="space-y-2 flex-1">
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
+          <div className="h-3 bg-gray-100 rounded animate-pulse w-40" />
+        </div>
+      </div>
+
+      {/* Stats skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-gray-100 rounded-xl p-3 animate-pulse">
+            <div className="h-2 bg-gray-200 rounded w-12 mb-2" />
+            <div className="h-5 bg-gray-200 rounded w-16" />
+          </div>
+        ))}
+      </div>
+
+      {/* Chart skeleton */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4">
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <BarChart3 className="w-4 h-4 text-purple-400 animate-pulse" />
+          <div className="h-3 bg-gray-300 rounded animate-pulse w-20" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 bg-gray-200 rounded animate-pulse w-full" />
+          <div className="h-3 bg-gray-200 rounded animate-pulse w-4/5" />
+          <div className="h-3 bg-gray-200 rounded animate-pulse w-3/5" />
+        </div>
+      </div>
+
+      {/* Insights skeleton */}
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
+        {[1, 2].map((i) => (
+          <div key={i} className="flex items-start gap-2 p-3 bg-gray-100 rounded-lg animate-pulse">
+            <div className="w-4 h-4 bg-gray-200 rounded-full" />
+            <div className="space-y-1 flex-1">
+              <div className="h-3 bg-gray-200 rounded w-24" />
+              <div className="h-2 bg-gray-100 rounded w-40" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnalysisCardProps) {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [typingPhase, setTypingPhase] = useState<"summary" | "insights" | "suggestions" | "done">("summary");
+  const [visibleInsights, setVisibleInsights] = useState(0);
+  const [visibleSuggestions, setVisibleSuggestions] = useState(0);
+
+  // Summary 打字机效果
+  const { displayedText: summaryText, isTyping: isSummaryTyping } = useTypingEffect(
+    analysis?.summary || "",
+    25,
+    0
+  );
+
+  // Summary 完成后进入 insights 阶段
+  useEffect(() => {
+    if (!isSummaryTyping && analysis?.summary && typingPhase === "summary") {
+      setTypingPhase("insights");
+    }
+  }, [isSummaryTyping, analysis?.summary, typingPhase]);
+
+  // Insights 逐个显示
+  useEffect(() => {
+    if (typingPhase === "insights" && analysis?.insights) {
+      if (visibleInsights < analysis.insights.length) {
+        const timer = setTimeout(() => {
+          setVisibleInsights((prev) => prev + 1);
+        }, 300);
+        return () => clearTimeout(timer);
+      } else {
+        setTypingPhase("suggestions");
+      }
+    }
+  }, [typingPhase, visibleInsights, analysis?.insights]);
+
+  // Suggestions 逐个显示
+  useEffect(() => {
+    if (typingPhase === "suggestions" && analysis?.suggestions) {
+      if (visibleSuggestions < analysis.suggestions.length) {
+        const timer = setTimeout(() => {
+          setVisibleSuggestions((prev) => prev + 1);
+        }, 300);
+        return () => clearTimeout(timer);
+      } else {
+        setTypingPhase("done");
+      }
+    }
+  }, [typingPhase, visibleSuggestions, analysis?.suggestions]);
+
+  // 开始分析时重置状态
+  useEffect(() => {
+    if (analysis) {
+      setTypingPhase("summary");
+      setVisibleInsights(0);
+      setVisibleSuggestions(0);
+    }
+  }, [analysis]);
 
   async function handleAnalyze() {
     setLoading(true);
     setError(null);
+    setAnalysis(null);
+    setHasAnalyzed(true);
 
     try {
       const result = await apiFetch<AnalysisResult>("/api/ai/analyze-consumption", {
@@ -88,7 +232,6 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
       });
 
       setAnalysis(result);
-      setHasAnalyzed(true);
     } catch (e) {
       console.error("AI Analysis Error:", e);
       setError(e instanceof Error ? e.message : "分析失败，请重试");
@@ -155,8 +298,8 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
       <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
         <div className="p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center animate-pulse">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-white animate-spin" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">AI 智能分析</h3>
@@ -164,11 +307,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
-            <div className="h-4 bg-gray-100 rounded animate-pulse w-1/2" />
-            <div className="h-20 bg-gray-100 rounded animate-pulse mt-4" />
-          </div>
+          <SkeletonLoader />
         </div>
       </div>
     );
@@ -245,9 +384,17 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
           </div>
         </div>
 
-        {/* Summary */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4">
-          <p className="text-sm text-gray-700">{analysis.summary}</p>
+        {/* Summary with typing effect */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-4 min-h-[60px]">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="w-4 h-4 text-purple-500" />
+            <span className="text-xs text-purple-600 font-medium">消费总结</span>
+            {isSummaryTyping && <Loader2 className="w-3 h-3 animate-spin text-purple-400" />}
+          </div>
+          <p className="text-sm text-gray-700">
+            {summaryText}
+            {isSummaryTyping && <span className="inline-block w-1.5 h-4 bg-purple-400 ml-0.5 animate-pulse" />}
+          </p>
         </div>
 
         {/* Expand/Collapse Toggle */}
@@ -268,19 +415,26 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
           )}
         </button>
 
-        {/* Expanded Content */}
+        {/* Expanded Content - Streaming effect */}
         {expanded && (
           <div className="space-y-4 pt-2 border-t border-gray-100">
-            {/* Insights */}
+            {/* Insights - Streaming */}
             {analysis.insights.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-500" />
                   关键洞察
+                  {typingPhase === "insights" && visibleInsights < analysis.insights.length && (
+                    <Loader2 className="w-3 h-3 animate-spin text-purple-400 ml-auto" />
+                  )}
                 </h4>
                 <div className="space-y-2">
-                  {analysis.insights.map((insight, idx) => (
-                    <div key={idx} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                  {analysis.insights.slice(0, visibleInsights).map((insight, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg animate-in slide-in-from-left-2 duration-300"
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
                       {getInsightIcon(insight.type)}
                       <div>
                         <p className="text-sm font-medium text-gray-800">{insight.title}</p>
@@ -288,25 +442,46 @@ export function AIAnalysisCard({ transactions, budgets, className = "" }: AIAnal
                       </div>
                     </div>
                   ))}
+                  {/* Placeholder skeletons while typing */}
+                  {typingPhase === "insights" && analysis.insights.slice(visibleInsights).map((_, idx) => (
+                    <div key={`skeleton-${idx}`} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg animate-pulse">
+                      <div className="w-4 h-4 bg-gray-200 rounded-full" />
+                      <div className="space-y-1 flex-1">
+                        <div className="h-3 bg-gray-200 rounded w-24" />
+                        <div className="h-2 bg-gray-100 rounded w-40" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Suggestions */}
+            {/* Suggestions - Streaming */}
             {analysis.suggestions.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                   <Lightbulb className="w-4 h-4 text-amber-500" />
                   优化建议
+                  {typingPhase === "suggestions" && visibleSuggestions < analysis.suggestions.length && (
+                    <Loader2 className="w-3 h-3 animate-spin text-amber-400 ml-auto" />
+                  )}
                 </h4>
                 <div className="space-y-2">
-                  {analysis.suggestions.map((suggestion, idx) => (
+                  {analysis.suggestions.slice(0, visibleSuggestions).map((suggestion, idx) => (
                     <div
                       key={idx}
-                      className={`p-3 rounded-lg border ${getPriorityColor(suggestion.priority)}`}
+                      className={`p-3 rounded-lg border animate-in slide-in-from-left-2 duration-300 ${getPriorityColor(suggestion.priority)}`}
+                      style={{ animationDelay: `${idx * 50}ms` }}
                     >
                       <p className="text-sm font-medium">{suggestion.title}</p>
                       <p className="text-xs mt-0.5 opacity-80">{suggestion.description}</p>
+                    </div>
+                  ))}
+                  {/* Placeholder skeletons while typing */}
+                  {typingPhase === "suggestions" && analysis.suggestions.slice(visibleSuggestions).map((_, idx) => (
+                    <div key={`skeleton-${idx}`} className="p-3 rounded-lg border bg-gray-50 border-gray-200 animate-pulse">
+                      <div className="h-3 bg-gray-200 rounded w-32 mb-1" />
+                      <div className="h-2 bg-gray-100 rounded w-48" />
                     </div>
                   ))}
                 </div>
