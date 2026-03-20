@@ -863,7 +863,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader>
             <CardTitle className="text-base">热门商家 Top 10</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <DelayedRender delay={360} className="h-[200px] w-full">
               <ReactECharts
                 ref={addChartRef}
