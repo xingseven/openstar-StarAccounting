@@ -903,7 +903,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader>
             <CardTitle className="text-base">支出趋势</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <div className="w-[1200px] md:w-full">
                 <DelayedRender delay={120} lazy className="h-[250px] w-full">
@@ -942,7 +942,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader>
             <CardTitle className="text-base">消费分类堆积</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <div className="w-[750px] md:w-full">
                 <DelayedRender delay={240} lazy className="h-[250px] w-full">
@@ -1051,7 +1051,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardHeader>
             <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <DelayedRender delay={600} lazy className="h-[250px] w-full">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-center border-collapse">
@@ -1119,7 +1119,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <DelayedRender delay={720} lazy className="h-[250px] w-full">
               <ReactECharts
                 ref={addChartRef}
@@ -1165,7 +1165,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
           <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向（支持拖拽节点调整布局）</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <div className="min-w-[900px] md:w-full">
               <DelayedRender delay={960} lazy className="h-[450px] w-full">
@@ -1330,7 +1330,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">消费时段分布 (散点图)</CardTitle>
             <CardDescription>24小时消费习惯透视</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <DelayedRender delay={1080} lazy className="h-[300px] w-full">
               <ReactECharts
                 ref={addChartRef}
@@ -1365,7 +1365,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">单笔金额分布 (直方图)</CardTitle>
             <CardDescription>消费力度画像分析</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <DelayedRender delay={1200} lazy className="h-[300px] w-full">
               <ReactECharts
                 ref={addChartRef}
@@ -1404,7 +1404,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <button className="px-3 py-1 rounded text-xs bg-gray-100">收入</button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <DelayedRender 
             delay={840}
             lazy 
