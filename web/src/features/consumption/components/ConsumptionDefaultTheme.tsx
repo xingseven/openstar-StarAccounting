@@ -1325,10 +1325,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
       {/* Row 8: Scatter & Histogram - Lazy Load */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">消费时段分布 (散点图)</CardTitle>
-            <CardDescription>24小时消费习惯透视</CardDescription>
+            <CardDescription>24 小时消费习惯透视</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <DelayedRender delay={1080} lazy className="h-[300px] w-full">
@@ -1360,7 +1360,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="p-3 md:p-5 lg:p-7">
           <CardHeader>
             <CardTitle className="text-base">单笔金额分布 (直方图)</CardTitle>
             <CardDescription>消费力度画像分析</CardDescription>
