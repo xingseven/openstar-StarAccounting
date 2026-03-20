@@ -1169,7 +1169,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <div className="min-w-[900px] md:w-full">
-              <DelayedRender delay={960} lazy className="h-[450px] w-full">
+              <DelayedRender delay={960} lazy className={isMobile ? 'h-[300px] w-full' : 'h-[450px] w-full'}>
                 <ReactECharts
                 ref={addChartRef}
                 autoResize={false}
