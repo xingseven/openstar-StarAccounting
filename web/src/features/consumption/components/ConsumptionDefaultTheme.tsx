@@ -1037,7 +1037,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardTitle className="text-base">消费日历</CardTitle>
             <CardDescription>每日消费强度分布</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1">
+          <CardContent className="flex-1 p-0">
             <DelayedRender delay={480} lazy className="h-[250px] w-full">
               <AnimatedCalendarGrid calendar={data.calendar} />
             </DelayedRender>
