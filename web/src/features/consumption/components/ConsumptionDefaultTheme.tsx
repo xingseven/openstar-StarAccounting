@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AIAnalysisCard } from "./AIAnalysisCard";
 // Recharts imports removed for performance optimization
 import {
   Card,
@@ -626,7 +627,21 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <span className="hidden sm:inline">AI 记账</span>
             </Button>
           </div>
-          
+
+          {/* AI 智能分析卡片 */}
+          <AIAnalysisCard
+            transactions={data.transactions.map(t => ({
+              id: t.id,
+              amount: parseFloat(t.amount) || 0,
+              category: t.category,
+              platform: t.platform,
+              date: t.date,
+              merchant: t.merchant,
+              description: "",
+            }))}
+            budgets={[]}
+          />
+
           {/* 原始的顶部过滤模块 (非吸顶状态) */}
           <div className="bg-white py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Search */}

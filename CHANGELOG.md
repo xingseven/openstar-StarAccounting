@@ -4,6 +4,17 @@
 
 ### Features
 
+- **AI 智能分析功能上线**:
+  - 新增 `POST /api/ai/analyze-consumption` 后端接口
+  - AI 分析服务自动分析用户消费数据，生成个性化洞察
+  - 消费页面顶部新增 AI 分析卡片，展示：
+    - 总支出、日均消费、主要类别等统计
+    - 消费总结文本
+    - 关键洞察（info/warning/success 类型）
+    - 可执行的优化建议（按优先级高/中/低排列）
+  - 支持展开/收起详情
+  - 支持重新分析
+
 - **消费页面移动端图表优化**:
   - 「每日平均消费 (按周)」图表在移动端支持 X 轴标签 45 度旋转显示
   - PC 端保持正常角度显示，根据 `isMobile` 状态动态切换
@@ -20,11 +31,18 @@
 
 ### Modified Files
 
-1. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (修复 JSX 解析错误，优化移动端图表旋转)
-2. `web/src/app/(dashboard)/ai/page.tsx` (移除 asChild prop，改用原生锚点样式)
-3. `web/src/app/(dashboard)/page.tsx` (修复 Transaction 类型)
-4. `web/src/lib/notifications.ts` (移除无效的 Notification 选项)
-5. `web/package.json` (新增 @playwright/test 依赖)
+**New Files:**
+1. `web/src/features/consumption/components/AIAnalysisCard.tsx` (新增 AI 分析卡片组件)
+2. `docs/AI账单智能分析功能开发文档.md` (新增开发文档)
+3. `src/server/src/services/doubaoAi.ts` (新增 `analyzeConsumption` 函数)
+
+**Modified Files:**
+4. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` (集成 AI 分析卡片，优化移动端图表旋转)
+5. `web/src/app/(dashboard)/ai/page.tsx` (移除 asChild prop，改用原生锚点样式)
+6. `web/src/app/(dashboard)/page.tsx` (修复 Transaction 类型)
+7. `web/src/lib/notifications.ts` (移除无效的 Notification 选项)
+8. `web/package.json` (新增 @playwright/test 依赖)
+9. `src/server/src/main.ts` (新增 `/api/ai/analyze-consumption` 路由)
 
 ## 2.1.8 - 2026-03-19
 
