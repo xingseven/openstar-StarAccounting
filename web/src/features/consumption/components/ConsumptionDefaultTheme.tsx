@@ -612,7 +612,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         dateRangeLabel={dateRangeLabel}
       />
 
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8 min-h-screen">
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex items-center justify-between gap-4">
             <div>

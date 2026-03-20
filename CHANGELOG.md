@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.2.6 - 2026-03-20
+
+### Fixes
+
+- **基于 Next.js 最佳实践彻底解决刷新滚动问题**:
+  - 移除了前一版本使用 `min-h-screen` 的 hack 写法。
+  - 将消费页面的骨架屏组件从 `page.tsx` 内部抽离，创建了符合 Next.js App Router 约定的 `app/(dashboard)/consumption/loading.tsx`。
+  - 通过服务端的原生 React Suspense 注入，确保浏览器在收到初始 HTML 的第一帧就拥有完整的骨架屏高度，从而让原生 Scroll Restoration（滚动恢复）完美生效。
+
+### Modified Files
+
+1. `web/src/app/(dashboard)/consumption/page.tsx`
+2. `web/src/app/(dashboard)/consumption/loading.tsx` (新增)
+3. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+
 ## 2.2.5 - 2026-03-20
 
 ### Fixes

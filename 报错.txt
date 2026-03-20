@@ -1,28 +1,72 @@
-## Error Type
-Build Error
+在 Next.js 项目中，确保骨架屏（Skeleton Screen）与真实业务模块高度一致、体验流畅，是提升用户“感知性能”的关键。结合 Next.js 的特性（尤其是 App Router 和 SSR/流式渲染），你可以通过以下最佳实践来解决骨架屏和真实组件不匹配的问题：
 
-## Error Message
-Parsing ecmascript source code failed
+1. 利用 App Router 的 loading.tsx 保持路由级一致性
+在 Next.js 的 App Router（Next.js 13+）中，官方原生提供了 loading.tsx（或 loading.js）文件约定。它基于 React Suspense 运行。
+你可以为每个具体的路由（如 /dashboard）创建一个专属的 loading.tsx，在其中直接复用真实页面的布局结构，仅把内部数据替换为骨架组件 。
+​
+​
 
-## Build Output
-./src/features/consumption/components/ConsumptionDefaultTheme.tsx:1322:23
-Parsing ecmascript source code failed
-  1320 |             </DelayedRender>
-  1321 |           </div>
-> 1322 |         </CardContent>
-       |                       ^
-> 1323 |       </Card>
-       | ^^^^^^^
-  1324 |
-  1325 |       {/* Row 8: Scatter & Histogram - Lazy Load */}
-  1326 |       <div className="grid gap-4 md:grid-cols-2">
+tsx
+// app/dashboard/loading.tsx
+import { Skeleton } from '@/components/ui/skeleton'
 
-Expected '</', got 'jsx text'
+export default function Loading() {
+  // 这里的布局 div 容器必须与真实 page.tsx 保持完全一样的 className
+  return (
+    <div className="grid grid-cols-3 gap-4 p-8">
+      <Skeleton className="h-[200px] w-full rounded-xl" />
+      <Skeleton className="h-[200px] w-full rounded-xl" />
+      <Skeleton className="h-[200px] w-full rounded-xl" />
+    </div>
+  )
+}
+核心点： 外层容器的 CSS Grid/Flexbox 布局类名（如 Tailwind 类名）必须与真实组件 100% 相同，只在内容区使用骨架占位，这样就能彻底避免页面加载完成时发生的布局跳动（Layout Shift）。
 
-Import trace:
-  Client Component Browser:
-    ./src/features/consumption/components/ConsumptionDefaultTheme.tsx [Client Component Browser]
-    ./src/app/(dashboard)/consumption/page.tsx [Client Component Browser]
-    ./src/app/(dashboard)/consumption/page.tsx [Server Component]
+2. 组件级别的 Suspense 与流式渲染 (Streaming)
+如果整个页面只有一个巨大的骨架屏，体验并不好。Next.js 支持流式渲染（Streaming）。你可以将真实组件和骨架屏拆解得更细，利用包裹在具体组件外层的 <Suspense> 来实现精准替换。
 
-Next.js version: 16.1.6 (Turbopack)
+tsx
+import { Suspense } from 'react'
+import UserProfile from './UserProfile'
+import UserProfileSkeleton from './UserProfileSkeleton'
+
+export default function Page() {
+  return (
+    <section>
+      {/* 侧边栏可能立马渲染，不需要骨架屏 */}
+      <Sidebar /> 
+      
+      {/* 只有需要请求慢速数据的组件才用特定的骨架屏包裹 */}
+      <Suspense fallback={<UserProfileSkeleton />}>
+        <UserProfile />
+      </Suspense>
+    </section>
+  )
+}
+这样不仅能确保 UserProfileSkeleton 与 UserProfile 尺寸和样式一一对应，还能让不需要请求数据的静态结构立即呈现给用户 。
+​
+​
+
+3. 使用 UI 库的 Skeleton 组件并统一抽离
+硬编码宽高是骨架屏不匹配的罪魁祸首 。在 Next.js 中，推荐使用 Tailwind CSS 配合如 Shadcn UI、NextUI 或第三方库 react-loading-skeleton 。
+
+继承父级尺寸：不要在骨架屏组件中写死固定像素（如 width: 300px），而是使用 w-full h-full 让骨架屏自动填充满真实的网格或 Flex 容器。
+
+创建“镜像”组件：在编写真实组件（如 Card.tsx）时，同级目录顺手写一个 CardSkeleton.tsx。它们共享同一套 Padding、Margin 和 Border Radius。一旦真实 Card 的样式改了，开发者能直观地想起来同步修改同文件下的 Skeleton 。
+​
+
+4. 结合 SWR 或 React Query 处理客户端渲染
+如果你的组件是客户端组件（"use client"），在 Next.js 中常结合 SWR 或 React Query 来获取数据。你可以直接利用解构出的 isLoading 状态来无缝切换同等大小的骨架屏，这种方式在配合 Next.js 的 SSG（静态生成）时也能起到很好的占位作用 。
+​
+
+tsx
+"use client"
+import useSWR from 'swr'
+
+export default function DataList() {
+  const { data, isLoading } = useSWR('/api/data', fetcher)
+
+  if (isLoading) return <ListSkeleton /> // 必须与下方真实 DOM 结构对应
+  return <ul>{data.map(item => <ListItem key={item.id} {...item} />)}</ul>
+}
+你的 Next.js 项目目前是使用较新的 App Router（app/ 目录）还是传统的 Pages Router（pages/ 目录）？
