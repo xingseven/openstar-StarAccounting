@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { CardContainer } from "@/components/shared/CardContainer";
+import { Skeleton } from "@/components/shared/Skeletons";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 
 const DEFAULT_VERSION = "2.0.5";
 
@@ -166,21 +168,21 @@ const contributors = [
 const websites = [
   {
     name: "GitHub 仓库",
-    url: "https://github.com/openstar-project/xfdashboard",
+    url: "https://github.com/openstar-project/Star Accounting",
     icon: Github,
     description: "查看源码、提交 Issue 或参与开发",
     gradient: "from-gray-700 to-gray-900",
   },
   {
     name: "问题反馈",
-    url: "https://github.com/openstar-project/xfdashboard/issues",
+    url: "https://github.com/openstar-project/Star Accounting/issues",
     icon: Zap,
     description: "报告 Bug 或提出功能建议",
     gradient: "from-amber-500 to-orange-500",
   },
   {
     name: "功能建议",
-    url: "https://github.com/openstar-project/xfdashboard/discussions",
+    url: "https://github.com/openstar-project/Star Accounting/discussions",
     icon: Sparkles,
     description: "参与讨论，分享你的想法",
     gradient: "from-emerald-500 to-teal-500",
@@ -222,6 +224,14 @@ export default function AboutPage() {
   const [versionHistory, setVersionHistory] = useState<VersionItem[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(true);
   const [showAllVersions, setShowAllVersions] = useState(false);
+
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // 动态获取 CHANGELOG.md 解析后的版本数据
@@ -277,6 +287,22 @@ export default function AboutPage() {
 
   const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, 1);
 
+  if (骨架显示) {
+    return (
+      <PageContainer className="pb-8">
+        <Skeleton className="h-[200px] w-full rounded-2xl mb-6" />
+        <div className="space-y-4">
+          <DelayedRender delay={0}>
+            <Skeleton className="h-[150px] w-full rounded-xl" />
+          </DelayedRender>
+          <DelayedRender delay={50}>
+            <Skeleton className="h-[150px] w-full rounded-xl" />
+          </DelayedRender>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer className="pb-8">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-slate-800 p-3 md:p-5 lg:p-7">
@@ -287,7 +313,7 @@ export default function AboutPage() {
               X
             </div>
             <div>
-              <h1 className="text-2xl md:text-4xl font-bold text-white">XFDashboard</h1>
+              <h1 className="text-2xl md:text-4xl font-bold text-white">Star Accounting</h1>
               <p className="text-blue-100 text-sm md:mt-1">OpenStar 开源个人财务管理面板</p>
             </div>
           </div>
@@ -335,7 +361,7 @@ export default function AboutPage() {
             <span className="text-sm text-green-700 font-medium">已是最新版本</span>
           </div>
           <a
-            href="https://github.com/openstar-project/xfdashboard/releases"
+            href="https://github.com/openstar-project/Star Accounting/releases"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 md:mt-4 flex items-center justify-center gap-2 w-full py-2.5 md:py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors group"
@@ -546,7 +572,7 @@ export default function AboutPage() {
       </CardContainer>
 
       <div className="text-center py-4 md:py-6">
-        <p className="text-xs md:text-sm text-gray-400">OpenStar XFDashboard v{currentVersion}</p>
+        <p className="text-xs md:text-sm text-gray-400">openstar Star Accounting v{currentVersion}</p>
         <p className="text-[10px] md:text-xs text-gray-300 mt-1">Made with ❤️ by OpenStar Team</p>
       </div>
     </PageContainer>

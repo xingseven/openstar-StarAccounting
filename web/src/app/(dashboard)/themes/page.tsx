@@ -1,6 +1,38 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { Skeleton } from "@/components/shared/Skeletons";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 
 export default function ThemesPage() {
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (骨架显示) {
+    return (
+      <PageContainer>
+        <div className="mb-6">
+          <Skeleton className="h-9 w-32 mb-2" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <DelayedRender delay={0}>
+            <Skeleton className="h-[250px] w-full rounded-xl" />
+          </DelayedRender>
+          <DelayedRender delay={50}>
+            <Skeleton className="h-[250px] w-full rounded-xl" />
+          </DelayedRender>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <div>

@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 import dynamic from "next/dynamic";
 import {
   Card,
@@ -49,6 +50,16 @@ export function LoansDefaultTheme({
   onOpenSchedule,
   onRepay,
 }: LoansViewProps) {
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const 显示骨架 = loading || 骨架显示;
+
   const getIcon = (platform: string) => {
     if (platform.includes("房")) return <Home className="h-5 w-5 text-blue-500" />;
     if (platform.includes("车")) return <CreditCard className="h-5 w-5 text-purple-500" />;
@@ -56,13 +67,51 @@ export function LoansDefaultTheme({
     return <Building className="h-5 w-5 text-gray-500" />;
   };
 
+  // Loading 状态显示骨架
+  if (显示骨架) {
+    return (
+      <div className="space-y-8 max-w-[1600px] mx-auto">
+        <DelayedRender delay={0}>
+          {/* 顶部按钮骨架 */}
+          <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
+            <Skeleton className="h-10 w-[120px]" />
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={50}>
+          {/* 图表骨架 */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-[350px] rounded-xl" />
+            <Skeleton className="h-[350px] rounded-xl" />
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={100}>
+          {/* 贷款卡片骨架 */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-xl bg-white border p-4 min-h-[200px]">
+                <div className="flex gap-3 mb-4">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </DelayedRender>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">贷款管理</h1>
-          <p className="text-gray-500 mt-1">清晰掌握负债情况，合理规划还款</p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
         <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white">
           <Plus className="h-4 w-4 mr-2" />
           新增贷款
@@ -134,26 +183,7 @@ export function LoansDefaultTheme({
 
       {/* Loan List */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          <>
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="rounded-xl bg-white border p-4 min-h-[200px]">
-                <div className="flex gap-3 mb-4">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-2 w-full" />
-                </div>
-              </div>
-            ))}
-          </>
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           <div className="col-span-full">
             <EmptyState
               icon={Landmark}

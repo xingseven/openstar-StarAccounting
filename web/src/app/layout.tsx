@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "OpenStar XFDashboard",
-    template: "%s | XFDashboard",
+    default: "openstar Star Accounting",
+    template: "%s | Star Accounting",
   },
   description: "个人财务管理仪表盘 - 智能记账、预算管理、资产追踪",
   keywords: ["财务管理", "记账", "预算", "资产", "消费分析"],
@@ -26,20 +26,20 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "XFDashboard",
+    title: "Star Accounting",
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: "website",
-    siteName: "XFDashboard",
-    title: "OpenStar XFDashboard",
+    siteName: "Star Accounting",
+    title: "openstar Star Accounting",
     description: "个人财务管理仪表盘 - 智能记账、预算管理、资产追踪",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OpenStar XFDashboard",
+    title: "openstar Star Accounting",
     description: "个人财务管理仪表盘 - 智能记账、预算管理、资产追踪",
   },
 };

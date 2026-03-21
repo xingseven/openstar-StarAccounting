@@ -17,6 +17,8 @@ import {
   Key,
   Loader2
 } from "lucide-react";
+import { Skeleton } from "@/components/shared/Skeletons";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   Card,
@@ -70,6 +72,14 @@ export default function AIPage() {
   const [editingModel, setEditingModel] = useState<AIModel | null>(null);
   const [configModel, setConfigModel] = useState<AIModel | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("configured");
+
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   // 表单状态
   const [formData, setFormData] = useState({
@@ -258,6 +268,31 @@ export default function AIPage() {
 
   function toggleSection(section: string) {
     setExpandedSection(expandedSection === section ? null : section);
+  }
+
+  if (骨架显示) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-12 w-12 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-28" />
+        </div>
+        <div className="space-y-4">
+          <DelayedRender delay={0}>
+            <Skeleton className="h-[200px] w-full rounded-xl" />
+          </DelayedRender>
+          <DelayedRender delay={50}>
+            <Skeleton className="h-[150px] w-full rounded-xl" />
+          </DelayedRender>
+        </div>
+      </PageContainer>
+    );
   }
 
   return (

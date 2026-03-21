@@ -62,7 +62,7 @@ export function PWARegister() {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         ">
           <div style="flex: 1;">
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">安装 XFDashboard</div>
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">安装 Star Accounting</div>
             <div style="font-size: 12px; opacity: 0.9;">添加到主屏幕，获得更好体验</div>
           </div>
           <button id="pwa-install-btn" style="

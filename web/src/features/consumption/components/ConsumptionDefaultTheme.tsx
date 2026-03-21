@@ -91,6 +91,7 @@ import {
 interface ConsumptionViewProps {
   data: ConsumptionData;
   dateRangeLabel: string;
+  loading?: boolean;
 }
 
 // Helper component for skeleton loading
@@ -230,9 +231,7 @@ function FixedStickyHeader({
       )}
       style={{ willChange: 'transform, opacity' }}
     >
-      <div className="w-full h-full rounded-2xl flex flex-wrap items-center gap-2 sm:gap-4 px-4 md:px-6">
-        <div className="font-bold text-gray-900 hidden md:block mr-4">消费分析</div>
-        
+      <div className="w-full h-full flex flex-wrap items-center gap-2 sm:gap-4">
         {/* Search */}
         <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -273,7 +272,17 @@ function FixedStickyHeader({
   );
 }
 
-export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionViewProps) {
+export function ConsumptionDefaultTheme({ data, dateRangeLabel, loading = false }: ConsumptionViewProps) {
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    // 骨架至少显示 600ms，让用户能看到骨架效果
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const 显示骨架 = loading || 骨架显示;
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("month");
@@ -513,34 +522,6 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     };
   }, []);
 
-  useEffect(() => {
-    const mainContent = document.querySelector('main');
-    if (!mainContent) return;
-
-    const STORAGE_KEY = 'consumption-scroll-position';
-
-    const handleScroll = () => {
-      sessionStorage.setItem(STORAGE_KEY, mainContent.scrollTop.toString());
-    };
-
-    const restoreScrollPosition = () => {
-      const savedPosition = sessionStorage.getItem(STORAGE_KEY);
-      if (savedPosition) {
-        const position = parseInt(savedPosition, 10);
-        if (!isNaN(position) && position > 0) {
-          mainContent.scrollTop = position;
-        }
-      }
-    };
-
-    mainContent.addEventListener('scroll', handleScroll, { passive: true });
-    restoreScrollPosition();
-
-    return () => {
-      mainContent.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
   const pieStrokeWidth = isMobile ? 12 : 4;
   const pieInnerRadius = isMobile ? 25 : 35;
 
@@ -599,7 +580,48 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
     return dates;
   };
 
-  
+  // Loading 状态显示骨架
+  if (显示骨架) {
+    return (
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
+        <DelayedRender delay={0}>
+          {/* 顶部标题与功能区骨架 */}
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Skeleton className="h-7 sm:h-9 w-24 sm:w-32 mb-1 sm:mb-2" />
+                <Skeleton className="h-4 sm:h-5 w-36 sm:w-48" />
+              </div>
+              {/* AI 分析卡片占位 */}
+              <Skeleton className="max-w-xl w-full hidden md:block h-[42px] rounded-xl" />
+              {/* AI 记账按钮占位 */}
+              <Skeleton className="h-10 w-[90px] sm:w-[100px] rounded-md shrink-0" />
+            </div>
+            {/* 筛选栏占位 */}
+            <Skeleton className="h-[60px] sm:h-[66px] w-full rounded-xl" />
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={50}>
+          {/* 核心数据卡片骨架 */}
+          <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
+            <Skeleton className="h-[80px] rounded-xl" />
+            <Skeleton className="h-[80px] rounded-xl" />
+            <Skeleton className="h-[80px] rounded-xl" />
+            <Skeleton className="h-[80px] rounded-xl" />
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={100}>
+          {/* 图表骨架 */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Skeleton className="h-[250px] rounded-xl" />
+            <Skeleton className="h-[250px] rounded-xl" />
+          </div>
+        </DelayedRender>
+      </div>
+    );
+  }
+
+
   return (
     <>
       <FixedStickyHeader 
@@ -612,40 +634,38 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
         dateRangeLabel={dateRangeLabel}
       />
 
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">消费分析</h1>
-              <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">全方位洞察您的收支状况</p>
-            </div>
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8 pt-16 sm:pt-0">
+        {/* AI 分析+记账按钮行 */}
+        <DelayedRender delay={0}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 sm:gap-3">
+              {/* AI 智能分析卡片 - 紧凑长条按钮样式 */}
+              <AIAnalysisCard
+                transactions={data.transactions.map(t => ({
+                  id: t.id,
+                  amount: parseFloat(t.amount) || 0,
+                  category: t.category,
+                  platform: t.platform,
+                  date: t.date,
+                  merchant: t.merchant,
+                  description: "",
+                }))}
+                budgets={[]}
+                className="w-full sm:w-auto"
+                compact
+              />
 
-            {/* AI 智能分析卡片 - 长条形状 */}
-            <AIAnalysisCard
-              transactions={data.transactions.map(t => ({
-                id: t.id,
-                amount: parseFloat(t.amount) || 0,
-                category: t.category,
-                platform: t.platform,
-                date: t.date,
-                merchant: t.merchant,
-                description: "",
-              }))}
-              budgets={[]}
-              className="max-w-xl w-full"
-              compact
-            />
-
-            <Button
-              onClick={openAIDialog}
-              className="gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shrink-0"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span className="hidden sm:inline">AI 记账</span>
-            </Button>
+              <Button
+                onClick={openAIDialog}
+                className="gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shrink-0 text-xs sm:text-sm"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>AI 记账</span>
+              </Button>
           </div>
+        </DelayedRender>
 
-          {/* 原始的顶部过滤模块 (非吸顶状态) */}
+        {/* 模块2: 筛选栏 */}
+        <DelayedRender delay={50}>
           <div className="bg-white py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Search */}
             <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
@@ -673,7 +693,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
 
             {/* Date Filter */}
             <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
-              <button 
+              <button
                 onClick={() => setDateFilter("month")}
                 className={cn("px-3 py-1.5 text-sm rounded-md font-medium transition-all shadow-sm", dateFilter === "month" ? "bg-white text-gray-900" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
               >
@@ -683,9 +703,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
               <span className="text-sm text-gray-500 px-3">{dateRangeLabel}</span>
             </div>
           </div>
-        </div>
+        </DelayedRender>
 
-      {/* Row 1: Summary Cards (4 cols) - Instant Render */}
+      {/* 模块3: Row 1: Summary Cards (4 cols) */}
+      <DelayedRender delay={100}>
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
           <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
@@ -749,8 +770,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
       </div>
+      </DelayedRender>
 
       {/* Row 2: Charts (3 cols) */}
+      <DelayedRender delay={150}>
       <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card className="col-span-1 flex flex-col">
           <CardHeader className="pb-2">
@@ -758,7 +781,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardHeader>
           <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block">
             <DelayedRender
-              delay={80}
+              delay={0}
               className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
               fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full" />}
             >
@@ -878,8 +901,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
       </div>
+      </DelayedRender>
 
-      {/* Row 3: Charts (2 cols) - Lazy Load */}
+      {/* Row 3: Charts (2 cols) */}
+      <DelayedRender delay={200}>
       <div className="grid gap-4 md:grid-cols-2 items-start">
         <Card>
           <CardHeader>
@@ -962,8 +987,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
       </div>
+      </DelayedRender>
 
-      {/* Row 4: Charts (2 cols) - Lazy Load */}
+      {/* Row 4: Charts (2 cols) */}
+      <DelayedRender delay={250}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="flex flex-col">
           <CardHeader className="pb-2">
@@ -1017,14 +1044,16 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             <CardDescription>每日消费强度分布</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 p-0">
-            <DelayedRender delay={480} lazy className="h-[250px] w-full">
+            <DelayedRender delay={0} lazy className="h-[250px] w-full">
               <AnimatedCalendarGrid calendar={data.calendar} />
             </DelayedRender>
           </CardContent>
         </Card>
       </div>
+      </DelayedRender>
 
-      {/* Row 5: Charts (2 cols) - Lazy Load */}
+      {/* Row 5: Charts (2 cols) */}
+      <DelayedRender delay={300}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -1137,8 +1166,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
       </div>
+      </DelayedRender>
 
-      {/* Row 7: Sankey Diagram - ECharts */}
+      {/* Row 6: Sankey Diagram */}
+      <DelayedRender delay={350}>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
@@ -1300,8 +1331,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
             </div>
           </CardContent>
         </Card>
+        </DelayedRender>
 
-      {/* Row 8: Scatter & Histogram - Lazy Load */}
+      {/* Row 7: Scatter & Histogram */}
+      <DelayedRender delay={400}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -1370,8 +1403,10 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </CardContent>
         </Card>
       </div>
+      </DelayedRender>
 
-      {/* Row 9: Transactions - Lazy Load */}
+      {/* Row 8: Transactions */}
+      <DelayedRender delay={450}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between py-4">
           <CardTitle className="text-base">交易明细</CardTitle>
@@ -1421,7 +1456,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           </DelayedRender>
         </CardContent>
       </Card>
-      </div>
+      </DelayedRender>
 
       {/* AI 记账对话框 */}
       <BottomSheet open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
@@ -1673,6 +1708,7 @@ export function ConsumptionDefaultTheme({ data, dateRangeLabel }: ConsumptionVie
           )}
         </BottomSheetContent>
       </BottomSheet>
+      </div>
     </>
   );
 }

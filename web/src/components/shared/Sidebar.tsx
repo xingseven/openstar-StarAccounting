@@ -38,7 +38,7 @@ export function SidebarContent() {
         <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
           X
         </div>
-        <span className="font-bold text-sm text-gray-900 tracking-tight truncate">XFDashboard</span>
+        <span className="font-bold text-sm text-gray-900 tracking-tight truncate">Star Accounting</span>
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

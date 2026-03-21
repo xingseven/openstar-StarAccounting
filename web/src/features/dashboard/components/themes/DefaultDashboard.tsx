@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { 
-  ArrowUpRight, 
+import { useState, useMemo, useEffect } from "react";
+import {
+  ArrowUpRight,
   ArrowDownLeft,
-  Wallet, 
-  CreditCard, 
-  Banknote, 
+  Wallet,
+  CreditCard,
+  Banknote,
   TrendingUp,
   MoreHorizontal,
   Calendar,
@@ -18,11 +18,11 @@ import {
   ArrowDown,
   type LucideIcon
 } from "lucide-react";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
   Cell,
   PieChart,
   Pie,
@@ -43,10 +43,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
+import { StatsCardSkeleton, ChartSkeleton, CardListSkeleton, Skeleton } from "@/components/shared/Skeletons";
 import { GridDecoration } from "@/components/shared/GridDecoration";
 import { CardContainer } from "@/components/shared/CardContainer";
 import { CardItem } from "@/components/shared/CardItem";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 import type { DashboardData } from "@/types";
 
 interface DashboardViewProps {
@@ -56,7 +57,50 @@ interface DashboardViewProps {
 
 export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   const [alertsDismissed, setAlertsDismissed] = useState(false);
-  
+
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 模拟消费分类占比数据 - 必须在 early return 之前
+  const categoryDistribution = useMemo(() => [
+    { name: '餐饮美食', value: 2450, color: '#3b82f6' },
+    { name: '购物消费', value: 1800, color: '#ef4444' },
+    { name: '日常缴费', value: 1200, color: '#f59e0b' },
+    { name: '交通出行', value: 800, color: '#10b981' },
+    { name: '休闲娱乐', value: 600, color: '#8b5cf6' },
+  ], []);
+
+  const 显示骨架 = loading || 骨架显示;
+
+  if (显示骨架) {
+    return (
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+        <DelayedRender delay={0}>
+          <Skeleton className="h-[120px] w-full rounded-2xl" />
+        </DelayedRender>
+        <DelayedRender delay={50}>
+          <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-[100px] rounded-xl" />
+            <Skeleton className="h-[100px] rounded-xl" />
+            <Skeleton className="h-[100px] rounded-xl" />
+            <Skeleton className="h-[100px] rounded-xl" />
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={100}>
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+        </DelayedRender>
+        <DelayedRender delay={150}>
+          <Skeleton className="h-[200px] w-full rounded-xl" />
+        </DelayedRender>
+      </div>
+    );
+  }
+
   const netWorth = data.totalAssets - data.totalDebt;
   const balance = data.monthIncome - data.monthExpense;
 
@@ -73,15 +117,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
     { name: '结余', value: Math.max(0, balance), color: '#3b82f6' },
   ];
 
-  // 模拟消费分类占比数据
-  const categoryDistribution = useMemo(() => [
-    { name: '餐饮美食', value: 2450, color: '#3b82f6' },
-    { name: '购物消费', value: 1800, color: '#ef4444' },
-    { name: '日常缴费', value: 1200, color: '#f59e0b' },
-    { name: '交通出行', value: 800, color: '#10b981' },
-    { name: '休闲娱乐', value: 600, color: '#8b5cf6' },
-  ], []);
-
   const chartConfig = {
     expense: {
       label: "支出",
@@ -97,24 +132,10 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
     },
   } satisfies ChartConfig;
 
-  if (loading) {
-    return (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-        </div>
-        <ChartSkeleton />
-        <CardListSkeleton count={5} />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto overflow-x-hidden">
       {/* Budget Alerts Banner */}
+      <DelayedRender delay={0}>
       {data.budgetAlerts.length > 0 && !alertsDismissed && (
         <div className="group relative rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 lg:p-3 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-start gap-3 sm:gap-4 relative z-10">
@@ -188,8 +209,10 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           <GridDecoration mode="light" opacity={0.03} />
         </div>
       )}
+      </DelayedRender>
 
       {/* Top Stats Cards */}
+      <DelayedRender delay={50}>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {/* Net Worth Card */}
         <div className="col-span-2 sm:col-span-1 relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-3 sm:p-6 text-white shadow-xl group">
@@ -236,17 +259,19 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           color="green"
         />
 
-        <StatCard 
-          title="储蓄" 
+        <StatCard
+          title="储蓄"
           subtitle="存入"
-          value={data.monthSavingsIncome} 
+          value={data.monthSavingsIncome}
           icon={TrendingUp}
           trend={trends.savings > 0 ? "up" : "down"}
           trendValue={trends.savings}
           color="amber"
         />
       </div>
+      </DelayedRender>
 
+      <DelayedRender delay={100}>
       <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
         {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-6 min-w-0">
@@ -412,6 +437,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           </CardContainer>
         </div>
       </div>
+      </DelayedRender>
     </div>
   );
 }

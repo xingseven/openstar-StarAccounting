@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
 import { MOCK_SAVINGS, MOCK_SAVINGS_TRANSACTIONS } from "@/features/shared/mockData";
-import { MockDataBanner } from "@/features/shared/useRealData";
+import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton } from "@/components/shared/Skeletons";
 
 const SavingsDefaultTheme = dynamic(
   () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
@@ -14,14 +14,16 @@ const SavingsDefaultTheme = dynamic(
     loading: () => (
       <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto min-h-[101vh]">
         <div className="grid gap-2 sm:gap-4 grid-cols-3">
-          <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[100px] animate-pulse" />
-          <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[100px] animate-pulse" />
-          <div className="border-l-4 border-l-gray-300 shadow-sm rounded-xl bg-white p-4 min-h-[100px] animate-pulse" />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
         </div>
-        <div className="grid gap-6 md:grid-cols-5 min-h-[350px]">
-          <div className="md:col-span-1 flex flex-col min-h-[350px] rounded-xl bg-white border p-4 animate-pulse" />
-          <div className="md:col-span-1 flex flex-col min-h-[350px] rounded-xl bg-white border p-4 animate-pulse" />
-          <div className="md:col-span-3 overflow-hidden rounded-xl bg-white border min-h-[350px] animate-pulse" />
+        <div className="grid gap-6 md:grid-cols-5">
+          <ChartSkeleton className="md:col-span-1" />
+          <ChartSkeleton className="md:col-span-1" />
+          <div className="md:col-span-3">
+            <ListTableSkeleton rows={3} columns={7} />
+          </div>
         </div>
       </div>
     )
@@ -195,7 +197,6 @@ export default function SavingsPage() {
 
   return (
     <>
-      <MockDataBanner usingMockData={usingMockData} />
       <SavingsDefaultTheme
         items={items}
         transactions={transactions}

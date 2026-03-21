@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Budget Management', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await page.locator('input[type="email"]').fill('admin@xfdashboard.com');
+    await page.locator('input[type="email"]').fill('admin@Star Accounting.com');
     await page.locator('input[type="password"]').fill('Admin123.');
     await page.locator('button[type="submit"]').click();
     

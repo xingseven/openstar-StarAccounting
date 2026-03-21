@@ -3,6 +3,8 @@
 import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { PageContainer } from "@/components/shared/PageContainer";
+import { Skeleton } from "@/components/shared/Skeletons";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 
 type GenerateData = {
   otpCode: string;
@@ -32,6 +34,14 @@ export default function ConnectionsPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const remainingSeconds = useMemo(() => {
     if (!generateData) return 0;
@@ -85,6 +95,25 @@ export default function ConnectionsPage() {
   }
 
   const expired = generateData ? remainingSeconds <= 0 : false;
+
+  if (骨架显示) {
+    return (
+      <PageContainer maxWidth="2xl">
+        <div className="space-y-2 text-center">
+          <Skeleton className="h-8 w-32 mx-auto mb-2" />
+          <Skeleton className="h-4 w-64 mx-auto" />
+        </div>
+        <div className="space-y-4">
+          <DelayedRender delay={0}>
+            <Skeleton className="h-[120px] w-full rounded-xl" />
+          </DelayedRender>
+          <DelayedRender delay={50}>
+            <Skeleton className="h-[200px] w-full rounded-xl" />
+          </DelayedRender>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer maxWidth="2xl">

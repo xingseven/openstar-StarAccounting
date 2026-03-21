@@ -4,7 +4,6 @@ dist/
 *.db
 *.sqlite
 *.sqlite-journal
-.env
 .env.*
 !.env.example
 .DS_Store

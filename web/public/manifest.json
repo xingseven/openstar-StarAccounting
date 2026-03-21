@@ -1,6 +1,6 @@
 {
-  "name": "OpenStar XFDashboard",
-  "short_name": "XFDashboard",
+  "name": "openstar Star Accounting",
+  "short_name": "Star Accounting",
   "description": "个人财务管理仪表盘 - 智能记账、预算管理、资产追踪",
   "start_url": "/",
   "display": "standalone",

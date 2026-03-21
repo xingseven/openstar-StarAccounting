@@ -1,11 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import {
-  StatsCardSkeleton,
-  ChartSkeleton,
-  ListTableSkeleton
-} from "@/components/shared/Skeletons";
-import {
   Plus,
   Target,
   TrendingUp,
@@ -34,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/shared/Skeletons";
 import { clsx } from "clsx";
 import { 
   Pie, 
@@ -106,6 +102,16 @@ export function SavingsDefaultTheme({
   const [filterBy, setFilterBy] = useState<FilterOption>("active");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // 首次加载时显示骨架的延迟状态
+  const [骨架显示, set骨架显示] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => set骨架显示(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const 显示骨架 = loading || 骨架显示;
+
   // Debug log
   useEffect(() => {
     if (transactions) {
@@ -160,9 +166,9 @@ export function SavingsDefaultTheme({
   // Deposit type distribution data
   const depositTypeData = useMemo(() => {
     const data = [
-      { name: "现金", value: 0, fill: "#10B981" },
-      { name: "死期", value: 0, fill: "#8B5CF6" },
-      { name: "他人帮存", value: 0, fill: "#F59E0B" },
+      { name: "现金", value: 0, fill: "#60A5FA" },
+      { name: "死期", value: 0, fill: "#3B82F6" },
+      { name: "他人帮存", value: 0, fill: "#1D4ED8" },
     ];
     items.forEach(item => {
       if (item.depositType === "CASH") data[0].value += item.currentAmount;
@@ -202,10 +208,10 @@ export function SavingsDefaultTheme({
   // Chart Data: Savings Distribution by Type
   const distributionData = useMemo(() => {
     const data = [
-      { name: "月度", value: 0, fill: "#F59E0B" }, // Amber
-      { name: "年度", value: 0, fill: "#8B5CF6" }, // Purple
-      { name: "长期", value: 0, fill: "#3B82F6" }, // Blue
-      { name: "隔月", value: 0, fill: "#10B981" }, // Emerald
+      { name: "月度", value: 0, fill: "#93C5FD" }, // Blue-300
+      { name: "年度", value: 0, fill: "#60A5FA" }, // Blue-400
+      { name: "长期", value: 0, fill: "#3B82F6" }, // Blue-500
+      { name: "隔月", value: 0, fill: "#1D4ED8" }, // Blue-700
     ];
     
     items.forEach(item => {
@@ -219,21 +225,56 @@ export function SavingsDefaultTheme({
   }, [items]);
 
   const chartConfig = {
-    monthly: { label: "月度", color: "#F59E0B" },
-    yearly: { label: "年度", color: "#8B5CF6" },
+    monthly: { label: "月度", color: "#93C5FD" },
+    yearly: { label: "年度", color: "#60A5FA" },
     longTerm: { label: "长期", color: "#3B82F6" },
-    biMonthly: { label: "隔月", color: "#10B981" },
+    biMonthly: { label: "隔月", color: "#1D4ED8" },
   } satisfies ChartConfig;
+
+  // Loading 状态显示骨架
+  if (显示骨架) {
+    return (
+      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
+        <DelayedRender delay={0}>
+          {/* 顶部标题与功能区骨架 */}
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div>
+              <Skeleton className="h-7 sm:h-9 w-24 sm:w-32 mb-1 sm:mb-2" />
+              <Skeleton className="h-4 sm:h-5 w-36 sm:w-48" />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <Skeleton className="h-9 w-[200px] rounded-md" />
+              <Skeleton className="h-9 w-[200px] rounded-md" />
+              <Skeleton className="h-9 w-[100px] rounded-md" />
+              <Skeleton className="h-9 w-[80px] rounded-md" />
+              <Skeleton className="h-9 w-[100px] rounded-md" />
+              <Skeleton className="h-9 w-[90px] rounded-md" />
+            </div>
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={50}>
+          {/* 统计卡片骨架 */}
+          <div className="grid gap-2 sm:gap-4 grid-cols-3">
+            <Skeleton className="h-[80px] rounded-xl" />
+            <Skeleton className="h-[80px] rounded-xl" />
+            <Skeleton className="h-[80px] rounded-xl" />
+          </div>
+        </DelayedRender>
+        <DelayedRender delay={100}>
+          {/* 图表与列表骨架 */}
+          <div className="grid gap-6 md:grid-cols-5">
+            <Skeleton className="h-[350px] rounded-xl" />
+            <Skeleton className="h-[350px] rounded-xl" />
+            <Skeleton className="h-[350px] rounded-xl" />
+          </div>
+        </DelayedRender>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-      <div className="flex flex-col gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-gray-900">储蓄目标</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">积少成多，实现你的财务愿望</p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Search */}
           <div className="relative flex-1 min-w-[140px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -331,73 +372,47 @@ export function SavingsDefaultTheme({
             <span className="hidden sm:inline">新建目标</span>
           </Button>
         </div>
-      </div>
 
-      {/* Row 1: Summary Cards (3 cols) - With Skeleton */}
+      {/* Row 1: Summary Cards (3 cols) */}
       <div className="grid gap-2 sm:gap-4 grid-cols-3">
-        {loading ? (
-          <>
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-          </>
-        ) : (
-          <>
-            <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-              <Wallet className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-blue-500/10" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总存款</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-lg sm:text-lg font-bold text-gray-900">¥{totalSaved.toLocaleString()}</div>
-                <p className="text-[10px] sm:text-[10px] text-gray-500 mt-0.5 sm:mt-1">所有目标的当前存款总和</p>
-              </CardContent>
-            </Card>
+        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+          <Wallet className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-blue-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总存款</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-lg sm:text-lg font-bold text-gray-900">¥{totalSaved.toLocaleString()}</div>
+            <p className="text-[10px] sm:text-[10px] text-gray-500 mt-0.5 sm:mt-1">所有目标的当前存款总和</p>
+          </CardContent>
+        </Card>
 
-            <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
-              <Target className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-purple-500/10" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">目标总额</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-lg sm:text-lg font-bold text-gray-900">¥{totalTarget.toLocaleString()}</div>
-                <p className="text-[10px] sm:text-[10px] text-gray-500 mt-0.5 sm:mt-1">所有目标的计划总额</p>
-              </CardContent>
-            </Card>
+        <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
+          <Target className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-purple-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">目标总额</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-lg sm:text-lg font-bold text-gray-900">¥{totalTarget.toLocaleString()}</div>
+            <p className="text-[10px] sm:text-[10px] text-gray-500 mt-0.5 sm:mt-1">所有目标的计划总额</p>
+          </CardContent>
+        </Card>
 
-            <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
-              <TrendingUp className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-green-500/10" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
-                <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总体进度</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-lg sm:text-lg font-bold text-gray-900">{overallProgress.toFixed(0)}%</div>
-                <Progress value={overallProgress} className="h-1.5 sm:h-2 mt-1 sm:mt-2 bg-green-100" indicatorClassName="bg-green-500" />
-              </CardContent>
-            </Card>
-          </>
-        )}
+        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+          <TrendingUp className="absolute -right-2 -bottom-2 h-16 w-16 sm:h-24 sm:w-24 text-green-500/10" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总体进度</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-lg sm:text-lg font-bold text-gray-900">{overallProgress.toFixed(0)}%</div>
+            <Progress value={overallProgress} className="h-1.5 sm:h-2 mt-1 sm:mt-2 bg-green-100" indicatorClassName="bg-green-500" />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Row 2: Distribution Chart & Goals Grid */}
       <div className="grid gap-6 md:grid-cols-5">
-        {loading ? (
-          <>
-            <div className="md:col-span-1">
-              <ChartSkeleton />
-            </div>
-            <div className="md:col-span-1">
-              <ChartSkeleton />
-            </div>
-            <div className="md:col-span-3">
-              <ListTableSkeleton rows={3} columns={7} />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Chart Column 1: 储蓄模式分布 */}
-            <DelayedRender delay={50} className="md:col-span-1 h-full" fallback={<ChartSkeleton />}>
-              <Card className="flex flex-col h-full">
+        {/* Chart Column 1: 储蓄模式分布 */}
+        <Card className="flex flex-col h-full">
                 <CardHeader className="items-center pb-0">
                   <CardTitle className="text-base">储蓄分布</CardTitle>
                   <CardDescription>按模式统计</CardDescription>
@@ -436,11 +451,9 @@ export function SavingsDefaultTheme({
                   )}
                 </CardContent>
               </Card>
-            </DelayedRender>
 
             {/* Chart Column 2: 存款类型分布 */}
-            <DelayedRender delay={100} className="md:col-span-1 h-full" fallback={<ChartSkeleton />}>
-              <Card className="flex flex-col h-full">
+            <Card className="flex flex-col h-full">
                 <CardHeader className="items-center pb-0">
                   <CardTitle className="text-base">存款类型</CardTitle>
                   <CardDescription>按方式统计</CardDescription>
@@ -479,11 +492,9 @@ export function SavingsDefaultTheme({
                   )}
                 </CardContent>
               </Card>
-            </DelayedRender>
 
             {/* Goals Table Column */}
-            <DelayedRender delay={150} className="md:col-span-3 h-full" fallback={<ListTableSkeleton rows={3} columns={7} />}>
-              <Card className="overflow-hidden min-h-[350px] h-full">
+            <Card className="overflow-hidden min-h-[350px] h-full">
                 <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
                   <div className="space-y-0 sm:space-y-1">
                     <CardTitle className="text-sm sm:text-base">目标列表</CardTitle>
@@ -749,9 +760,6 @@ export function SavingsDefaultTheme({
                   )}
                 </CardContent>
               </Card>
-            </DelayedRender>
-          </>
-        )}
       </div>
 
     </div>

@@ -3,15 +3,13 @@
 import { useMemo, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
-import { MockDataBanner } from "@/features/shared/useRealData";
 import { fetchConsumptionData } from "@/features/consumption/api";
-import SkeletonLoading from "./loading";
 
 const ConsumptionDefaultTheme = dynamic(
   () => import("@/features/consumption/components/ConsumptionDefaultTheme").then(mod => mod.ConsumptionDefaultTheme),
   {
     ssr: false,
-    loading: () => <SkeletonLoading />
+    loading: () => null
   }
 );
 
@@ -19,6 +17,34 @@ export default function ConsumptionPage() {
   const [consumptionData, setConsumptionData] = useState(MOCK_CONSUMPTION);
   const [loading, setLoading] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
+
+  // 恢复滚动位置 - 页面级别执行
+  useEffect(() => {
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+    const STORAGE_KEY = 'consumption-scroll-position';
+    const savedPosition = sessionStorage.getItem(STORAGE_KEY);
+    if (savedPosition) {
+      const position = parseInt(savedPosition, 10);
+      if (!isNaN(position) && position > 0) {
+        requestAnimationFrame(() => {
+          mainContent.scrollTop = position;
+        });
+      }
+    }
+  }, []);
+
+  // 保存滚动位置 - 页面级别执行
+  useEffect(() => {
+    const mainContent = document.querySelector('main');
+    if (!mainContent) return;
+    const STORAGE_KEY = 'consumption-scroll-position';
+    const handleScroll = () => {
+      sessionStorage.setItem(STORAGE_KEY, mainContent.scrollTop.toString());
+    };
+    mainContent.addEventListener('scroll', handleScroll, { passive: true });
+    return () => mainContent.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -60,15 +86,11 @@ export default function ConsumptionPage() {
 
   return (
     <div className="w-full">
-      <MockDataBanner usingMockData={usingMockData} />
-      {loading && consumptionData.transactions.length === 0 ? (
-        <SkeletonLoading />
-      ) : (
-        <ConsumptionDefaultTheme
-          data={consumptionData}
-          dateRangeLabel={dateRangeLabel}
-        />
-      )}
+      <ConsumptionDefaultTheme
+        data={consumptionData}
+        dateRangeLabel={dateRangeLabel}
+        loading={loading}
+      />
     </div>
   );
 }

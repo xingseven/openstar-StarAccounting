@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-可选：配置 PostgreSQL 并启用持久化，参考 [数据库配置.md](file:///f:/1python/xiangmu/openstar-xfdashboard/docs/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%85%8D%E7%BD%AE.md)
+可选：配置 PostgreSQL 并启用持久化，参考 [数据库配置.md](file:///f:/1python/xiangmu/openstar-Star Accounting/docs/%E6%95%B0%E6%8D%AE%E5%BA%93%E9%85%8D%E7%BD%AE.md)
 
 ### 2) 启动前端
 

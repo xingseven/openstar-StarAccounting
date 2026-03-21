@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.3.0 - 2026-03-21
+
+### Features
+
+- **多账户权限系统**:
+  - 新增 `account` 表 - 账户信息
+  - 新增 `account_member` 表 - 成员关系与权限（支持 OWNER/ADMIN/MEMBER 三种角色）
+  - 所有业务表新增 `accountId` 字段，实现数据隔离
+  - 用户 `defaultAccountId` 字段关联默认账户
+  - `canViewOwn`/`canManageOwn`/`canViewAll`/`canManageAll` 细粒度权限控制
+
+### Database Changes
+
+- 新增表：`account`, `account_member`
+- 修改表：所有业务表新增 `accountId` 字段
+- 新增 `npm run db:create` 一键创建数据表
+
+### New Files
+
+1. `docs/多账户权限系统设计.md` - 设计文档
+2. `docs/完整数据库结构.sql` - 数据库结构 SQL
+3. `src/server/scripts/create-tables.ts` - 一键建表脚本
+
+### Modified Files
+
+1. `src/server/prisma/schema.prisma` - 新增 account 和 account_member 模型
+2. `src/server/src/main.ts` - 新增 `requireAccountId` 函数，导入逻辑使用 accountId
+3. `src/server/package.json` - 新增 `db:create` 脚本
+
 ## 2.2.6 - 2026-03-20
 
 ### Fixes

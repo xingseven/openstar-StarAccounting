@@ -5,7 +5,10 @@
       "Bash(git pull:*)",
       "Bash(npm run:*)",
       "Bash(npm install:*)",
-      "Bash(npm list:*)"
+      "Bash(npm list:*)",
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(mysql:*)"
     ]
   }
 }
