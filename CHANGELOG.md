@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.3.1 - 2026-03-21
+
+### Features
+
+- **数据管理页面**:
+  - 新增 `/data` 路由，侧边栏添加"数据管理"入口
+  - 支持批量选择、删除、修改交易记录
+
+- **账户管理功能**:
+  - 设置页面新增"账户管理"模块（三列布局）
+  - 支持创建新账户、查看账户列表、设置默认账户
+
+### API
+
+- `POST /api/accounts` - 创建账户
+- `GET /api/accounts` - 获取账户列表
+- `PUT /api/accounts/:id/default` - 设置默认账户
+
+### New Files
+
+1. `web/src/app/(dashboard)/data/page.tsx` - 数据管理页面
+
+### Modified Files
+
+1. `web/src/components/shared/Sidebar.tsx` - 添加数据管理入口
+2. `web/src/app/(dashboard)/settings/page.tsx` - 添加账户管理模块
+3. `src/server/src/main.ts` - 新增账户管理 API
+
 ## 2.3.0 - 2026-03-21
 
 ### Features

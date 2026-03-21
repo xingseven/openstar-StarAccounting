@@ -18,11 +18,13 @@ const SavingsDefaultTheme = dynamic(
           <StatsCardSkeleton />
           <StatsCardSkeleton />
         </div>
-        <div className="grid gap-6 md:grid-cols-5">
-          <ChartSkeleton className="md:col-span-1" />
-          <ChartSkeleton className="md:col-span-1" />
-          <div className="md:col-span-3">
-            <ListTableSkeleton rows={3} columns={7} />
+        <div className="grid gap-6 md:grid-cols-4 md:grid-rows-2">
+          <div className="flex flex-col gap-6 md:col-span-1 md:row-span-2">
+            <ChartSkeleton className="flex-1 min-h-0" />
+            <ChartSkeleton className="flex-1 min-h-0" />
+          </div>
+          <div className="md:col-span-3 md:row-span-2">
+            <ListTableSkeleton rows={6} columns={7} />
           </div>
         </div>
       </div>
