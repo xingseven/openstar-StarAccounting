@@ -136,11 +136,14 @@ export default function SettingsPage() {
         <DelayedRender delay={0}>
           <Skeleton className="h-20 rounded-2xl" />
         </DelayedRender>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-3">
           <DelayedRender delay={50}>
             <Skeleton className="h-64 rounded-2xl" />
           </DelayedRender>
           <DelayedRender delay={100}>
+            <Skeleton className="h-64 rounded-2xl" />
+          </DelayedRender>
+          <DelayedRender delay={150}>
             <Skeleton className="h-64 rounded-2xl" />
           </DelayedRender>
         </div>
@@ -179,7 +182,7 @@ export default function SettingsPage() {
       )}
 
       {/* Settings Cards */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Settings */}
         <CardContainer className="group/card flex flex-col gap-0 overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-sm text-foreground lg:p-8">
           <div className="flex items-center gap-3 mb-4 sm:mb-6">
@@ -263,82 +266,82 @@ export default function SettingsPage() {
           </form>
           <GridDecoration mode="light" className="opacity-[0.015]" />
         </CardContainer>
-      </div>
 
-      {/* Account Management */}
-      <CardContainer className="overflow-hidden rounded-2xl bg-white p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center gap-3 mb-4 sm:mb-6">
-          <div className="p-2 rounded-lg bg-green-50 text-green-600">
-            <Users className="h-5 w-5" />
+        {/* Account Management */}
+        <CardContainer className="overflow-hidden rounded-2xl bg-white p-4 sm:p-6 lg:p-8">
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <div className="p-2 rounded-lg bg-green-50 text-green-600">
+              <Users className="h-5 w-5" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">账户管理</h2>
           </div>
-          <h2 className="text-base sm:text-lg font-bold text-gray-900">账户管理</h2>
-        </div>
 
-        {/* Create Account Form */}
-        <form onSubmit={handleCreateAccount} className="flex items gap-3 mb-6">
-          <input
-            type="text"
-            placeholder="新账户名称"
-            value={newAccountName}
-            onChange={(e) => setNewAccountName(e.target.value)}
-            className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
-          />
-          <button
-            type="submit"
-            disabled={accountLoading || !newAccountName.trim()}
-            className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            创建账户
-          </button>
-        </form>
+          {/* Create Account Form */}
+          <form onSubmit={handleCreateAccount} className="flex items gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="新账户名称"
+              value={newAccountName}
+              onChange={(e) => setNewAccountName(e.target.value)}
+              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
+            />
+            <button
+              type="submit"
+              disabled={accountLoading || !newAccountName.trim()}
+              className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              创建账户
+            </button>
+          </form>
 
-        {/* Account List */}
-        <div className="space-y-3">
-          {accounts.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">暂无账户</p>
-          ) : (
-            accounts.map((account) => (
-              <div
-                key={account.id}
-                className={`flex items-center justify-between rounded-xl border p-4 transition-colors ${
-                  user?.defaultAccountId === account.id
-                    ? "border-green-200 bg-green-50/50"
-                    : "border-gray-100 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    user?.defaultAccountId === account.id ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"
-                  }`}>
-                    {account.role === "OWNER" ? <Star className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+          {/* Account List */}
+          <div className="space-y-3">
+            {accounts.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">暂无账户</p>
+            ) : (
+              accounts.map((account) => (
+                <div
+                  key={account.id}
+                  className={`flex items-center justify-between rounded-xl border p-4 transition-colors ${
+                    user?.defaultAccountId === account.id
+                      ? "border-green-200 bg-green-50/50"
+                      : "border-gray-100 hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      user?.defaultAccountId === account.id ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {account.role === "OWNER" ? <Star className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{account.name}</p>
+                      <p className="text-xs text-gray-400">
+                        {account.role === "OWNER" ? "所有者" : account.role?.toLowerCase()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{account.name}</p>
-                    <p className="text-xs text-gray-400">
-                      {account.role === "OWNER" ? "所有者" : account.role?.toLowerCase()}
-                    </p>
-                  </div>
+                  {user?.defaultAccountId !== account.id && (
+                    <button
+                      onClick={() => handleSetDefaultAccount(account.id)}
+                      disabled={accountLoading}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-100 disabled:opacity-50 transition-colors"
+                    >
+                      设为默认
+                    </button>
+                  )}
+                  {user?.defaultAccountId === account.id && (
+                    <span className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">
+                      默认账户
+                    </span>
+                  )}
                 </div>
-                {user?.defaultAccountId !== account.id && (
-                  <button
-                    onClick={() => handleSetDefaultAccount(account.id)}
-                    disabled={accountLoading}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-100 disabled:opacity-50 transition-colors"
-                  >
-                    设为默认
-                  </button>
-                )}
-                {user?.defaultAccountId === account.id && (
-                  <span className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">
-                    默认账户
-                  </span>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </CardContainer>
+              ))
+            )}
+          </div>
+        </CardContainer>
+      </div>
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 py-4">

@@ -262,10 +262,12 @@ export function SavingsDefaultTheme({
         </DelayedRender>
         <DelayedRender delay={100}>
           {/* 图表与列表骨架 */}
-          <div className="grid gap-6 md:grid-cols-3">
-            <Skeleton className="h-[350px] rounded-xl" />
-            <Skeleton className="h-[350px] rounded-xl" />
-            <Skeleton className="h-[350px] rounded-xl" />
+          <div className="grid gap-6 md:grid-cols-4 md:grid-rows-2">
+            <div className="flex flex-col gap-6 md:col-span-1 md:row-span-2">
+              <Skeleton className="flex-1 min-h-0 rounded-xl" />
+              <Skeleton className="flex-1 min-h-0 rounded-xl" />
+            </div>
+            <Skeleton className="rounded-xl md:col-span-3 md:row-span-2" />
           </div>
         </DelayedRender>
       </div>
@@ -410,91 +412,94 @@ export function SavingsDefaultTheme({
       </div>
 
       {/* Row 2: Distribution Chart & Goals Grid */}
-      <div className="grid gap-6 md:grid-cols-5">
-        {/* Chart Column 1: 储蓄模式分布 */}
-        <Card className="flex flex-col h-full md:col-span-2">
-                <CardHeader className="items-center pb-0">
-                  <CardTitle className="text-base">储蓄分布</CardTitle>
-                  <CardDescription>按模式统计</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 pb-0 relative min-h-[200px]">
-                  {distributionData.length > 0 ? (
-                    <>
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
-                        <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie
-                            data={distributionData}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={40}
-                            strokeWidth={5}
-                          >
-                            {distributionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ChartContainer>
-                      <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-                        {distributionData.map((item, index) => (
-                          <div key={index} className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                            <span className="text-gray-500">{item.name}</span>
-                            <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
-                  )}
-                </CardContent>
-              </Card>
+      <div className="grid gap-6 md:grid-cols-4 md:grid-rows-2">
+        {/* 左边两个圆形图上下排列，占1列2行高度 */}
+        <div className="flex flex-col gap-6 md:col-span-1 md:row-span-2">
+          {/* Chart Column 1: 储蓄模式分布 */}
+          <Card className="flex flex-col flex-1 min-h-0">
+                  <CardHeader className="items-center pb-0">
+                    <CardTitle className="text-base">储蓄分布</CardTitle>
+                    <CardDescription>按模式统计</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 pb-0 relative min-h-[120px]">
+                    {distributionData.length > 0 ? (
+                      <>
+                        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[120px]">
+                          <PieChart>
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                            <Pie
+                              data={distributionData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={40}
+                              strokeWidth={5}
+                            >
+                              {distributionData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ChartContainer>
+                        <div className="absolute bottom-2 right-2 flex flex-col gap-1 text-xs">
+                          {distributionData.map((item, index) => (
+                            <div key={index} className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                              <span className="text-gray-500">{item.name}</span>
+                              <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* Chart Column 2: 存款类型分布 */}
-            <Card className="flex flex-col h-full">
-                <CardHeader className="items-center pb-0">
-                  <CardTitle className="text-base">存款类型</CardTitle>
-                  <CardDescription>按方式统计</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 pb-0 relative min-h-[200px]">
-                  {depositTypeData.length > 0 ? (
-                    <>
-                      <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[200px]">
-                        <PieChart>
-                          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                          <Pie
-                            data={depositTypeData}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={40}
-                            strokeWidth={5}
-                          >
-                            {depositTypeData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ChartContainer>
-                      <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
-                        {depositTypeData.map((item, index) => (
-                          <div key={index} className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                            <span className="text-gray-500">{item.name}</span>
-                            <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
-                  )}
-                </CardContent>
-              </Card>
+              {/* Chart Column 2: 存款类型分布 */}
+              <Card className="flex flex-col flex-1 min-h-0">
+                  <CardHeader className="items-center pb-0">
+                    <CardTitle className="text-base">存款类型</CardTitle>
+                    <CardDescription>按方式统计</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1 pb-0 relative min-h-[120px]">
+                    {depositTypeData.length > 0 ? (
+                      <>
+                        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[120px]">
+                          <PieChart>
+                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                            <Pie
+                              data={depositTypeData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={40}
+                              strokeWidth={5}
+                            >
+                              {depositTypeData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ChartContainer>
+                        <div className="absolute bottom-2 right-2 flex flex-col gap-1 text-xs">
+                          {depositTypeData.map((item, index) => (
+                            <div key={index} className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                              <span className="text-gray-500">{item.name}</span>
+                              <span className="font-medium">{(item.value / totalSaved * 100).toFixed(0)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">暂无数据</div>
+                    )}
+                  </CardContent>
+                </Card>
+        </div>
 
-            {/* Goals Table Column */}
-            <Card className="overflow-hidden min-h-[350px] h-full">
+            {/* Goals Table Column - 占右边3列2行高度 */}
+            <Card className="overflow-hidden flex-1 min-h-0 md:col-span-3 md:row-span-2">
                 <CardHeader className="flex flex-row items-center justify-between py-2 sm:py-4">
                   <div className="space-y-0 sm:space-y-1">
                     <CardTitle className="text-sm sm:text-base">目标列表</CardTitle>
