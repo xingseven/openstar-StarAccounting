@@ -68,29 +68,3 @@ export function useRealData<T>({
   return { data, loading, usingMockData };
 }
 
-/**
- * 模拟数据提示组件的 Props
- */
-export interface MockDataBannerProps {
-  usingMockData: boolean;
-  message?: string;
-}
-
-/**
- * 简单的模拟数据提示 Banner
- * 用于在页面顶部显示当前使用的是模拟数据
- */
-export function MockDataBanner({
-  usingMockData,
-  message = "当前显示模拟数据，正在尝试连接服务器获取真实数据...",
-}: MockDataBannerProps) {
-  if (!usingMockData) return null;
-
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-2">
-      <div className="rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800 whitespace-nowrap overflow-hidden text-ellipsis">
-        {message}
-      </div>
-    </div>
-  );
-}

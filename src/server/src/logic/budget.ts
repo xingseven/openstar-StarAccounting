@@ -1,5 +1,3 @@
-import { type TransactionType } from "@prisma/client";
-
 type TransactionLike = {
   amount: string | number;
   type: string;

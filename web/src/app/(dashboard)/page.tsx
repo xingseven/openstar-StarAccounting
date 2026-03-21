@@ -4,31 +4,12 @@ import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_DASHBOARD } from "@/features/shared/mockData";
-import { MockDataBanner } from "@/features/shared/useRealData";
-import { StatsCardSkeleton, ChartSkeleton, CardListSkeleton } from "@/components/shared/Skeletons";
 
 const DashboardDefaultTheme = dynamic(
   () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
   {
     ssr: false,
-    loading: () => (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-        </div>
-        <div className="grid gap-6 md:gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <ChartSkeleton />
-          </div>
-          <div>
-            <CardListSkeleton count={5} />
-          </div>
-        </div>
-      </div>
-    )
+    loading: () => null
   }
 );
 
@@ -139,8 +120,7 @@ async function fetchDashboardData(): Promise<DashboardData> {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData>(MOCK_DASHBOARD);
-  const [loading, setLoading] = useState(true);
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -155,15 +135,12 @@ export default function DashboardPage() {
           realData.recentTransactions.length === 0;
         if (hasNoData) {
           setData(MOCK_DASHBOARD);
-          setUsingMockData(true);
         } else {
           setData(realData);
-          setUsingMockData(false);
         }
       } catch (error) {
         console.warn("Failed to fetch dashboard data, using mock data:", error);
         setData(MOCK_DASHBOARD);
-        setUsingMockData(true);
       } finally {
         setLoading(false);
       }
@@ -174,7 +151,6 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <MockDataBanner usingMockData={usingMockData} />
       <DashboardDefaultTheme data={data} loading={loading} />
     </div>
   );

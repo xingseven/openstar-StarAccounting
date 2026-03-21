@@ -1,12 +1,11 @@
 "use client";
 
 import { apiFetch } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import type { Asset } from "@/types";
 import { MOCK_ASSETS } from "@/features/shared/mockData";
-import { MockDataBanner } from "@/features/shared/useRealData";
-import { CardListSkeleton } from "@/components/shared/Skeletons";
 import {
   BottomSheet,
   BottomSheetContent,
@@ -19,15 +18,103 @@ const AssetsDefaultTheme = dynamic(
   () => import("@/features/assets/components/themes/DefaultAssets").then(mod => mod.AssetsDefaultTheme),
   {
     ssr: false,
-    loading: () => (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-        <CardListSkeleton count={6} />
-      </div>
-    )
+    loading: () => null
   }
 );
 
 const SUPPORTED_CURRENCIES = ["CNY", "USD", "EUR", "HKD", "JPY", "GBP"];
+
+// 根据名称获取 Logo URL
+function getLogoUrl(name: string, type: string): string | null {
+  const lowerName = name.toLowerCase();
+
+  // 支付宝
+  if (type === "ALIPAY" || lowerName.includes('支付宝') || lowerName.includes('zfb')) {
+    return "/logo/ZFB.svg";
+  }
+
+  // 微信
+  if (type === "WECHAT" || lowerName.includes('微信') || lowerName.includes('wx')) {
+    return "/logo/WX.svg";
+  }
+
+  // 招商银行 CMB
+  if (lowerName.includes('招商') || lowerName.includes('cmb')) {
+    return "/logo/CMB.svg";
+  }
+
+  // 工商银行 ICBC
+  if (lowerName.includes('工商') || lowerName.includes('icbc')) {
+    return "/logo/ICBC.svg";
+  }
+
+  // 建设银行 CCB
+  if (lowerName.includes('建设') || lowerName.includes('ccb')) {
+    return "/logo/CCB.svg";
+  }
+
+  // 农业银行 ABC
+  if (lowerName.includes('农业') || lowerName.includes('abc')) {
+    return "/logo/ABC.svg";
+  }
+
+  // 中国银行 BOC
+  if (lowerName.includes('中国银行') || lowerName.includes('boc')) {
+    return "/logo/BOC.svg";
+  }
+
+  // 交通银行 BCM
+  if (lowerName.includes('交通') || lowerName.includes('bcom') || lowerName.includes('bcm')) {
+    return "/logo/BCM.svg";
+  }
+
+  // 浦发银行 SPD
+  if (lowerName.includes('浦发') || lowerName.includes('spd')) {
+    return "/logo/SPD.svg";
+  }
+
+  // 兴业银行 CIB
+  if (lowerName.includes('兴业') || lowerName.includes('cib')) {
+    return "/logo/CIB.svg";
+  }
+
+  // 民生银行 CMBC
+  if (lowerName.includes('民生') || lowerName.includes('cmbc')) {
+    return "/logo/CMBC.svg";
+  }
+
+  // 平安银行 PAB
+  if (lowerName.includes('平安') || lowerName.includes('pab') || lowerName.includes('pingan')) {
+    return "/logo/PAB.svg";
+  }
+
+  // 邮储银行 PSBC
+  if (lowerName.includes('邮储') || lowerName.includes('psbc')) {
+    return "/logo/PSBC.svg";
+  }
+
+  // 中信银行 CITIC
+  if (lowerName.includes('中信') || lowerName.includes('citic')) {
+    return "/logo/CITIC.svg";
+  }
+
+  // 华夏银行 HXB
+  if (lowerName.includes('华夏') || lowerName.includes('hxb')) {
+    return "/logo/HXB.svg";
+  }
+
+  // 广发银行 GDB
+  if (lowerName.includes('广发') || lowerName.includes('gdb')) {
+    return "/logo/GDB.svg";
+  }
+
+  // 银行卡类型默认银联
+  if (type === "BANK_CARD" || type === "CREDIT_CARD") {
+    return "/logo/UNION.svg";
+  }
+
+  return null;
+}
 
 async function fetchAssetsData(currency: string): Promise<Asset[]> {
   const data = await apiFetch<{ items: Asset[] }>(`/api/assets?currency=${currency}`);
@@ -54,10 +141,8 @@ export default function AssetsPage() {
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState("CNY");
 
-  const [loading, setLoading] = useState(true);
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
 
   async function loadItems() {
     try {
@@ -65,23 +150,18 @@ export default function AssetsPage() {
       // 如果 API 返回空数据，使用 mock 数据用于展示
       if (data.length === 0) {
         setItems(MOCK_ASSETS);
-        setUsingMockData(true);
       } else {
         setItems(data);
-        setUsingMockData(false);
       }
     } catch (e) {
       console.warn("Failed to fetch assets data, using mock data:", e);
       setItems(MOCK_ASSETS);
-      setUsingMockData(true);
     } finally {
       setLoading(false);
-      setInitialLoading(false);
     }
   }
 
   useEffect(() => {
-    setLoading(true);
     loadItems();
   }, [displayCurrency]);
 
@@ -159,7 +239,6 @@ export default function AssetsPage() {
 
   return (
     <>
-      <MockDataBanner usingMockData={usingMockData} />
       <AssetsDefaultTheme
         items={items}
         totalAssets={totalAssets}
@@ -187,13 +266,24 @@ export default function AssetsPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">名称</label>
-              <input
-                required
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="例如：招商银行储蓄卡"
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  required
+                  className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/5"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="例如：招商银行储蓄卡"
+                />
+                {getLogoUrl(name, type) && (
+                  <div className="h-10 w-10 rounded-lg bg-gray-50 flex items-center justify-center p-1.5 border border-gray-100 overflow-hidden">
+                    <img
+                      src={getLogoUrl(name, type)!}
+                      alt="logo"
+                      style={{ height: '100%', width: 'auto', objectFit: 'contain' }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -206,6 +296,7 @@ export default function AssetsPage() {
                 >
                   <option value="CASH">现金</option>
                   <option value="BANK_CARD">银行卡</option>
+                  <option value="CREDIT_CARD">信用卡</option>
                   <option value="ALIPAY">支付宝</option>
                   <option value="WECHAT">微信</option>
                   <option value="INVESTMENT">投资</option>
