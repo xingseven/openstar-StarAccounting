@@ -1,4 +1,4 @@
-# openstar Star Accounting - 个人财务管理系统
+# openstar 星会计 - 个人财务管理系统
 
 ## 项目简介
 
@@ -6,7 +6,7 @@
 
 - **当前版本**: 2.1.8
 - **发布日期**: 2026-03-19
-- **GitHub**: https://github.com/xingseven/openstar-xfdashborad
+- **GitHub**: https://github.com/xingseven/openstar-StarAccounting
 - **技术架构**: 前后端分离
 - **许可证**: 开源免费
 
@@ -450,4 +450,4 @@ npm run dev
 
 开源项目，欢迎贡献！
 
-如有问题或建议，请提交 [GitHub Issue](https://github.com/xingseven/openstar-xfdashborad/issues)。
+如有问题或建议，请提交 [GitHub Issue](https://github.com/xingseven/openstar-StarAccounting/issues)。

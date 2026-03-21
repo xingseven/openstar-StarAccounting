@@ -2914,6 +2914,134 @@ app.put("/api/settings/password", async (req, res) => {
   jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持修改密码");
 });
 
+// Account API - 创建新账户
+app.post("/api/accounts", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const { name } = req.body ?? {};
+  if (typeof name !== "string" || !name.trim()) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "账户名称不能为空");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      // 创建账户
+      const account = await prisma.account.create({
+        data: {
+          id: crypto.randomUUID(),
+          name: name.trim(),
+          ownerId: userId,
+          updatedAt: new Date(),
+        },
+      });
+
+      // 创建账户成员关系（自己是OWNER）
+      await prisma.account_member.create({
+        data: {
+          id: crypto.randomUUID(),
+          accountId: account.id,
+          userId,
+          role: "OWNER",
+          nickname: null,
+          joinedAt: new Date(),
+        },
+      });
+
+      jsonOk(res, { item: account });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持账户管理");
+});
+
+// Account API - 获取用户的账户列表
+app.get("/api/accounts", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const accounts = await prisma.account.findMany({
+        where: {
+          accountMember: {
+            some: { userId },
+          },
+        },
+        include: {
+          accountMember: {
+            where: { userId },
+            select: { role: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      const items = accounts.map((a) => ({
+        id: a.id,
+        name: a.name,
+        role: a.accountMember[0]?.role || null,
+        createdAt: a.createdAt,
+      }));
+
+      jsonOk(res, { items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持账户管理");
+});
+
+// Account API - 设置默认账户
+app.put("/api/accounts/:id/default", async (req, res) => {
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const accountId = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      // 验证用户是否是该账户的成员
+      const member = await prisma.account_member.findFirst({
+        where: { accountId, userId },
+      });
+
+      if (!member) {
+        jsonFail(res, 403, 50000, "FORBIDDEN", "无权操作此账户");
+        return;
+      }
+
+      // 更新用户的默认账户
+      await prisma.user.update({
+        where: { id: userId },
+        data: { defaultAccountId: accountId },
+      });
+
+      jsonOk(res, { updated: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 400, 50000, "NOT_SUPPORTED", "内存模式不支持账户管理");
+});
+
 // Admin API
 app.get("/api/admin/stats", async (req, res) => {
   const userId = await requireAdmin(req, res);

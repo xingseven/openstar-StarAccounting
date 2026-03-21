@@ -262,7 +262,7 @@ export function SavingsDefaultTheme({
         </DelayedRender>
         <DelayedRender delay={100}>
           {/* 图表与列表骨架 */}
-          <div className="grid gap-6 md:grid-cols-5">
+          <div className="grid gap-6 md:grid-cols-3">
             <Skeleton className="h-[350px] rounded-xl" />
             <Skeleton className="h-[350px] rounded-xl" />
             <Skeleton className="h-[350px] rounded-xl" />
@@ -412,7 +412,7 @@ export function SavingsDefaultTheme({
       {/* Row 2: Distribution Chart & Goals Grid */}
       <div className="grid gap-6 md:grid-cols-5">
         {/* Chart Column 1: 储蓄模式分布 */}
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-full md:col-span-2">
                 <CardHeader className="items-center pb-0">
                   <CardTitle className="text-base">储蓄分布</CardTitle>
                   <CardDescription>按模式统计</CardDescription>

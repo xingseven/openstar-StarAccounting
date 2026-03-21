@@ -12,7 +12,8 @@ import {
   Settings,
   Palette,
   Info,
-  Brain
+  Brain,
+  Database
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -24,6 +25,7 @@ const items = [
   { href: "/loans", label: "贷款", icon: Landmark },
   { href: "/connections", label: "连接", icon: LinkIcon },
   { href: "/ai", label: "大模型", icon: Brain },
+  { href: "/data", label: "数据管理", icon: Database },
   { href: "/themes", label: "主题", icon: Palette },
   { href: "/settings", label: "设置", icon: Settings },
   { href: "/about", label: "关于", icon: Info },
