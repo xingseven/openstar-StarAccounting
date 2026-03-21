@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.3.2 - 2026-03-21
+
+### Features
+
+- **账单导入优化**:
+  - 后端动态识别CSV列名行（前80行扫描）
+  - 微信/支付宝分别识别特征列
+  - 统一分类：18种标准分类
+  - 统一状态：SUCCESS / FAILED / REFUND
+  - 微信交易类型自动映射到统一分类
+
+### Modified Files
+
+1. `src/server/src/etl/importCsv.ts` - 改进列名识别算法
+2. `src/server/src/etl/mapTransaction.ts` - 添加分类/状态映射
+
+### New Files
+
+1. `docs/账单导入优化.md` - 设计文档
+
 ## 2.3.1 - 2026-03-21
 
 ### Features

@@ -38,6 +38,7 @@ export type SavingsGoal = {
   depositType: "CASH" | "FIXED_TERM" | "HELP_DEPOSIT";
   status: "ACTIVE" | "COMPLETED" | "ARCHIVED";
   createdAt: string;
+  image?: string | null;
 };
 
 export type SavingsPlan = {

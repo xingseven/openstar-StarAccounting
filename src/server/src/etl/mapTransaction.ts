@@ -13,13 +13,88 @@ export type MappedTransaction = {
   status: string | null;
 };
 
-const successStatuses = new Set([
-  "支付成功",
-  "交易成功",
-  "已存入",
-  "已取出",
-  "已完成",
-]);
+// 统一分类映射
+const UNIFIED_CATEGORIES = [
+  "餐饮美食",
+  "生活服务",
+  "转账红包",
+  "信用卡还款",
+  "商业服务",
+  "退款",
+  "医疗健康",
+  "交通出行",
+  "充值缴费",
+  "日用百货",
+  "服饰装扮",
+  "数码电器",
+  "爱车养车",
+  "家居家装",
+  "账户存取",
+  "投资理财",
+  "信用借还",
+  "其他",
+] as const;
+
+// 微信交易类型 → 统一分类 映射
+const WECHAT_TYPE_MAP: Record<string, string> = {
+  "商户消费": "日用百货",
+  "扫二维码": "日用百货",
+  "转账": "转账红包",
+  "红包": "转账红包",
+  "信用卡还款": "信用卡还款",
+  "其他": "其他",
+  "退款": "退款",
+  "投资理财": "投资理财",
+  "城市服务": "生活服务",
+  "生活缴费": "充值缴费",
+  "医疗健康": "医疗健康",
+  "交通出行": "交通出行",
+  "信用借还": "信用借还",
+  "商业服务": "商业服务",
+  "服饰装扮": "服饰装扮",
+  "数码电器": "数码电器",
+  "爱车养车": "爱车养车",
+  "家居家装": "家居家装",
+  "话费和流量": "充值缴费",
+  "公益": "其他",
+  "电影票": "其他",
+  "机票火车票": "交通出行",
+  "酒店": "其他",
+  "旅游": "其他",
+  "签证": "其他",
+};
+
+// 统一状态
+export type UnifiedStatus = "SUCCESS" | "FAILED" | "REFUND";
+
+// 微信状态 → 统一状态
+const WECHAT_STATUS_MAP: Record<string, UnifiedStatus> = {
+  "支付成功": "SUCCESS",
+  "对方已收钱": "SUCCESS",
+  "已到账": "SUCCESS",
+  "已转账": "SUCCESS",
+  "转账失败": "FAILED",
+  "已关闭": "FAILED",
+  "退款成功": "REFUND",
+};
+
+// 支付宝状态 → 统一状态
+const ALIPAY_STATUS_MAP: Record<string, UnifiedStatus> = {
+  "交易成功": "SUCCESS",
+  "还款成功": "SUCCESS",
+  "解冻成功": "SUCCESS",
+  "转账成功": "SUCCESS",
+  "支付成功": "SUCCESS",
+  "转账失败": "FAILED",
+  "交易关闭": "FAILED",
+  "退款成功": "REFUND",
+};
+
+// 平台映射
+const PLATFORM_MAP: Record<Source, string> = {
+  wechat: "微信支付",
+  alipay: "支付宝",
+};
 
 function getValue(row: Record<string, string>, ...keys: string[]) {
   for (const k of keys) {
@@ -54,9 +129,31 @@ function joinDesc(...parts: string[]) {
   return s.length > 0 ? s : null;
 }
 
-function isSuccessful(status: string) {
-  if (!status) return true;
-  return successStatuses.has(status);
+function getUnifiedStatus(status: string, source: Source): UnifiedStatus | null {
+  const statusMap = source === "wechat" ? WECHAT_STATUS_MAP : ALIPAY_STATUS_MAP;
+  return statusMap[status] || null;
+}
+
+function mapCategory(category: string, source: Source): string {
+  if (source === "wechat") {
+    // 微信：先尝试直接映射
+    if (WECHAT_TYPE_MAP[category]) {
+      return WECHAT_TYPE_MAP[category];
+    }
+    // 模糊匹配
+    for (const [key, value] of Object.entries(WECHAT_TYPE_MAP)) {
+      if (category.includes(key) || key.includes(category)) {
+        return value;
+      }
+    }
+    // 支付宝分类直接使用
+  }
+  // 检查是否是有效的统一分类
+  if (UNIFIED_CATEGORIES.includes(category as typeof UNIFIED_CATEGORIES[number])) {
+    return category;
+  }
+  // 默认返回"其他"
+  return "其他";
 }
 
 export function mapRowToTransaction(row: Record<string, string>, source: Source) {
@@ -64,8 +161,13 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
   const date = new Date(dateRaw);
   if (Number.isNaN(date.getTime())) return { ok: false as const, reason: "INVALID_DATE" };
 
-  const status = getValue(row, "当前状态", "交易状态", "状态");
-  if (!isSuccessful(status)) return { ok: false as const, reason: "INVALID_STATUS" };
+  const statusRaw = getValue(row, "当前状态", "交易状态", "状态");
+  const unifiedStatus = getUnifiedStatus(statusRaw, source);
+
+  // 如果状态是 FAILED，跳过这笔交易（转账失败等）
+  if (unifiedStatus === "FAILED") {
+    return { ok: false as const, reason: "INVALID_STATUS" };
+  }
 
   const amountRaw = getValue(row, "金额(元)", "收/支金额", "金额");
   const amountInfo = parseAmount(amountRaw);
@@ -87,14 +189,17 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
 
   if (!inferredType) return { ok: false as const, reason: "INVALID_TYPE" };
 
-  const category =
+  // 获取原始分类并映射到统一分类
+  const originalCategory =
     source === "wechat"
       ? getValue(row, "交易类型", "交易分类")
       : getValue(row, "交易分类", "交易类型");
 
-  if (!category) return { ok: false as const, reason: "INVALID_CATEGORY" };
+  if (!originalCategory) return { ok: false as const, reason: "INVALID_CATEGORY" };
 
-  const merchant = getValue(row, "交易对方", "对方", "商家名称");
+  const category = mapCategory(originalCategory, source);
+
+  const merchant = getValue(row, "交易对方", "对方", "对方账号");
   const title = getValue(row, "商品", "商品说明");
   const remark = getValue(row, "备注");
 
@@ -112,12 +217,17 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
     type: inferredType,
     amount: amountInfo.abs,
     category,
-    platform: source,
+    platform: PLATFORM_MAP[source],
     merchant: merchant || null,
     description,
     paymentMethod: paymentMethod || null,
-    status: status || null,
+    status: unifiedStatus || "SUCCESS",
   };
 
   return { ok: true as const, tx: mapped };
+}
+
+// 导出统一分类列表，供前端使用
+export function getUnifiedCategories() {
+  return [...UNIFIED_CATEGORIES];
 }

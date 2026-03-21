@@ -5,30 +5,12 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
 import { MOCK_SAVINGS, MOCK_SAVINGS_TRANSACTIONS } from "@/features/shared/mockData";
-import { StatsCardSkeleton, ChartSkeleton, ListTableSkeleton } from "@/components/shared/Skeletons";
 
 const SavingsDefaultTheme = dynamic(
   () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
   {
     ssr: false,
-    loading: () => (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto min-h-[101vh]">
-        <div className="grid gap-2 sm:gap-4 grid-cols-3">
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-          <StatsCardSkeleton />
-        </div>
-        <div className="grid gap-6 md:grid-cols-4 md:grid-rows-2">
-          <div className="flex flex-col gap-6 md:col-span-1 md:row-span-2">
-            <ChartSkeleton className="flex-1 min-h-0" />
-            <ChartSkeleton className="flex-1 min-h-0" />
-          </div>
-          <div className="md:col-span-3 md:row-span-2">
-            <ListTableSkeleton rows={6} columns={7} />
-          </div>
-        </div>
-      </div>
-    )
+    loading: () => null
   }
 );
 import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
@@ -193,6 +175,18 @@ export default function SavingsPage() {
     setIsModalOpen(true);
   }
 
+  async function handleImageChange(item: SavingsGoal, image: string | null) {
+    try {
+      await apiFetch(`/api/savings/${item.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...item, image }),
+      });
+      loadData();
+    } catch (e) {
+      alert("保存图片失败");
+    }
+  }
+
   const totalSaved = items.reduce((acc, item) => acc + item.currentAmount, 0);
   const totalTarget = items.reduce((acc, item) => acc + item.targetAmount, 0);
   const overallProgress = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
@@ -215,6 +209,7 @@ export default function SavingsPage() {
         onBatchDelete={handleBatchDelete}
         onBatchArchive={handleBatchArchive}
         onCopy={handleCopy}
+        onImageChange={handleImageChange}
       />
 
       <SavingsGoalDialog

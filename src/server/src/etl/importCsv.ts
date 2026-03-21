@@ -41,8 +41,10 @@ function scoreHeader(row: string[], features: string[]) {
 }
 
 function findHeaderIndex(rows: string[][], source: Source) {
-  const wechatFeatures = ["交易时间", "交易类型", "收/支", "金额(元)", "交易单号"];
-  const alipayFeatures = ["交易时间", "交易分类", "收/支金额", "交易订单号", "商家订单号"];
+  // 微信特征列（必须有的核心列）
+  const wechatFeatures = ["交易时间", "交易类型", "收/支", "金额(元)", "交易对方"];
+  // 支付宝特征列
+  const alipayFeatures = ["交易时间", "交易分类", "交易对方", "收/支", "金额"];
   const features = source === "wechat" ? wechatFeatures : alipayFeatures;
 
   const maxScan = Math.min(rows.length, 80);
@@ -57,7 +59,9 @@ function findHeaderIndex(rows: string[][], source: Source) {
     }
   }
 
-  if (bestIndex >= 0 && bestScore >= 3) return bestIndex;
+  // 微信需要至少4个特征匹配，支付宝需要至少3个
+  const threshold = source === "wechat" ? 4 : 3;
+  if (bestIndex >= 0 && bestScore >= threshold) return bestIndex;
   return -1;
 }
 

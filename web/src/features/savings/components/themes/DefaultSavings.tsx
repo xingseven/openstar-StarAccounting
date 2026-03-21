@@ -17,7 +17,8 @@ import {
   Trash2,
   AlertCircle,
   CheckSquare,
-  Square
+  Square,
+  Image as ImageIcon
 } from "lucide-react";
 import {
   Card,
@@ -76,6 +77,7 @@ interface SavingsViewProps {
   onBatchDelete?: (ids: string[]) => Promise<void>;
   onBatchArchive?: (ids: string[]) => Promise<void>;
   onCopy?: (item: SavingsGoal) => void;
+  onImageChange?: (item: SavingsGoal, image: string | null) => Promise<void>;
 }
 
 // Types and interfaces
@@ -96,11 +98,17 @@ export function SavingsDefaultTheme({
   onBatchDelete,
   onBatchArchive,
   onCopy,
+  onImageChange,
 }: SavingsViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("progress");
   const [filterBy, setFilterBy] = useState<FilterOption>("active");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // 图片对话框状态
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [imageDialogGoal, setImageDialogGoal] = useState<SavingsGoal | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // 首次加载时显示骨架的延迟状态
   const [骨架显示, set骨架显示] = useState(true);
@@ -236,20 +244,16 @@ export function SavingsDefaultTheme({
     return (
       <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
         <DelayedRender delay={0}>
-          {/* 顶部标题与功能区骨架 */}
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div>
-              <Skeleton className="h-7 sm:h-9 w-24 sm:w-32 mb-1 sm:mb-2" />
-              <Skeleton className="h-4 sm:h-5 w-36 sm:w-48" />
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <Skeleton className="h-9 w-[200px] rounded-md" />
-              <Skeleton className="h-9 w-[200px] rounded-md" />
-              <Skeleton className="h-9 w-[100px] rounded-md" />
-              <Skeleton className="h-9 w-[80px] rounded-md" />
-              <Skeleton className="h-9 w-[100px] rounded-md" />
-              <Skeleton className="h-9 w-[90px] rounded-md" />
-            </div>
+          {/* 搜索和筛选栏骨架 */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Skeleton className="h-9 sm:h-10 flex-1 min-w-[140px] max-w-[300px] rounded-md" />
+            <Skeleton className="h-9 w-[80px] rounded-md" />
+            <Skeleton className="h-9 w-[80px] rounded-md" />
+            <Skeleton className="h-9 w-[80px] rounded-md" />
+            <Skeleton className="h-9 w-[80px] rounded-md" />
+            <Skeleton className="h-9 w-[100px] rounded-md" />
+            <Skeleton className="h-9 w-[80px] rounded-md" />
+            <Skeleton className="h-9 sm:h-10 w-[100px] rounded-md" />
           </div>
         </DelayedRender>
         <DelayedRender delay={50}>
@@ -261,13 +265,59 @@ export function SavingsDefaultTheme({
           </div>
         </DelayedRender>
         <DelayedRender delay={100}>
-          {/* 图表与列表骨架 */}
+          {/* 图表与列表骨架 - 匹配实际2行4列布局 */}
           <div className="grid gap-6 md:grid-cols-4 md:grid-rows-2">
+            {/* 左边两个图表 */}
             <div className="flex flex-col gap-6 md:col-span-1 md:row-span-2">
-              <Skeleton className="flex-1 min-h-0 rounded-xl" />
-              <Skeleton className="flex-1 min-h-0 rounded-xl" />
+              <div className="flex-1 min-h-0 rounded-xl bg-white border p-4">
+                <div className="flex flex-col items-center gap-2 mb-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="w-full aspect-square max-h-[150px] rounded-lg" />
+              </div>
+              <div className="flex-1 min-h-0 rounded-xl bg-white border p-4">
+                <div className="flex flex-col items-center gap-2 mb-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="w-full aspect-square max-h-[150px] rounded-lg" />
+              </div>
             </div>
-            <Skeleton className="rounded-xl md:col-span-3 md:row-span-2" />
+            {/* 右边目标列表表格 */}
+            <div className="rounded-xl bg-white border overflow-hidden md:col-span-3 md:row-span-2">
+              <div className="flex flex-row items-center justify-between p-4">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+                <Skeleton className="h-8 w-20" />
+              </div>
+              <div className="px-0">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      {[...Array(7)].map((_, i) => (
+                        <th key={i} className="text-left px-3 py-2">
+                          <Skeleton className="h-4 w-16" />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {[...Array(6)].map((_, i) => (
+                      <tr key={i}>
+                        {[...Array(7)].map((_, j) => (
+                          <td key={j} className="px-3 py-3">
+                            <Skeleton className="h-4 w-full max-w-[100px]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </DelayedRender>
       </div>
@@ -421,10 +471,10 @@ export function SavingsDefaultTheme({
                     <CardTitle className="text-base">储蓄分布</CardTitle>
                     <CardDescription>按模式统计</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex-1 pb-0 relative min-h-[120px]">
+                  <CardContent className="flex-1 pb-0 relative min-h-[180px]">
                     {distributionData.length > 0 ? (
                       <>
-                        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[120px]">
+                        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[180px]">
                           <PieChart>
                             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                             <Pie
@@ -440,7 +490,7 @@ export function SavingsDefaultTheme({
                             </Pie>
                           </PieChart>
                         </ChartContainer>
-                        <div className="absolute bottom-2 right-2 flex flex-col gap-1 text-xs">
+                        <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
                           {distributionData.map((item, index) => (
                             <div key={index} className="flex items-center gap-1">
                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
@@ -462,10 +512,10 @@ export function SavingsDefaultTheme({
                     <CardTitle className="text-base">存款类型</CardTitle>
                     <CardDescription>按方式统计</CardDescription>
                   </CardHeader>
-                  <CardContent className="flex-1 pb-0 relative min-h-[120px]">
+                  <CardContent className="flex-1 pb-0 relative min-h-[180px]">
                     {depositTypeData.length > 0 ? (
                       <>
-                        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[120px]">
+                        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[180px]">
                           <PieChart>
                             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                             <Pie
@@ -481,7 +531,7 @@ export function SavingsDefaultTheme({
                             </Pie>
                           </PieChart>
                         </ChartContainer>
-                        <div className="absolute bottom-2 right-2 flex flex-col gap-1 text-xs">
+                        <div className="absolute bottom-4 right-4 flex flex-col gap-1 text-xs">
                           {depositTypeData.map((item, index) => (
                             <div key={index} className="flex items-center gap-1">
                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.fill }} />
@@ -754,6 +804,23 @@ export function SavingsDefaultTheme({
                                     >
                                       删除
                                     </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setImageDialogGoal(item);
+                                        setPreviewImage(item.image || null);
+                                        setIsImageDialogOpen(true);
+                                      }}
+                                      className={clsx(
+                                        "p-1.5 rounded-md transition-colors cursor-pointer border",
+                                        item.image
+                                          ? "bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
+                                          : "bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700 border-gray-200"
+                                      )}
+                                      title={item.image ? "查看/修改图片" : "上传图片"}
+                                    >
+                                      <ImageIcon className="h-4 w-4" />
+                                    </button>
                                   </div>
                                 </td>
                               </tr>
@@ -767,6 +834,103 @@ export function SavingsDefaultTheme({
               </Card>
       </div>
 
+    </div>
+
+      {/* 图片上传/查看对话框 */}
+      {isImageDialogOpen && imageDialogGoal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <Card className="w-full max-w-md shadow-xl">
+            <CardHeader className="flex flex-row items-center justify-between py-4 border-b">
+              <CardTitle className="text-base">查看/上传图片 - {imageDialogGoal.name}</CardTitle>
+              <button onClick={() => setIsImageDialogOpen(false)} className="text-gray-500 hover:text-black">✕</button>
+            </CardHeader>
+            <CardContent className="p-4">
+              {previewImage ? (
+                <div className="space-y-4">
+                  <div className="relative rounded-lg overflow-hidden border bg-gray-50">
+                    <img
+                      src={previewImage}
+                      alt="预览"
+                      className="w-full h-auto max-h-[300px] object-contain"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const base64 = ev.target?.result as string;
+                              setPreviewImage(base64);
+                              if (onImageChange) {
+                                onImageChange(imageDialogGoal, base64);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
+                      更换图片
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        setPreviewImage(null);
+                        if (onImageChange) {
+                          onImageChange(imageDialogGoal, null);
+                        }
+                        setIsImageDialogOpen(false);
+                      }}
+                    >
+                      删除图片
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div
+                    className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 transition-colors"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = async (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const base64 = ev.target?.result as string;
+                            setPreviewImage(base64);
+                            if (onImageChange) {
+                              onImageChange(imageDialogGoal, base64);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }}
+                  >
+                    <ImageIcon className="h-12 w-12 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">点击上传图片</p>
+                    <p className="text-xs text-gray-400 mt-1">支持 JPG、PNG、GIF</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
