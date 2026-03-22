@@ -1,26 +1,11 @@
-## Error Type
-Build Error
-
-## Error Message
-Parsing ecmascript source code failed
-
-## Build Output
-./src/features/savings/components/themes/DefaultSavings.tsx:839:7
-Parsing ecmascript source code failed
-  837 |     </div>
-  838 |
-> 839 |       {/* 图片上传/查看对话框 */}
-      |       ^
-  840 |       {isImageDialogOpen && imageDialogGoal && (
-  841 |         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-  842 |           <Card className="w-full max-w-md shadow-xl">
-
-Expected ',', got '{'
-
-Import trace:
-  Client Component Browser:
-    ./src/features/savings/components/themes/DefaultSavings.tsx [Client Component Browser]
-    ./src/app/(dashboard)/savings/page.tsx [Client Component Browser]
-    ./src/app/(dashboard)/savings/page.tsx [Server Component]
-
-Next.js version: 16.1.6 (Turbopack)
+inspector.js:7  POST http://localhost:3006/api/transactions/import 401 (Unauthorized)
+window.fetch @ inspector.js:7
+handleFileChange @ page.tsx:163
+executeDispatch @ react-dom-client.development.js:20543
+runWithFiberInDEV @ react-dom-client.development.js:986
+processDispatchQueue @ react-dom-client.development.js:20593
+(匿名) @ react-dom-client.development.js:21164
+batchedUpdates$1 @ react-dom-client.development.js:3377
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
+dispatchEvent @ react-dom-client.development.js:25693
+dispatchDiscreteEvent @ react-dom-client.development.js:25661

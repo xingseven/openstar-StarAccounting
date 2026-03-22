@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth";
 import { CardContainer } from "@/components/shared/CardContainer";
 import { GridDecoration } from "@/components/shared/GridDecoration";
 import { Database, Trash2, Tag, CheckCircle, AlertCircle, Loader2, Upload, FileText } from "lucide-react";
@@ -155,7 +156,7 @@ export default function DataPage() {
       formData.append("file", file);
       formData.append("source", source);
 
-      const token = localStorage.getItem("accessToken");
+      const token = getAccessToken();
       const API_BASE_URL = typeof window !== "undefined"
         ? `${window.location.protocol}//${window.location.hostname}:3006`
         : "http://localhost:3006";
