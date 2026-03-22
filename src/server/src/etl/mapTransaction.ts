@@ -135,42 +135,46 @@ function getUnifiedStatus(status: string, source: Source): UnifiedStatus | null 
 }
 
 function mapCategory(category: string, source: Source): string {
+  // 如果分类为空，返回"其他"
+  if (!category) return "其他";
+
   if (source === "wechat") {
     // 微信：先尝试直接映射
-    if (WECHAT_TYPE_MAP[category]) {
-      return WECHAT_TYPE_MAP[category];
-    }
+    const mapped = WECHAT_TYPE_MAP[category];
+    if (mapped) return mapped;
+
     // 模糊匹配
     for (const [key, value] of Object.entries(WECHAT_TYPE_MAP)) {
       if (category.includes(key) || key.includes(category)) {
         return value;
       }
     }
-    // 支付宝分类直接使用
   }
+
   // 检查是否是有效的统一分类
   if (UNIFIED_CATEGORIES.includes(category as typeof UNIFIED_CATEGORIES[number])) {
     return category;
   }
-  // 默认返回"其他"
-  return "其他";
+
+  // 如果都不匹配，使用原始分类（可能是支付宝的分类，直接用）
+  return category || "其他";
 }
 
 export function mapRowToTransaction(row: Record<string, string>, source: Source) {
   const dateRaw = getValue(row, "交易时间");
   const date = new Date(dateRaw);
+  // 日期无效则跳过
   if (Number.isNaN(date.getTime())) return { ok: false as const, reason: "INVALID_DATE" };
 
   const statusRaw = getValue(row, "当前状态", "交易状态", "状态");
   const unifiedStatus = getUnifiedStatus(statusRaw, source);
 
-  // 如果状态是 FAILED，跳过这笔交易（转账失败等）
-  if (unifiedStatus === "FAILED") {
-    return { ok: false as const, reason: "INVALID_STATUS" };
-  }
+  // 即使状态是 FAILED 也导入，只是不显示为成功
+  const finalStatus = unifiedStatus || "SUCCESS";
 
   const amountRaw = getValue(row, "金额(元)", "收/支金额", "金额");
   const amountInfo = parseAmount(amountRaw);
+  // 金额无效则跳过
   if (!amountInfo.ok) return { ok: false as const, reason: "INVALID_AMOUNT" };
 
   const directionRaw = getValue(row, "收/支", "资金状态");
@@ -185,9 +189,7 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
           ? "EXPENSE"
           : amountInfo.sign > 0
             ? "INCOME"
-            : null;
-
-  if (!inferredType) return { ok: false as const, reason: "INVALID_TYPE" };
+            : "EXPENSE"; // 默认当作支出
 
   // 获取原始分类并映射到统一分类
   const originalCategory =
@@ -195,9 +197,8 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
       ? getValue(row, "交易类型", "交易分类")
       : getValue(row, "交易分类", "交易类型");
 
-  if (!originalCategory) return { ok: false as const, reason: "INVALID_CATEGORY" };
-
-  const category = mapCategory(originalCategory, source);
+  // 如果没有分类，使用"其他"
+  const category = originalCategory ? mapCategory(originalCategory, source) : "其他";
 
   const merchant = getValue(row, "交易对方", "对方", "对方账号");
   const title = getValue(row, "商品", "商品说明");
@@ -221,7 +222,7 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
     merchant: merchant || null,
     description,
     paymentMethod: paymentMethod || null,
-    status: unifiedStatus || "SUCCESS",
+    status: finalStatus,
   };
 
   return { ok: true as const, tx: mapped };
