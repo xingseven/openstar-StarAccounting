@@ -1,1 +1,26 @@
-在数据管理页面，新增数据导入模块，有微信和支付宝账单，这两个平台的账单有点不一样，微信的列名是：交易时间、 交易类型、交易对方、商品、收/支、金额(元)、支付方式、当前状态、交易单号、商户单号、备注。支付宝的是：交易时间、交易分类、交易对方、对方账号、商品说明、收/支、金额、收/付款方式、交易状态、交易订单号、商家订单号。    这两种账单都有一个问题就是从第一行~第25行左右吧应该，上面都有一些其他的账单里的信息。但是我们要的数据是从前面这两个行数开始的数据的，那么就要在后端做一个行数识别的功能，只提取从列名开始的哪一行以下的数据，前面那些不重要可以不提取。2：账单导入要做识别，你也看到了这两个平台的账单列名不一致，但后里面的数据类型也不一样，比如微信的交易类型列是：其他、扫二维码、商户消费、信用卡还款、转账等等，交易对方列是对方的收款账户名称，当前状态列是：对方已收钱、已到账、已转账、支付成功等等。支付宝的交易分类是：餐饮美食、生活服务、转账红包、用卡还款、商业服务、退款、医疗健康、交通出行、充值缴费、日用百货、其他、账户存取、投资理财、信用借还、数码电器、爱车养车、家居家装、服饰装扮等，交易对方也是对方收款名称，收/支是：支出、不计收支、收入，交易状态是：交易成功、退款成功、转账失败、交易关闭、芝麻免押下单成功、还款成功、支付成功、解冻成功。等等这些类型我不知道要怎么做分类然后把两种账单的类型合并。你又什么好注意？
+## Error Type
+Build Error
+
+## Error Message
+Parsing ecmascript source code failed
+
+## Build Output
+./src/features/savings/components/themes/DefaultSavings.tsx:839:7
+Parsing ecmascript source code failed
+  837 |     </div>
+  838 |
+> 839 |       {/* 图片上传/查看对话框 */}
+      |       ^
+  840 |       {isImageDialogOpen && imageDialogGoal && (
+  841 |         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+  842 |           <Card className="w-full max-w-md shadow-xl">
+
+Expected ',', got '{'
+
+Import trace:
+  Client Component Browser:
+    ./src/features/savings/components/themes/DefaultSavings.tsx [Client Component Browser]
+    ./src/app/(dashboard)/savings/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/savings/page.tsx [Server Component]
+
+Next.js version: 16.1.6 (Turbopack)

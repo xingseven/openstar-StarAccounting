@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { CardContainer } from "@/components/shared/CardContainer";
 import { GridDecoration } from "@/components/shared/GridDecoration";
-import { Database, Trash2, Tag, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Database, Trash2, Tag, CheckCircle, AlertCircle, Loader2, Upload, FileText } from "lucide-react";
 import { Skeleton } from "@/components/shared/Skeletons";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 
@@ -19,14 +19,24 @@ type Transaction = {
   description: string | null;
 };
 
+type ImportResult = {
+  totalRows: number;
+  insertedCount: number;
+  duplicateCount: number;
+  invalidCount: number;
+};
+
 export default function DataPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newCategory, setNewCategory] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   // 骨架屏延迟
   const [骨架显示, set骨架显示] = useState(true);
@@ -123,6 +133,66 @@ export default function DataPage() {
     }
   }
 
+  async function handleImport(source: "wechat" | "alipay") {
+    fileInputRef.current?.click();
+    // 记住选择的平台
+    fileInputRef.current?.setAttribute("data-source", source);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const source = (e.target.getAttribute("data-source") as "wechat" | "alipay") || "alipay";
+
+    setImportLoading(true);
+    setImportResult(null);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("source", source);
+
+      const token = localStorage.getItem("accessToken");
+      const API_BASE_URL = typeof window !== "undefined"
+        ? `${window.location.protocol}//${window.location.hostname}:3006`
+        : "http://localhost:3006";
+
+      const res = await fetch(`${API_BASE_URL}/api/transactions/import`, {
+        method: "POST",
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.detail || "导入失败");
+      }
+
+      const result: ImportResult = {
+        totalRows: json.data?.totalRows || 0,
+        insertedCount: json.data?.insertedCount || 0,
+        duplicateCount: json.data?.duplicateCount || 0,
+        invalidCount: json.data?.invalidCount || 0,
+      };
+
+      setImportResult(result);
+      setMessage(`导入完成：成功 ${result.insertedCount} 条，重复 ${result.duplicateCount} 条，无效 ${result.invalidCount} 条`);
+      loadTransactions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "导入失败");
+    } finally {
+      setImportLoading(false);
+      // 清空文件输入
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
   if (骨架显示 || loading) return (
     <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
       <div className="space-y-4 md:space-y-6">
@@ -168,6 +238,54 @@ export default function DataPage() {
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
+
+      {/* Import Section */}
+      <CardContainer className="overflow-hidden rounded-2xl bg-white p-4 sm:p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+            <Upload className="h-5 w-5" />
+          </div>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900">导入账单</h2>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => handleImport("wechat")}
+            disabled={importLoading}
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+            导入微信账单
+          </button>
+          <button
+            onClick={() => handleImport("alipay")}
+            disabled={importLoading}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+            导入支付宝账单
+          </button>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {importResult && (
+          <div className="mt-4 p-3 rounded-lg bg-gray-50 text-sm">
+            <p className="text-gray-600">
+              总行数：{importResult.totalRows} |
+              成功导入：{importResult.insertedCount} |
+              重复跳过：{importResult.duplicateCount} |
+              无效数据：{importResult.invalidCount}
+            </p>
+          </div>
+        )}
+      </CardContainer>
 
       {/* Batch Actions */}
       <CardContainer className="overflow-hidden rounded-2xl bg-white p-4 sm:p-6">

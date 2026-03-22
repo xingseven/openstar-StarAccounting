@@ -834,8 +834,6 @@ export function SavingsDefaultTheme({
               </Card>
       </div>
 
-    </div>
-
       {/* 图片上传/查看对话框 */}
       {isImageDialogOpen && imageDialogGoal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
