@@ -331,9 +331,45 @@ app.post("/api/auth/register", async (req, res) => {
 
   try {
     const passwordHash = await hashPassword(password);
+
+    // 先创建用户
     const user = await prisma.user.create({
-      data: { id: crypto.randomUUID(), email, password: passwordHash, name: typeof name === "string" ? name : null, updatedAt: new Date() },
+      data: {
+        id: crypto.randomUUID(),
+        email,
+        password: passwordHash,
+        name: typeof name === "string" ? name : null,
+        updatedAt: new Date(),
+      },
       select: { id: true, email: true, name: true },
+    });
+
+    // 创建账户
+    const account = await prisma.account.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: "我的账户",
+        ownerId: user.id,
+        updatedAt: new Date(),
+      },
+    });
+
+    // 更新用户的默认账户
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { defaultAccountId: account.id },
+    });
+
+    // 创建账户成员关系
+    await prisma.account_member.create({
+      data: {
+        id: crypto.randomUUID(),
+        accountId: account.id,
+        userId: user.id,
+        role: "OWNER",
+        nickname: null,
+        joinedAt: new Date(),
+      },
     });
 
     const token = signAccessToken({ userId: user.id });
@@ -342,7 +378,7 @@ app.post("/api/auth/register", async (req, res) => {
       return;
     }
 
-    jsonOk(res, { accessToken: token, user });
+    jsonOk(res, { accessToken: token, user: { ...user, defaultAccountId: account.id } });
   } catch (e) {
     const message = e instanceof Error ? e.message : "unknown";
     jsonFail(res, 400, 50000, "INTERNAL_ERROR", message);
@@ -3198,8 +3234,8 @@ app.get("/api/changelog", async (_req, res) => {
   const fs = await import("fs");
   const path = await import("path");
 
-  // CHANGELOG.md 位于项目根目录，即相对于 src/server/src/main.ts 的两层父目录
-  const changelogPath = path.join(process.cwd(), "..", "..", "CHANGELOG.md");
+  // CHANGELOG.md 位于项目根目录
+  const changelogPath = path.join(process.cwd(), "CHANGELOG.md");
 
   try {
     if (!fs.existsSync(changelogPath)) {
