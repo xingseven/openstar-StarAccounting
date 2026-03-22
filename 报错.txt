@@ -1,11 +1,10 @@
-inspector.js:7  POST http://localhost:3006/api/transactions/import 401 (Unauthorized)
-window.fetch @ inspector.js:7
-handleFileChange @ page.tsx:163
-executeDispatch @ react-dom-client.development.js:20543
-runWithFiberInDEV @ react-dom-client.development.js:986
-processDispatchQueue @ react-dom-client.development.js:20593
-(匿名) @ react-dom-client.development.js:21164
-batchedUpdates$1 @ react-dom-client.development.js:3377
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
-dispatchEvent @ react-dom-client.development.js:25693
-dispatchDiscreteEvent @ react-dom-client.development.js:25661
+forward-logs-shared.ts:95 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+forward-logs-shared.ts:95 [PWA] Development mode: Service Worker registration and PWA prompt skipped.
+icons/icon-144x144.png:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+data:1 Error while trying to use the following icon from the Manifest: http://localhost:3000/icons/icon-144x144.png (Download error or resource isn't a valid image)
+forward-logs-shared.ts:95 [HMR] connected
+:3006/api/transactions/import:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+icons/icon-144x144.png:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+settings:1 Error while trying to use the following icon from the Manifest: http://localhost:3000/icons/icon-144x144.png (Download error or resource isn't a valid image)
+icons/icon-144x144.png:1  Failed to load resource: the server responded with a status of 404 (Not Found)
+about:1 Error while trying to use the following icon from the Manifest: http://localhost:3000/icons/icon-144x144.png (Download error or resource isn't a valid image)

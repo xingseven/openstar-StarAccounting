@@ -411,7 +411,7 @@ app.get("/api/auth/me", async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, defaultAccountId: true },
     });
     if (!user) {
       jsonFail(res, 401, 10002, "TOKEN_EXPIRED", "请重新登录");
