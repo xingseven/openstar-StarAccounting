@@ -1,5 +1,25 @@
 import iconv from "iconv-lite";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
+
+// XLSX 文件签名 (ZIP)
+const XLSX_SIGNATURE = [0x50, 0x4b, 0x03, 0x04]; // "PK.."
+
+function isXlsx(buffer: Buffer): boolean {
+  if (buffer.length < 4) return false;
+  return buffer[0] === XLSX_SIGNATURE[0] &&
+         buffer[1] === XLSX_SIGNATURE[1] &&
+         buffer[2] === XLSX_SIGNATURE[2] &&
+         buffer[3] === XLSX_SIGNATURE[3];
+}
+
+function parseXlsx(buffer: Buffer): string[][] {
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const csv = XLSX.utils.sheet_to_csv(sheet);
+  return csv.split(/[\r\n]+/).map(row => row.split(","));
+}
 
 type Source = "wechat" | "alipay";
 
@@ -108,11 +128,19 @@ function buildRow(headers: string[], row: string[]) {
 }
 
 export function importCsvBuffer(buffer: Buffer, source: Source): ImportResult {
-  const encoding = detectEncoding(buffer);
-  const text =
-    encoding === "gbk" ? iconv.decode(buffer, "gbk") : buffer.toString("utf8");
+  let rows: string[][];
 
-  const rows = parseRows(text);
+  // 检测是否是 XLSX 文件
+  if (isXlsx(buffer)) {
+    rows = parseXlsx(buffer);
+  } else {
+    // CSV/GBK 文件处理
+    const encoding = detectEncoding(buffer);
+    const text =
+      encoding === "gbk" ? iconv.decode(buffer, "gbk") : buffer.toString("utf8");
+    rows = parseRows(text);
+  }
+
   const headerIndex = findHeaderIndex(rows, source);
   if (headerIndex < 0) {
     const err = new Error("IMPORT_HEADER_NOT_FOUND");

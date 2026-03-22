@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
+    "@types/xlsx": "^0.0.35",
     "argon2": "^0.44.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
@@ -25,7 +26,8 @@
     "multer": "^2.0.2",
     "mysql2": "^3.19.1",
     "openai": "^6.32.0",
-    "papaparse": "^5.5.3"
+    "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",

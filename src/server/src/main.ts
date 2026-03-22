@@ -1231,7 +1231,7 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
       const existing: Array<{ orderId: string | null }> =
         orderIds.length > 0
           ? await prisma.transaction.findMany({
-              where: { orderId: { in: orderIds }, accountId },
+              where: { orderId: { in: orderIds } }, // 全局检查 orderId，因为数据库中 orderId 是全局唯一的
               select: { orderId: true },
             })
           : [];
@@ -1263,10 +1263,12 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
             })
           : { count: 0 };
 
+      const dbSkippedCount = toInsert.length - result.count;
+
       jsonOk(res, {
         totalRows: imported.rows.length,
         insertedCount: result.count,
-        duplicateCount,
+        duplicateCount: duplicateCount + dbSkippedCount,
         invalidCount,
       });
       return;

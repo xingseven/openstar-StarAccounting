@@ -104,6 +104,25 @@ function getValue(row: Record<string, string>, ...keys: string[]) {
   return "";
 }
 
+function parseDate(dateRaw: string): Date | null {
+  if (!dateRaw) return null;
+
+  // 尝试标准格式 2026-03-22 10:38
+  let d = new Date(dateRaw);
+  if (!isNaN(d.getTime())) return d;
+
+  // 支付宝格式: 3/20/26 10:38 (M/D/YY H:mm)
+  const match = dateRaw.match(/^(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+)/);
+  if (match) {
+    const [, month, day, year, hour, minute] = match;
+    const fullYear = parseInt(year) + (parseInt(year) > 50 ? 1900 : 2000);
+    d = new Date(fullYear, parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  return null;
+}
+
 function parseAmount(raw: string) {
   const s = raw.replace(/[,\s]/g, "").replace(/[¥￥]/g, "");
   if (!s) return { ok: false as const };
@@ -162,9 +181,8 @@ function mapCategory(category: string, source: Source): string {
 
 export function mapRowToTransaction(row: Record<string, string>, source: Source) {
   const dateRaw = getValue(row, "交易时间");
-  const date = new Date(dateRaw);
-  // 日期无效则跳过
-  if (Number.isNaN(date.getTime())) return { ok: false as const, reason: "INVALID_DATE" };
+  const date = parseDate(dateRaw);
+  if (!date) return { ok: false as const, reason: "INVALID_DATE" };
 
   const statusRaw = getValue(row, "当前状态", "交易状态", "状态");
   const unifiedStatus = getUnifiedStatus(statusRaw, source);

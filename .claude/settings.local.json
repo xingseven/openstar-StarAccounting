@@ -8,7 +8,10 @@
       "Bash(npm list:*)",
       "WebSearch",
       "Bash(ls:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(head -30 \"F:/1python/xiangmu/openstar-xfdashboard/支付宝交易明细\\(20250101-20251231\\).csv\")",
+      "Bash(head -30 'F:/1python/xiangmu/openstar-xfdashboard/支付宝交易明细\\(20250101-20251231\\).csv')",
+      "Bash(node -e \":*)"
     ]
   }
 }
