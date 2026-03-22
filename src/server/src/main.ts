@@ -2928,6 +2928,14 @@ app.post("/api/accounts", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
+      // 检查用户是否有默认账户
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { defaultAccountId: true },
+      });
+
+      const hasDefaultAccount = !!user?.defaultAccountId;
+
       // 创建账户
       const account = await prisma.account.create({
         data: {
@@ -2949,6 +2957,14 @@ app.post("/api/accounts", async (req, res) => {
           joinedAt: new Date(),
         },
       });
+
+      // 如果用户没有默认账户，自动设为默认
+      if (!hasDefaultAccount) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { defaultAccountId: account.id },
+        });
+      }
 
       jsonOk(res, { item: account });
       return;
