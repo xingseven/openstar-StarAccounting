@@ -1,6 +1,6 @@
-const CACHE_NAME = 'Star Accounting-v1';
-const STATIC_CACHE_NAME = 'Star Accounting-static-v1';
-const DYNAMIC_CACHE_NAME = 'Star Accounting-dynamic-v1';
+const CACHE_NAME = 'openstar-StarAccounting-v1';
+const STATIC_CACHE_NAME = 'openstar-StarAccounting-static-v1';
+const DYNAMIC_CACHE_NAME = 'openstar-StarAccounting-dynamic-v1';
 
 const STATIC_ASSETS = [
   '/',
@@ -144,7 +144,7 @@ async function networkOnly(request) {
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received');
   
-  let data = { title: 'Star Accounting', body: '您有新的通知' };
+  let data = { title: 'openstar-StarAccounting', body: '您有新的通知' };
   
   if (event.data) {
     try {

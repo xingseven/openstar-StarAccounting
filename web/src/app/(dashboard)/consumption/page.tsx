@@ -15,7 +15,7 @@ const ConsumptionDefaultTheme = dynamic(
 
 export default function ConsumptionPage() {
   const [consumptionData, setConsumptionData] = useState(MOCK_CONSUMPTION);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [usingMockData, setUsingMockData] = useState(false);
 
   // 恢复滚动位置 - 页面级别执行
@@ -90,6 +90,7 @@ export default function ConsumptionPage() {
         data={consumptionData}
         dateRangeLabel={dateRangeLabel}
         loading={loading}
+        usingMockData={usingMockData}
       />
     </div>
   );

@@ -1,25 +1,28 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   BottomSheet,
   BottomSheetContent,
+  BottomSheetDescription,
+  BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
-  BottomSheetFooter
-} from "@/components/ui/bottomsheet"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/bottomsheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-interface ConfirmDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => void
-  onCancel?: () => void
-  title?: string
-  description?: string
-  confirmText?: string
-  cancelText?: string
-}
+type ConfirmDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  onCancel?: () => void;
+  title?: string;
+  description?: string;
+  confirmText?: string;
+  cancelText?: string;
+  tone?: "default" | "danger";
+};
 
 export function ConfirmDialog({
   open,
@@ -27,100 +30,227 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   title = "确认操作",
-  description = "确定要执行此操作吗？",
+  description = "确定要执行这个操作吗？",
   confirmText = "确认",
   cancelText = "取消",
+  tone = "default",
 }: ConfirmDialogProps) {
-  const handleCancel = () => {
-    onCancel?.()
-    onOpenChange(false)
+  function handleCancel() {
+    onCancel?.();
+    onOpenChange(false);
   }
 
   return (
-    <BottomSheet open={open} onOpenChange={handleCancel}>
-      <BottomSheetContent className="rounded-t-2xl" hideClose>
+    <BottomSheet open={open} onOpenChange={(next) => (!next ? handleCancel() : onOpenChange(next))}>
+      <BottomSheetContent className="max-w-md" hideClose>
         <BottomSheetHeader>
-          <BottomSheetTitle className="text-center">{title}</BottomSheetTitle>
+          <BottomSheetTitle>{title}</BottomSheetTitle>
+          {description ? <BottomSheetDescription>{description}</BottomSheetDescription> : null}
         </BottomSheetHeader>
-        <p className="text-center text-sm text-gray-500 py-4">{description}</p>
-        <BottomSheetFooter className="flex-row justify-between gap-2">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            className="flex-1 h-11"
-          >
+
+        <BottomSheetFooter className="pt-2 sm:justify-end">
+          <Button variant="outline" onClick={handleCancel} className="h-11 rounded-2xl sm:min-w-28">
             {cancelText}
           </Button>
           <Button
             onClick={onConfirm}
-            className="flex-1 h-11 bg-red-500 hover:bg-red-600"
+            variant={tone === "danger" ? "destructive" : "default"}
+            className="h-11 rounded-2xl sm:min-w-28"
           >
             {confirmText}
           </Button>
         </BottomSheetFooter>
       </BottomSheetContent>
     </BottomSheet>
-  )
+  );
 }
 
-// 包装函数，用于替换原生 confirm
-export function useConfirm() {
-  const [config, setConfig] = React.useState<{
-    open: boolean
-    title: string
-    description: string
-    confirmText?: string
-    cancelText?: string
-    onConfirm: () => void
-    onCancel?: () => void
-  } | null>(null)
+type ConfirmConfig = {
+  open: boolean;
+  title: string;
+  description?: string;
+  confirmText?: string;
+  cancelText?: string;
+  tone?: "default" | "danger";
+  onConfirm?: () => void;
+  onCancel?: () => void;
+};
 
-  const confirm = (options: {
-    title?: string
-    description?: string
-    confirmText?: string
-    cancelText?: string
-    onConfirm: () => void
-    onCancel?: () => void
-  }) => {
+export function useConfirm() {
+  const [config, setConfig] = React.useState<ConfirmConfig | null>(null);
+
+  const confirm = React.useCallback((options: Omit<ConfirmConfig, "open">) => {
     setConfig({
       open: true,
-      title: options.title || "确认操作",
-      description: options.description || "确定要执行此操作吗？",
+      title: options.title,
+      description: options.description,
       confirmText: options.confirmText,
       cancelText: options.cancelText,
+      tone: options.tone,
       onConfirm: options.onConfirm,
       onCancel: options.onCancel,
-    })
-  }
+    });
+  }, []);
 
-  const handleClose = () => {
-    setConfig(null)
-  }
+  const confirmAsync = React.useCallback(
+    (options: Omit<ConfirmConfig, "open" | "onConfirm" | "onCancel">) =>
+      new Promise<boolean>((resolve) => {
+        setConfig({
+          open: true,
+          title: options.title,
+          description: options.description,
+          confirmText: options.confirmText,
+          cancelText: options.cancelText,
+          tone: options.tone,
+          onConfirm: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
+      }),
+    []
+  );
 
-  const handleConfirm = () => {
-    config?.onConfirm()
-    handleClose()
-  }
+  const handleClose = React.useCallback(() => setConfig(null), []);
 
-  const handleCancel = () => {
-    config?.onCancel?.()
-    handleClose()
-  }
+  const handleConfirm = React.useCallback(() => {
+    config?.onConfirm?.();
+    handleClose();
+  }, [config, handleClose]);
+
+  const handleCancel = React.useCallback(() => {
+    config?.onCancel?.();
+    handleClose();
+  }, [config, handleClose]);
 
   return {
     confirm,
+    confirmAsync,
     ConfirmDialog: config ? (
       <ConfirmDialog
         open={config.open}
-        onOpenChange={(open) => !open && handleClose()}
+        onOpenChange={(open) => {
+          if (!open) handleCancel();
+        }}
         onConfirm={handleConfirm}
         onCancel={handleCancel}
         title={config.title}
         description={config.description}
         confirmText={config.confirmText}
         cancelText={config.cancelText}
+        tone={config.tone}
       />
     ) : null,
-  }
+  };
+}
+
+type NoticeConfig = {
+  title: string;
+  description?: string;
+  buttonText?: string;
+};
+
+export function useNoticeDialog() {
+  const [config, setConfig] = React.useState<NoticeConfig | null>(null);
+
+  const notify = React.useCallback((options: NoticeConfig) => {
+    setConfig(options);
+  }, []);
+
+  const close = React.useCallback(() => setConfig(null), []);
+
+  return {
+    notify,
+    NoticeDialog: config ? (
+      <BottomSheet open onOpenChange={(open) => (!open ? close() : undefined)}>
+        <BottomSheetContent className="max-w-md" hideClose>
+          <BottomSheetHeader>
+            <BottomSheetTitle>{config.title}</BottomSheetTitle>
+            {config.description ? <BottomSheetDescription>{config.description}</BottomSheetDescription> : null}
+          </BottomSheetHeader>
+          <BottomSheetFooter className="pt-2">
+            <Button className="h-11 rounded-2xl" onClick={close}>
+              {config.buttonText ?? "我知道了"}
+            </Button>
+          </BottomSheetFooter>
+        </BottomSheetContent>
+      </BottomSheet>
+    ) : null,
+  };
+}
+
+type PromptConfig = {
+  title: string;
+  description?: string;
+  placeholder?: string;
+  defaultValue?: string;
+  confirmText?: string;
+  cancelText?: string;
+  required?: boolean;
+};
+
+export function usePromptDialog() {
+  const [config, setConfig] = React.useState<(PromptConfig & { resolve: (value: string | null) => void }) | null>(null);
+  const [value, setValue] = React.useState("");
+
+  const prompt = React.useCallback((options: PromptConfig) => {
+    return new Promise<string | null>((resolve) => {
+      setValue(options.defaultValue ?? "");
+      setConfig({
+        ...options,
+        resolve,
+      });
+    });
+  }, []);
+
+  const close = React.useCallback((result: string | null) => {
+    setConfig((current) => {
+      current?.resolve(result);
+      return null;
+    });
+    setValue("");
+  }, []);
+
+  const isDisabled = Boolean(config?.required && value.trim().length === 0);
+
+  return {
+    prompt,
+    PromptDialog: config ? (
+      <BottomSheet open onOpenChange={(open) => (!open ? close(null) : undefined)}>
+        <BottomSheetContent className="max-w-md" hideClose>
+          <BottomSheetHeader>
+            <BottomSheetTitle>{config.title}</BottomSheetTitle>
+            {config.description ? <BottomSheetDescription>{config.description}</BottomSheetDescription> : null}
+          </BottomSheetHeader>
+
+          <div className="px-1 py-1">
+            <Input
+              value={value}
+              placeholder={config.placeholder}
+              onChange={(event) => setValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !isDisabled) {
+                  event.preventDefault();
+                  close(value.trim());
+                }
+              }}
+              className="h-11 rounded-2xl"
+              autoFocus
+            />
+          </div>
+
+          <BottomSheetFooter className="pt-2">
+            <Button variant="outline" onClick={() => close(null)} className="h-11 rounded-2xl sm:min-w-28">
+              {config.cancelText ?? "取消"}
+            </Button>
+            <Button
+              onClick={() => close(config.required === false ? value : value.trim())}
+              className="h-11 rounded-2xl sm:min-w-28"
+              disabled={isDisabled}
+            >
+              {config.confirmText ?? "确认"}
+            </Button>
+          </BottomSheetFooter>
+        </BottomSheetContent>
+      </BottomSheet>
+    ) : null,
+  };
 }

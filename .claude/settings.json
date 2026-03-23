@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git commit:*)",
-      "Bash(npx tailwindcss-cli@latest build src/app/globals.css --output /dev/null)"
+      "Bash(npx tailwindcss-cli@latest build src/app/globals.css --output /dev/null)",
+      "Bash(head -320 \"f:\\\\1python\\\\xiangmu\\\\openstar-xfdashboard\\\\web\\\\src\\\\app\\\\\\(dashboard\\)\\\\about\\\\page.tsx\")",
+      "Bash(xxd)"
     ]
   }
 }

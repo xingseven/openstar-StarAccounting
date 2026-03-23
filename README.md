@@ -1,8 +1,8 @@
-# openstar 星会计 - 个人财务管理系统
+# openstar-StarAccounting 星会计 - 个人财务管理系统
 
 ## 项目简介
 
-**openstar Star Accounting** 是一款功能完善的**开源个人财务管理 Dashboard**，致力于帮助用户轻松管理个人资产、追踪消费支出、规划储蓄目标和管理贷款债务。
+**openstar-StarAccounting** 是一款功能完善的**开源个人财务管理 Dashboard**，致力于帮助用户轻松管理个人资产、追踪消费支出、规划储蓄目标和管理贷款债务。
 
 - **当前版本**: 2.1.8
 - **发布日期**: 2026-03-19
@@ -357,7 +357,7 @@
 - **数据库**: MySQL 8.0 (localhost:3306)
 - **后端端口**: 3004
 - **前端端口**: 3000 (Next.js)
-- **默认用户**: admin@Star Accounting.com / Admin123.
+- **默认用户**: admin@openstar-StarAccounting.com / Admin123.
 
 ### 部署支持
 
@@ -370,7 +370,7 @@
 ## 项目结构
 
 ```
-openstar-Star Accounting/
+openstar-StarAccounting/
 ├── web/                          # 前端 (Next.js)
 │   └── src/
 │       ├── app/                  # 页面路由
@@ -441,7 +441,7 @@ npm run dev
 
 ### 默认登录
 
-- 邮箱: admin@Star Accounting.com
+- 邮箱: admin@openstar-StarAccounting.com
 - 密码: Admin123.
 
 ---

@@ -1,191 +1,29 @@
-forward-logs-shared.ts:95 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-PWARegister.tsx:11 [PWA] Development mode: Service Worker registration and PWA prompt skipped.
-icon-144x144.png:1  GET http://localhost:3000/icons/icon-144x144.png 404 (Not Found)
-login?next=%2Fdata:1 Error while trying to use the following icon from the Manifest: http://localhost:3000/icons/icon-144x144.png (Download error or resource isn't a valid image)
-forward-logs-shared.ts:95 [HMR] connected
-inspector.js:7  POST http://localhost:3006/api/auth/login net::ERR_CONNECTION_REFUSED
-(匿名) @ inspector.js:7
-apiFetch @ api.ts:21
-onSubmit @ page.tsx:34
-executeDispatch @ react-dom-client.development.js:20543
-runWithFiberInDEV @ react-dom-client.development.js:986
-processDispatchQueue @ react-dom-client.development.js:20593
-(匿名) @ react-dom-client.development.js:21164
-batchedUpdates$1 @ react-dom-client.development.js:3377
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
-dispatchEvent @ react-dom-client.development.js:25693
-dispatchDiscreteEvent @ react-dom-client.development.js:25661
-<form>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-LoginForm @ page.tsx:57
-react_stack_bottom_frame @ react-dom-client.development.js:28038
-renderWithHooksAgain @ react-dom-client.development.js:8084
-renderWithHooks @ react-dom-client.development.js:7996
-updateFunctionComponent @ react-dom-client.development.js:10501
-beginWork @ react-dom-client.development.js:12136
-runWithFiberInDEV @ react-dom-client.development.js:986
-performUnitOfWork @ react-dom-client.development.js:18997
-workLoopConcurrentByScheduler @ react-dom-client.development.js:18991
-renderRootConcurrent @ react-dom-client.development.js:18973
-performWorkOnRoot @ react-dom-client.development.js:17834
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
-performWorkUntilDeadline @ scheduler.development.js:45
-<LoginForm>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-LoginPage @ page.tsx:104
-react_stack_bottom_frame @ react-dom-client.development.js:28038
-renderWithHooksAgain @ react-dom-client.development.js:8084
-renderWithHooks @ react-dom-client.development.js:7996
-updateFunctionComponent @ react-dom-client.development.js:10501
-beginWork @ react-dom-client.development.js:12136
-runWithFiberInDEV @ react-dom-client.development.js:986
-performUnitOfWork @ react-dom-client.development.js:18997
-workLoopConcurrentByScheduler @ react-dom-client.development.js:18991
-renderRootConcurrent @ react-dom-client.development.js:18973
-performWorkOnRoot @ react-dom-client.development.js:17834
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
-performWorkUntilDeadline @ scheduler.development.js:45
-<LoginPage>
-exports.jsx @ react-jsx-runtime.development.js:342
-ClientPageRoot @ client-page.tsx:83
-react_stack_bottom_frame @ react-dom-client.development.js:28038
-renderWithHooksAgain @ react-dom-client.development.js:8084
-renderWithHooks @ react-dom-client.development.js:7996
-updateFunctionComponent @ react-dom-client.development.js:10501
-beginWork @ react-dom-client.development.js:12085
-runWithFiberInDEV @ react-dom-client.development.js:986
-performUnitOfWork @ react-dom-client.development.js:18997
-workLoopConcurrentByScheduler @ react-dom-client.development.js:18991
-renderRootConcurrent @ react-dom-client.development.js:18973
-performWorkOnRoot @ react-dom-client.development.js:17834
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
-performWorkUntilDeadline @ scheduler.development.js:45
-"use client"
-Promise.all @ VM162 <anonymous>:1
-Promise.all @ VM162 <anonymous>:1
-Promise.all @ VM162 <anonymous>:1
-initializeElement @ react-server-dom-turbopack-client.browser.development.js:1940
-"use server"
-ResponseInstance @ react-server-dom-turbopack-client.browser.development.js:2784
-createResponseFromOptions @ react-server-dom-turbopack-client.browser.development.js:4660
-exports.createFromReadableStream @ react-server-dom-turbopack-client.browser.development.js:5064
-module evaluation @ app-index.tsx:211
-(匿名) @ dev-base.ts:244
-runModuleExecutionHooks @ dev-base.ts:278
-instantiateModule @ dev-base.ts:238
-getOrInstantiateModuleFromParent @ dev-base.ts:162
-commonJsRequire @ runtime-utils.ts:389
-(匿名) @ app-next-turbopack.ts:11
-(匿名) @ app-bootstrap.ts:79
-loadScriptsInSequence @ app-bootstrap.ts:23
-appBootstrap @ app-bootstrap.ts:61
-module evaluation @ app-next-turbopack.ts:10
-(匿名) @ dev-base.ts:244
-runModuleExecutionHooks @ dev-base.ts:278
-instantiateModule @ dev-base.ts:238
-getOrInstantiateRuntimeModule @ dev-base.ts:128
-registerChunk @ runtime-backend-dom.ts:57
-await in registerChunk
-registerChunk @ dev-base.ts:1149
-(匿名) @ dev-backend-dom.ts:126
-(匿名) @ dev-backend-dom.ts:126
-inspector.js:7 Fetch request failed: TypeError: Failed to fetch
-    at inspector.js:7:3144
-    at apiFetch (api.ts:21:21)
-    at onSubmit (page.tsx:34:34)
-    at executeDispatch (react-dom-client.development.js:20543:9)
-    at runWithFiberInDEV (react-dom-client.development.js:986:30)
-    at processDispatchQueue (react-dom-client.development.js:20593:19)
-    at react-dom-client.development.js:21164:9
-    at batchedUpdates$1 (react-dom-client.development.js:3377:40)
-    at dispatchEventForPluginEventSystem (react-dom-client.development.js:20747:7)
-    at dispatchEvent (react-dom-client.development.js:25693:11)
-    at dispatchDiscreteEvent (react-dom-client.development.js:25661:11)
-error @ intercept-console-error.ts:42
-(匿名) @ inspector.js:7
-Promise.catch
-(匿名) @ inspector.js:7
-apiFetch @ api.ts:21
-onSubmit @ page.tsx:34
-executeDispatch @ react-dom-client.development.js:20543
-runWithFiberInDEV @ react-dom-client.development.js:986
-processDispatchQueue @ react-dom-client.development.js:20593
-(匿名) @ react-dom-client.development.js:21164
-batchedUpdates$1 @ react-dom-client.development.js:3377
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
-dispatchEvent @ react-dom-client.development.js:25693
-dispatchDiscreteEvent @ react-dom-client.development.js:25661
-<form>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-LoginForm @ page.tsx:57
-react_stack_bottom_frame @ react-dom-client.development.js:28038
-renderWithHooksAgain @ react-dom-client.development.js:8084
-renderWithHooks @ react-dom-client.development.js:7996
-updateFunctionComponent @ react-dom-client.development.js:10501
-beginWork @ react-dom-client.development.js:12136
-runWithFiberInDEV @ react-dom-client.development.js:986
-performUnitOfWork @ react-dom-client.development.js:18997
-workLoopConcurrentByScheduler @ react-dom-client.development.js:18991
-renderRootConcurrent @ react-dom-client.development.js:18973
-performWorkOnRoot @ react-dom-client.development.js:17834
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
-performWorkUntilDeadline @ scheduler.development.js:45
-<LoginForm>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-LoginPage @ page.tsx:104
-react_stack_bottom_frame @ react-dom-client.development.js:28038
-renderWithHooksAgain @ react-dom-client.development.js:8084
-renderWithHooks @ react-dom-client.development.js:7996
-updateFunctionComponent @ react-dom-client.development.js:10501
-beginWork @ react-dom-client.development.js:12136
-runWithFiberInDEV @ react-dom-client.development.js:986
-performUnitOfWork @ react-dom-client.development.js:18997
-workLoopConcurrentByScheduler @ react-dom-client.development.js:18991
-renderRootConcurrent @ react-dom-client.development.js:18973
-performWorkOnRoot @ react-dom-client.development.js:17834
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
-performWorkUntilDeadline @ scheduler.development.js:45
-<LoginPage>
-exports.jsx @ react-jsx-runtime.development.js:342
-ClientPageRoot @ client-page.tsx:83
-react_stack_bottom_frame @ react-dom-client.development.js:28038
-renderWithHooksAgain @ react-dom-client.development.js:8084
-renderWithHooks @ react-dom-client.development.js:7996
-updateFunctionComponent @ react-dom-client.development.js:10501
-beginWork @ react-dom-client.development.js:12085
-runWithFiberInDEV @ react-dom-client.development.js:986
-performUnitOfWork @ react-dom-client.development.js:18997
-workLoopConcurrentByScheduler @ react-dom-client.development.js:18991
-renderRootConcurrent @ react-dom-client.development.js:18973
-performWorkOnRoot @ react-dom-client.development.js:17834
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
-performWorkUntilDeadline @ scheduler.development.js:45
-"use client"
-Promise.all @ VM162 <anonymous>:1
-Promise.all @ VM162 <anonymous>:1
-Promise.all @ VM162 <anonymous>:1
-initializeElement @ react-server-dom-turbopack-client.browser.development.js:1940
-"use server"
-ResponseInstance @ react-server-dom-turbopack-client.browser.development.js:2784
-createResponseFromOptions @ react-server-dom-turbopack-client.browser.development.js:4660
-exports.createFromReadableStream @ react-server-dom-turbopack-client.browser.development.js:5064
-module evaluation @ app-index.tsx:211
-(匿名) @ dev-base.ts:244
-runModuleExecutionHooks @ dev-base.ts:278
-instantiateModule @ dev-base.ts:238
-getOrInstantiateModuleFromParent @ dev-base.ts:162
-commonJsRequire @ runtime-utils.ts:389
-(匿名) @ app-next-turbopack.ts:11
-(匿名) @ app-bootstrap.ts:79
-loadScriptsInSequence @ app-bootstrap.ts:23
-appBootstrap @ app-bootstrap.ts:61
-module evaluation @ app-next-turbopack.ts:10
-(匿名) @ dev-base.ts:244
-runModuleExecutionHooks @ dev-base.ts:278
-instantiateModule @ dev-base.ts:238
-getOrInstantiateRuntimeModule @ dev-base.ts:128
-registerChunk @ runtime-backend-dom.ts:57
-await in registerChunk
-registerChunk @ dev-base.ts:1149
-(匿名) @ dev-backend-dom.ts:126
-(匿名) @ dev-backend-dom.ts:126
+## Error Type
+Build Error
+
+## Error Message
+Parsing ecmascript source code failed
+
+## Build Output
+./src/app/(dashboard)/about/page.tsx:93:18
+Parsing ecmascript source code failed
+  91 |   {
+  92 |     title: "寮€婧愮敓鎬?",
+> 93 |     description: "鎰熻阿 Next.js銆丳risma銆乀ailwind CSS銆丩ucide 绛夊紑婧愬伐鍏峰拰椤圭洰鎻愪緵鐨勫簳灞傝兘鍔涖€? ,
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  94 |     note: "鍚庣画鍙互鍦ㄨ繖閲岀户缁ˉ鍏呭叿浣撲緷璧栵紝鎴栬€呭啓鏄庢劅璋㈠師鍥犮€?,
+  95 |     icon: HeartHandshake,
+  96 |   },
+
+Unterminated string constant
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/about/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/about/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/about/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/about/page.tsx [Server Component]
+
+Next.js version: 16.1.6 (Turbopack)

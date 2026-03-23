@@ -7,7 +7,6 @@ import { CardContainer } from "@/components/shared/CardContainer";
 import { GridDecoration } from "@/components/shared/GridDecoration";
 import { Skeleton } from "@/components/shared/Skeletons";
 import { DelayedRender } from "@/components/shared/DelayedRender";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 
 type Transaction = {
   id: string;
@@ -57,7 +56,6 @@ function formatDateTime(value: string) {
 }
 
 export default function DataPage() {
-  const { confirmAsync, ConfirmDialog } = useConfirm();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);

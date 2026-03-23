@@ -8,7 +8,7 @@ async function showTables() {
         const host = "localhost";
         const username = "root";
         const password = "Admin123.";
-        const dbname = "xf_dashboard";
+        const dbname = "star_accounting";
 
         // 创建连接
         const conn = await mysql.createConnection({

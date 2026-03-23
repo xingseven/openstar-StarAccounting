@@ -3,7 +3,7 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
-    container_name: Star Accounting-db
+    container_name: openstar-StarAccounting-db
     environment:
       MYSQL_ROOT_PASSWORD: Admin123.
       MYSQL_DATABASE: xf_dashboard
@@ -21,7 +21,7 @@ services:
   server:
     build:
       context: ./src/server
-    container_name: Star Accounting-server
+    container_name: openstar-StarAccounting-server
     environment:
       DATABASE_URL: "mysql://root:Admin123.@mysql:3306/xf_dashboard"
       PORT: 3006
@@ -44,7 +44,7 @@ services:
   web:
     build:
       context: ./web
-    container_name: Star Accounting-web
+    container_name: openstar-StarAccounting-web
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:3006"
     ports:
@@ -62,7 +62,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: Star Accounting-nginx
+    container_name: openstar-StarAccounting-nginx
     ports:
       - "80:80"
       - "443:443"
