@@ -1,26 +1,35 @@
 "use client";
 
-import { clearAccessToken } from "@/lib/auth";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Bell, User as UserIcon, LogOut } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Settings2, User as UserIcon } from "lucide-react";
+import { clearAccessToken } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 import { MobileSidebar } from "@/components/shared/MobileSidebar";
 import { useUser } from "@/components/shared/UserContext";
-
-const PAGE_TITLES: Record<string, string> = {
-  "/": "仪表盘",
-  "/assets": "资产管理",
-  "/consumption": "消费流水",
-  "/savings": "储蓄目标",
-  "/loans": "贷款管理",
-  "/connections": "设备连接",
-  "/settings": "系统设置",
-};
+import { getPageMeta } from "@/components/shared/navigation";
 
 export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const pageMeta = getPageMeta(pathname);
+  const displayName = user ? user.name || user.email.split("@")[0] : "未登录";
+  const emailText = user ? user.email : "请重新登录";
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (!dropdownRef.current?.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
 
   function logout() {
     clearAccessToken();
@@ -28,71 +37,80 @@ export function Header() {
     window.location.href = "/auth/login";
   }
 
-  const title = PAGE_TITLES[pathname] || "消费面板";
-
   return (
-    <header className="h-16 px-3 md:px-4 flex items-center justify-between sticky top-0 z-10 bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100/80">
-      <div className="w-full h-full flex items-center justify-between px-4 md:px-6">
-      <div className="flex items-center gap-2 md:gap-4">
-        <MobileSidebar />
-        <h1 className="text-lg md:text-xl font-semibold text-gray-800 truncate max-w-[200px] md:max-w-none">{title}</h1>
-      </div>
+    <header className="rounded-[20px] border border-slate-200/80 bg-white shadow-sm">
+      <div className="flex min-h-[60px] items-center justify-between gap-3 px-3 py-2.5 sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <MobileSidebar />
 
-      <div className="flex items-center gap-2 md:gap-4">
-        <button className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
-          <Bell className="h-5 w-5" />
-        </button>
-
-        <div className="h-8 w-px bg-gray-200 mx-1" />
-
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <div className="text-sm font-medium text-gray-900">
-              {user ? (user.name || user.email.split("@")[0]) : "未登录"}
-            </div>
-            <div className="text-xs text-gray-500">
-              {user ? user.email : "请重新登录"}
-            </div>
-          </div>
-          
-          {/* 移动端点击整个区域打开下拉菜单 */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="用户菜单"
-            >
-              <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
-                <UserIcon className="h-5 w-5" />
-              </div>
-              {/* 移动端显示的小箭头 */}
-              <svg className="w-4 h-4 text-gray-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {/* Dropdown */}
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-100 py-1 z-50">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-xs text-gray-500">{user ? "已登录" : "未登录"}</p>
-                  <p className="text-sm font-medium truncate">{user ? user.email : "请点击重新登录"}</p>
-                </div>
-                <a href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  个人设置
-                </a>
-                <button
-                  onClick={logout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  退出登录
-                </button>
-              </div>
-            )}
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold tracking-tight text-slate-950 sm:text-xl">{pageMeta.title}</h1>
+            <p className="hidden truncate text-sm text-slate-500 md:block">{pageMeta.subtitle}</p>
           </div>
         </div>
-      </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            aria-label="通知"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-950"
+          >
+            <Bell className="h-4.5 w-4.5" />
+            <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white" />
+          </button>
+
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setShowDropdown((value) => !value)}
+              className={cn(
+                "group flex items-center gap-2 rounded-[20px] border border-slate-200 bg-white px-1.5 py-1.5 transition hover:border-slate-300",
+                showDropdown && "border-slate-300 bg-slate-50"
+              )}
+              aria-label="用户菜单"
+              aria-expanded={showDropdown}
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                <UserIcon className="h-4.5 w-4.5" />
+              </div>
+
+              <div className="hidden min-w-0 text-left md:block">
+                <p className="max-w-[140px] truncate text-sm font-medium text-slate-900">{displayName}</p>
+                <p className="max-w-[180px] truncate text-xs text-slate-500">{emailText}</p>
+              </div>
+
+              <ChevronDown className={cn("mr-1 hidden h-4 w-4 text-slate-400 transition md:block", showDropdown && "rotate-180")} />
+            </button>
+
+            {showDropdown ? (
+              <div className="absolute right-0 top-full z-50 mt-3 w-[240px] rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                <div className="rounded-[18px] bg-slate-50 p-3">
+                  <p className="truncate text-sm font-semibold text-slate-950">{displayName}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{emailText}</p>
+                </div>
+
+                <div className="mt-2 space-y-1">
+                  <Link
+                    href="/settings"
+                    onClick={() => setShowDropdown(false)}
+                    className="flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
+                  >
+                    <Settings2 className="h-4 w-4 text-slate-500" />
+                    个人设置
+                  </Link>
+
+                  <button
+                    onClick={logout}
+                    className="flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    退出登录
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
     </header>
   );

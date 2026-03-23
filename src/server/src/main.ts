@@ -42,6 +42,8 @@ type TransactionRecord = {
 
 type Connection = {
   id: string;
+  userId: string;
+  accountId: string;
   otpCode: string;
   isVerified: boolean;
   expiresAt: number;
@@ -50,6 +52,11 @@ type Connection = {
   deviceId?: string;
   deviceName?: string;
   ipAddress?: string;
+};
+
+type AuthContext = {
+  userId: string;
+  accountId?: string;
 };
 
 const connectionsById = new Map<string, Connection>();
@@ -158,6 +165,41 @@ function getRequestIp(req: Request) {
   return req.ip;
 }
 
+function stripPortFromHost(host: string) {
+  const value = host.trim();
+  if (value.startsWith("[") && value.includes("]")) {
+    return value.slice(1, value.indexOf("]"));
+  }
+  return value.replace(/:\d+$/, "");
+}
+
+function normalizeIp(value: string | undefined | null) {
+  if (!value) return null;
+  const normalized = value.replace(/^::ffff:/, "").trim();
+  if (!normalized) return null;
+  if (normalized === "::1") return "127.0.0.1";
+  return normalized;
+}
+
+function getPublicConnectHost(req: Request) {
+  const configured = process.env.PUBLIC_IP?.trim();
+  if (configured && configured !== "0.0.0.0") {
+    return configured;
+  }
+
+  const forwardedHost = req.headers["x-forwarded-host"];
+  if (typeof forwardedHost === "string" && forwardedHost.trim().length > 0) {
+    return stripPortFromHost(forwardedHost.split(",")[0] ?? forwardedHost);
+  }
+
+  const host = req.headers.host;
+  if (typeof host === "string" && host.trim().length > 0) {
+    return stripPortFromHost(host);
+  }
+
+  return normalizeIp(getRequestIp(req)) ?? "127.0.0.1";
+}
+
 function generateOtpCode() {
   return String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0");
 }
@@ -204,19 +246,51 @@ function memoryUserId(email: string) {
   return `mem-${email}`;
 }
 
-function getAuthUserId(req: Request) {
+async function getAuthContext(req: Request): Promise<AuthContext | null> {
   const auth = req.headers.authorization;
   if (typeof auth === "string" && auth.startsWith("Bearer ")) {
     const token = auth.slice("Bearer ".length).trim();
     const payload = verifyAccessToken(token);
-    if (payload) return payload.userId;
+    if (payload) {
+      return { userId: payload.userId };
+    }
+
+    if (!token.startsWith("dev-")) {
+      return null;
+    }
+
+    const connectionId = token.slice("dev-".length).trim();
+    if (!connectionId) {
+      return null;
+    }
+
+    const prisma = getPrisma();
+    if (prisma) {
+      const connection = await prisma.appconnection.findFirst({
+        where: { id: connectionId, isVerified: true },
+        select: { userId: true, accountId: true },
+      });
+
+      if (!connection) {
+        return null;
+      }
+
+      return { userId: connection.userId, accountId: connection.accountId };
+    }
+
+    const connection = connectionsById.get(connectionId);
+    if (!connection?.isVerified) {
+      return null;
+    }
+
+    return { userId: connection.userId, accountId: connection.accountId };
   }
   return null;
 }
 
 async function requireUserId(req: Request, res: Response) {
-  const tokenUserId = getAuthUserId(req);
-  if (tokenUserId) return tokenUserId;
+  const authContext = await getAuthContext(req);
+  if (authContext?.userId) return authContext.userId;
 
   const prisma = getPrisma();
   if (!prisma) {
@@ -248,8 +322,13 @@ async function requireUserId(req: Request, res: Response) {
 }
 
 async function requireAccountId(req: Request, res: Response): Promise<{ userId: string; accountId: string } | null> {
-  const userId = await requireUserId(req, res);
+  const authContext = await getAuthContext(req);
+  const userId = authContext?.userId ?? await requireUserId(req, res);
   if (!userId) return null;
+
+  if (authContext?.accountId) {
+    return { userId, accountId: authContext.accountId };
+  }
 
   const prisma = getPrisma();
   if (!prisma) {
@@ -1321,13 +1400,14 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
 });
 
 app.get("/api/connect/devices", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const prisma = getPrisma();
   if (prisma) {
     try {
       const devices = await prisma.appconnection.findMany({
-        where: { userId, isVerified: true },
+        where: { userId, accountId, isVerified: true },
         orderBy: [{ verifiedAt: "desc" }, { createdAt: "desc" }],
         select: {
           id: true,
@@ -1349,7 +1429,7 @@ app.get("/api/connect/devices", async (req, res) => {
   }
 
   const devices = Array.from(connectionsById.values())
-    .filter((c) => c.isVerified)
+    .filter((c) => c.userId === userId && c.accountId === accountId && c.isVerified)
     .map((c) => ({
       id: c.id,
       deviceId: c.deviceId ?? null,
@@ -1357,14 +1437,20 @@ app.get("/api/connect/devices", async (req, res) => {
       ipAddress: c.ipAddress ?? null,
       verifiedAt: c.verifiedAt ? new Date(c.verifiedAt).toISOString() : null,
       createdAt: new Date(c.createdAt).toISOString(),
-    }));
+    }))
+    .sort((a, b) => {
+      const left = a.verifiedAt ? new Date(a.verifiedAt).getTime() : new Date(a.createdAt).getTime();
+      const right = b.verifiedAt ? new Date(b.verifiedAt).getTime() : new Date(b.createdAt).getTime();
+      return right - left;
+    });
 
   jsonOk(res, { devices });
 });
 
 app.post("/api/connect/generate", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   try {
     await cleanupExpiredInDb();
   } catch {
@@ -1374,20 +1460,21 @@ app.post("/api/connect/generate", async (req, res) => {
   if (prisma) {
     try {
       await prisma.appconnection.deleteMany({
-        where: { userId, isVerified: false },
+        where: { userId, accountId, isVerified: false },
       });
 
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const publicIp = getPublicConnectHost(req);
 
       for (let i = 0; i < 20; i++) {
         const otpCode = generateOtpCode();
         try {
           // @ts-ignore - Prisma type mismatch
-          await prisma.appconnection.create({
+          const created = await prisma.appconnection.create({
             data: {
               id: crypto.randomUUID(),
               userId,
-              accountId: userId, // fallback to userId for single-account mode
+              accountId,
               otpCode,
               expiresAt,
               ipAddress: getRequestIp(req),
@@ -1395,9 +1482,12 @@ app.post("/api/connect/generate", async (req, res) => {
           });
 
           jsonOk(res, {
+            connectionId: created.id,
             otpCode,
-            publicIp: process.env.PUBLIC_IP ?? "0.0.0.0",
+            publicIp,
+            verifyPath: "/api/connect/verify",
             expiresAt: expiresAt.toISOString(),
+            expiresInSeconds: 5 * 60,
           });
           return;
         } catch (e: unknown) {
@@ -1423,14 +1513,10 @@ app.post("/api/connect/generate", async (req, res) => {
 
   cleanupExpiredInMemory();
 
-  for (const conn of connectionsById.values()) {
-    if (!conn.isVerified && conn.expiresAt > Date.now()) {
-      jsonOk(res, {
-        otpCode: conn.otpCode,
-        publicIp: process.env.PUBLIC_IP ?? "0.0.0.0",
-        expiresAt: new Date(conn.expiresAt).toISOString(),
-      });
-      return;
+  for (const [id, conn] of connectionsById.entries()) {
+    if (conn.userId === userId && conn.accountId === accountId && !conn.isVerified) {
+      connectionsById.delete(id);
+      connectionIdByOtp.delete(conn.otpCode);
     }
   }
 
@@ -1443,6 +1529,8 @@ app.post("/api/connect/generate", async (req, res) => {
 
   const conn: Connection = {
     id,
+    userId,
+    accountId,
     otpCode,
     isVerified: false,
     createdAt: now,
@@ -1454,9 +1542,12 @@ app.post("/api/connect/generate", async (req, res) => {
   connectionIdByOtp.set(otpCode, id);
 
   jsonOk(res, {
+    connectionId: id,
     otpCode,
-    publicIp: process.env.PUBLIC_IP ?? "0.0.0.0",
+    publicIp: getPublicConnectHost(req),
+    verifyPath: "/api/connect/verify",
     expiresAt: new Date(expiresAt).toISOString(),
+    expiresInSeconds: 5 * 60,
   });
 });
 
@@ -1467,8 +1558,12 @@ app.post("/api/connect/verify", async (req, res) => {
   }
 
   const { otpCode, deviceId, deviceName } = req.body ?? {};
+  const normalizedOtpCode = typeof otpCode === "string" ? otpCode.trim() : "";
+  const normalizedDeviceId = typeof deviceId === "string" ? deviceId.trim() : "";
+  const normalizedDeviceName =
+    typeof deviceName === "string" && deviceName.trim().length > 0 ? deviceName.trim() : null;
 
-  if (typeof otpCode !== "string" || otpCode.trim().length !== 6) {
+  if (!/^\d{6}$/.test(normalizedOtpCode)) {
     jsonFail(res, 400, 20001, "OTP_NOT_FOUND", "otpCode 格式不正确");
     return;
   }
@@ -1476,12 +1571,12 @@ app.post("/api/connect/verify", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const conn = await prisma.appconnection.findFirst({
-        where: {
-          otpCode,
-          isVerified: false,
-          expiresAt: { gt: new Date() },
-        },
+        const conn = await prisma.appconnection.findFirst({
+          where: {
+            otpCode: normalizedOtpCode,
+            isVerified: false,
+            expiresAt: { gt: new Date() },
+          },
         orderBy: { createdAt: "desc" },
       });
 
@@ -1490,7 +1585,7 @@ app.post("/api/connect/verify", async (req, res) => {
         return;
       }
 
-      if (typeof deviceId !== "string" || deviceId.trim().length === 0) {
+      if (!normalizedDeviceId) {
         jsonFail(res, 400, 50000, "INTERNAL_ERROR", "deviceId 必填");
         return;
       }
@@ -1500,15 +1595,20 @@ app.post("/api/connect/verify", async (req, res) => {
         data: {
           isVerified: true,
           verifiedAt: new Date(),
-          deviceId: deviceId.trim(),
-          deviceName: typeof deviceName === "string" ? deviceName : null,
+          deviceId: normalizedDeviceId,
+          deviceName: normalizedDeviceName,
           ipAddress: getRequestIp(req),
         },
       });
 
       jsonOk(
         res,
-        { accessToken: `dev-${updated.id}`, connectionId: updated.id },
+        {
+          accessToken: `dev-${updated.id}`,
+          tokenType: "device",
+          connectionId: updated.id,
+          verifiedAt: updated.verifiedAt?.toISOString() ?? new Date().toISOString(),
+        },
         "verified"
       );
       return;
@@ -1519,7 +1619,7 @@ app.post("/api/connect/verify", async (req, res) => {
     }
   }
 
-  const id = connectionIdByOtp.get(otpCode);
+  const id = connectionIdByOtp.get(normalizedOtpCode);
   if (!id) {
     jsonFail(res, 400, 20001, "OTP_NOT_FOUND", "验证码不存在");
     return;
@@ -1541,29 +1641,40 @@ app.post("/api/connect/verify", async (req, res) => {
     return;
   }
 
-  if (typeof deviceId !== "string" || deviceId.trim().length === 0) {
+  if (!normalizedDeviceId) {
     jsonFail(res, 400, 50000, "INTERNAL_ERROR", "deviceId 必填");
     return;
   }
 
   conn.isVerified = true;
   conn.verifiedAt = Date.now();
-  conn.deviceId = deviceId;
-  if (typeof deviceName === "string") conn.deviceName = deviceName;
+  conn.deviceId = normalizedDeviceId;
+  conn.deviceName = normalizedDeviceName ?? undefined;
+  conn.ipAddress = getRequestIp(req);
 
-  jsonOk(res, { accessToken: `dev-${id}`, connectionId: id }, "verified");
+  jsonOk(
+    res,
+    {
+      accessToken: `dev-${id}`,
+      tokenType: "device",
+      connectionId: id,
+      verifiedAt: new Date(conn.verifiedAt).toISOString(),
+    },
+    "verified"
+  );
 });
 
 app.delete("/api/connect/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const id = req.params.id;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
       const deleted = await prisma.appconnection.deleteMany({
-        where: { id, userId },
+        where: { id, userId, accountId },
       });
       if (deleted.count === 0) {
         jsonFail(res, 404, 50000, "INTERNAL_ERROR", "connection 不存在");
@@ -1578,7 +1689,7 @@ app.delete("/api/connect/:id", async (req, res) => {
   }
 
   const conn = connectionsById.get(id);
-  if (!conn) {
+  if (!conn || conn.userId !== userId || conn.accountId !== accountId) {
     jsonFail(res, 404, 50000, "INTERNAL_ERROR", "connection 不存在");
     return;
   }

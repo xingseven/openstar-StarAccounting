@@ -1,5 +1,72 @@
 # Changelog
 
+## 2.3.5 - 2026-03-23
+
+### Added
+
+- **新增 APP 连接功能开发文档**:
+  - 新增 `docs/APP连接功能开发文档.md`
+  - 梳理 Web 端生成连接码、App 端 OTP 验证、设备令牌与后续联调清单
+  - 明确 `generate / verify / devices / revoke` 四个连接接口的请求与返回结构
+
+### Modified
+
+- **连接页重构为可联调的设备绑定工作台**:
+  - 连接页补齐中文界面、验证码展示、服务器地址、验证路径、倒计时与复制操作
+  - 增加 App 对接说明区，直接展示 `POST /api/connect/verify` 的请求体示例
+  - 增加连接状态轮询，当前验证码被 App 成功验证后，页面会自动切换为“已完成绑定”
+  - 已授权设备列表支持刷新与撤销，撤销后设备令牌立即失效
+
+- **连接后端接口补齐用于 App 开发的返回结构**:
+  - `POST /api/connect/generate` 新增返回 `connectionId`、`verifyPath`、`expiresInSeconds`
+  - `POST /api/connect/verify` 新增返回 `tokenType`、`verifiedAt`
+  - 连接记录改为按 `accountId` 隔离，避免多账户模式下设备串号
+  - 设备令牌 `dev-<connectionId>` 接入认证流程，便于 App 后续直接携带令牌访问接口
+  - `PUBLIC_IP` 未配置时自动从当前请求推导可展示的服务器地址
+
+### Modified Files
+
+1. `docs/APP连接功能开发文档.md` - APP 连接开发说明
+2. `web/src/app/(dashboard)/connections/page.tsx` - 连接页重构
+3. `web/src/components/shared/navigation.ts` - 页面标题与导航元信息
+4. `web/src/components/shared/Header.tsx` - 顶部页头与用户菜单
+5. `web/src/components/shared/MobileSidebar.tsx` - 移动端导航
+6. `src/server/src/main.ts` - 连接接口与设备令牌认证
+
+## 2.3.4 - 2026-03-23
+
+### Modified
+
+- **项目名称统一更新为 `openstar-StarAccounting`**:
+  - 更新所有配置文件中的项目名称引用（package.json、layout.tsx、manifest.json、docker-compose.yml等）
+  - 更新前端 UI 中的项目标题（Sidebar、About页面、设置页面等）
+  - 更新文档中的项目名称引用（README.md、开发进度文档、V2高级功能文档等）
+  - 更新测试文件中的默认用户名
+  - 更新 Docker 容器名称为 `openstar-StarAccounting-*`
+  - 更新 PWA manifest 和 Service Worker 缓存名称
+  - 更新所有 GitHub 链接引用
+
+### Modified Files
+
+1. `package.json` - 项目名称
+2. `web/package.json` - 前端项目名称
+3. `src/server/package.json` - 后端项目名称
+4. `web/src/app/layout.tsx` - 元数据和标题
+5. `web/src/components/shared/Sidebar.tsx` - 侧边栏标题
+6. `web/src/components/shared/PWARegister.tsx` - PWA 安装提示
+7. `web/public/manifest.json` - PWA manifest
+8. `web/public/sw.js` - Service Worker 缓存名称
+9. `docker-compose.yml` - Docker 容器名称
+10. `README.md` - 项目文档标题
+11. `docs/V2高级功能开发文档.md` - 文档标题
+12. `docs/数据库配置.md` - 数据库配置
+13. `docs/开发进度.md` - 管理员邮箱
+14. `web/src/app/(dashboard)/about/page.tsx` - 关于页面标题
+15. `web/src/app/(dashboard)/settings/page.tsx` - 设置页面底部
+16. `web/public/test-api.html` - 测试页面默认邮箱
+17. `web/public/offline.html` - 离线页面标题
+18. `web/tests/budget.spec.ts` - 测试文件默认邮箱
+
 ## 2.3.3 - 2026-03-22
 
 ### Bug Fixes
