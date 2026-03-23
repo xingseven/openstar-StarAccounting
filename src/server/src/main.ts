@@ -38,6 +38,28 @@ type TransactionRecord = {
   description: string | null;
   paymentMethod: string | null;
   status: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type SyncCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+type SyncTransactionPayload = {
+  clientId?: string;
+  id?: string;
+  orderId?: string | null;
+  date?: string;
+  type?: string;
+  amount?: string | number;
+  category?: string;
+  platform?: string;
+  merchant?: string | null;
+  description?: string | null;
+  paymentMethod?: string | null;
+  status?: string | null;
 };
 
 type Connection = {
@@ -198,6 +220,18 @@ function getPublicConnectHost(req: Request) {
   }
 
   return normalizeIp(getRequestIp(req)) ?? "127.0.0.1";
+}
+
+function getOtpHashSecret() {
+  const configured = process.env.OTP_HASH_SECRET?.trim();
+  if (configured) return configured;
+  const jwtSecret = process.env.JWT_SECRET?.trim();
+  if (jwtSecret) return jwtSecret;
+  return "dev-otp-secret";
+}
+
+function hashOtpCode(otpCode: string) {
+  return `otp_sha256$${crypto.createHmac("sha256", getOtpHashSecret()).update(otpCode).digest("hex")}`;
 }
 
 function generateOtpCode() {
@@ -540,8 +574,18 @@ app.get("/api/auth/me", async (req, res) => {
 });
 
 function parseQuery(req: Request) {
-  const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
-  const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
+  const startDate =
+    typeof req.query.startDate === "string"
+      ? req.query.startDate
+      : typeof req.query.start === "string"
+        ? req.query.start
+        : "";
+  const endDate =
+    typeof req.query.endDate === "string"
+      ? req.query.endDate
+      : typeof req.query.end === "string"
+        ? req.query.end
+        : "";
   const type = typeof req.query.type === "string" ? req.query.type : "EXPENSE";
   const start = startDate ? new Date(startDate) : null;
   const end = endDate ? new Date(endDate) : null;
@@ -552,6 +596,163 @@ function parseQuery(req: Request) {
     start: start && !Number.isNaN(start.getTime()) ? start : null,
     end: end && !Number.isNaN(end.getTime()) ? end : null,
   };
+}
+
+function isTransactionType(value: unknown): value is "INCOME" | "EXPENSE" | "TRANSFER" | "REPAYMENT" {
+  return value === "INCOME" || value === "EXPENSE" || value === "TRANSFER" || value === "REPAYMENT";
+}
+
+function normalizeOptionalText(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function encodeSyncCursor(cursor: SyncCursor) {
+  return Buffer.from(JSON.stringify(cursor), "utf8").toString("base64url");
+}
+
+function decodeSyncCursor(value: string | undefined) {
+  if (!value) return null;
+  try {
+    const raw = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<SyncCursor>;
+    if (typeof raw.updatedAt !== "string" || typeof raw.id !== "string") return null;
+    if (Number.isNaN(new Date(raw.updatedAt).getTime())) return null;
+    return { updatedAt: raw.updatedAt, id: raw.id };
+  } catch {
+    return null;
+  }
+}
+
+function compareSyncRecordCursor(
+  record: { updatedAt?: string; date: string; id: string },
+  cursor: SyncCursor | null
+) {
+  if (!cursor) return true;
+  const value = new Date(record.updatedAt ?? record.date).toISOString();
+  if (value > cursor.updatedAt) return true;
+  if (value < cursor.updatedAt) return false;
+  return record.id > cursor.id;
+}
+
+function normalizeSyncTransactionPayload(input: SyncTransactionPayload) {
+  const clientId =
+    typeof input.clientId === "string" && input.clientId.trim().length > 0 ? input.clientId.trim() : null;
+  const id = typeof input.id === "string" && input.id.trim().length > 0 ? input.id.trim() : null;
+  const orderId = normalizeOptionalText(input.orderId);
+  const category = normalizeOptionalText(input.category);
+  const platform = normalizeOptionalText(input.platform);
+  const merchant = normalizeOptionalText(input.merchant);
+  const description = normalizeOptionalText(input.description);
+  const paymentMethod = normalizeOptionalText(input.paymentMethod);
+  const status = normalizeOptionalText(input.status);
+  const date = typeof input.date === "string" ? new Date(input.date) : null;
+  const amountValue =
+    typeof input.amount === "number" || typeof input.amount === "string" ? Number(input.amount) : Number.NaN;
+  const type = typeof input.type === "string" ? input.type.trim() : "";
+
+  if (!id && !orderId) {
+    return { ok: false as const, clientId, error: "新交易至少需要提供 id 或 orderId" };
+  }
+  if (!date || Number.isNaN(date.getTime())) {
+    return { ok: false as const, clientId, error: "date 格式不正确" };
+  }
+  if (!Number.isFinite(amountValue)) {
+    return { ok: false as const, clientId, error: "amount 格式不正确" };
+  }
+  if (!isTransactionType(type)) {
+    return { ok: false as const, clientId, error: "type 必须是 INCOME/EXPENSE/TRANSFER/REPAYMENT" };
+  }
+  if (!category) {
+    return { ok: false as const, clientId, error: "category 不能为空" };
+  }
+  if (!platform) {
+    return { ok: false as const, clientId, error: "platform 不能为空" };
+  }
+
+  return {
+    ok: true as const,
+    clientId,
+    value: {
+      id,
+      orderId,
+      date,
+      type,
+      amount: amountValue.toString(),
+      category,
+      platform,
+      merchant,
+      description,
+      paymentMethod,
+      status,
+    },
+  };
+}
+
+type DailyMetricRow = {
+  date: Date | string;
+  amount: unknown;
+};
+
+type DailyCategoryMetricRow = DailyMetricRow & {
+  category: string | null;
+};
+
+function formatMetricBucket(date: Date, groupBy: "day" | "month" = "day") {
+  return date.toISOString().slice(0, groupBy === "month" ? 7 : 10);
+}
+
+function aggregateDailyMetrics(rows: DailyMetricRow[], groupBy: "day" | "month" = "day") {
+  const map = new Map<string, { total: number; count: number }>();
+
+  for (const row of rows) {
+    const date = row.date instanceof Date ? row.date : new Date(row.date);
+    if (Number.isNaN(date.getTime())) continue;
+
+    const key = formatMetricBucket(date, groupBy);
+    const current = map.get(key) ?? { total: 0, count: 0 };
+    current.total += Number(row.amount ?? 0);
+    current.count += 1;
+    map.set(key, current);
+  }
+
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, value]) => ({
+      day,
+      date: day,
+      total: String(value.total),
+      count: value.count,
+    }));
+}
+
+function aggregateDailyCategoryMetrics(rows: DailyCategoryMetricRow[]) {
+  const map = new Map<string, number>();
+
+  for (const row of rows) {
+    const date = row.date instanceof Date ? row.date : new Date(row.date);
+    if (Number.isNaN(date.getTime())) continue;
+
+    const day = formatMetricBucket(date, "day");
+    const category = row.category?.trim() || "未分类";
+    const key = `${day}__${category}`;
+    map.set(key, (map.get(key) ?? 0) + Number(row.amount ?? 0));
+  }
+
+  return Array.from(map.entries())
+    .map(([key, total]) => {
+      const [day, category] = key.split("__");
+      return {
+        day,
+        date: day,
+        category,
+        total: String(total),
+      };
+    })
+    .sort((a, b) => {
+      const dayDiff = a.day.localeCompare(b.day);
+      return dayDiff !== 0 ? dayDiff : a.category.localeCompare(b.category);
+    });
 }
 
 app.get("/api/metrics/consumption/summary", async (req, res) => {
@@ -787,23 +988,25 @@ app.get("/api/metrics/consumption/daily-category", async (req, res) => {
 
   if (prisma) {
     try {
-      // Group by day and category
-      const rows = (await prisma.$queryRawUnsafe(`
-        SELECT date_trunc('day', "date") AS d, "category", SUM(amount) AS total
-        FROM "Transaction"
-        WHERE "userId"='${userId}'
-          AND "type"='${type}'
-          AND (${start ? `'${start.toISOString()}'::timestamptz` : "NULL"} IS NULL OR "date" >= '${start ? start.toISOString() : ""}')
-          AND (${end ? `'${end.toISOString()}'::timestamptz` : "NULL"} IS NULL OR "date" <= '${end ? end.toISOString() : ""}')
-        GROUP BY d, "category"
-        ORDER BY d
-      `)) as Array<{ d: Date; category: string; total: unknown }>;
+      const where: Record<string, unknown> = { userId, type };
+      if (start || end) {
+        where.date = {
+          ...(start ? { gte: start } : {}),
+          ...(end ? { lte: end } : {}),
+        };
+      }
 
-      const items = rows.map((r) => ({
-        day: r.d.toISOString().slice(0, 10),
-        category: r.category,
-        total: String(r.total ?? 0),
-      }));
+      const rows = await prisma.transaction.findMany({
+        where,
+        select: {
+          date: true,
+          category: true,
+          amount: true,
+        },
+        orderBy: { date: "asc" },
+      });
+
+      const items = aggregateDailyCategoryMetrics(rows);
 
       jsonOk(res, { items });
       return;
@@ -814,7 +1017,24 @@ app.get("/api/metrics/consumption/daily-category", async (req, res) => {
     }
   }
 
-  jsonOk(res, { items: [] });
+  const all = transactionsByUser.get(userId) ?? [];
+  const filtered = all.filter((t) => {
+    if (t.type !== type) return false;
+    const ts = new Date(t.date).getTime();
+    if (start && ts < start.getTime()) return false;
+    if (end && ts > end.getTime()) return false;
+    return true;
+  });
+
+  jsonOk(res, {
+    items: aggregateDailyCategoryMetrics(
+      filtered.map((t) => ({
+        date: t.date,
+        category: t.category,
+        amount: t.amount,
+      })),
+    ),
+  });
 });
 
 app.get("/api/metrics/consumption/platform-category", async (req, res) => {
@@ -866,21 +1086,24 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
 
   if (prisma) {
     try {
-      const trunc = groupBy === "month" ? "month" : "day";
-      const rows = (await prisma.$queryRawUnsafe(`SELECT date_trunc('${trunc}',"date") AS d, SUM(amount) AS total, COUNT(*)::int AS count
-        FROM "Transaction"
-        WHERE "userId"='${userId}'
-          AND "type"='${type}'
-          AND (${start ? `'${start.toISOString()}'::timestamptz` : "NULL"} IS NULL OR "date" >= '${start ? start.toISOString() : ""}')
-          AND (${end ? `'${end.toISOString()}'::timestamptz` : "NULL"} IS NULL OR "date" <= '${end ? end.toISOString() : ""}')
-        GROUP BY d
-        ORDER BY d`)) as Array<{ d: Date; total: unknown; count: number }>;
+      const where: Record<string, unknown> = { userId, type };
+      if (start || end) {
+        where.date = {
+          ...(start ? { gte: start } : {}),
+          ...(end ? { lte: end } : {}),
+        };
+      }
 
-      const items = rows.map((r) => ({
-        day: r.d.toISOString().slice(0, groupBy === "month" ? 7 : 10),
-        total: String(r.total ?? 0),
-        count: r.count,
-      }));
+      const rows = await prisma.transaction.findMany({
+        where,
+        select: {
+          date: true,
+          amount: true,
+        },
+        orderBy: { date: "asc" },
+      });
+
+      const items = aggregateDailyMetrics(rows, groupBy);
 
       jsonOk(res, { items });
       return;
@@ -892,27 +1115,23 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
   }
 
   const all = transactionsByUser.get(userId) ?? [];
-  const map = new Map<string, { total: number; count: number }>();
+  const filtered = all.filter((t) => {
+    if (t.type !== type) return false;
+    const ts = new Date(t.date).getTime();
+    if (start && ts < start.getTime()) return false;
+    if (end && ts > end.getTime()) return false;
+    return true;
+  });
 
-  for (const t of all) {
-    if (t.type !== type) continue;
-    const d = new Date(t.date);
-    if (Number.isNaN(d.getTime())) continue;
-    if (start && d.getTime() < start.getTime()) continue;
-    if (end && d.getTime() > end.getTime()) continue;
-    
-    const key = d.toISOString().slice(0, groupBy === "month" ? 7 : 10);
-    const cur = map.get(key) ?? { total: 0, count: 0 };
-    cur.total += Number(t.amount);
-    cur.count += 1;
-    map.set(key, cur);
-  }
-
-  const items = Array.from(map.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([day, v]) => ({ day, total: v.total.toFixed(2), count: v.count }));
-
-  jsonOk(res, { items });
+  jsonOk(res, {
+    items: aggregateDailyMetrics(
+      filtered.map((t) => ({
+        date: t.date,
+        amount: t.amount,
+      })),
+      groupBy,
+    ),
+  });
 });
 
 app.get("/api/transactions", async (req, res) => {
@@ -920,8 +1139,18 @@ app.get("/api/transactions", async (req, res) => {
   if (!userId) return;
   const page = Number(req.query.page ?? 1);
   const pageSize = Math.min(200, Number(req.query.pageSize ?? 20));
-  const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
-  const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
+  const startDate =
+    typeof req.query.startDate === "string"
+      ? req.query.startDate
+      : typeof req.query.start === "string"
+        ? req.query.start
+        : "";
+  const endDate =
+    typeof req.query.endDate === "string"
+      ? req.query.endDate
+      : typeof req.query.end === "string"
+        ? req.query.end
+        : "";
   const type = typeof req.query.type === "string" ? req.query.type : "";
   const platform = typeof req.query.platform === "string" ? req.query.platform : "";
   const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
@@ -1053,6 +1282,7 @@ app.put("/api/transactions/:id", async (req, res) => {
     ...(type ? { type } : {}),
     ...(platform ? { platform } : {}),
     ...(date ? { date: String(date) } : {}),
+    updatedAt: new Date().toISOString(),
   };
   list[idx] = updated;
   jsonOk(res, { item: updated });
@@ -1275,6 +1505,7 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
   let imported;
   try {
     imported = importCsvBuffer(file.buffer, source);
+    console.log(`[Import] Parsed ${imported.rows.length} rows using ${imported.encoding}, header at index ${imported.headerIndex}, headers: ${imported.headers.join(", ")}`);
   } catch (e: unknown) {
     const code =
       typeof e === "object" && e && "code" in e ? (e as { code?: unknown }).code : 50000;
@@ -1282,11 +1513,19 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
       jsonFail(res, 400, 30001, "IMPORT_HEADER_NOT_FOUND", "无法识别微信/支付宝列头，请检查文件格式");
       return;
     }
+    if (code === 30002) {
+      jsonFail(res, 400, 30002, "IMPORT_NO_DATA_ROWS", "识别到表头，但没有找到可导入的数据行。请优先尝试原始账单文件或 XLSX 文件");
+      return;
+    }
     jsonFail(res, 500, 50000, "INTERNAL_ERROR", "解析失败");
     return;
   }
 
   const mapped = imported.rows.map((r) => mapRowToTransaction(r, source));
+  console.log(`[Import] Mapped ${mapped.length} rows, valid: ${mapped.filter(m => m.ok).length}, invalid reasons: ${mapped.filter(m => !m.ok).map(m => m.reason).join(", ")}`);
+  if (mapped.length > 0 && mapped[0].ok === false) {
+    console.log(`[Import] First row sample:`, JSON.stringify(imported.rows[0]));
+  }
   const valid = mapped
     .filter((m) => m.ok)
     .map((m) => (m as { ok: true; tx: unknown }).tx) as {
@@ -1369,6 +1608,7 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
       continue;
     }
     const id = crypto.randomUUID();
+    const nowIso = new Date().toISOString();
     list.push({
       id,
       accountId,
@@ -1382,6 +1622,8 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
       description: t.description,
       paymentMethod: t.paymentMethod,
       status: t.status,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     });
     if (t.orderId) existingSet.add(t.orderId);
     insertedCount++;
@@ -1396,6 +1638,340 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
     insertedCount,
     duplicateCount,
     invalidCount,
+  });
+});
+
+app.get("/api/sync/transactions/pull", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
+
+  const limitRaw = Number(req.query.limit ?? 100);
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(Math.floor(limitRaw), 1), 200) : 100;
+  const cursorParam = typeof req.query.cursor === "string" ? req.query.cursor : undefined;
+  const updatedAfterParam =
+    typeof req.query.updatedAfter === "string" ? req.query.updatedAfter : undefined;
+  const cursor =
+    decodeSyncCursor(cursorParam) ??
+    (updatedAfterParam && !Number.isNaN(new Date(updatedAfterParam).getTime())
+      ? { updatedAt: new Date(updatedAfterParam).toISOString(), id: "" }
+      : null);
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const where: Record<string, unknown> = { userId, accountId };
+      if (cursor) {
+        where.OR = [
+          { updatedAt: { gt: new Date(cursor.updatedAt) } },
+          { updatedAt: new Date(cursor.updatedAt), id: { gt: cursor.id } },
+        ];
+      }
+
+      const rows = await prisma.transaction.findMany({
+        where,
+        orderBy: [{ updatedAt: "asc" }, { id: "asc" }],
+        take: limit + 1,
+        select: {
+          id: true,
+          orderId: true,
+          date: true,
+          type: true,
+          amount: true,
+          category: true,
+          platform: true,
+          merchant: true,
+          description: true,
+          paymentMethod: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      const hasMore = rows.length > limit;
+      const items = rows.slice(0, limit).map((item) => ({
+        id: item.id,
+        orderId: item.orderId,
+        date: item.date.toISOString(),
+        type: item.type,
+        amount: String(item.amount),
+        category: item.category,
+        platform: item.platform,
+        merchant: item.merchant,
+        description: item.description,
+        paymentMethod: item.paymentMethod,
+        status: item.status,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+      }));
+
+      const lastItem = items.at(-1);
+      jsonOk(res, {
+        items,
+        limit,
+        hasMore,
+        nextCursor: hasMore && lastItem ? encodeSyncCursor({ updatedAt: lastItem.updatedAt, id: lastItem.id }) : null,
+        serverTime: new Date().toISOString(),
+      });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = (transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [])
+    .filter((item) => compareSyncRecordCursor(item, cursor))
+    .sort((a, b) => {
+      const left = new Date(a.updatedAt ?? a.date).getTime();
+      const right = new Date(b.updatedAt ?? b.date).getTime();
+      if (left !== right) return left - right;
+      return a.id.localeCompare(b.id);
+    });
+
+  const hasMore = list.length > limit;
+  const items = list.slice(0, limit);
+  const lastItem = items.at(-1);
+
+  jsonOk(res, {
+    items,
+    limit,
+    hasMore,
+    nextCursor:
+      hasMore && lastItem
+        ? encodeSyncCursor({ updatedAt: lastItem.updatedAt ?? lastItem.date, id: lastItem.id })
+        : null,
+    serverTime: new Date().toISOString(),
+  });
+});
+
+app.post("/api/sync/transactions/push", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
+  const rawItems = Array.isArray(req.body?.items) ? (req.body.items as SyncTransactionPayload[]) : [];
+
+  if (rawItems.length === 0) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "items 不能为空");
+    return;
+  }
+  if (rawItems.length > 100) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "单次最多同步 100 条交易");
+    return;
+  }
+
+  const prisma = getPrisma();
+  const results: Array<{
+    clientId: string | null;
+    id?: string;
+    orderId?: string | null;
+    action?: "created" | "updated";
+    error?: string;
+  }> = [];
+
+  if (prisma) {
+    try {
+      for (const rawItem of rawItems) {
+        const normalized = normalizeSyncTransactionPayload(rawItem);
+        if (!normalized.ok) {
+          results.push({ clientId: normalized.clientId, error: normalized.error });
+          continue;
+        }
+
+        const { clientId, value } = normalized;
+        let existingById:
+          | { id: string; orderId: string | null; userId: string; accountId: string }
+          | null = null;
+        let existingByOrderId:
+          | { id: string; orderId: string | null; userId: string; accountId: string }
+          | null = null;
+
+        if (value.id) {
+          existingById = await prisma.transaction.findUnique({
+            where: { id: value.id },
+            select: { id: true, orderId: true, userId: true, accountId: true },
+          });
+
+          if (!existingById || existingById.userId !== userId || existingById.accountId !== accountId) {
+            results.push({ clientId, id: value.id, orderId: value.orderId, error: "指定的交易不存在或不属于当前账户" });
+            continue;
+          }
+        }
+
+        if (value.orderId) {
+          existingByOrderId = await prisma.transaction.findUnique({
+            where: { orderId: value.orderId },
+            select: { id: true, orderId: true, userId: true, accountId: true },
+          });
+
+          if (
+            existingByOrderId &&
+            (existingByOrderId.userId !== userId || existingByOrderId.accountId !== accountId)
+          ) {
+            results.push({ clientId, id: value.id ?? undefined, orderId: value.orderId, error: "orderId 已被其他账户占用" });
+            continue;
+          }
+        }
+
+        const target = existingById ?? existingByOrderId;
+
+        if (target) {
+          const updated = await prisma.transaction.update({
+            where: { id: target.id },
+            data: {
+              orderId: value.orderId,
+              amount: value.amount,
+              type: value.type as never,
+              category: value.category,
+              platform: value.platform,
+              merchant: value.merchant,
+              date: value.date,
+              description: value.description,
+              paymentMethod: value.paymentMethod,
+              status: value.status,
+              updatedAt: new Date(),
+            },
+            select: { id: true, orderId: true },
+          });
+
+          results.push({
+            clientId,
+            id: updated.id,
+            orderId: updated.orderId,
+            action: "updated",
+          });
+          continue;
+        }
+
+        const created = await prisma.transaction.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId,
+            accountId,
+            orderId: value.orderId,
+            amount: value.amount,
+            type: value.type as never,
+            category: value.category,
+            platform: value.platform,
+            merchant: value.merchant,
+            date: value.date,
+            description: value.description,
+            paymentMethod: value.paymentMethod,
+            status: value.status,
+            updatedAt: new Date(),
+          },
+          select: { id: true, orderId: true },
+        });
+
+        results.push({
+          clientId,
+          id: created.id,
+          orderId: created.orderId,
+          action: "created",
+        });
+      }
+
+      jsonOk(res, {
+        summary: {
+          total: rawItems.length,
+          created: results.filter((item) => item.action === "created").length,
+          updated: results.filter((item) => item.action === "updated").length,
+          errors: results.filter((item) => item.error).length,
+        },
+        items: results,
+        serverTime: new Date().toISOString(),
+      });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
+
+  for (const rawItem of rawItems) {
+    const normalized = normalizeSyncTransactionPayload(rawItem);
+    if (!normalized.ok) {
+      results.push({ clientId: normalized.clientId, error: normalized.error });
+      continue;
+    }
+
+    const { clientId, value } = normalized;
+    const targetIndex = list.findIndex((item) => {
+      if (value.id && item.id === value.id) return true;
+      return Boolean(value.orderId && item.orderId === value.orderId);
+    });
+    const nowIso = new Date().toISOString();
+
+    if (targetIndex >= 0) {
+      const current = list[targetIndex];
+      list[targetIndex] = {
+        ...current,
+        orderId: value.orderId,
+        date: value.date.toISOString(),
+        type: value.type,
+        amount: value.amount,
+        category: value.category,
+        platform: value.platform,
+        merchant: value.merchant,
+        description: value.description,
+        paymentMethod: value.paymentMethod,
+        status: value.status,
+        updatedAt: nowIso,
+      };
+
+      results.push({
+        clientId,
+        id: list[targetIndex].id,
+        orderId: list[targetIndex].orderId,
+        action: "updated",
+      });
+      continue;
+    }
+
+    const id = value.id ?? crypto.randomUUID();
+    list.push({
+      id,
+      accountId,
+      orderId: value.orderId,
+      date: value.date.toISOString(),
+      type: value.type,
+      amount: value.amount,
+      category: value.category,
+      platform: value.platform,
+      merchant: value.merchant,
+      description: value.description,
+      paymentMethod: value.paymentMethod,
+      status: value.status,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    });
+
+    results.push({
+      clientId,
+      id,
+      orderId: value.orderId,
+      action: "created",
+    });
+  }
+
+  list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  transactionsByAccount.set(accountId, list);
+  transactionsByUser.set(userId, list);
+
+  jsonOk(res, {
+    summary: {
+      total: rawItems.length,
+      created: results.filter((item) => item.action === "created").length,
+      updated: results.filter((item) => item.action === "updated").length,
+      errors: results.filter((item) => item.error).length,
+    },
+    items: results,
+    serverTime: new Date().toISOString(),
   });
 });
 
@@ -1468,6 +2044,7 @@ app.post("/api/connect/generate", async (req, res) => {
 
       for (let i = 0; i < 20; i++) {
         const otpCode = generateOtpCode();
+        const otpHash = hashOtpCode(otpCode);
         try {
           // @ts-ignore - Prisma type mismatch
           const created = await prisma.appconnection.create({
@@ -1475,7 +2052,7 @@ app.post("/api/connect/generate", async (req, res) => {
               id: crypto.randomUUID(),
               userId,
               accountId,
-              otpCode,
+              otpCode: otpHash,
               expiresAt,
               ipAddress: getRequestIp(req),
             },
@@ -1521,7 +2098,11 @@ app.post("/api/connect/generate", async (req, res) => {
   }
 
   let otpCode = generateOtpCode();
-  while (connectionIdByOtp.has(otpCode)) otpCode = generateOtpCode();
+  let otpHash = hashOtpCode(otpCode);
+  while (connectionIdByOtp.has(otpHash)) {
+    otpCode = generateOtpCode();
+    otpHash = hashOtpCode(otpCode);
+  }
 
   const id = crypto.randomUUID();
   const now = Date.now();
@@ -1531,7 +2112,7 @@ app.post("/api/connect/generate", async (req, res) => {
     id,
     userId,
     accountId,
-    otpCode,
+    otpCode: otpHash,
     isVerified: false,
     createdAt: now,
     expiresAt,
@@ -1539,7 +2120,7 @@ app.post("/api/connect/generate", async (req, res) => {
   };
 
   connectionsById.set(id, conn);
-  connectionIdByOtp.set(otpCode, id);
+  connectionIdByOtp.set(otpHash, id);
 
   jsonOk(res, {
     connectionId: id,
@@ -1559,6 +2140,7 @@ app.post("/api/connect/verify", async (req, res) => {
 
   const { otpCode, deviceId, deviceName } = req.body ?? {};
   const normalizedOtpCode = typeof otpCode === "string" ? otpCode.trim() : "";
+  const hashedOtpCode = /^\d{6}$/.test(normalizedOtpCode) ? hashOtpCode(normalizedOtpCode) : "";
   const normalizedDeviceId = typeof deviceId === "string" ? deviceId.trim() : "";
   const normalizedDeviceName =
     typeof deviceName === "string" && deviceName.trim().length > 0 ? deviceName.trim() : null;
@@ -1573,7 +2155,7 @@ app.post("/api/connect/verify", async (req, res) => {
     try {
         const conn = await prisma.appconnection.findFirst({
           where: {
-            otpCode: normalizedOtpCode,
+            OR: [{ otpCode: hashedOtpCode }, { otpCode: normalizedOtpCode }],
             isVerified: false,
             expiresAt: { gt: new Date() },
           },
@@ -1619,7 +2201,7 @@ app.post("/api/connect/verify", async (req, res) => {
     }
   }
 
-  const id = connectionIdByOtp.get(normalizedOtpCode);
+  const id = connectionIdByOtp.get(hashedOtpCode) ?? connectionIdByOtp.get(normalizedOtpCode);
   if (!id) {
     jsonFail(res, 400, 20001, "OTP_NOT_FOUND", "验证码不存在");
     return;
@@ -3341,18 +3923,22 @@ app.put("/api/admin/users/:id/role", async (req, res) => {
   jsonFail(res, 404, 50000, "NOT_FOUND", "用户不存在");
 });
 
-const port = Number(process.env.PORT ?? 3004);
+const port = Number(process.env.PORT ?? 3006);
 
 app.get("/api/changelog", async (_req, res) => {
   const fs = await import("fs");
   const path = await import("path");
 
   // CHANGELOG.md 位于项目根目录
-  const changelogPath = path.join(process.cwd(), "CHANGELOG.md");
+  const changelogCandidates = [
+    path.join(process.cwd(), "CHANGELOG.md"),
+    path.resolve(process.cwd(), "..", "..", "CHANGELOG.md"),
+  ];
+  const changelogPath = changelogCandidates.find((candidate) => fs.existsSync(candidate));
 
   try {
-    if (!fs.existsSync(changelogPath)) {
-      console.warn("Changelog file not found:", changelogPath);
+    if (!changelogPath) {
+      console.warn("Changelog file not found. Candidates:", changelogCandidates);
       return jsonOk(res, { versions: [] });
     }
 

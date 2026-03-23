@@ -17,7 +17,7 @@
 1. 用户进入侧边栏的“连接”页面。
 2. 点击“生成连接码”。
 3. 服务端创建一条 `appconnection` 记录：
-   - `otpCode`: 6 位数字验证码
+   - `otpCode`: 6 位数字验证码对应的哈希值
    - `isVerified`: `false`
    - `expiresAt`: 当前时间 + 5 分钟
    - `userId`: 当前用户
@@ -38,6 +38,7 @@
    - OTP 是否未过期
    - OTP 是否未被使用
    - `deviceId` 是否存在
+   - 服务端会先对用户输入的 OTP 做同样的哈希，再与数据库中的 `otpCode` 字段比对
 5. 校验成功后，服务端写入：
    - `isVerified = true`
    - `verifiedAt`
@@ -65,7 +66,7 @@
 - `deviceId`: App 设备唯一标识，必填。
 - `deviceName`: 设备名称，可选。
 - `ipAddress`: 发起验证时的 IP。
-- `otpCode`: 6 位一次性验证码。
+- `otpCode`: 6 位一次性验证码的哈希值，不直接存明文。
 - `isVerified`: 是否已完成验证。
 - `expiresAt`: OTP 失效时间。
 - `verifiedAt`: 实际绑定完成时间。
@@ -104,6 +105,7 @@
 - 每次生成都会覆盖当前账户下未完成验证的旧 OTP。
 - `publicIp` 优先使用 `PUBLIC_IP`，未配置时退回到当前请求地址推导结果。
 - `connectionId` 用于 Web 端判断这次生成的验证码是否已被成功验证。
+- 明文 OTP 只在生成成功时返回给前端展示一次，数据库中只保存哈希值。
 
 ### 4.2 App 验证连接
 
@@ -226,6 +228,7 @@ JWT_SECRET="please-change-me"
 - 本地开发可将 `PUBLIC_IP` 配成局域网 IP，例如 `192.168.1.20`。
 - 生产环境可配置为公网 IP 或域名。
 - 若使用 Nginx 或网关代理，App 实际访问路径应与代理后的路由保持一致。
+- 若希望将 OTP 哈希密钥与 JWT 密钥分离，可额外配置 `OTP_HASH_SECRET`。
 
 ## 9. 本轮已完成内容
 
