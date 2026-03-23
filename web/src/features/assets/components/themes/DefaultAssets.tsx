@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
+"use client";
+
 import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Wallet,
-  CreditCard,
-  TrendingUp,
-  MoreHorizontal,
-  Plus,
+  ArrowDownRight,
+  ArrowUpRight,
   Coins,
+  CreditCard,
+  Layers3,
+  MoreHorizontal,
+  PiggyBank,
+  Plus,
+  Sparkles,
+  Wallet,
+  type LucideIcon,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,99 +23,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/shared/Skeletons";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { DelayedRender } from "@/components/shared/DelayedRender";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Skeleton } from "@/components/shared/Skeletons";
+import {
+  THEME_SURFACE_CLASS,
+  ThemeDarkPanel,
+  ThemeHero,
+  ThemeMetricCard,
+  ThemeSurface,
+  getThemeToneClass,
+} from "@/components/shared/theme-primitives";
+import { cn } from "@/lib/utils";
 import type { Asset } from "@/types";
+
 export type { Asset };
-
-// 银行 Logo SVG 组件
-function BankLogoSvg({ bankName, className }: { bankName: string; className?: string }) {
-  const lowerName = bankName.toLowerCase();
-
-  // 招商银行 CMB
-  if (lowerName.includes('招商') || lowerName.includes('cmb')) {
-    return <img src="/logo/CMB.svg" alt="招商银行" className={className} />;
-  }
-
-  // 工商银行 ICBC
-  if (lowerName.includes('工商') || lowerName.includes('icbc')) {
-    return <img src="/logo/ICBC.svg" alt="工商银行" className={className} />;
-  }
-
-  // 建设银行 CCB
-  if (lowerName.includes('建设') || lowerName.includes('ccb')) {
-    return <img src="/logo/CCB.svg" alt="建设银行" className={className} />;
-  }
-
-  // 农业银行 ABC
-  if (lowerName.includes('农业') || lowerName.includes('abc')) {
-    return <img src="/logo/ABC.svg" alt="农业银行" className={className} />;
-  }
-
-  // 中国银行 BOC
-  if (lowerName.includes('中国银行') || lowerName.includes('boc')) {
-    return <img src="/logo/BOC.svg" alt="中国银行" className={className} />;
-  }
-
-  // 交通银行 BCM
-  if (lowerName.includes('交通') || lowerName.includes('bcom') || lowerName.includes('bcm')) {
-    return <img src="/logo/BCM.svg" alt="交通银行" className={className} />;
-  }
-
-  // 浦发银行 SPD
-  if (lowerName.includes('浦发') || lowerName.includes('spd')) {
-    return <img src="/logo/SPD.svg" alt="浦发银行" className={className} />;
-  }
-
-  // 兴业银行 CIB
-  if (lowerName.includes('兴业') || lowerName.includes('cib')) {
-    return <img src="/logo/CIB.svg" alt="兴业银行" className={className} />;
-  }
-
-  // 民生银行 CMBC
-  if (lowerName.includes('民生') || lowerName.includes('cmbc')) {
-    return <img src="/logo/CMBC.svg" alt="民生银行" className={className} />;
-  }
-
-  // 平安银行 PAB
-  if (lowerName.includes('平安') || lowerName.includes('pab') || lowerName.includes('pingan')) {
-    return <img src="/logo/PAB.svg" alt="平安银行" className={className} />;
-  }
-
-  // 邮储银行 PSBC
-  if (lowerName.includes('邮储') || lowerName.includes('psbc')) {
-    return <img src="/logo/PSBC.svg" alt="邮储银行" className={className} />;
-  }
-
-  // 中信银行 CITIC
-  if (lowerName.includes('中信') || lowerName.includes('citic')) {
-    return <img src="/logo/CITIC.svg" alt="中信银行" className={className} />;
-  }
-
-  // 华夏银行 HXB
-  if (lowerName.includes('华夏') || lowerName.includes('hxb')) {
-    return <img src="/logo/HXB.svg" alt="华夏银行" className={className} />;
-  }
-
-  // 广发银行 GDB
-  if (lowerName.includes('广发') || lowerName.includes('gdb')) {
-    return <img src="/logo/GDB.svg" alt="广发银行" className={className} />;
-  }
-
-  // 默认银联图标
-  return <img src="/logo/UNION.svg" alt="银行卡" className={className} />;
-}
-
-// 支付宝 Logo
-function AlipayLogo({ className }: { className?: string }) {
-  return <img src="/logo/ZFB.svg" alt="支付宝" className={className} />;
-}
-
-// 微信 Logo
-function WechatLogo({ className }: { className?: string }) {
-  return <img src="/logo/WX.svg" alt="微信" className={className} />;
-}
 
 interface AssetsViewProps {
   items: Asset[];
@@ -129,80 +51,251 @@ interface AssetsViewProps {
   onDelete: (id: string) => void;
 }
 
-function getAssetIcon(type: string, name?: string) {
-  switch (type) {
-    case 'CASH': return <Coins className="h-5 w-5 text-blue-500" />;
-    case 'BANK_CARD':
-    case 'CREDIT_CARD': return name ? <BankLogoSvg bankName={name} className="h-5 w-5" /> : <CreditCard className="h-5 w-5 text-blue-500" />;
-    case 'ALIPAY': return <AlipayLogo className="h-5 w-5" />;
-    case 'WECHAT': return <WechatLogo className="h-5 w-5" />;
-    case 'INVESTMENT': return <TrendingUp className="h-5 w-5 text-purple-500" />;
-    default: return <Wallet className="h-5 w-5 text-gray-500" />;
+type Tone = "blue" | "emerald" | "violet" | "red" | "slate";
+
+const SURFACE_CLASS = THEME_SURFACE_CLASS;
+
+const LIQUID_TYPES = new Set(["CASH", "BANK_CARD", "ALIPAY", "WECHAT"]);
+
+function formatMoney(
+  value: number,
+  currency: string,
+  options: { compact?: boolean; maximumFractionDigits?: number } = {}
+) {
+  const { compact = false, maximumFractionDigits = 0 } = options;
+
+  try {
+    return new Intl.NumberFormat("zh-CN", {
+      style: "currency",
+      currency,
+      notation: compact ? "compact" : "standard",
+      minimumFractionDigits: 0,
+      maximumFractionDigits,
+    }).format(value);
+  } catch {
+    return `${currency} ${value.toLocaleString("zh-CN", { maximumFractionDigits })}`;
   }
 }
 
-// 获取资产类型对应的大图标装饰（右下角）
-function getAssetBigIcon(type: string, name: string) {
+function resolveAssetLogo(name: string, type: string): string | null {
+  const lowerName = name.toLowerCase();
+
+  if (type === "ALIPAY" || lowerName.includes("支付宝") || lowerName.includes("zfb")) return "/logo/ZFB.svg";
+  if (type === "WECHAT" || lowerName.includes("微信") || lowerName.includes("wx")) return "/logo/WX.svg";
+  if (lowerName.includes("招商") || lowerName.includes("cmb")) return "/logo/CMB.svg";
+  if (lowerName.includes("工商") || lowerName.includes("icbc")) return "/logo/ICBC.svg";
+  if (lowerName.includes("建设") || lowerName.includes("ccb")) return "/logo/CCB.svg";
+  if (lowerName.includes("农业") || lowerName.includes("abc")) return "/logo/ABC.svg";
+  if (lowerName.includes("中国银行") || lowerName.includes("boc")) return "/logo/BOC.svg";
+  if (lowerName.includes("交通") || lowerName.includes("bcom") || lowerName.includes("bcm")) return "/logo/BCM.svg";
+  if (lowerName.includes("浦发") || lowerName.includes("spd")) return "/logo/SPD.svg";
+  if (lowerName.includes("兴业") || lowerName.includes("cib")) return "/logo/CIB.svg";
+  if (lowerName.includes("民生") || lowerName.includes("cmbc")) return "/logo/CMBC.svg";
+  if (lowerName.includes("平安") || lowerName.includes("pab") || lowerName.includes("pingan")) return "/logo/PAB.svg";
+  if (lowerName.includes("邮储") || lowerName.includes("psbc")) return "/logo/PSBC.svg";
+  if (lowerName.includes("中信") || lowerName.includes("citic")) return "/logo/CITIC.svg";
+  if (lowerName.includes("华夏") || lowerName.includes("hxb")) return "/logo/HXB.svg";
+  if (lowerName.includes("广发") || lowerName.includes("gdb")) return "/logo/GDB.svg";
+  if (type === "BANK_CARD" || type === "CREDIT_CARD") return "/logo/UNION.svg";
+
+  return null;
+}
+
+function getTypeMeta(type: string): { label: string; tone: Tone; icon: LucideIcon } {
   switch (type) {
-    case 'CASH': return <Coins className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />;
-    case 'BANK_CARD':
-    case 'CREDIT_CARD': return <BankLogoSvg bankName={name} className="absolute right-0 bottom-0 w-20 sm:w-44 h-auto opacity-10" />;
-    case 'ALIPAY': return <AlipayLogo className="absolute right-0 bottom-0 w-20 sm:w-44 h-auto opacity-10" />;
-    case 'WECHAT': return <WechatLogo className="absolute right-0 bottom-0 w-20 sm:w-44 h-auto opacity-10" />;
-    case 'INVESTMENT': return <TrendingUp className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-purple-500/10" />;
-    default: return <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-gray-500/10" />;
+    case "CASH":
+      return { label: "现金", tone: "emerald", icon: Coins };
+    case "BANK_CARD":
+      return { label: "银行卡", tone: "blue", icon: Wallet };
+    case "CREDIT_CARD":
+      return { label: "信用卡", tone: "red", icon: CreditCard };
+    case "ALIPAY":
+      return { label: "支付宝", tone: "blue", icon: Wallet };
+    case "WECHAT":
+      return { label: "微信", tone: "emerald", icon: Wallet };
+    case "INVESTMENT":
+      return { label: "投资", tone: "violet", icon: PiggyBank };
+    default:
+      return { label: "其他", tone: "slate", icon: Layers3 };
   }
 }
 
-function getAssetLabel(type: string) {
-  const map: Record<string, string> = {
-    'CASH': '现金', 'BANK_CARD': '银行卡', 'CREDIT_CARD': '信用卡',
-    'ALIPAY': '支付宝', 'WECHAT': '微信', 'INVESTMENT': '投资', 'OTHER': '其他'
+function AssetAvatar({ item, className }: { item: Asset; className?: string }) {
+  const logo = resolveAssetLogo(item.name, item.type);
+  const meta = getTypeMeta(item.type);
+  const Icon = meta.icon;
+
+  return (
+    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/70 bg-white shadow-sm", className)}>
+      {logo ? (
+        <Image src={logo} alt={item.name} width={28} height={28} className="h-7 w-7 object-contain" />
+      ) : (
+        <Icon className="h-5 w-5 text-slate-500" />
+      )}
+    </div>
+  );
+}
+
+function AssetWatermark({ item }: { item: Asset }) {
+  const logo = resolveAssetLogo(item.name, item.type);
+  const meta = getTypeMeta(item.type);
+  const Icon = meta.icon;
+
+  if (logo) {
+    return (
+      <div className="pointer-events-none absolute bottom-0 right-0 translate-x-3 translate-y-2 opacity-[0.1] select-none">
+        <Image
+          src={logo}
+          alt=""
+          width={176}
+          height={176}
+          aria-hidden="true"
+          className="h-auto w-24 object-contain sm:w-36"
+        />
+      </div>
+    );
+  }
+
+  const iconToneClass: Record<Tone, string> = {
+    blue: "text-blue-300/20",
+    emerald: "text-emerald-300/20",
+    violet: "text-violet-300/20",
+    red: "text-red-300/20",
+    slate: "text-slate-300/25",
   };
-  return map[type] || type;
+
+  return (
+    <div className="pointer-events-none absolute bottom-0 right-0 translate-x-2 translate-y-2 select-none">
+      <Icon className={cn("h-20 w-20 sm:h-28 sm:w-28", iconToneClass[meta.tone])} aria-hidden="true" />
+    </div>
+  );
 }
 
-// 资产卡片组件
+function HeroStat({
+  label,
+  value,
+  tone,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  tone: Tone;
+  icon: LucideIcon;
+}) {
+  return (
+    <ThemeMetricCard label={label} value={value} tone={tone} icon={Icon} className="p-3.5 sm:p-4" />
+  );
+}
+
+function StructureRow({
+  label,
+  value,
+  count,
+  progress,
+  tone,
+}: {
+  label: string;
+  value: string;
+  count: number;
+  progress: number;
+  tone: Tone;
+}) {
+  return (
+    <div className="rounded-[20px] bg-transparent px-0 py-2.5 sm:bg-slate-50/90 sm:px-4 sm:py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-900">{label}</p>
+          <p className="mt-1 text-xs text-slate-500">{count} 个账户</p>
+        </div>
+        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium ring-1", getThemeToneClass(tone))}>{value}</span>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-300" style={{ width: `${Math.max(6, Math.min(100, progress))}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function AssetCard({
   item,
   displayCurrency,
+  portfolioBase,
   onEdit,
 }: {
   item: Asset;
   displayCurrency: string;
+  portfolioBase: number;
   onEdit: () => void;
 }) {
+  const meta = getTypeMeta(item.type);
+  const isLiability = item.estimatedValue < 0 || item.balance < 0;
+  const share = portfolioBase > 0 ? (Math.abs(item.estimatedValue) / portfolioBase) * 100 : 0;
+  const balanceText = formatMoney(item.balance, item.currency, {
+    maximumFractionDigits: Math.abs(item.balance) < 1000 ? 2 : 0,
+  });
+  const estimatedText =
+    item.currency !== displayCurrency
+      ? formatMoney(item.estimatedValue, displayCurrency, {
+          maximumFractionDigits: Math.abs(item.estimatedValue) < 1000 ? 2 : 0,
+        })
+      : null;
+
   return (
-    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-3 md:p-5 lg:p-7 relative overflow-hidden group flex flex-col justify-between h-full">
-      <div className="flex items-start justify-between mb-2 md:mb-3">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center overflow-hidden">
-            {getAssetIcon(item.type, item.name)}
+    <div className={cn(SURFACE_CLASS, "group p-4 sm:p-5")}>
+      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.12),transparent_70%)]" />
+      <AssetWatermark item={item} />
+      <div className="relative z-10 flex h-full flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <AssetAvatar item={item} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-950 sm:text-base">{item.name}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium ring-1", getThemeToneClass(meta.tone))}>{meta.label}</span>
+                  <span className="text-[11px] text-slate-400">{item.currency}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200/70 bg-white/80 text-slate-400 transition hover:border-slate-300 hover:text-slate-700"
+              aria-label={`编辑${item.name}`}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
           </div>
+
+          <div className="mt-5">
+            <p className={cn("text-2xl font-semibold tracking-tight sm:text-[2rem]", isLiability ? "text-red-600" : "text-slate-950")}>
+              {balanceText}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              {estimatedText ? <span className="text-slate-500">折合 {estimatedText}</span> : <span className="text-slate-500">按当前显示货币直接统计</span>}
+              <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">占比 {share.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
           <div>
-            <div className="font-medium whitespace-nowrap">{item.name}</div>
-            <div className="text-xs text-gray-500 whitespace-nowrap">{getAssetLabel(item.type)}</div>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Portfolio</p>
+            <p className="mt-1 text-sm font-medium text-slate-900">{isLiability ? "负债类账户" : "资产类账户"}</p>
+          </div>
+
+          <div
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+              isLiability ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+            )}
+          >
+            {isLiability ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+            {isLiability ? "需关注" : "表现稳定"}
           </div>
         </div>
-        <button
-          onClick={onEdit}
-          className="p-1.5 hover:bg-gray-100 rounded-md text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
       </div>
-
-      <div className="text-lg md:text-xl font-bold text-gray-900">
-        {item.currency === "CNY" ? "¥" : item.currency} {item.balance.toLocaleString()}
-      </div>
-      {item.currency !== displayCurrency && (
-        <div className="text-xs text-gray-500 mt-1">
-          ≈ {displayCurrency} {item.estimatedValue.toLocaleString()}
-        </div>
-      )}
-
-      {/* 右下角大图标装饰 */}
-      {getAssetBigIcon(item.type, item.name)}
     </div>
   );
 }
@@ -217,131 +310,232 @@ export function AssetsDefaultTheme({
   onOpenCreate,
   onOpenEdit,
 }: AssetsViewProps) {
-  // 首次加载时显示骨架的延迟状态
-  const [骨架显示, set骨架显示] = useState(true);
+  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => set骨架显示(false), 600);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
+    return () => window.clearTimeout(timer);
   }, []);
 
-  const 显示骨架 = loading || 骨架显示;
+  const isSkeletonVisible = loading || showInitialSkeleton;
 
-  if (显示骨架) {
+  const sortedItems = useMemo(
+    () => [...items].sort((a, b) => Math.abs(b.estimatedValue) - Math.abs(a.estimatedValue)),
+    [items]
+  );
+
+  const positiveAssets = useMemo(
+    () => items.filter((item) => item.estimatedValue > 0).reduce((sum, item) => sum + item.estimatedValue, 0),
+    [items]
+  );
+  const liabilities = useMemo(
+    () => Math.abs(items.filter((item) => item.estimatedValue < 0).reduce((sum, item) => sum + item.estimatedValue, 0)),
+    [items]
+  );
+  const liquidAssets = useMemo(
+    () =>
+      items
+        .filter((item) => item.estimatedValue > 0 && LIQUID_TYPES.has(item.type))
+        .reduce((sum, item) => sum + item.estimatedValue, 0),
+    [items]
+  );
+  const investmentAssets = useMemo(
+    () =>
+      items
+        .filter((item) => item.estimatedValue > 0 && item.type === "INVESTMENT")
+        .reduce((sum, item) => sum + item.estimatedValue, 0),
+    [items]
+  );
+  const accountCount = items.length;
+  const currencyCount = new Set(items.map((item) => item.currency)).size;
+  const largestAsset = sortedItems.find((item) => item.estimatedValue > 0) ?? sortedItems[0];
+  const structureBase = Math.max(positiveAssets + liabilities, 1);
+
+  if (isSkeletonVisible) {
     return (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-        <DelayedRender delay={0}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <Skeleton className="h-9 w-32 mb-2" />
-              <Skeleton className="h-5 w-48" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-[120px]" />
-              <Skeleton className="h-10 w-[100px]" />
-            </div>
-          </div>
-        </DelayedRender>
-        <DelayedRender delay={80}>
-          <Skeleton className="h-[120px] w-full rounded-2xl" />
-        </DelayedRender>
-        <DelayedRender delay={160}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="rounded-2xl bg-white border border-gray-100 shadow-sm p-3 md:p-5 lg:p-7 flex flex-col justify-between h-full min-h-[120px]">
-                <div className="flex items-start justify-between mb-2 md:mb-3">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                </div>
-                <Skeleton className="h-6 w-32" />
-              </div>
-            ))}
-          </div>
-        </DelayedRender>
+      <div className="mx-auto max-w-[1680px] space-y-4 sm:space-y-5">
+        <Skeleton className="h-[280px] rounded-[30px]" />
+        <div className="grid gap-3 md:grid-cols-4">
+          <Skeleton className="h-[120px] rounded-[24px]" />
+          <Skeleton className="h-[120px] rounded-[24px]" />
+          <Skeleton className="h-[120px] rounded-[24px]" />
+          <Skeleton className="h-[120px] rounded-[24px]" />
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.4fr)]">
+          <Skeleton className="h-[260px] rounded-[24px]" />
+          <Skeleton className="h-[260px] rounded-[24px]" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-[240px] rounded-[24px]" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
-      {/* Header */}
+    <div className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5">
       <DelayedRender delay={0}>
-        <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
-          <div className="flex items-center gap-3">
-            <Select value={displayCurrency} onValueChange={onCurrencyChange}>
-              <SelectTrigger className="w-[120px] bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {supportedCurrencies.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800">
-              <Plus className="h-4 w-4 mr-2" />
-              新增资产
-            </Button>
-          </div>
-        </div>
-      </DelayedRender>
+        <ThemeHero className="p-4 sm:p-6 lg:p-8">
+          <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.16),transparent_70%)] lg:block" />
+          <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-blue-200/35 blur-3xl sm:h-56 sm:w-56" />
 
-      {/* Total Assets Card */}
-      <DelayedRender delay={80} fallback={
-        <div className="rounded-2xl bg-gray-900 p-4 md:p-5 lg:p-7 text-white shadow-sm relative overflow-hidden min-h-[100px]">
-          <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-white/10" />
-        </div>
-      }>
-        <div className="rounded-2xl bg-black p-4 md:p-5 lg:p-7 text-white shadow-sm relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-              <Wallet className="h-4 w-4" />
-              总资产估值 ({displayCurrency})
-            </div>
-            <div className="text-3xl font-bold">
-              {displayCurrency === "CNY" ? "¥" : displayCurrency} {totalAssets.toLocaleString()}
-            </div>
-          </div>
-          <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-white/10" />
-        </div>
-      </DelayedRender>
+          <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.88fr)]">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-100">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  资产工作台
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white">
+                  <Layers3 className="h-3.5 w-3.5" />
+                  显示货币 {displayCurrency}
+                </span>
+              </div>
 
-      {/* Asset List */}
-      <DelayedRender delay={160} fallback={
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-2xl bg-white border border-gray-100 shadow-sm p-3 md:p-5 lg:p-7 flex flex-col justify-between h-full min-h-[120px]">
-              <div className="flex items-start justify-between mb-2 md:mb-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-4 w-24" />
+              <div className="space-y-3">
+                <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                  用统一视图查看账户余额、投资仓位和负债暴露，把你的钱分布在哪里一眼看清。
+                </p>
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">资产净值</p>
+                    <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+                      {formatMoney(totalAssets, displayCurrency, { maximumFractionDigits: Math.abs(totalAssets) < 1000 ? 2 : 0 })}
+                    </h1>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/82 px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-white/70">
+                    <Wallet className="h-4 w-4 text-blue-600" />
+                    共 {accountCount} 个账户，覆盖 {currencyCount} 种货币
+                  </div>
                 </div>
               </div>
-              <Skeleton className="h-6 w-32" />
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <HeroStat label="正向资产" value={formatMoney(positiveAssets, displayCurrency, { compact: true })} tone="emerald" icon={ArrowUpRight} />
+                <HeroStat label="投资资产" value={formatMoney(investmentAssets, displayCurrency, { compact: true })} tone="violet" icon={PiggyBank} />
+                <HeroStat label="负债敞口" value={formatMoney(liabilities, displayCurrency, { compact: true })} tone="red" icon={CreditCard} />
+              </div>
             </div>
-          ))}
-        </div>
-      }>
-        {items.length === 0 ? (
-          <EmptyState
-            icon={Wallet}
-            title="暂无资产记录"
-            description="开始添加你的第一笔资产吧"
-          />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((item) => (
-              <AssetCard
-                key={item.id}
-                item={item}
-                displayCurrency={displayCurrency}
-                onEdit={() => onOpenEdit(item)}
-              />
-            ))}
+
+            <ThemeDarkPanel className="p-5 shadow-none sm:shadow-[0_20px_60px_rgba(15,23,42,0.28)]">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Select value={displayCurrency} onValueChange={onCurrencyChange}>
+                  <SelectTrigger className="h-11 flex-1 rounded-2xl border-white/10 bg-white/6 text-white shadow-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedCurrencies.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  onClick={onOpenCreate}
+                  className="h-11 rounded-2xl bg-white text-slate-950 shadow-none hover:bg-blue-50"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增资产
+                </Button>
+              </div>
+
+              <div className="mt-5 rounded-[22px] border border-transparent bg-transparent p-0 sm:border-white/10 sm:bg-white/6 sm:p-4">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-blue-100/60">Largest Holding</p>
+                <div className="mt-3 flex items-center gap-3">
+                  {largestAsset ? <AssetAvatar item={largestAsset} className="border-white/12 bg-white/10" /> : null}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">{largestAsset?.name ?? "暂无资产"}</p>
+                    <p className="mt-1 truncate text-xs text-slate-300/75">
+                      {largestAsset ? formatMoney(largestAsset.estimatedValue, displayCurrency, { maximumFractionDigits: 0 }) : "录入后会自动显示重点账户"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                <StructureRow
+                  label="流动资产"
+                  value={formatMoney(liquidAssets, displayCurrency, { compact: true })}
+                  count={items.filter((item) => LIQUID_TYPES.has(item.type) && item.estimatedValue > 0).length}
+                  progress={(liquidAssets / structureBase) * 100}
+                  tone="blue"
+                />
+                <StructureRow
+                  label="投资资产"
+                  value={formatMoney(investmentAssets, displayCurrency, { compact: true })}
+                  count={items.filter((item) => item.type === "INVESTMENT" && item.estimatedValue > 0).length}
+                  progress={(investmentAssets / structureBase) * 100}
+                  tone="violet"
+                />
+                <StructureRow
+                  label="负债账户"
+                  value={formatMoney(liabilities, displayCurrency, { compact: true })}
+                  count={items.filter((item) => item.estimatedValue < 0).length}
+                  progress={(liabilities / structureBase) * 100}
+                  tone="red"
+                />
+              </div>
+            </ThemeDarkPanel>
           </div>
-        )}
+        </ThemeHero>
+      </DelayedRender>
+
+      <DelayedRender delay={60}>
+        <section className="grid gap-3 md:grid-cols-4">
+          <HeroStat label="账户数量" value={`${accountCount} 个`} tone="blue" icon={Layers3} />
+          <HeroStat label="现金类账户" value={`${items.filter((item) => LIQUID_TYPES.has(item.type)).length} 个`} tone="emerald" icon={Coins} />
+          <HeroStat label="投资仓位" value={`${items.filter((item) => item.type === "INVESTMENT").length} 个`} tone="violet" icon={PiggyBank} />
+          <HeroStat label="需关注账户" value={`${items.filter((item) => item.estimatedValue < 0).length} 个`} tone="red" icon={CreditCard} />
+        </section>
+      </DelayedRender>
+
+      <DelayedRender delay={120}>
+        <ThemeSurface className="p-4 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-slate-500">账户列表</p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-950">所有资产账户</h2>
+              <p className="mt-1 text-sm text-slate-500">按资产占比排序，优先显示对整体净值影响最大的账户。</p>
+            </div>
+
+            <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+              共 {accountCount} 项
+            </div>
+          </div>
+
+          <div className="mt-5">
+            {sortedItems.length === 0 ? (
+              <EmptyState
+                icon={Wallet}
+                title="还没有资产记录"
+                description="先创建一个账户，资产工作台就会开始汇总你的资金分布。"
+                className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50"
+                action={
+                  <Button onClick={onOpenCreate} className="rounded-2xl bg-slate-900 hover:bg-slate-800">
+                    <Plus className="mr-2 h-4 w-4" />
+                    新增资产
+                  </Button>
+                }
+              />
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {sortedItems.map((item) => (
+                  <AssetCard
+                    key={item.id}
+                    item={item}
+                    displayCurrency={displayCurrency}
+                    portfolioBase={Math.max(positiveAssets, 1)}
+                    onEdit={() => onOpenEdit(item)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </ThemeSurface>
       </DelayedRender>
     </div>
   );

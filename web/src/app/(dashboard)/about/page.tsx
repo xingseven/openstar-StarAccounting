@@ -1,29 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import {
-  History,
-  Download,
-  Users,
-  Globe,
+  ArrowRight,
+  CheckCircle,
   ChevronDown,
   ChevronUp,
   ExternalLink,
   Github,
-  Sparkles,
-  Zap,
+  HeartHandshake,
   Shield,
+  Sparkles,
   TrendingUp,
-  CheckCircle,
-  Clock,
-  ArrowRight,
+  Users,
+  Zap,
 } from "lucide-react";
-import { PageContainer } from "@/components/shared/PageContainer";
-import { CardContainer } from "@/components/shared/CardContainer";
+import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { DelayedRender } from "@/components/shared/DelayedRender";
-
-const DEFAULT_VERSION = "2.0.5";
+import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 
 type VersionItem = {
   version: string;
@@ -32,184 +27,6 @@ type VersionItem = {
   highlights: string[];
 };
 
-const fallbackVersionHistory: VersionItem[] = [
-  {
-    version: "2.0.5",
-    date: "2026-03-18",
-    type: "bugfix",
-    highlights: [
-      "彻底移除储蓄页不再需要的'存取记录'模块",
-      "优化开发环境 PWA 策略：在 dev 模式下禁用 Service Worker 以修复 HMR 缓存冲突",
-      "全局滚动条样式美化：定制 6px 细窄灰色滚动条，提升视觉精致感",
-      "关于页面版本历史改为'按需展开'模式，默认只显示最新版本",
-    ],
-  },
-  {
-    version: "2.0.4",
-    date: "2026-03-18",
-    type: "bugfix",
-    highlights: [
-      "修复储蓄页面布局高度跳变问题",
-      "移除 page.tsx 中多余的 dynamic loading 骨架屏占位",
-      "同步更新关于页面的版本硬编码数据至 v2.0.5",
-    ],
-  },
-  {
-    version: "1.8.36",
-    date: "2026-03-17",
-    type: "bugfix",
-    highlights: [
-      "为 DefaultSavings.tsx 添加 min-h-[101vh] 强制滚动条（注：现已优化为自适应）",
-      "解决了因异步内容加载导致滚动条突然出现引发的布局跳动",
-    ],
-  },
-  {
-    version: "1.8.34",
-    date: "2026-03-17",
-    type: "feature",
-    highlights: [
-      "消费页滚动性能极限优化：抽离 FixedStickyHeader 独立组件",
-      "通过'状态下沉'策略避免滚动时全量图表重绘，实现丝滑滚动",
-    ],
-  },
-  {
-    version: "1.8.31",
-    date: "2026-03-17",
-    type: "feature",
-    highlights: [
-      "消费页筛选交互重构：引入吸顶 (Sticky) 筛选栏",
-      "增加毛玻璃 (Backdrop Blur) 背景效果，提升 UI 质感",
-      "移除右下角悬浮筛选按钮，改为更自然的顶部固定交互",
-    ],
-  },
-  {
-    version: "1.8.27",
-    date: "2026-03-17",
-    type: "feature",
-    highlights: [
-      "消费页图表引擎全面升级：从 Recharts (SVG) 迁移至 ECharts (Canvas)",
-      "解决了万级数据点导致的页面滚动卡顿，渲染效率提升 5 倍以上",
-      "统一图表颜色体系为蓝色色阶（#1d4ed8 - #dbeafe）",
-    ],
-  },
-  {
-    version: "1.8.25",
-    date: "2026-03-17",
-    type: "feature",
-    highlights: [
-      "新增关于页面 (About Page)：展示项目愿景、版本记录与贡献者",
-      "侧边栏新增'关于'入口，完善系统信息展示维度",
-    ],
-  },
-  {
-    version: "1.8.24",
-    date: "2026-03-14",
-    type: "feature",
-    highlights: [
-      "桑基图升级：支持 4 级分支数据流（餐饮/购物/交通/生活等细分展示）",
-      "性能优化：对所有核心页面应用 next/dynamic 异步加载 (ssr: false)",
-      "解决了页面切换时由于同步加载大量图表导致的瞬间卡顿",
-    ],
-  },
-  {
-    version: "1.8.22",
-    date: "2026-03-14",
-    type: "feature",
-    highlights: [
-      "消费页移动端适配：图表支持横向滑动查看，圆环图线宽响应式调整",
-      "每日平均消费图表增强：新增周数选择（1-5周）与日历日期计算",
-    ],
-  },
-  {
-    version: "1.8.17",
-    date: "2026-03-14",
-    type: "feature",
-    highlights: [
-      "Savings 页面新增'取款'功能，支持从储蓄目标提取资金",
-      "存取记录自动化：打卡存款与取款均自动生成对应分类的交易记录",
-    ],
-  },
-  {
-    version: "1.8.0",
-    date: "2026-03-13",
-    type: "major",
-    highlights: [
-      "前端架构重构：迁移至 Feature-based 模块化架构",
-      "组件库深度集成：引入 shadcn/ui 与 Lucide Icons",
-      "数据可视化升级：初步集成 Recharts 图表库",
-    ],
-  },
-  {
-    version: "1.0.0",
-    date: "2026-03-13",
-    type: "major",
-    highlights: [
-      "后端架构初始化：Express + Prisma + MySQL 落地",
-      "核心模块发布：资产管理、预算控制、贷款追踪功能上线",
-    ],
-  },
-];
-
-const contributors = [
-  {
-    name: "OpenStar Team",
-    role: "核心开发",
-    contributions: ["架构设计", "核心功能开发", "性能优化"],
-    gradient: "from-blue-500 to-blue-700",
-  },
-  {
-    name: "Community",
-    role: "社区贡献者",
-    contributions: ["Bug 修复", "功能建议", "文档完善"],
-    gradient: "from-slate-500 to-gray-500",
-  },
-];
-
-const websites = [
-  {
-    name: "GitHub 仓库",
-    url: "https://github.com/openstar-project/Star Accounting",
-    icon: Github,
-    description: "查看源码、提交 Issue 或参与开发",
-    gradient: "from-gray-700 to-gray-900",
-  },
-  {
-    name: "问题反馈",
-    url: "https://github.com/openstar-project/Star Accounting/issues",
-    icon: Zap,
-    description: "报告 Bug 或提出功能建议",
-    gradient: "from-amber-500 to-orange-500",
-  },
-  {
-    name: "功能建议",
-    url: "https://github.com/openstar-project/Star Accounting/discussions",
-    icon: Sparkles,
-    description: "参与讨论，分享你的想法",
-    gradient: "from-emerald-500 to-teal-500",
-  },
-];
-
-const features = [
-  { icon: TrendingUp, label: "资产管理", color: "text-blue-500" },
-  { icon: Sparkles, label: "消费分析", color: "text-slate-500" },
-  { icon: Shield, label: "储蓄目标", color: "text-emerald-500" },
-  { icon: Zap, label: "贷款追踪", color: "text-amber-500" },
-];
-
-function VersionTypeBadge({ type }: { type: string }) {
-  const config: Record<string, { label: string; className: string }> = {
-    major: { label: "重大更新", className: "bg-slate-100 text-slate-700 border border-slate-200" },
-    feature: { label: "新功能", className: "bg-blue-100 text-blue-700 border border-blue-200" },
-    bugfix: { label: "Bug 修复", className: "bg-emerald-100 text-emerald-700 border border-emerald-200" },
-  };
-  const { label, className } = config[type] || config.feature;
-  return (
-    <span className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${className}`}>
-      {label}
-    </span>
-  );
-}
-
 type Contributor = {
   login: string;
   avatar_url: string;
@@ -217,44 +34,135 @@ type Contributor = {
   contributions: number;
 };
 
+const fallbackVersionHistory: VersionItem[] = [
+  {
+    version: "2.3.4",
+    date: "2026-03-23",
+    type: "feature",
+    highlights: [
+      "统一项目名称与展示文案。",
+      "关于页面接入动态版本记录。",
+      "继续完善导入、消费分析与系统配置能力。",
+    ],
+  },
+  {
+    version: "2.3.3",
+    date: "2026-03-22",
+    type: "bugfix",
+    highlights: [
+      "修复账单导入重复数据统计不准确的问题。",
+      "优化导入结果提示，避免出现 0/0/0 的误导信息。",
+    ],
+  },
+  {
+    version: "2.3.2",
+    date: "2026-03-21",
+    type: "feature",
+    highlights: [
+      "优化微信 / 支付宝账单导入识别逻辑。",
+      "统一导入分类和状态映射。",
+    ],
+  },
+];
+
+const DEFAULT_VERSION = fallbackVersionHistory[0]?.version ?? "2.3.4";
+
+const features = [
+  { icon: TrendingUp, label: "资产管理" },
+  { icon: Sparkles, label: "消费分析" },
+  { icon: Shield, label: "储蓄目标" },
+  { icon: Zap, label: "贷款追踪" },
+];
+
+const websites = [
+  {
+    name: "GitHub 仓库",
+    url: "https://github.com/openstar-project/StarAccounting",
+    icon: Github,
+    description: "查看源码、提交 Issue 或参与开发。",
+  },
+  {
+    name: "问题反馈",
+    url: "https://github.com/openstar-project/StarAccounting/issues",
+    icon: Zap,
+    description: "报告 Bug 或提出功能建议。",
+  },
+  {
+    name: "功能讨论",
+    url: "https://github.com/openstar-project/StarAccounting/discussions",
+    icon: Sparkles,
+    description: "参与产品和技术讨论，分享想法。",
+  },
+];
+
+const acknowledgements = [
+  {
+    title: "开源生态",
+    description: "感谢 Next.js、Prisma、Tailwind CSS、Lucide 等开源项目提供的底层能力。",
+    note: "后续可继续补充具体依赖、工具链或特别感谢的项目。",
+    icon: HeartHandshake,
+  },
+  {
+    title: "社区反馈",
+    description: "感谢提交 Issue、参与讨论、帮助测试和提供建议的用户与贡献者。",
+    note: "后续可补充具体成员、测试同学、合作伙伴或支持者名单。",
+    icon: Users,
+  },
+  {
+    title: "参考与启发",
+    description: "感谢设计灵感、产品参考、技术实践文章和示例项目带来的启发。",
+    note: "后续可添加博客、仓库、老师朋友或任何值得致谢的来源。",
+    icon: Sparkles,
+  },
+];
+
+function VersionTypeBadge({ type }: { type: string }) {
+  const config: Record<string, string> = {
+    major: "bg-slate-100 text-slate-700 border border-slate-200",
+    feature: "bg-blue-100 text-blue-700 border border-blue-200",
+    bugfix: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+  };
+
+  const labelMap: Record<string, string> = {
+    major: "重大更新",
+    feature: "新功能",
+    bugfix: "Bug 修复",
+  };
+
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${config[type] || config.feature}`}>
+      {labelMap[type] || type}
+    </span>
+  );
+}
+
 export default function AboutPage() {
   const [expandedVersions, setExpandedVersions] = useState<string[]>([DEFAULT_VERSION]);
   const [currentVersion, setCurrentVersion] = useState(DEFAULT_VERSION);
   const [githubContributors, setGithubContributors] = useState<Contributor[]>([]);
-  const [versionHistory, setVersionHistory] = useState<VersionItem[]>([]);
-  const [loadingVersions, setLoadingVersions] = useState(true);
+  const [versionHistory, setVersionHistory] = useState<VersionItem[]>(fallbackVersionHistory);
   const [showAllVersions, setShowAllVersions] = useState(false);
-
-  // 首次加载时显示骨架的延迟状态
-  const [骨架显示, set骨架显示] = useState(true);
+  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => set骨架显示(false), 600);
-    return () => clearTimeout(timer);
+    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    // 动态获取 CHANGELOG.md 解析后的版本数据
-    setLoadingVersions(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006'}/api/changelog`)
-      .then((res) => res.json())
+    apiFetch<{ versions: VersionItem[] }>("/api/changelog")
       .then((data) => {
-        // 兼容后端返回 data.versions 的结构
-        if (data.versions && data.versions.length > 0) {
-          setVersionHistory(data.versions);
-          const latestVersion = data.versions[0].version;
-          setCurrentVersion(latestVersion);
-          setExpandedVersions([latestVersion]);
-        } else {
-          setVersionHistory(fallbackVersionHistory);
+        const versions = data.versions ?? [];
+        if (versions.length > 0) {
+          setVersionHistory(versions);
+          setCurrentVersion(versions[0].version);
+          setExpandedVersions([versions[0].version]);
         }
       })
-      .catch((err) => {
-        console.error("Failed to fetch dynamic changelog:", err);
+      .catch(() => {
         setVersionHistory(fallbackVersionHistory);
-      })
-      .finally(() => {
-        setLoadingVersions(false);
+        setCurrentVersion(fallbackVersionHistory[0]?.version ?? DEFAULT_VERSION);
+        setExpandedVersions([fallbackVersionHistory[0]?.version ?? DEFAULT_VERSION]);
       });
   }, []);
 
@@ -266,315 +174,249 @@ export default function AboutPage() {
           setGithubContributors(data);
         }
       })
-      .catch((err) => console.error("Failed to fetch contributors:", err));
+      .catch(() => {});
   }, []);
-
-  const toggleVersion = (version: string) => {
-    setExpandedVersions((prev) =>
-      prev.includes(version)
-        ? prev.filter((v) => v !== version)
-        : [...prev, version]
-    );
-  };
-
-  const expandAllVersions = () => {
-    setExpandedVersions(versionHistory.map((v) => v.version));
-  };
-
-  const collapseAllVersions = () => {
-    setExpandedVersions([]);
-  };
 
   const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, 1);
 
-  if (骨架显示) {
+  if (showInitialSkeleton) {
     return (
-      <PageContainer className="pb-8">
-        <Skeleton className="h-[200px] w-full rounded-2xl mb-6" />
-        <div className="space-y-4">
-          <DelayedRender delay={0}>
-            <Skeleton className="h-[150px] w-full rounded-xl" />
-          </DelayedRender>
-          <DelayedRender delay={50}>
-            <Skeleton className="h-[150px] w-full rounded-xl" />
-          </DelayedRender>
+      <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+        <Skeleton className="h-[220px] rounded-[28px]" />
+        <div className="grid gap-3 md:grid-cols-4">
+          <Skeleton className="h-[110px] rounded-[20px]" />
+          <Skeleton className="h-[110px] rounded-[20px]" />
+          <Skeleton className="h-[110px] rounded-[20px]" />
+          <Skeleton className="h-[110px] rounded-[20px]" />
         </div>
-      </PageContainer>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[320px] rounded-[24px]" />
+          <Skeleton className="h-[320px] rounded-[24px]" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <PageContainer className="pb-8">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-slate-800 p-3 md:p-5 lg:p-7">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yIDItNCAyLTRzLTItMi00LTJjMCAwIDItMiAyLTRzLTItMi0yLTJoLThjMCAwIDIgMiAyIDRzLTIgMi0yIDJjMCAwIDIgMiAyIDRzLTIgMi0yIDJoOGMwIDAtMi0yLTItNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-20" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-4 md:mb-6">
-            <div className="h-12 w-12 md:h-20 md:w-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white font-bold text-2xl md:text-4xl shadow-xl border border-white/30">
-              X
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-4xl font-bold text-white">Star Accounting</h1>
-              <p className="text-blue-100 text-sm md:mt-1">OpenStar 开源个人财务管理面板</p>
-            </div>
+    <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+      <ThemeHero className="p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-700">
+            OS
           </div>
-          <div className="flex flex-wrap items-center gap-2 md:gap-3">
-            <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium border border-white/30">
-              <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
-              v{currentVersion}
-            </span>
-            <span className="inline-flex items-center gap-1.5 bg-white/10 text-white/80 px-3 py-1.5 rounded-full text-sm">
-              Next.js + Express + Prisma
-            </span>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">OpenStar Accounting</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              一个用于管理资产、消费、储蓄和贷款的个人财务工作台。
+            </p>
           </div>
         </div>
-      </div>
+      </ThemeHero>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {features.map((feature, idx) => (
-          <div
-            key={idx}
-            className="group relative overflow-hidden rounded-xl bg-white border border-gray-100 p-3 md:p-4 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className={`h-9 w-9 md:h-10 md:w-10 rounded-lg bg-gray-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${feature.color}`}>
-                <feature.icon className="h-4 w-4 md:h-5 md:w-5" />
-              </div>
-              <span className="text-xs md:text-sm font-medium text-gray-700">{feature.label}</span>
-            </div>
-          </div>
+      <div className="grid gap-3 md:grid-cols-4">
+        {features.map((feature) => (
+          <ThemeMetricCard
+            key={feature.label}
+            label={feature.label}
+            value="已接入"
+            detail="核心模块"
+            tone="blue"
+            icon={feature.icon}
+            className="p-4"
+            hideDetailOnMobile
+          />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <CardContainer>
-          <div className="flex items-center gap-3 mb-3 md:mb-4">
-            <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
-              <Download className="h-4 w-4 md:h-5 md:w-5 text-white" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ThemeSurface className="p-4 sm:p-6">
+          <ThemeSectionHeader
+            eyebrow="当前版本"
+            title={`v${currentVersion}`}
+            description={versionHistory[0]?.date || "版本信息同步中"}
+          />
+          <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm font-medium text-green-700">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              当前已是最新版本
             </div>
-            <div>
-              <h2 className="text-base md:text-lg font-semibold text-gray-900">当前版本</h2>
-              <p className="text-xs md:text-sm text-gray-500">v{currentVersion} · {versionHistory[0]?.date || '2026-03-17'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-sm text-green-700 font-medium">已是最新版本</span>
           </div>
           <a
-            href="https://github.com/openstar-project/Star Accounting/releases"
+            href="https://github.com/openstar-project/StarAccounting/releases"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 md:mt-4 flex items-center justify-center gap-2 w-full py-2.5 md:py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors group"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
           >
             <Github className="h-4 w-4" />
             查看所有版本
-            <ExternalLink className="h-3.5 w-3.5 opacity-60" />
+            <ExternalLink className="h-4 w-4" />
           </a>
-        </CardContainer>
+        </ThemeSurface>
 
-        <CardContainer>
-          <div className="flex items-center gap-3 mb-3 md:mb-4">
-            <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center">
-              <Users className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            </div>
-            <h2 className="text-base md:text-lg font-semibold text-gray-900">贡献者</h2>
-          </div>
-
-          <div className="mb-3 md:mb-4">
-            <h3 className="text-xs md:text-sm font-medium text-gray-700 mb-2 md:mb-3 flex items-center gap-2">
-              <Github className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              GitHub Contributors
-            </h3>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 md:gap-3">
-              {githubContributors.map((contributor) => (
+        <ThemeSurface className="p-4 sm:p-6">
+          <ThemeSectionHeader
+            eyebrow="贡献者"
+            title="社区与核心团队"
+            description="感谢所有让 OpenStar 持续进化的参与者。"
+          />
+          <div className="mt-5 grid grid-cols-4 gap-3 sm:grid-cols-6">
+            {githubContributors.length > 0 ? (
+              githubContributors.map((contributor) => (
                 <a
                   key={contributor.login}
                   href={contributor.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center gap-1 group"
-                  title={`${contributor.login} (${contributor.contributions} contributions)`}
+                  className="flex flex-col items-center gap-2"
                 >
-                  <div className="relative">
-                    <img
-                      src={contributor.avatar_url}
-                      alt={contributor.login}
-                      className="h-9 w-9 md:h-10 md:w-10 rounded-full border-2 border-white shadow-sm group-hover:scale-110 transition-transform"
-                    />
-                    <div className="absolute -bottom-1 -right-1 bg-blue-100 text-blue-700 text-[10px] px-1 rounded-full font-medium border border-white">
-                      {contributor.contributions}
-                    </div>
-                  </div>
-                  <span className="text-[9px] md:text-[10px] text-gray-500 truncate max-w-full group-hover:text-blue-600 transition-colors">
-                    {contributor.login}
-                  </span>
+                  <Image
+                    src={contributor.avatar_url}
+                    alt={contributor.login}
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="h-10 w-10 rounded-full border border-slate-200 object-cover"
+                  />
+                  <span className="max-w-full truncate text-[11px] text-slate-500">{contributor.login}</span>
                 </a>
-              ))}
-              {githubContributors.length === 0 && (
-                <div className="col-span-full text-center py-4 text-sm text-gray-400">
-                  Loading contributors...
-                </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <p className="col-span-full text-sm text-slate-400">Loading contributors...</p>
+            )}
           </div>
-
-          <div className="space-y-2 md:space-y-3 border-t border-gray-100 pt-3 md:pt-4">
-            <h3 className="text-xs md:text-sm font-medium text-gray-700 mb-2">Core Team</h3>
-            {contributors.map((contributor, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <div className={`h-9 w-9 md:h-10 md:w-10 rounded-full bg-gradient-to-br ${contributor.gradient} flex items-center justify-center text-white font-bold text-xs md:text-sm`}>
-                  {contributor.name.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-xs md:text-sm">{contributor.name}</p>
-                  <p className="text-[10px] md:text-xs text-gray-500">{contributor.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContainer>
+        </ThemeSurface>
       </div>
 
-      <CardContainer>
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-              <History className="h-4 w-4 md:h-5 md:w-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-base md:text-lg font-semibold text-gray-900">版本更新记录</h2>
-              <p className="text-xs md:text-sm text-gray-500 hidden sm:block">查看项目的版本迭代历史</p>
-            </div>
-          </div>
-          {showAllVersions && (
-            <div className="flex gap-2">
-              <button
-                onClick={expandAllVersions}
-                className="text-xs text-gray-500 hover:text-gray-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                展开全部
-              </button>
-              <button
-                onClick={collapseAllVersions}
-                className="text-xs text-gray-500 hover:text-gray-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                收起全部
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="space-y-1 md:space-y-3">
-          {visibleVersions.map((item, index) => (
+      <ThemeSurface className="p-4 sm:p-6">
+        <ThemeSectionHeader
+          eyebrow="版本更新记录"
+          title="项目演进历史"
+          description="查看近期版本迭代的核心变化。"
+          action={
+            showAllVersions ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setExpandedVersions(versionHistory.map((item) => item.version))}
+                  className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100"
+                >
+                  展开全部
+                </button>
+                <button
+                  onClick={() => setExpandedVersions([])}
+                  className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100"
+                >
+                  收起全部
+                </button>
+              </div>
+            ) : null
+          }
+        />
+
+        <div className="mt-5 space-y-3">
+          {visibleVersions.map((item) => (
             <div
               key={item.version}
-              className={`border rounded-xl overflow-hidden transition-all duration-200 ${
-                item.version === currentVersion
-                  ? "border-blue-200 bg-blue-50/50"
-                  : "border-gray-100 hover:border-gray-200"
+              className={`overflow-hidden rounded-xl border transition-all ${
+                item.version === currentVersion ? "border-blue-200 bg-blue-50/50" : "border-slate-200"
               }`}
             >
               <button
-                onClick={() => toggleVersion(item.version)}
-                className="w-full flex items-center justify-between p-3 md:p-4 hover:bg-gray-50/50 transition-colors"
+                onClick={() =>
+                  setExpandedVersions((prev) =>
+                    prev.includes(item.version)
+                      ? prev.filter((version) => version !== item.version)
+                      : [...prev, item.version]
+                  )
+                }
+                className="flex w-full items-center justify-between p-4 text-left"
               >
-                <div className="flex items-center gap-1.5 md:gap-3">
+                <div className="flex items-center gap-3">
                   <VersionTypeBadge type={item.type} />
-                  <span className="font-semibold text-gray-900 text-xs md:text-sm">v{item.version}</span>
-                  <span className="text-[10px] md:text-xs text-gray-400 hidden sm:inline">{item.date}</span>
-                  {item.version === currentVersion && (
-                    <span className="text-[10px] md:text-xs bg-blue-600 text-white px-1.5 md:px-2 py-0.5 rounded-full">
-                      当前
-                    </span>
-                  )}
+                  <span className="text-sm font-semibold text-slate-900">v{item.version}</span>
+                  <span className="text-xs text-slate-400">{item.date}</span>
                 </div>
                 {expandedVersions.includes(item.version) ? (
-                  <ChevronUp className="h-4 w-4 text-gray-400" />
+                  <ChevronUp className="h-4 w-4 text-slate-400" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
                 )}
               </button>
-              {expandedVersions.includes(item.version) && (
-                <div className="px-3 md:px-4 pb-3 md:pb-4 pt-0 border-t border-gray-100">
-                  <ul className="space-y-1.5 md:space-y-2 mt-3">
-                    {item.highlights.map((highlight, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 text-xs md:text-sm text-gray-600"
-                      >
-                        <CheckCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-500 mt-0.5 shrink-0" />
+
+              {expandedVersions.includes(item.version) ? (
+                <div className="border-t border-slate-200 px-4 pb-4 pt-3">
+                  <ul className="space-y-2">
+                    {item.highlights.map((highlight, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                         {highlight}
                       </li>
                     ))}
                   </ul>
                 </div>
-              )}
+              ) : null}
             </div>
           ))}
 
-          {!showAllVersions && versionHistory.length > 1 && (
+          {!showAllVersions && versionHistory.length > 1 ? (
             <button
               onClick={() => setShowAllVersions(true)}
-              className="w-full py-3 md:py-4 flex items-center justify-center gap-2 text-xs md:text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-xl border border-dashed border-blue-200 transition-all group"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 py-3 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
             >
               查看全部历史版本 ({versionHistory.length})
-              <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4 group-hover:translate-y-0.5 transition-transform" />
+              <ChevronDown className="h-4 w-4" />
             </button>
-          )}
-
-          {showAllVersions && (
-            <button
-              onClick={() => {
-                setShowAllVersions(false);
-                setExpandedVersions([DEFAULT_VERSION]);
-              }}
-              className="w-full py-2.5 md:py-3 flex items-center justify-center gap-2 text-xs md:text-sm text-gray-500 font-medium hover:bg-gray-50 rounded-xl transition-all"
-            >
-              收起历史记录
-              <ChevronUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
-            </button>
-          )}
+          ) : null}
         </div>
-      </CardContainer>
+      </ThemeSurface>
 
-      <CardContainer>
-        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-          <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Globe className="h-4 w-4 md:h-5 md:w-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-base md:text-lg font-semibold text-gray-900">相关链接</h2>
-            <p className="text-xs md:text-sm text-gray-500 hidden sm:block">访问以下网站获取更多信息</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
-          {websites.map((site, idx) => (
+      <ThemeSurface className="p-4 sm:p-6">
+        <ThemeSectionHeader
+          eyebrow="相关链接"
+          title="更多信息"
+          description="访问仓库、反馈问题或参与讨论。"
+        />
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {websites.map((site) => (
             <a
-              key={idx}
+              key={site.name}
               href={site.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative overflow-hidden rounded-xl border border-gray-100 p-4 md:p-5 hover:border-gray-200 hover:shadow-lg transition-all duration-300"
+              className="group rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
             >
-              <div className={`h-10 w-10 md:h-12 md:w-12 rounded-xl bg-gradient-to-br ${site.gradient} flex items-center justify-center mb-3 md:mb-4 group-hover:scale-110 transition-transform`}>
-                <site.icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                <site.icon className="h-5 w-5" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-sm md:text-base mb-1">{site.name}</h3>
-              <p className="text-[10px] md:text-xs text-gray-500 mb-2 md:mb-3">{site.description}</p>
-              <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
-                访问 <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              <h3 className="text-sm font-semibold text-slate-950">{site.name}</h3>
+              <p className="mt-1 text-xs text-slate-500">{site.description}</p>
+              <div className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-600">
+                访问
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </div>
             </a>
           ))}
         </div>
-      </CardContainer>
+      </ThemeSurface>
 
-      <div className="text-center py-4 md:py-6">
-        <p className="text-xs md:text-sm text-gray-400">openstar Star Accounting v{currentVersion}</p>
-        <p className="text-[10px] md:text-xs text-gray-300 mt-1">Made with ❤️ by OpenStar Team</p>
-      </div>
-    </PageContainer>
+      <ThemeSurface className="p-4 sm:p-6">
+        <ThemeSectionHeader
+          eyebrow="鸣谢"
+          title="致谢与感谢"
+          description="这里预留给后续补充致谢对象、参考来源、协作者和支持者。"
+        />
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {acknowledgements.map((item) => (
+            <div key={item.title} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
+                <item.icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-950">{item.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+              <p className="mt-3 text-xs leading-5 text-slate-400">{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </ThemeSurface>
+    </div>
   );
 }

@@ -1,75 +1,87 @@
 "use client";
 
-import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { CardContainer } from "@/components/shared/CardContainer";
-import { GridDecoration } from "@/components/shared/GridDecoration";
-import { User, Lock, CheckCircle, AlertCircle, Plus, Star, Users } from "lucide-react";
-import { Skeleton } from "@/components/shared/Skeletons";
+import { AlertCircle, CheckCircle, Lock, Plus, Star, User, Users } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { DelayedRender } from "@/components/shared/DelayedRender";
+import { Skeleton } from "@/components/shared/Skeletons";
+import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+
+type AccountItem = {
+  id: string;
+  name: string;
+  role: string | null;
+  createdAt: string;
+};
+
+type UserInfo = {
+  id: string;
+  email: string;
+  name: string | null;
+  defaultAccountId: string | null;
+};
 
 export default function SettingsPage() {
-  const [user, setUser] = useState<{ id: string; email: string; name: string | null; defaultAccountId: string | null } | null>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 首次加载时显示骨架的延迟状态
-  const [骨架显示, set骨架显示] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => set骨架显示(false), 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Profile Form
   const [name, setName] = useState("");
-
-  // Password Form
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-
-  // Account Form
-  const [accounts, setAccounts] = useState<Array<{ id: string; name: string; role: string | null; createdAt: string }>>([]);
   const [newAccountName, setNewAccountName] = useState("");
-  const [accountLoading, setAccountLoading] = useState(false);
 
   useEffect(() => {
-    apiFetch<{ user: any }>("/api/auth/me")
-      .then((res) => {
-        setUser(res.user);
-        setName(res.user.name || "");
-      })
-      .catch(() => {});
-
-    // 加载账户列表
-    apiFetch<{ items: any[] }>("/api/accounts")
-      .then((res) => setAccounts(res.items || []))
-      .catch(() => {});
+    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
+    return () => window.clearTimeout(timer);
   }, []);
 
-  async function handleUpdateProfile(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [meResponse, accountResponse] = await Promise.all([
+          apiFetch<{ user: UserInfo }>("/api/auth/me"),
+          apiFetch<{ items: AccountItem[] }>("/api/accounts"),
+        ]);
+
+        setUser(meResponse.user);
+        setName(meResponse.user.name || "");
+        setAccounts(accountResponse.items || []);
+      } catch (loadError) {
+        console.error(loadError);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  async function handleUpdateProfile(event: React.FormEvent) {
+    event.preventDefault();
     setLoading(true);
     setMessage(null);
     setError(null);
 
     try {
-      const res = await apiFetch<{ user: any }>("/api/settings/profile", {
+      const response = await apiFetch<{ user: UserInfo }>("/api/settings/profile", {
         method: "PUT",
         body: JSON.stringify({ name }),
       });
-      setUser(res.user);
+      setUser(response.user);
       setMessage("个人信息已更新");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "更新失败");
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "更新失败");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleUpdatePassword(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleUpdatePassword(event: React.FormEvent) {
+    event.preventDefault();
     setLoading(true);
     setMessage(null);
     setError(null);
@@ -79,18 +91,18 @@ export default function SettingsPage() {
         method: "PUT",
         body: JSON.stringify({ oldPassword, newPassword }),
       });
-      setMessage("密码已修改");
       setOldPassword("");
       setNewPassword("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "修改失败");
+      setMessage("密码已修改");
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "修改失败");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleCreateAccount(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleCreateAccount(event: React.FormEvent) {
+    event.preventDefault();
     if (!newAccountName.trim()) return;
 
     setAccountLoading(true);
@@ -98,21 +110,23 @@ export default function SettingsPage() {
     setError(null);
 
     try {
-      const res = await apiFetch<{ item: any }>("/api/accounts", {
+      const response = await apiFetch<{ item: AccountItem }>("/api/accounts", {
         method: "POST",
         body: JSON.stringify({ name: newAccountName.trim() }),
       });
-      setAccounts([res.item, ...accounts]);
+      setAccounts((current) => [response.item, ...current]);
       setNewAccountName("");
       setMessage("账户已创建");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "创建失败");
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "创建失败");
     } finally {
       setAccountLoading(false);
     }
   }
 
   async function handleSetDefaultAccount(accountId: string) {
+    if (!user) return;
+
     setAccountLoading(true);
     setMessage(null);
     setError(null);
@@ -121,232 +135,222 @@ export default function SettingsPage() {
       await apiFetch(`/api/accounts/${accountId}/default`, {
         method: "PUT",
       });
-      setUser({ ...user!, defaultAccountId: accountId });
+      setUser({ ...user, defaultAccountId: accountId });
       setMessage("默认账户已更新");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "设置失败");
+    } catch (defaultError) {
+      setError(defaultError instanceof Error ? defaultError.message : "设置失败");
     } finally {
       setAccountLoading(false);
     }
   }
 
-  if (骨架显示 || !user) return (
-    <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="space-y-4 md:space-y-6">
-        <DelayedRender delay={0}>
-          <Skeleton className="h-20 rounded-2xl" />
-        </DelayedRender>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <DelayedRender delay={50}>
-            <Skeleton className="h-64 rounded-2xl" />
-          </DelayedRender>
-          <DelayedRender delay={100}>
-            <Skeleton className="h-64 rounded-2xl" />
-          </DelayedRender>
-          <DelayedRender delay={150}>
-            <Skeleton className="h-64 rounded-2xl" />
-          </DelayedRender>
+  if (showInitialSkeleton || !user) {
+    return (
+      <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+        <Skeleton className="h-[180px] rounded-[28px]" />
+        <div className="grid gap-3 md:grid-cols-3">
+          <Skeleton className="h-[110px] rounded-[20px]" />
+          <Skeleton className="h-[110px] rounded-[20px]" />
+          <Skeleton className="h-[110px] rounded-[20px]" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Skeleton className="h-[320px] rounded-[24px]" />
+          <Skeleton className="h-[320px] rounded-[24px]" />
+          <Skeleton className="h-[320px] rounded-[24px]" />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  const defaultAccountName = accounts.find((account) => account.id === user.defaultAccountId)?.name || "未设置";
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-4 md:space-y-6 p-4 sm:p-6 lg:p-8">
-      {/* Page Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-4 sm:p-6 lg:p-8 text-white shadow-xl">
-        <GridDecoration mode="dark" />
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-white/10">
-            <User className="h-6 w-6 text-white" />
+    <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+      <DelayedRender delay={0}>
+        <ThemeHero className="p-4 sm:p-6 lg:p-8">
+          <div className="flex items-center gap-4">
+            <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+              <User className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">设置</h1>
+              <p className="mt-1 text-sm text-slate-500">管理你的账户资料、安全信息和默认工作账户。</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">设置</h1>
-            <p className="text-sm text-gray-300 mt-1">管理你的个人资料与安全设置</p>
+        </ThemeHero>
+      </DelayedRender>
+
+      <DelayedRender delay={60}>
+        <div className="grid gap-3 md:grid-cols-3">
+          <ThemeMetricCard label="账号邮箱" value={user.email} detail="当前登录身份" tone="blue" icon={User} className="p-4" hideDetailOnMobile />
+          <ThemeMetricCard label="默认账户" value={defaultAccountName} detail="当前工作账户" tone="green" icon={Star} className="p-4" hideDetailOnMobile />
+          <ThemeMetricCard label="账户数量" value={`${accounts.length} 个`} detail="可切换账户" tone="slate" icon={Users} className="p-4" hideDetailOnMobile />
+        </div>
+      </DelayedRender>
+
+      {message ? (
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm">
+          <div className="flex items-center gap-3 text-sm text-green-700">
+            <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
+            {message}
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* Alerts */}
-      {message && (
-        <div className="rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 shadow-sm flex items-center gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-          <p className="text-sm text-green-700">{message}</p>
+      {error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
+          <div className="flex items-center gap-3 text-sm text-red-700">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+            {error}
+          </div>
         </div>
-      )}
-      {error && (
-        <div className="rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-orange-50 p-4 shadow-sm flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
-      )}
+      ) : null}
 
-      {/* Settings Cards */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Settings */}
-        <CardContainer className="group/card flex flex-col gap-0 overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-sm text-foreground lg:p-8">
-          <div className="flex items-center gap-3 mb-4 sm:mb-6">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-              <User className="h-5 w-5" />
-            </div>
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">基本信息</h2>
-          </div>
+      <DelayedRender delay={120}>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <ThemeSurface className="p-4 sm:p-6 lg:p-8">
+            <ThemeSectionHeader eyebrow="基本信息" title="个人资料" description="更新你的显示名称和个人信息。" />
 
-          <form onSubmit={handleUpdateProfile} className="space-y-4 sm:space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-500">邮箱</label>
-              <input
-                disabled
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-2.5 sm:py-3 text-sm text-gray-500 cursor-not-allowed"
-                value={user.email}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-500">昵称</label>
-              <input
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="设置你的昵称"
-              />
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-xl bg-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 transition-colors shadow-sm"
-              >
-                保存修改
-              </button>
-            </div>
-          </form>
-          <GridDecoration mode="light" className="opacity-[0.015]" />
-        </CardContainer>
+            <form onSubmit={handleUpdateProfile} className="mt-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-500">邮箱</label>
+                <input
+                  disabled
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500"
+                  value={user.email}
+                />
+              </div>
 
-        {/* Password Settings */}
-        <CardContainer className="group/card flex flex-col gap-0 overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-sm text-foreground lg:p-8">
-          <div className="flex items-center gap-3 mb-4 sm:mb-6">
-            <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
-              <Lock className="h-5 w-5" />
-            </div>
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">安全设置</h2>
-          </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-500">显示名称</label>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="设置你的显示名称"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
 
-          <form onSubmit={handleUpdatePassword} className="space-y-4 sm:space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-500">当前密码</label>
-              <input
-                required
-                type="password"
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs sm:text-sm font-medium text-gray-500">新密码</label>
-              <input
-                required
-                type="password"
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="至少 6 位"
-              />
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-xl border border-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
-                修改密码
-              </button>
-            </div>
-          </form>
-          <GridDecoration mode="light" className="opacity-[0.015]" />
-        </CardContainer>
-
-        {/* Account Management */}
-        <CardContainer className="overflow-hidden rounded-2xl bg-white p-4 sm:p-6 lg:p-8">
-          <div className="flex items-center gap-3 mb-4 sm:mb-6">
-            <div className="p-2 rounded-lg bg-green-50 text-green-600">
-              <Users className="h-5 w-5" />
-            </div>
-            <h2 className="text-base sm:text-lg font-bold text-gray-900">账户管理</h2>
-          </div>
-
-          {/* Create Account Form */}
-          <form onSubmit={handleCreateAccount} className="flex items gap-3 mb-6">
-            <input
-              type="text"
-              placeholder="新账户名称"
-              value={newAccountName}
-              onChange={(e) => setNewAccountName(e.target.value)}
-              className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all"
-            />
-            <button
-              type="submit"
-              disabled={accountLoading || !newAccountName.trim()}
-              className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              创建账户
-            </button>
-          </form>
-
-          {/* Account List */}
-          <div className="space-y-3">
-            {accounts.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">暂无账户</p>
-            ) : (
-              accounts.map((account) => (
-                <div
-                  key={account.id}
-                  className={`flex items-center justify-between rounded-xl border p-4 transition-colors ${
-                    user?.defaultAccountId === account.id
-                      ? "border-green-200 bg-green-50/50"
-                      : "border-gray-100 hover:bg-gray-50"
-                  }`}
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      user?.defaultAccountId === account.id ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"
-                    }`}>
-                      {account.role === "OWNER" ? <Star className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{account.name}</p>
-                      <p className="text-xs text-gray-400">
-                        {account.role === "OWNER" ? "所有者" : account.role?.toLowerCase()}
-                      </p>
-                    </div>
-                  </div>
-                  {user?.defaultAccountId !== account.id && (
-                    <button
-                      onClick={() => handleSetDefaultAccount(account.id)}
-                      disabled={accountLoading}
-                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-green-600 hover:bg-green-100 disabled:opacity-50 transition-colors"
-                    >
-                      设为默认
-                    </button>
-                  )}
-                  {user?.defaultAccountId === account.id && (
-                    <span className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">
-                      默认账户
-                    </span>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </CardContainer>
-      </div>
+                  保存修改
+                </button>
+              </div>
+            </form>
+          </ThemeSurface>
 
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-400 py-4">
-        openstar Star Accounting v1.4.0
-      </div>
+          <ThemeSurface className="p-4 sm:p-6 lg:p-8">
+            <ThemeSectionHeader eyebrow="安全设置" title="修改密码" description="定期更新密码，保持账户安全。" />
+
+            <form onSubmit={handleUpdatePassword} className="mt-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-500">当前密码</label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+                  <input
+                    required
+                    type="password"
+                    value={oldPassword}
+                    onChange={(event) => setOldPassword(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-500">新密码</label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+                  <input
+                    required
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    placeholder="至少 6 位"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-xl border border-slate-900 px-5 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  修改密码
+                </button>
+              </div>
+            </form>
+          </ThemeSurface>
+
+          <ThemeSurface className="p-4 sm:p-6 lg:p-8">
+            <ThemeSectionHeader eyebrow="账户管理" title="切换与创建账户" description="管理你的多账户工作空间和默认账户。" />
+
+            <form onSubmit={handleCreateAccount} className="mt-5 flex gap-3">
+              <input
+                type="text"
+                placeholder="新账户名称"
+                value={newAccountName}
+                onChange={(event) => setNewAccountName(event.target.value)}
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              />
+              <button
+                type="submit"
+                disabled={accountLoading || !newAccountName.trim()}
+                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" />
+                创建
+              </button>
+            </form>
+
+            <div className="mt-5 space-y-3">
+              {accounts.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                  暂无账户
+                </p>
+              ) : (
+                accounts.map((account) => {
+                  const isDefault = user.defaultAccountId === account.id;
+
+                  return (
+                    <div
+                      key={account.id}
+                      className={cn(
+                        "flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition",
+                        isDefault ? "border-green-200 bg-green-50/70" : "border-slate-200 bg-slate-50/70"
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-slate-950">{account.name}</p>
+                        <p className="mt-1 text-xs text-slate-500">{account.role === "OWNER" ? "所有者" : account.role?.toLowerCase()}</p>
+                      </div>
+
+                      {isDefault ? (
+                        <span className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">默认账户</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefaultAccount(account.id)}
+                          disabled={accountLoading}
+                          className="rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                        >
+                          设为默认
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </ThemeSurface>
+        </div>
+      </DelayedRender>
     </div>
   );
 }

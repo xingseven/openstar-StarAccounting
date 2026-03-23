@@ -31,7 +31,7 @@ export const NAV_ITEMS: NavigationItem[] = [
   { href: "/consumption", label: "消费", icon: CreditCard, caption: "流水、分类与趋势" },
   { href: "/savings", label: "储蓄", icon: PiggyBank, caption: "目标进度与计划节奏" },
   { href: "/loans", label: "贷款", icon: Landmark, caption: "还款状态与负债管理" },
-  { href: "/connections", label: "连接", icon: LinkIcon, caption: "同步设备与外部接入" },
+  { href: "/connections", label: "连接", icon: LinkIcon, caption: "设备绑定与外部接入" },
   { href: "/ai", label: "AI", icon: Brain, caption: "智能分析与辅助记账" },
   { href: "/data", label: "数据", icon: Database, caption: "导入导出与数据维护" },
   { href: "/themes", label: "主题", icon: Palette, caption: "切换界面视觉风格" },

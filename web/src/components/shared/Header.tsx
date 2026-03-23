@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, LogOut, Settings2, User as UserIcon } from "lucide-react";
 import { clearAccessToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { MobileSidebar } from "@/components/shared/MobileSidebar";
 import { useUser } from "@/components/shared/UserContext";
 import { getPageMeta } from "@/components/shared/navigation";
 
@@ -38,15 +37,11 @@ export function Header() {
   }
 
   return (
-    <header className="rounded-[20px] border border-slate-200/80 bg-white shadow-sm">
-      <div className="flex min-h-[60px] items-center justify-between gap-3 px-3 py-2.5 sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <MobileSidebar />
-
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold tracking-tight text-slate-950 sm:text-xl">{pageMeta.title}</h1>
-            <p className="hidden truncate text-sm text-slate-500 md:block">{pageMeta.subtitle}</p>
-          </div>
+    <header className="rounded-[20px] border [background:var(--theme-header-bg)] [border-color:var(--theme-header-border)] [box-shadow:var(--theme-header-shadow)]">
+      <div className="flex min-h-[60px] items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        <div className="min-w-0">
+          <h1 className="truncate text-base font-semibold tracking-tight text-slate-950 sm:text-xl">{pageMeta.title}</h1>
+          <p className="hidden truncate text-sm text-slate-500 md:block">{pageMeta.subtitle}</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">

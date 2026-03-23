@@ -1,5 +1,49 @@
 # Changelog
 
+## 2.3.7 - 2026-03-23
+
+### Added
+
+- **新增全局主题系统与主题注册中心**:
+  - 新增 `web/src/themes/registry.ts`，集中定义主题元信息、主题预览以及全局 CSS 变量映射。
+  - 新增 `web/src/components/shared/theme-provider.tsx`，支持主题状态管理、本地持久化与全局变量注入。
+  - 新增 `web/src/components/shared/theme-primitives.tsx`，抽象 `ThemeHero`、`ThemeSurface`、`ThemeDarkPanel`、`ThemeSectionHeader`、`ThemeMetricCard` 等共享主题组件。
+  - 主题中心页 `web/src/app/(dashboard)/themes/page.tsx` 升级为真正的全局主题切换入口，支持切换后即时作用于整套 dashboard UI。
+
+### Modified
+
+- **Dashboard 区域页面主题统一接入共享框架**:
+  - 将总览、资产、消费、储蓄、贷款、设置、连接、数据管理、后台管理、关于、AI 配置页面接入共享主题 primitive，减少逐页硬编码样式。
+  - 将 `Header`、`Sidebar`、`Dashboard Layout` 统一改为读取主题变量，确保导航、内容壳层与页面卡片同步切换。
+  - 让新增主题时不再需要逐页重写 UI，只需补充主题配置即可完成全局切换。
+
+- **主题系统基础变量接入全局样式层**:
+  - 在 `web/src/app/globals.css` 中新增 `theme-*` 系列 CSS 变量默认值。
+  - `Providers` 接入 `ThemeProvider`，整个应用在根级别挂载主题上下文。
+
+### Modified Files
+
+1. `web/src/themes/registry.ts` - 主题注册中心与主题预设
+2. `web/src/components/shared/theme-provider.tsx` - 主题 Provider 与切换逻辑
+3. `web/src/components/shared/theme-primitives.tsx` - 共享主题基础组件
+4. `web/src/app/providers.tsx` - 接入全局主题上下文
+5. `web/src/app/globals.css` - 增加全局主题 CSS 变量
+6. `web/src/app/(dashboard)/themes/page.tsx` - 主题中心页改为全局切换入口
+7. `web/src/components/shared/Header.tsx` - 顶部导航接入主题变量
+8. `web/src/components/shared/Sidebar.tsx` - 侧边导航接入主题变量
+9. `web/src/app/(dashboard)/layout.tsx` - Dashboard 外壳接入主题变量
+10. `web/src/features/dashboard/components/themes/DefaultDashboard.tsx` - 总览页接入共享主题组件
+11. `web/src/features/assets/components/themes/DefaultAssets.tsx` - 资产页接入共享主题组件
+12. `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` - 消费页接入共享主题组件
+13. `web/src/features/savings/components/themes/DefaultSavings.tsx` - 储蓄页接入共享主题组件
+14. `web/src/features/loans/components/themes/DefaultLoans.tsx` - 贷款页接入共享主题组件
+15. `web/src/app/(dashboard)/settings/page.tsx` - 设置页主题统一
+16. `web/src/app/(dashboard)/data/page.tsx` - 数据管理页主题统一
+17. `web/src/app/(dashboard)/admin/page.tsx` - 后台管理页主题统一
+18. `web/src/app/(dashboard)/about/page.tsx` - 关于页主题统一与内容重构
+19. `web/src/app/(dashboard)/ai/page.tsx` - AI 模型配置页主题统一
+20. `web/src/app/(dashboard)/connections/page.tsx` - 连接页沿用共享主题体系
+
 ## 2.3.6 - 2026-03-23
 
 ### Added

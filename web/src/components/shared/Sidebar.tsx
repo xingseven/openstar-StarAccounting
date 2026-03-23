@@ -2,88 +2,77 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Wallet,
-  CreditCard,
-  PiggyBank,
-  Landmark,
-  Link as LinkIcon,
-  Settings,
-  Palette,
-  Info,
-  Brain,
-  Database
-} from "lucide-react";
-import { clsx } from "clsx";
+import { cn } from "@/lib/utils";
+import { NAV_ITEMS } from "@/components/shared/navigation";
 
-const items = [
-  { href: "/", label: "总览", icon: LayoutDashboard },
-  { href: "/assets", label: "资产", icon: Wallet },
-  { href: "/consumption", label: "消费", icon: CreditCard },
-  { href: "/savings", label: "储蓄", icon: PiggyBank },
-  { href: "/loans", label: "贷款", icon: Landmark },
-  { href: "/connections", label: "连接", icon: LinkIcon },
-  { href: "/ai", label: "大模型", icon: Brain },
-  { href: "/data", label: "数据管理", icon: Database },
-  { href: "/themes", label: "主题", icon: Palette },
-  { href: "/settings", label: "设置", icon: Settings },
-  { href: "/about", label: "关于", icon: Info },
-];
-
-export function SidebarContent() {
+export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="p-4 border-b flex items-center gap-2 shrink-0">
-        <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
-          X
+    <div className="flex h-full flex-col overflow-hidden [background:var(--theme-sidebar-bg)]">
+      <div className="border-b px-4 py-4 [border-color:var(--theme-sidebar-border)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-sm font-bold text-white">
+            OS
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold tracking-tight text-slate-950">OpenStar Accounting</p>
+            <p className="mt-0.5 truncate text-xs [color:var(--theme-sidebar-muted)]">Finance workspace</p>
+          </div>
         </div>
-        <span className="font-bold text-sm text-gray-900 tracking-tight truncate">Star Accounting</span>
       </div>
-      
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        <div className="text-xs font-semibold text-gray-400 mb-2 px-3 uppercase tracking-wider">
-          Menu
-        </div>
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={clsx(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Icon className={clsx("h-5 w-5 transition-colors", isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500")} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
 
-      <div className="p-4 border-t bg-gray-50/50 shrink-0">
-        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 p-4 text-white shadow-lg">
-          <h4 className="font-semibold text-sm mb-1">OpenStar</h4>
-          <p className="text-xs text-blue-100 opacity-90">
-            开源个人财务管理面板
-          </p>
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] [color:var(--theme-sidebar-muted)]">Navigation</div>
+
+        <div className="space-y-1.5">
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "group flex items-center gap-3 rounded-[18px] px-3 py-2.5 transition-all",
+                  isActive
+                    ? "[background:var(--theme-sidebar-active-bg)] [color:var(--theme-sidebar-active-text)] ring-1 ring-slate-200"
+                    : "[color:var(--theme-sidebar-text)] hover:[background:var(--theme-sidebar-hover-bg)] hover:[color:var(--theme-sidebar-hover-text)]"
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition-colors",
+                    isActive
+                      ? "[background:var(--theme-sidebar-icon-active-bg)] [color:var(--theme-sidebar-icon-active-text)]"
+                      : "[background:var(--theme-sidebar-icon-bg)] [color:var(--theme-sidebar-icon-text)] group-hover:bg-white group-hover:text-slate-600"
+                  )}
+                >
+                  <Icon className="h-4.5 w-4.5" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{item.label}</p>
+                    <p className={cn("mt-0.5 truncate text-xs", isActive ? "opacity-80" : "[color:var(--theme-sidebar-muted)] group-hover:text-slate-500")}>
+                      {item.caption}
+                    </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
-      </div>
+      </nav>
     </div>
   );
 }
 
 export function Sidebar() {
   return (
-    <aside className="w-64 hidden md:flex shrink-0 h-full p-3">
-      <div className="w-full h-full rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-100/80 bg-white overflow-hidden">
+    <aside className="hidden h-full w-72 shrink-0 md:flex">
+      <div className="h-full w-full overflow-hidden rounded-[24px] border [background:var(--theme-sidebar-bg)] [border-color:var(--theme-sidebar-border)] [box-shadow:var(--theme-shell-shadow)]">
         <SidebarContent />
       </div>
     </aside>

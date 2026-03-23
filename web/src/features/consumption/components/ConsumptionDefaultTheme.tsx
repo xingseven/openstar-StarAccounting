@@ -1,56 +1,60 @@
+"use client";
+
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AIAnalysisCard } from "./AIAnalysisCard";
-// Recharts imports removed for performance optimization
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { siAlipay, siWechat } from "simple-icons";
 import dynamic from "next/dynamic";
+import { siAlipay, siWechat } from "simple-icons";
 import {
-    ArrowDownIcon,
-    ArrowUpIcon,
-    Wallet,
-    ShoppingBag,
-    Search,
-    Sparkles,
-    Camera,
-    Loader2
-  } from "lucide-react";
-  import { Input } from "@/components/ui/input";
-  import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select";
-  import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-  } from "@/components/ui/popover";
-  import { Button } from "@/components/ui/button";
-  import { Filter } from "lucide-react";
-  import { Label } from "@/components/ui/label";
-  import { apiFetch } from "@/lib/api";
-  import {
-    BottomSheet,
-    BottomSheetContent,
-    BottomSheetHeader,
-    BottomSheetTitle,
-    BottomSheetFooter,
-  } from "@/components/ui/bottomsheet";
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  Camera,
+  CalendarDays,
+  CreditCard,
+  Filter,
+  Grid3X3,
+  Network,
+  Loader2,
+  Plus,
+  ReceiptText,
+  Search,
+  Sparkles,
+  Store,
+  TimerReset,
+} from "lucide-react";
+import { AIAnalysisCard } from "./AIAnalysisCard";
+import { apiFetch } from "@/lib/api";
+import { cn, formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetFooter,
+  BottomSheetHeader,
+  BottomSheetTitle,
+} from "@/components/ui/bottomsheet";
+import { DelayedRender } from "@/components/shared/DelayedRender";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Skeleton } from "@/components/shared/Skeletons";
+import {
+  THEME_SURFACE_CLASS,
+  ThemeDarkPanel,
+  ThemeHero,
+  ThemeMetricCard,
+} from "@/components/shared/theme-primitives";
 
-  const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
+const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 
-  // Types
-  export type ConsumptionData = {
-  // ... (Keep existing types)
+export type ConsumptionData = {
   summary: {
     totalExpense: number;
     totalIncome: number;
@@ -92,84 +96,237 @@ interface ConsumptionViewProps {
   data: ConsumptionData;
   dateRangeLabel: string;
   loading?: boolean;
+  usingMockData?: boolean;
 }
 
-// Helper component for skeleton loading
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("animate-pulse rounded-md bg-gray-100", className)} {...props} />;
+type ScanResponse = {
+  amount: number;
+  currency: string;
+  merchant?: string;
+  date?: string;
+  category?: string;
+  description?: string;
+  platform?: string;
+  tradeName?: string;
+  payeeFullName?: string;
+  product?: string;
+  tradeTime?: string;
+  paymentTime?: string;
+  remark?: string;
+};
+
+type TransactionFormState = {
+  amount: string;
+  merchant: string;
+  date: string;
+  category: string;
+  description: string;
+  platform: "alipay" | "wechat" | "unionpay";
+};
+
+const SURFACE_CLASS = THEME_SURFACE_CLASS;
+
+const PLATFORM_LABELS: Record<string, string> = {
+  wechat: "微信",
+  alipay: "支付宝",
+  cloudpay: "云闪付",
+  unionpay: "云闪付",
+  unknown: "其他",
+};
+
+const CATEGORY_OPTIONS = ["餐饮", "购物", "交通", "娱乐", "生活", "医疗", "教育", "其他"];
+
+function getPlatformLabel(platform: string) {
+  return PLATFORM_LABELS[platform] ?? platform;
 }
 
-function WechatOfficialIcon({ className }: { className?: string }) {
+function getPlatformBadge(platform: string) {
+  if (platform === "wechat") {
+    return (
+      <div className="rounded-2xl bg-[#07c160]/10 p-2.5 ring-1 ring-[#07c160]/10">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+          <path d={siWechat.path} fill={`#${siWechat.hex}`} transform="translate(2 2) scale(0.83)" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (platform === "alipay") {
+    return (
+      <div className="rounded-2xl bg-[#1677ff]/10 p-2.5 ring-1 ring-[#1677ff]/10">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+          <path d={siAlipay.path} fill={`#${siAlipay.hex}`} transform="translate(2 2) scale(0.83)" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`#${siWechat.hex}`} />
-      <path d={siWechat.path} fill="#FFFFFF" transform="translate(1.5 1.5) scale(0.875)" />
-    </svg>
+    <div className="rounded-2xl bg-slate-100 p-2.5 ring-1 ring-slate-200">
+      <CreditCard className="h-5 w-5 text-slate-600" />
+    </div>
   );
 }
 
-function AlipayOfficialIcon({ className }: { className?: string }) {
+function MetricCard({
+  label,
+  value,
+  detail,
+  accent,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  accent: "blue" | "green" | "red" | "slate";
+}) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <rect x="1.5" y="1.5" width="21" height="21" rx="6" fill={`#${siAlipay.hex}`} />
-      <path d={siAlipay.path} fill="#FFFFFF" transform="translate(1.5 1.5) scale(0.875)" />
-    </svg>
+    <ThemeMetricCard label={label} value={value} detail={detail} tone={accent} detailPosition="badge" className="p-3.5 sm:p-4" />
   );
 }
 
-import { DelayedRender } from "@/components/shared/DelayedRender";
+function MerchantRow({ merchant, total, fill }: { merchant: string; total: number; fill: string }) {
+  return (
+    <div className="rounded-[20px] bg-slate-50/90 px-3 py-3 sm:px-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: fill }} />
+          <span className="truncate text-sm font-medium text-slate-900">{merchant}</span>
+        </div>
+        <span className="text-sm font-semibold text-slate-950">{formatCurrency(total)}</span>
+      </div>
+    </div>
+  );
+}
 
-function AnimatedCalendarGrid({ calendar }: { calendar: ConsumptionData["calendar"] }) {
-  const [visibleCount, setVisibleCount] = useState(0);
-
-  useEffect(() => {
-    setVisibleCount(0);
-    const timer = window.setInterval(() => {
-      setVisibleCount((prev) => {
-        if (prev >= calendar.length) {
-          window.clearInterval(timer);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 35);
-
-    return () => window.clearInterval(timer);
-  }, [calendar]);
+function TransactionRow({
+  transaction,
+}: {
+  transaction: ConsumptionData["transactions"][number];
+}) {
+  const isIncome = transaction.type === "INCOME";
 
   return (
-    <div className="w-full h-[250px] flex flex-col justify-between">
-      <div className="grid grid-cols-7 gap-3 text-center text-sm mb-2">
-        {["日", "一", "二", "三", "四", "五", "六"].map(d => (
-          <div key={d} className="font-bold text-gray-500">{d}</div>
+    <div className="flex items-center justify-between gap-3 rounded-[20px] border border-slate-100 bg-slate-50/70 px-3 py-3 transition hover:border-slate-200 hover:bg-white sm:px-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+            isIncome ? "bg-emerald-50 text-emerald-600" : "bg-slate-900 text-white"
+          )}
+        >
+          {isIncome ? <ArrowDownRight className="h-4.5 w-4.5" /> : <ArrowUpRight className="h-4.5 w-4.5" />}
+        </div>
+
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-950">{transaction.merchant}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+            <span>{transaction.date}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium">{transaction.category}</span>
+            <span>{getPlatformLabel(transaction.platform)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-right">
+        <p className={cn("text-sm font-semibold sm:text-base", isIncome ? "text-emerald-600" : "text-slate-950")}>
+          {isIncome ? "+" : "-"}
+          {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
+        </p>
+        <p className="mt-1 text-[11px] text-slate-500">{isIncome ? "收入" : "支出"}</p>
+      </div>
+    </div>
+  );
+}
+
+function HeatmapGrid({ data }: { data: ConsumptionData["heatmap"] }) {
+  const maxValue = Math.max(...data.data.map((item) => item.total), 1);
+  const valueMap = new Map(data.data.map((item) => [`${item.platform}::${item.category}`, item.total]));
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[540px]">
+        <div className="grid grid-cols-[120px_repeat(4,minmax(88px,1fr))] gap-2">
+          <div />
+          {data.platforms.slice(0, 4).map((platform) => (
+            <div key={platform} className="px-2 py-1 text-center text-xs font-medium text-slate-500">
+              {platform}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-2 space-y-2">
+          {data.categories.slice(0, 6).map((category) => (
+            <div key={category} className="grid grid-cols-[120px_repeat(4,minmax(88px,1fr))] gap-2">
+              <div className="flex items-center text-sm font-medium text-slate-700">{category}</div>
+              {data.platforms.slice(0, 4).map((platform) => {
+                const value = valueMap.get(`${platform}::${category}`) ?? 0;
+                const opacity = value > 0 ? 0.12 + (value / maxValue) * 0.55 : 0.04;
+
+                return (
+                  <div
+                    key={`${platform}-${category}`}
+                    className="rounded-2xl border border-slate-100 px-2 py-3 text-center text-xs font-medium text-slate-700"
+                    style={{ backgroundColor: `rgba(37, 99, 235, ${opacity})` }}
+                  >
+                    {value > 0 ? formatCurrency(value, { compact: true }) : "—"}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarHeatGrid({ calendar }: { calendar: ConsumptionData["calendar"] }) {
+  const weekDays = ["日", "一", "二", "三", "四", "五", "六"];
+  const firstDate = calendar[0]?.date ? new Date(calendar[0].date) : null;
+  const leadingBlanks = firstDate ? firstDate.getDay() : 0;
+  const maxValue = Math.max(...calendar.map((item) => item.value), 1);
+
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-7 gap-2 text-center text-xs font-medium text-slate-400">
+        {weekDays.map((day) => (
+          <div key={day} className="py-1">
+            {day}
+          </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-2 flex-1">
-        <div /> <div /> <div /> <div />
-        {calendar.map((d, index) => {
-          const max = 2000;
-          const intensity = max > 0 ? d.value / max : 0;
-          const bg = intensity === 0 ? "bg-gray-50" :
-                     intensity < 0.2 ? "bg-blue-100" :
-                     intensity < 0.5 ? "bg-blue-300" :
-                     intensity < 0.8 ? "bg-blue-500" : "bg-blue-700";
-          const text = intensity > 0.5 ? "text-white" : "text-gray-700";
-          const visible = index < visibleCount;
-          
+
+      <div className="mt-2 grid grid-cols-7 gap-2">
+        {Array.from({ length: leadingBlanks }).map((_, index) => (
+          <div key={`blank-${index}`} className="h-12 rounded-2xl bg-transparent" />
+        ))}
+
+        {calendar.map((item) => {
+          const intensity = item.value / maxValue;
+          const background =
+            intensity === 0
+              ? "rgba(148,163,184,0.08)"
+              : intensity < 0.2
+                ? "rgba(191,219,254,0.7)"
+                : intensity < 0.45
+                  ? "rgba(96,165,250,0.65)"
+                  : intensity < 0.75
+                    ? "rgba(37,99,235,0.7)"
+                    : "rgba(30,64,175,0.82)";
+
           return (
             <div
-              key={d.date}
-              className={cn(
-                "h-8 rounded-md flex flex-col items-center justify-center p-0.5 shadow-sm transition-all duration-300",
-                visible ? "opacity-100 scale-100" : "opacity-0 scale-90",
-                visible ? "hover:scale-105" : "",
-                bg,
-                text
-              )}
-              title={`${d.date}: ¥${d.value}`}
+              key={item.date}
+              className="flex h-12 flex-col items-center justify-center rounded-2xl border border-white/70 text-center shadow-sm"
+              style={{ backgroundColor: background }}
+              title={`${item.date}: ${formatCurrency(item.value)}`}
             >
-              <span className="font-bold text-xs mb-0.5">{d.day}</span>
-              {d.value > 0 && <span className="text-[10px] font-medium leading-none scale-90">¥{Math.round(d.value)}</span>}
+              <span className={cn("text-xs font-semibold", intensity > 0.4 ? "text-white" : "text-slate-800")}>{item.day}</span>
+              {item.value > 0 ? (
+                <span className={cn("mt-0.5 text-[10px]", intensity > 0.4 ? "text-blue-50" : "text-slate-500")}>
+                  {formatCurrency(item.value, { compact: true })}
+                </span>
+              ) : null}
             </div>
           );
         })}
@@ -178,1537 +335,1140 @@ function AnimatedCalendarGrid({ calendar }: { calendar: ConsumptionData["calenda
   );
 }
 
-// 移除悬浮按钮组件
-// function FloatingFilterButton({ ... }) { ... }
-
-// 抽离独立的吸顶筛选栏组件，避免滚动时触发整个页面的重渲染
-function FixedStickyHeader({ 
-  searchTerm, 
-  setSearchTerm, 
-  platformFilter, 
-  setPlatformFilter, 
-  dateFilter, 
-  setDateFilter, 
-  dateRangeLabel 
-}: {
-  searchTerm: string;
-  setSearchTerm: (val: string) => void;
-  platformFilter: string;
-  setPlatformFilter: (val: string) => void;
-  dateFilter: string;
-  setDateFilter: (val: string) => void;
-  dateRangeLabel: string;
-}) {
-  const [isStickyVisible, setIsStickyVisible] = useState(false);
-
-  useEffect(() => {
-    const mainContent = document.querySelector('main');
-    if (!mainContent) return;
-
-    let ticking = false;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setIsStickyVisible(mainContent.scrollTop > 150);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    mainContent.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Check initial position
-    
-    return () => mainContent.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  return (
-    <div
-      className={cn(
-        "fixed top-0 z-[100] backdrop-blur-md transition-all duration-300 ease-in-out px-3 md:px-4 h-16",
-        isStickyVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
-      )}
-      style={{ willChange: 'transform, opacity' }}
-    >
-      <div className="w-full h-full flex flex-wrap items-center gap-2 sm:gap-4">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="search"
-            placeholder="搜索消费明细..."
-            className="pl-9 w-full bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        {/* Platform Filter */}
-        <Select value={platformFilter} onValueChange={setPlatformFilter}>
-          <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 text-xs sm:text-sm border-gray-200 transition-colors">
-            <SelectValue placeholder="所有平台" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">所有平台</SelectItem>
-            <SelectItem value="wechat">微信</SelectItem>
-            <SelectItem value="alipay">支付宝</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Date Filter */}
-        <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-md border border-gray-200">
-          <button 
-            onClick={() => setDateFilter("month")}
-            className={cn("px-3 py-1 text-xs rounded-md font-medium transition-all", dateFilter === "month" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
-          >
-            本月
-          </button>
-          <div className="h-3 w-px bg-gray-300 mx-0.5" />
-          <span className="text-xs text-gray-500 px-2">{dateRangeLabel}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function ConsumptionDefaultTheme({ data, dateRangeLabel, loading = false }: ConsumptionViewProps) {
-  // 首次加载时显示骨架的延迟状态
-  const [骨架显示, set骨架显示] = useState(true);
-
-  useEffect(() => {
-    // 骨架至少显示 600ms，让用户能看到骨架效果
-    const timer = setTimeout(() => set骨架显示(false), 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const 显示骨架 = loading || 骨架显示;
+export function ConsumptionDefaultTheme({
+  data,
+  dateRangeLabel,
+  loading = false,
+  usingMockData = false,
+}: ConsumptionViewProps) {
+  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("month");
-  const [isMobile, setIsMobile] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState<number>(1);
-  const mainContentRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // AI 记账相关状态
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [scanResult, setScanResult] = useState<{
-    amount: number;
-    currency: string;
-    merchant: string;
-    date: string;
-    category: string;
-    description: string;
-    billCategory?: string;
-    paymentMethod?: string;
-    paymentTime?: string;
-    payeeFullName?: string;
-    remark?: string;
-  } | null>(null);
-  const [editForm, setEditForm] = useState({
+  const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
+  const [formState, setFormState] = useState<TransactionFormState>({
     amount: "",
     merchant: "",
     date: "",
     category: "",
     description: "",
-    billCategory: "",
-    paymentMethod: "",
-    payeeFullName: "",
-    remark: "",
-    platform: "alipay" as "alipay" | "wechat" | "unionpay",
-    // 云闪付字段
-    tradeName: "",
-    cardNo: "",
-    tradeTime: "",
-    tradeCategory: "",
-    // 微信字段
-    product: "",
+    platform: "alipay",
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const incomeExpenseTotal = useMemo(
-    () => data.incomeExpense.reduce((acc, curr) => acc + curr.value, 0),
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const isSkeletonVisible = loading || showInitialSkeleton;
+  const balance = data.summary.totalIncome - data.summary.totalExpense;
+  const avgPerExpense = data.summary.expenseCount > 0 ? data.summary.totalExpense / data.summary.expenseCount : 0;
+  const topCategory = data.pareto[0];
+  const topMerchant = data.merchants[0];
+  const lowerSearchTerm = searchTerm.trim().toLowerCase();
+  const incomeExpenseTotal = data.incomeExpense.reduce((accumulator, item) => accumulator + item.value, 0);
+
+  const filteredTransactions = useMemo(
+    () =>
+      data.transactions.filter((transaction) => {
+        const matchesSearch =
+          lowerSearchTerm === "" ||
+          transaction.merchant.toLowerCase().includes(lowerSearchTerm) ||
+          transaction.category.toLowerCase().includes(lowerSearchTerm);
+        const matchesPlatform = platformFilter === "all" || transaction.platform === platformFilter;
+        return matchesSearch && matchesPlatform;
+      }),
+    [data.transactions, lowerSearchTerm, platformFilter]
+  );
+
+  const trendOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "axis",
+        formatter: (params: Array<{ axisValue: string; value: number }>) =>
+          `${params[0]?.axisValue ?? ""}<br/>消费 ${formatCurrency(Number(params[0]?.value ?? 0))}`,
+      },
+      grid: { left: 16, right: 12, top: 24, bottom: 24, containLabel: true },
+      xAxis: {
+        type: "category",
+        data: data.trend.map((item) => item.day.slice(5)),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      yAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      series: [
+        {
+          type: "line",
+          smooth: true,
+          symbol: "circle",
+          symbolSize: 7,
+          data: data.trend.map((item) => item.total),
+          lineStyle: { color: "#2563eb", width: 3 },
+          itemStyle: { color: "#2563eb", borderColor: "#ffffff", borderWidth: 2 },
+          areaStyle: {
+            color: {
+              type: "linear",
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: "rgba(37,99,235,0.24)" },
+                { offset: 1, color: "rgba(37,99,235,0.02)" },
+              ],
+            },
+          },
+        },
+      ],
+    }),
+    [data.trend]
+  );
+
+  const platformOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "item",
+        formatter: (params: { name: string; value: number }) => `${params.name}<br/>${formatCurrency(params.value)}`,
+      },
+      series: [
+        {
+          type: "pie",
+          radius: ["58%", "80%"],
+          center: ["50%", "50%"],
+          avoidLabelOverlap: true,
+          label: { show: false },
+          labelLine: { show: false },
+          itemStyle: { borderColor: "#ffffff", borderWidth: 5 },
+          data: data.platformDistribution,
+        },
+      ],
+    }),
+    [data.platformDistribution]
+  );
+
+  const incomeExpenseOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "item",
+        formatter: (params: { name: string; value: number }) => `${params.name}<br/>${formatCurrency(params.value)}`,
+      },
+      series: [
+        {
+          type: "pie",
+          radius: ["54%", "78%"],
+          center: ["50%", "50%"],
+          label: { show: false },
+          labelLine: { show: false },
+          itemStyle: { borderColor: "#ffffff", borderWidth: 5 },
+          data: data.incomeExpense,
+        },
+      ],
+    }),
     [data.incomeExpense]
   );
-  const lowerSearchTerm = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
-  const heatmapValueMap = useMemo(() => {
-    const map = new Map<string, number>();
-    data.heatmap.data.forEach((item) => {
-      map.set(`${item.platform}::${item.category}`, Number(item.total) || 0);
-    });
-    return map;
-  }, [data.heatmap.data]);
 
-  // AI 扫描处理函数 - 选择图片后只做预览
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const categoryOption = useMemo(
+    () => ({
+      grid: { left: 0, right: 8, top: 8, bottom: 0, containLabel: true },
+      xAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: { show: false },
+      },
+      yAxis: {
+        type: "category",
+        data: data.pareto.slice(0, 5).map((item) => item.name),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#64748b", fontSize: 12 },
+      },
+      series: [
+        {
+          type: "bar",
+          data: data.pareto.slice(0, 5).map((item) => ({
+            value: item.value,
+            itemStyle: {
+              color: item.fill,
+              borderRadius: [0, 12, 12, 0],
+            },
+          })),
+          label: {
+            show: true,
+            position: "right",
+            color: "#0f172a",
+            formatter: ({ value }: { value: number }) => formatCurrency(value, { compact: true }),
+          },
+          barWidth: 16,
+        },
+      ],
+    }),
+    [data.pareto]
+  );
+
+  const stackedCategories = useMemo(
+    () => Array.from(new Set(data.stackedBar.flatMap((item) => Object.keys(item).filter((key) => key !== "day")))).slice(0, 5),
+    [data.stackedBar]
+  );
+
+  const stackedBarOption = useMemo(
+    () => ({
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      legend: {
+        top: 0,
+        textStyle: { color: "#64748b", fontSize: 11 },
+        itemWidth: 10,
+        itemHeight: 10,
+      },
+      grid: { left: 8, right: 8, bottom: 8, top: 44, containLabel: true },
+      xAxis: {
+        type: "category",
+        data: data.stackedBar.map((item) => String(item.day).slice(5)),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      yAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      series: stackedCategories.map((category, index) => ({
+        name: category,
+        type: "bar",
+        stack: "total",
+        emphasis: { focus: "series" },
+        data: data.stackedBar.map((item) => Number(item[category] ?? 0)),
+        itemStyle: {
+          color: data.pareto[index]?.fill || ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"][index % 5],
+          borderRadius: index === stackedCategories.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0],
+        },
+      })),
+    }),
+    [data.pareto, data.stackedBar, stackedCategories]
+  );
+
+  const weekdayOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (params: Array<{ axisValue: string; value: number }>) =>
+          `${params[0]?.axisValue ?? ""}<br/>日均 ${formatCurrency(Number(params[0]?.value ?? 0))}`,
+      },
+      grid: { left: 8, right: 8, bottom: 8, top: 20, containLabel: true },
+      xAxis: {
+        type: "category",
+        data: data.weekdayWeekend.map((item) => item.name),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      yAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      series: [
+        {
+          type: "bar",
+          data: data.weekdayWeekend.map((item) => ({
+            value: item.value,
+            itemStyle: {
+              color: item.fill,
+              borderRadius: [8, 8, 0, 0],
+            },
+          })),
+          barWidth: "54%",
+          label: {
+            show: true,
+            position: "top",
+            color: "#475569",
+            formatter: ({ value }: { value: number }) => formatCurrency(value, { compact: true }),
+          },
+        },
+      ],
+    }),
+    [data.weekdayWeekend]
+  );
+
+  const sankeyOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "item",
+        formatter: (params: { dataType: string; name: string; value: number }) =>
+          params.dataType === "edge" ? `${params.name}<br/>${formatCurrency(params.value)}` : params.name,
+      },
+      series: [
+        {
+          type: "sankey",
+          left: 8,
+          right: 12,
+          top: 12,
+          bottom: 12,
+          draggable: true,
+          emphasis: { focus: "adjacency" },
+          nodeGap: 14,
+          lineStyle: {
+            color: "source",
+            curveness: 0.5,
+            opacity: 0.28,
+          },
+          label: {
+            color: "#334155",
+            fontSize: 11,
+          },
+          data: data.sankey.nodes.map((node, index) => ({
+            ...node,
+            itemStyle: {
+              color: ["#16a34a", "#0f766e", "#1677ff", "#2563eb", "#22c55e", "#60a5fa", "#f59e0b", "#ef4444"][index % 8],
+            },
+          })),
+          links: data.sankey.links.map((link) => ({
+            ...link,
+            source: data.sankey.nodes[link.source]?.name ?? "",
+            target: data.sankey.nodes[link.target]?.name ?? "",
+          })),
+        },
+      ],
+    }),
+    [data.sankey]
+  );
+
+  const scatterOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "item",
+        formatter: (params: { value: [number, number, string] }) =>
+          `${params.value[0].toFixed(1)} 点<br/>${formatCurrency(params.value[1])}<br/>${params.value[2]}`,
+      },
+      grid: { left: 8, right: 8, bottom: 8, top: 20, containLabel: true },
+      xAxis: {
+        type: "value",
+        min: 0,
+        max: 24,
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      yAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      series: [
+        {
+          type: "scatter",
+          data: data.scatter.map((item) => [item.hour, item.amount, item.category]),
+          symbolSize: (value: [number, number]) => Math.max(8, Math.min(22, value[1] / 60)),
+          itemStyle: {
+            color: "rgba(37,99,235,0.68)",
+            borderColor: "#ffffff",
+            borderWidth: 1,
+          },
+        },
+      ],
+    }),
+    [data.scatter]
+  );
+
+  const histogramOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+      },
+      grid: { left: 8, right: 8, bottom: 8, top: 20, containLabel: true },
+      xAxis: {
+        type: "category",
+        data: data.histogram.map((item) => item.range),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      yAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: { color: "#94a3b8", fontSize: 11 },
+      },
+      series: [
+        {
+          type: "bar",
+          data: data.histogram.map((item) => ({
+            value: item.count,
+            itemStyle: {
+              color: item.fill,
+              borderRadius: [8, 8, 0, 0],
+            },
+          })),
+          barWidth: "60%",
+          label: { show: true, position: "top", color: "#475569" },
+        },
+      ],
+    }),
+    [data.histogram]
+  );
+
+  function openAIDialog() {
+    setIsAIDialogOpen(true);
+    setSelectedImage(null);
+    setSelectedFile(null);
+    setScanResult(null);
+    setFormState({
+      amount: "",
+      merchant: "",
+      date: "",
+      category: "",
+      description: "",
+      platform: "alipay",
+    });
+  }
+
+  function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    // 存储文件
     setSelectedFile(file);
-
-    // 预览图片
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setSelectedImage(event.target?.result as string);
-      setScanResult(null); // 清空之前的结果
+    reader.onload = (loadEvent) => {
+      setSelectedImage(loadEvent.target?.result as string);
+      setScanResult(null);
     };
     reader.readAsDataURL(file);
-  };
+  }
 
-  // 点击识别按钮后执行 AI 扫描
-  const handleAIScan = async () => {
-    if (!selectedImage || !selectedFile) return;
+  async function handleAIScan() {
+    if (!selectedFile) return;
 
-    // 开始扫描
     setIsScanning(true);
     setScanResult(null);
 
     try {
       const formData = new FormData();
       formData.append("image", selectedFile);
-      formData.append("platform", editForm.platform || "alipay");
+      formData.append("platform", formState.platform);
 
-      const response = await apiFetch<{
-        amount: number;
-        currency: string;
-        merchant: string;
-        date: string;
-        category: string;
-        description: string;
-        platform: string;
-        tradeName?: string;
-        cardNo?: string;
-        tradeTime?: string;
-        tradeCategory?: string;
-        product?: string;
-        payeeFullName?: string;
-        billCategory?: string;
-        paymentMethod?: string;
-        paymentTime?: string;
-        remark?: string;
-      }>("/api/ai/scan-receipt", {
+      const response = await apiFetch<ScanResponse>("/api/ai/scan-receipt", {
         method: "POST",
         body: formData,
       });
 
-      // 格式化时间
-      let formattedDate = response.date;
-      const timeToFormat = response.tradeTime || response.paymentTime;
-      if (timeToFormat) {
-        formattedDate = timeToFormat.replace(' ', 'T');
-      }
+      const detectedDate = response.tradeTime || response.paymentTime || response.date || "";
+      const merchant = response.merchant || response.tradeName || response.payeeFullName || response.product || "";
+      const description = [response.description, response.remark].filter(Boolean).join(" | ");
 
       setScanResult(response);
-      setEditForm(prev => ({
-        amount: String(response.amount),
-        merchant: response.merchant || prev.merchant,
-        date: formattedDate,
-        category: response.category || prev.category,
-        description: response.description || prev.description,
-        billCategory: response.billCategory || "",
-        paymentMethod: response.paymentMethod || "",
-        payeeFullName: response.payeeFullName || "",
-        remark: response.remark || "",
-        platform: response.platform as "alipay" | "wechat" | "unionpay" || prev.platform,
-        // 云闪付字段
-        tradeName: response.tradeName || "",
-        cardNo: response.cardNo || "",
-        tradeTime: response.tradeTime || "",
-        tradeCategory: response.tradeCategory || "",
-        // 微信字段
-        product: response.product || "",
+      setFormState((current) => ({
+        ...current,
+        amount: String(response.amount ?? ""),
+        merchant,
+        date: detectedDate.includes("T") ? detectedDate : detectedDate.replace(" ", "T"),
+        category: response.category || current.category,
+        description,
+        platform: (response.platform as TransactionFormState["platform"]) || current.platform,
       }));
     } catch (error) {
-      console.error("AI scan error:", error);
-      // 提供更友好的错误提示
       const errorMessage = error instanceof Error ? error.message : "AI 识别失败，请重试";
-      if (errorMessage.includes("API Key") || errorMessage.includes("Missing API Key")) {
-        alert("请先在「侧边栏 > 大模型」页面配置 API Key 后再使用 AI 记账功能");
-      } else if (errorMessage.includes("请先登录") || errorMessage.includes("TOKEN")) {
-        alert("请先登录后再使用 AI 记账功能");
-      } else {
-        alert(errorMessage || "AI 识别失败，请重试");
-      }
+      alert(errorMessage);
     } finally {
       setIsScanning(false);
     }
-  };
+  }
 
-  const handleAIConfirm = async () => {
-    if (!editForm.amount || !editForm.merchant) {
+  async function handleAIConfirm() {
+    if (!formState.amount || !formState.merchant) {
       alert("请填写金额和商户");
       return;
     }
 
     try {
-      // 构建要保存的描述信息，如果有额外信息则拼接到 description 中
-      let finalDescription = editForm.description || "";
-      const extraInfos = [];
-      if (editForm.billCategory) extraInfos.push(`账单分类: ${editForm.billCategory}`);
-      if (editForm.paymentMethod) extraInfos.push(`付款方式: ${editForm.paymentMethod}`);
-      if (editForm.payeeFullName) extraInfos.push(`收款方: ${editForm.payeeFullName}`);
-      if (editForm.remark) extraInfos.push(`备注: ${editForm.remark}`);
-      
-      if (extraInfos.length > 0) {
-        finalDescription += (finalDescription ? " | " : "") + extraInfos.join(", ");
-      }
-
-      // 后端 API 需要的 date 格式通常是 YYYY-MM-DD 或 ISO 字符串，这里保留原有的截取逻辑
-      // 或者如果有需要，可以将精确到秒的时间传过去
-      const apiDate = editForm.date.split('T')[0];
-
       await apiFetch("/api/transactions", {
         method: "POST",
         body: JSON.stringify({
-          amount: parseFloat(editForm.amount),
+          amount: parseFloat(formState.amount),
           type: "EXPENSE",
-          category: editForm.category || "其他",
-          platform: editForm.platform || "alipay",
-          merchant: editForm.merchant,
-          description: finalDescription,
-          date: apiDate
+          category: formState.category || "其他",
+          platform: formState.platform,
+          merchant: formState.merchant,
+          description: formState.description,
+          date: formState.date ? formState.date.split("T")[0] : new Date().toISOString().split("T")[0],
         }),
       });
 
-      alert("记账成功！");
+      alert("记账成功");
       setIsAIDialogOpen(false);
-      setSelectedImage(null);
-      setSelectedFile(null);
-      setScanResult(null);
-      // 可以在这里触发页面刷新
       window.location.reload();
     } catch (error) {
-      console.error("Save transaction error:", error);
+      console.error(error);
       alert("保存失败，请重试");
     }
-  };
+  }
 
-  const openAIDialog = () => {
-    setIsAIDialogOpen(true);
-    setSelectedImage(null);
-    setSelectedFile(null);
-    setScanResult(null);
-  };
-
-  const filteredTransactions = useMemo(() => data.transactions.filter((t) => {
-    const matchesSearch = lowerSearchTerm === "" || 
-      t.merchant.toLowerCase().includes(lowerSearchTerm) ||
-      t.category.toLowerCase().includes(lowerSearchTerm);
-    const matchesPlatform = platformFilter === "all" || t.platform === platformFilter;
-    return matchesSearch && matchesPlatform;
-  }), [data.transactions, lowerSearchTerm, platformFilter]);
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    const debouncedCheckMobile = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(checkMobile, 200);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', debouncedCheckMobile);
-    
-    return () => {
-      window.removeEventListener('resize', debouncedCheckMobile);
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
-  const pieStrokeWidth = isMobile ? 12 : 4;
-  const pieInnerRadius = isMobile ? 25 : 35;
-
-  // 计算周数 - 假设一个月最多 5 周
-  const weekLabels = useMemo(() => {
-    const weeks = ['第 1 周', '第 2 周', '第 3 周', '第 4 周', '第 5 周'];
-    return weeks.slice(0, 5);
-  }, []);
-
-  // 获取某月 1 号是周几 (0=周日，1=周一，..., 6=周六)
-  const getFirstDayOfWeek = (year: number, month: number) => {
-    return new Date(year, month, 1).getDay();
-  };
-
-  // 获取某月的天数
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  // 计算当前周的日期
-  const getWeekDates = (week: number) => {
-    const year = 2026;
-    const month = 2; // 3 月 (0-indexed)
-    const firstDay = getFirstDayOfWeek(year, month); // 3 月 1 号是周几 (0=周日)
-    const daysInMonth = getDaysInMonth(year, month);
-    const daysInPrevMonth = getDaysInMonth(year, month - 1); // 2 月的天数
-    
-    const dates = [];
-    
-    // 计算第 week 周的日期
-    if (week === 1) {
-      // 第一周：从 1 号开始，1 号是周日，所以周一到六是上个月的日期
-      for (let i = 0; i < 7; i++) {
-        // i=0 是周一，i=6 是周日
-        // 1 号是周日 (i=6)，所以 i<6 时是上个月的日期
-        if (i < 6) {
-          // 上个月的日期：从 (daysInPrevMonth - 5) 开始
-          dates.push({ day: daysInPrevMonth - 5 + i, month: 2, isCurrentMonth: false });
-        } else {
-          dates.push({ day: 1, month: 3, isCurrentMonth: true }); // 3 月 1 号
-        }
-      }
-    } else {
-      // 第 2 周及以后
-      const startDay = (week - 1) * 7 - (7 - firstDay) + 1;
-      for (let i = 0; i < 7; i++) {
-        const day = startDay + i;
-        if (day >= 1 && day <= daysInMonth) {
-          dates.push({ day, month: 3, isCurrentMonth: true });
-        } else {
-          dates.push({ day: day - daysInMonth, month: 4, isCurrentMonth: false }); // 下个月的日期
-        }
-      }
-    }
-    
-    return dates;
-  };
-
-  // Loading 状态显示骨架
-  if (显示骨架) {
+  if (isSkeletonVisible) {
     return (
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8">
-        <DelayedRender delay={0}>
-          {/* 顶部标题与功能区骨架 */}
-          <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <Skeleton className="h-7 sm:h-9 w-24 sm:w-32 mb-1 sm:mb-2" />
-                <Skeleton className="h-4 sm:h-5 w-36 sm:w-48" />
-              </div>
-              {/* AI 分析卡片占位 */}
-              <Skeleton className="max-w-xl w-full hidden md:block h-[42px] rounded-xl" />
-              {/* AI 记账按钮占位 */}
-              <Skeleton className="h-10 w-[90px] sm:w-[100px] rounded-md shrink-0" />
-            </div>
-            {/* 筛选栏占位 */}
-            <Skeleton className="h-[60px] sm:h-[66px] w-full rounded-xl" />
-          </div>
-        </DelayedRender>
-        <DelayedRender delay={50}>
-          {/* 核心数据卡片骨架 */}
-          <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-            <Skeleton className="h-[80px] rounded-xl" />
-            <Skeleton className="h-[80px] rounded-xl" />
-            <Skeleton className="h-[80px] rounded-xl" />
-            <Skeleton className="h-[80px] rounded-xl" />
-          </div>
-        </DelayedRender>
-        <DelayedRender delay={100}>
-          {/* 图表骨架 */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Skeleton className="h-[250px] rounded-xl" />
-            <Skeleton className="h-[250px] rounded-xl" />
-          </div>
-        </DelayedRender>
+      <div className="mx-auto max-w-[1680px] space-y-4 sm:space-y-5">
+        <Skeleton className="h-[300px] rounded-[30px]" />
+        <div className="grid gap-3 md:grid-cols-4">
+          <Skeleton className="h-[120px] rounded-[24px]" />
+          <Skeleton className="h-[120px] rounded-[24px]" />
+          <Skeleton className="h-[120px] rounded-[24px]" />
+          <Skeleton className="h-[120px] rounded-[24px]" />
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.92fr)]">
+          <Skeleton className="h-[330px] rounded-[24px]" />
+          <Skeleton className="h-[330px] rounded-[24px]" />
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+          <Skeleton className="h-[320px] rounded-[24px]" />
+          <Skeleton className="h-[320px] rounded-[24px]" />
+        </div>
+        <Skeleton className="h-[420px] rounded-[24px]" />
       </div>
     );
   }
 
-
   return (
     <>
-      <FixedStickyHeader 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        platformFilter={platformFilter}
-        setPlatformFilter={setPlatformFilter}
-        dateFilter={dateFilter}
-        setDateFilter={setDateFilter}
-        dateRangeLabel={dateRangeLabel}
-      />
-
-      <div className="space-y-4 md:space-y-6 max-w-[1600px] mx-auto pb-8 pt-16 sm:pt-0">
-        {/* AI 分析+记账按钮行 */}
+      <div className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5">
         <DelayedRender delay={0}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2 sm:gap-3">
-              {/* AI 智能分析卡片 - 紧凑长条按钮样式 */}
+        <ThemeHero className="p-4 sm:p-6 lg:p-8">
+            <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.16),transparent_70%)] lg:block" />
+            <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-blue-200/35 blur-3xl sm:h-56 sm:w-56" />
+
+            <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.92fr)]">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-100">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    消费工作台
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white">
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    {dateRangeLabel}
+                  </span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1",
+                      usingMockData
+                        ? "bg-amber-50 text-amber-700 ring-amber-200"
+                        : "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    )}
+                  >
+                    <CreditCard className="h-3.5 w-3.5" />
+                    {usingMockData ? "演示数据" : "真实数据"}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                    把支出、收入、平台分布和交易明细收拢到同一块消费工作台里，优先看见当前最影响决策的支出信号。
+                  </p>
+                  <p
+                    className={cn(
+                      "max-w-2xl text-xs leading-5",
+                      usingMockData ? "text-amber-700" : "text-emerald-700"
+                    )}
+                  >
+                    {usingMockData
+                      ? "当前为演示数据。接入真实账单后，这里会自动切换为真实消费看板。"
+                      : "当前展示真实账单数据，图表和流水会跟随导入结果更新。"}
+                  </p>
+                  <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-slate-500">本月总支出</p>
+                      <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+                        {formatCurrency(data.summary.totalExpense)}
+                      </h1>
+                    </div>
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ring-1",
+                        balance >= 0 ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-red-50 text-red-700 ring-red-100"
+                      )}
+                    >
+                      {balance >= 0 ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                      收支差 {formatCurrency(balance)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <MetricCard label="支出笔数" value={`${data.summary.expenseCount} 笔`} detail="本期记录" accent="blue" />
+                  <MetricCard label="笔均支出" value={formatCurrency(avgPerExpense)} detail="平均客单价" accent="slate" />
+                  <MetricCard
+                    label="最高分类"
+                    value={topCategory ? topCategory.name : "暂无"}
+                    detail={topCategory ? `${topCategory.cumulativePercentage.toFixed(0)}% 累积贡献` : "等待数据"}
+                    accent="green"
+                  />
+                </div>
+              </div>
+
+              <ThemeDarkPanel className="p-5 shadow-none sm:shadow-[0_20px_60px_rgba(15,23,42,0.28)]">
+                <div className="flex flex-col gap-3">
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                      <Input
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        placeholder="搜索商户或分类"
+                        className="h-11 rounded-2xl border-white/10 bg-white/6 pl-10 text-white placeholder:text-slate-400"
+                      />
+                    </div>
+
+                    <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                      <SelectTrigger className="h-11 rounded-2xl border-white/10 bg-white/6 text-white shadow-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部平台</SelectItem>
+                        <SelectItem value="wechat">微信</SelectItem>
+                        <SelectItem value="alipay">支付宝</SelectItem>
+                        <SelectItem value="cloudpay">云闪付</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <AIAnalysisCard
+                      transactions={data.transactions.map((transaction) => ({
+                        id: transaction.id,
+                        amount: parseFloat(transaction.amount) || 0,
+                        category: transaction.category,
+                        platform: transaction.platform,
+                        date: transaction.date,
+                        merchant: transaction.merchant,
+                        description: "",
+                      }))}
+                      budgets={[]}
+                      compact
+                      className="w-full"
+                    />
+
+                    <Button
+                      onClick={openAIDialog}
+                      className="h-11 rounded-2xl bg-white text-slate-950 shadow-none hover:bg-blue-50"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      AI 记账
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-[22px] border border-transparent bg-transparent p-0 sm:border-white/10 sm:bg-white/6 sm:p-4">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-blue-100/60">Leading Merchant</p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-blue-100">
+                      <Store className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white">{topMerchant?.merchant ?? "暂无商户"}</p>
+                      <p className="mt-1 truncate text-xs text-slate-300/75">
+                        {topMerchant ? `${formatCurrency(topMerchant.total)} · 本期最高消费商户` : "记录交易后自动生成消费重点商户"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {data.platformDistribution.slice(0, 4).map((platform) => (
+                    <div key={platform.name} className="rounded-[20px] bg-transparent px-0 py-2.5 sm:bg-white/6 sm:px-3 sm:py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-white">{platform.name}</span>
+                        <span className="text-xs text-slate-300/75">{formatCurrency(platform.value, { compact: true })}</span>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.max(8, (platform.value / Math.max(data.summary.totalExpense, 1)) * 100)}%`,
+                            backgroundColor: platform.fill,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ThemeDarkPanel>
+            </div>
+          </ThemeHero>
+        </DelayedRender>
+
+        <DelayedRender delay={60}>
+          <section className="grid gap-3 md:grid-cols-4">
+            <MetricCard label="本月支出" value={formatCurrency(data.summary.totalExpense)} detail="消费总额" accent="red" />
+            <MetricCard label="本月收入" value={formatCurrency(data.summary.totalIncome)} detail="已入账金额" accent="green" />
+            <MetricCard label="Top 分类" value={topCategory ? formatCurrency(topCategory.value, { compact: true }) : "暂无"} detail={topCategory?.name ?? "等待数据"} accent="blue" />
+            <MetricCard label="筛选结果" value={`${filteredTransactions.length} 笔`} detail={platformFilter === "all" ? "全部平台" : getPlatformLabel(platformFilter)} accent="slate" />
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={120}>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.92fr)]">
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">消费趋势</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">每日支出走势</h2>
+                  <p className="mt-1 text-sm text-slate-500">观察本期消费波动，找出高峰日和资金节奏变化。</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                  {dateRangeLabel}
+                </span>
+              </div>
+
+              <div className="mt-5 h-[300px] w-full">
+                <ReactECharts option={trendOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+                <div>
+                  <p className="text-sm font-medium text-slate-500">平台分布</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">支付渠道占比</h2>
+                </div>
+
+                <div className="mt-5 grid items-center gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+                  <div className="mx-auto h-[180px] w-[180px]">
+                    <ReactECharts option={platformOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {data.platformDistribution.map((platform) => (
+                      <div key={platform.name} className="flex items-center justify-between gap-3 rounded-[18px] bg-slate-50 px-3 py-2.5">
+                        <div className="flex min-w-0 items-center gap-3">
+                          {getPlatformBadge(platform.name === "微信" ? "wechat" : platform.name === "支付宝" ? "alipay" : "cloudpay")}
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">{platform.name}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {((platform.value / Math.max(data.summary.totalExpense, 1)) * 100).toFixed(1)}% 占比
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-950">{formatCurrency(platform.value, { compact: true })}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <AIAnalysisCard
-                transactions={data.transactions.map(t => ({
-                  id: t.id,
-                  amount: parseFloat(t.amount) || 0,
-                  category: t.category,
-                  platform: t.platform,
-                  date: t.date,
-                  merchant: t.merchant,
+                transactions={data.transactions.map((transaction) => ({
+                  id: transaction.id,
+                  amount: parseFloat(transaction.amount) || 0,
+                  category: transaction.category,
+                  platform: transaction.platform,
+                  date: transaction.date,
+                  merchant: transaction.merchant,
                   description: "",
                 }))}
                 budgets={[]}
-                className="w-full sm:w-auto"
-                compact
               />
-
-              <Button
-                onClick={openAIDialog}
-                className="gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md shrink-0 text-xs sm:text-sm"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>AI 记账</span>
-              </Button>
-          </div>
+            </div>
+          </section>
         </DelayedRender>
 
-        {/* 模块2: 筛选栏 */}
-        <DelayedRender delay={50}>
-          <div className="bg-white py-3 px-4 -mx-4 sm:mx-0 sm:px-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[120px] sm:min-w-[200px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="search"
-                placeholder="搜索消费明细..."
-                className="pl-9 w-full bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {/* Platform Filter */}
-            <Select value={platformFilter} onValueChange={setPlatformFilter}>
-              <SelectTrigger className="w-[100px] sm:w-[140px] bg-gray-50 hover:bg-gray-100 focus:bg-white h-9 sm:h-10 text-xs sm:text-sm border-gray-200 transition-colors">
-                <SelectValue placeholder="所有平台" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">所有平台</SelectItem>
-                <SelectItem value="wechat">微信</SelectItem>
-                <SelectItem value="alipay">支付宝</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Date Filter */}
-            <div className="hidden sm:flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
-              <button
-                onClick={() => setDateFilter("month")}
-                className={cn("px-3 py-1.5 text-sm rounded-md font-medium transition-all shadow-sm", dateFilter === "month" ? "bg-white text-gray-900" : "text-gray-500 hover:text-gray-900 hover:bg-gray-200")}
-              >
-                本月
-              </button>
-              <div className="h-4 w-px bg-gray-200 mx-1" />
-              <span className="text-sm text-gray-500 px-3">{dateRangeLabel}</span>
-            </div>
-          </div>
-        </DelayedRender>
-
-      {/* 模块3: Row 1: Summary Cards (4 cols) */}
-      <DelayedRender delay={100}>
-      <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="relative overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
-          <ShoppingBag className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-orange-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">总消费金额</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-lg sm:text-lg font-bold text-gray-900">¥{data.summary.totalExpense.toLocaleString()}</div>
-            <p className="text-[10px] sm:text-[10px] text-gray-500">共 {data.summary.expenseCount} 笔支出</p>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
-          <Wallet className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 text-blue-500/10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">本月收支</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 pt-0">
-            <div>
-              <div className="text-[10px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowDownIcon className="h-2 w-2 sm:h-2 sm:w-2 text-green-500" /> 收入</div>
-              <div className="text-base sm:text-lg font-semibold text-green-600">¥{data.summary.totalIncome.toLocaleString()}</div>
-            </div>
-            <div>
-              <div className="text-[10px] sm:text-[10px] text-gray-500 flex items-center gap-0.5"><ArrowUpIcon className="h-2 w-2 sm:h-2 sm:w-2 text-red-500" /> 支出</div>
-              <div className="text-base sm:text-lg font-semibold text-red-600">¥{data.summary.totalExpense.toLocaleString()}</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
-          <WechatOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">微信收支</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 pt-0">
-            <div>
-              <div className="text-[10px] sm:text-[10px] text-gray-500">收入</div>
-              <div className="text-base sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.income.toLocaleString()}</div>
-            </div>
-            <div>
-              <div className="text-[10px] sm:text-[10px] text-gray-500">支出</div>
-              <div className="text-base sm:text-lg font-semibold text-gray-900">¥{data.summary.wechat.expense.toLocaleString()}</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow h-auto min-h-[80px] sm:min-h-[45px] py-1 sm:py-2">
-          <AlipayOfficialIcon className="absolute -right-2 -bottom-2 h-10 w-10 sm:h-24 sm:w-24 opacity-10" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-            <CardTitle className="text-xs sm:text-sm font-medium text-gray-500">支付宝收支</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-0.5 sm:gap-1 pt-0">
-            <div>
-              <div className="text-[10px] sm:text-[10px] text-gray-500">收入</div>
-              <div className="text-base sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.income.toLocaleString()}</div>
-            </div>
-            <div>
-              <div className="text-[10px] sm:text-[10px] text-gray-500">支出</div>
-              <div className="text-base sm:text-lg font-semibold text-gray-900">¥{data.summary.alipay.expense.toLocaleString()}</div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      </DelayedRender>
-
-      {/* Row 2: Charts (3 cols) */}
-      <DelayedRender delay={150}>
-      <div className="grid gap-2 sm:gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="col-span-1 flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">支付平台分布</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block">
-            <DelayedRender
-              delay={0}
-              className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
-              fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full" />}
-            >
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: { trigger: 'item' },
-                  series: [{
-                    name: '平台分布',
-                    type: 'pie',
-                    radius: ['0%', '70%'],
-                    label: { show: false },
-                    data: data.platformDistribution.map(item => ({
-                      value: item.value,
-                      name: item.name,
-                      itemStyle: { color: item.fill }
-                    })),
-                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
-                  }]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-            <div className="w-full flex justify-center mt-2 md:absolute md:bottom-4 md:right-4 md:w-auto md:mt-0 md:justify-end">
-              <div className="flex flex-col gap-1 text-[10px] md:text-xs">
-                 {data.platformDistribution.map((item, index) => (
-                   <div key={index} className="flex items-center gap-1.5">
-                     <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
-                     <span className="text-gray-500">{item.name}</span>
-                     <span className="font-medium">{(item.value / data.summary.totalExpense * 100).toFixed(0)}%</span>
-                   </div>
-                 ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-1 flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">收支分析</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 pb-1 pt-0 px-0 relative flex flex-col items-center justify-center md:block">
-            <DelayedRender
-              delay={220}
-              className="mx-auto h-[125px] w-[125px] flex items-center justify-center md:h-[200px] md:w-[200px]"
-              fallback={<Skeleton className="h-[125px] w-[125px] md:h-[200px] md:w-[200px] rounded-full border-4 border-white" />}
-            >
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: { trigger: 'item' },
-                  series: [{
-                    name: '收支分析',
-                    type: 'pie',
-                    radius: ['50%', '70%'],
-                    label: { show: false },
-                    data: data.incomeExpense.map(item => ({
-                      value: item.value,
-                      name: item.name,
-                      itemStyle: { color: item.fill }
-                    })),
-                    emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
-                  }]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-            <div className="w-full flex justify-center mt-2 md:absolute md:bottom-4 md:right-4 md:w-auto md:mt-0 md:justify-end">
-              <div className="flex flex-col gap-1 text-[10px] md:text-xs">
-                 {data.incomeExpense.map((item, index) => {
-                   return (
-                     <div key={index} className="flex items-center gap-1.5">
-                       <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
-                       <span className="text-gray-500">{item.name}</span>
-                       <span className="font-medium">{(item.value / incomeExpenseTotal * 100).toFixed(0)}%</span>
-                     </div>
-                   );
-                 })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">热门商家 Top 10</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <DelayedRender delay={360} className="h-[200px] w-full">
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '0%', right: '15%', bottom: '0%', top: '0%', containLabel: false },
-                  xAxis: { type: 'value', show: false },
-                  yAxis: { 
-                    type: 'category', 
-                    data: data.merchants.map(m => m.merchant),
-                    axisLine: { show: false },
-                    axisTick: { show: false },
-                    axisLabel: { fontSize: 12, color: '#666' }
-                  },
-                  series: [{
-                    name: '消费金额',
-                    type: 'bar',
-                    data: data.merchants.map(m => ({
-                      value: m.total,
-                      itemStyle: { color: m.fill, borderRadius: [0, 4, 4, 0] }
-                    })),
-                    barWidth: 12,
-                    label: { show: true, position: 'right', formatter: '¥{c}' }
-                  }]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-          </CardContent>
-        </Card>
-      </div>
-      </DelayedRender>
-
-      {/* Row 3: Charts (2 cols) */}
-      <DelayedRender delay={200}>
-      <div className="grid gap-4 md:grid-cols-2 items-start">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">支出趋势</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <div className="w-[1200px] md:w-full">
-                <DelayedRender delay={120} lazy className="h-[250px] w-full">
-                  <ReactECharts
-                        autoResize={false}
-                    option={{
-                      tooltip: { trigger: 'axis' },
-                      grid: { left: '0%', right: '0%', bottom: '20%', containLabel: false },
-                      xAxis: { 
-                        type: 'category', 
-                        boundaryGap: false, 
-                        data: data.trend.map(t => t.day.slice(5)),
-                        axisLine: { show: false },
-                        axisTick: { show: false }
-                      },
-                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
-                      series: [{
-                        name: '支出',
-                        type: 'line',
-                        data: data.trend.map(t => t.total),
-                        smooth: true,
-                        itemStyle: { color: '#3b82f6' },
-                        areaStyle: { opacity: 0.1, color: '#3b82f6' }
-                      }]
-                    }}
-                    style={{ height: '100%', width: '100%' }}
-                  />
-                </DelayedRender>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">消费分类堆积</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <div className="w-[750px] md:w-full">
-                <DelayedRender delay={240} lazy className="h-[250px] w-full">
-                  <ReactECharts
-                        autoResize={false}
-                    option={{
-                      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                      legend: { data: ["餐饮", "购物", "交通", "娱乐"], top: 0 },
-                      grid: { left: '0%', right: '0%', bottom: '0%', top: '10%', containLabel: false },
-                      xAxis: { 
-                        type: 'category', 
-                        data: data.stackedBar.map(t => t.day.slice(8)),
-                        axisLine: { show: false },
-                        axisTick: { show: false }
-                      },
-                      yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
-                      series: ["餐饮", "购物", "交通", "娱乐"].map((key, i) => {
-                        const colors = ['#1d4ed8', '#3b82f6', '#93c5fd', '#dbeafe'];
-                        return {
-                          name: key,
-                          type: 'bar',
-                          stack: 'total',
-                          data: data.stackedBar.map(t => t[key]),
-                          itemStyle: { 
-                            color: colors[i],
-                            borderRadius: i === 3 ? [4, 4, 0, 0] : [0, 0, 0, 0] 
-                          }
-                        };
-                      })
-                    }}
-                    style={{ height: '100%', width: '100%' }}
-                  />
-                </DelayedRender>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      </DelayedRender>
-
-      {/* Row 4: Charts (2 cols) */}
-      <DelayedRender delay={250}>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="flex flex-col">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">帕累托分析 (20/80法则)</CardTitle>
-            <CardDescription>识别主要支出分类</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 p-0">
-            <DelayedRender delay={360} lazy className="h-[250px] w-full">
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
-                  grid: { left: '0%', right: '0%', bottom: '0%', containLabel: false },
-                  xAxis: { 
-                    type: 'category', 
-                    data: data.pareto.map(t => t.name),
-                    axisLine: { show: false },
-                    axisTick: { show: false }
-                  },
-                  yAxis: [
-                    { type: 'value', name: '金额', position: 'left', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed' } } },
-                    { type: 'value', name: '占比', min: 0, max: 100, position: 'right', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { formatter: '{value} %' } }
-                  ],
-                  series: [
-                    {
-                      name: '金额',
-                      type: 'bar',
-                      data: data.pareto.map(t => ({ value: t.value, itemStyle: { color: t.fill } })),
-                      barWidth: '60%',
-                      itemStyle: { borderRadius: [4, 4, 0, 0] }
-                    },
-                    {
-                      name: '累计占比',
-                      type: 'line',
-                      yAxisIndex: 1,
-                      data: data.pareto.map(t => t.cumulativePercentage),
-                      smooth: true,
-                      itemStyle: { color: '#fb923c' } // Use an orange/amber color for contrast against blue bars
-                    }
-                  ]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-          </CardContent>
-        </Card>
-
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-base">消费日历</CardTitle>
-            <CardDescription>每日消费强度分布</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 p-0">
-            <DelayedRender delay={0} lazy className="h-[250px] w-full">
-              <AnimatedCalendarGrid calendar={data.calendar} />
-            </DelayedRender>
-          </CardContent>
-        </Card>
-      </div>
-      </DelayedRender>
-
-      {/* Row 5: Charts (2 cols) */}
-      <DelayedRender delay={300}>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">平台 x 分类 热力分布</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <DelayedRender delay={600} lazy className="h-[250px] w-full">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-center border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="p-2 border-b bg-gray-50 text-left text-xs">分类</th>
-                      {data.heatmap.platforms.map(p => (
-                        <th key={p} className="p-2 border-b bg-gray-50 text-xs">
-                          {p === "wechat" ? "微信" : p === "alipay" ? "支付宝" : p}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.heatmap.categories.map(cat => (
-                      <tr key={cat}>
-                        <td className="p-2 border-b font-medium text-left bg-gray-50 text-xs">{cat}</td>
-                        {data.heatmap.platforms.map(plat => {
-                          const val = heatmapValueMap.get(`${plat}::${cat}`) ?? 0;
-                          const maxVal = 2500;
-                          const intensity = maxVal > 0 ? val / maxVal : 0;
-                          
-                          return (
-                            <td key={plat} className="p-2 border-b relative group">
-                              <div 
-                                className="absolute inset-1 rounded bg-blue-600 transition-opacity"
-                                style={{ opacity: intensity * 0.8 + (val > 0 ? 0.1 : 0) }}
-                              />
-                              <span className={cn("relative z-10 text-xs", intensity > 0.5 ? "text-white" : "text-gray-900")}>
-                                {val > 0 ? `¥${val.toFixed(0)}` : "-"}
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </DelayedRender>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <CardTitle className="text-base">每日平均消费 (按周)</CardTitle>
-              </div>
-              <div className="flex items-center gap-1 flex-wrap">
-                {weekLabels.map((week, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedWeek(index + 1)}
-                    className={cn(
-                      "px-2 py-1 text-xs rounded font-medium transition-colors",
-                      selectedWeek === index + 1 
-                        ? "bg-gray-900 text-white" 
-                        : "bg-gray-100 text-gray-500 hover:text-gray-900"
-                    )}
-                  >
-                    {week}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <DelayedRender delay={720} lazy className="h-[250px] w-full">
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '0%', right: '0%', bottom: isMobile ? '18%' : '3%', top: '0%', containLabel: false },
-                  xAxis: {
-                    type: 'category',
-                    data: data.weekdayWeekend.map((item, index) => {
-                      const weekDates = getWeekDates(selectedWeek);
-                      const dateInfo = weekDates[index];
-                      return `${item.name}\n${dateInfo ? `${dateInfo.month}月${dateInfo.day}日` : ''}`;
-                    }),
-                    axisLine: { show: false },
-                    axisTick: { show: false },
-                    axisLabel: {
-                      interval: 0,
-                      lineHeight: 16,
-                      color: '#666',
-                      fontSize: 12,
-                      rotate: isMobile ? 45 : 0
-                    }
-                  },
-                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
-                  series: [{
-                    name: '平均消费',
-                    type: 'bar',
-                    data: data.weekdayWeekend.map(t => t.value),
-                    itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
-                    label: { show: true, position: 'top', formatter: '¥{c}' }
-                  }]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-          </CardContent>
-        </Card>
-      </div>
-      </DelayedRender>
-
-      {/* Row 6: Sankey Diagram */}
-      <DelayedRender delay={350}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">资金流向 (桑基图)</CardTitle>
-          <CardDescription>收入来源 ➔ 支付账户 ➔ 支出去向（支持拖拽节点调整布局）</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <div className="min-w-[900px] md:w-full">
-              <DelayedRender delay={960} lazy className={isMobile ? 'h-[300px] w-full' : 'h-[450px] w-full'}>
-                <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: {
-                    trigger: 'item',
-                    triggerOn: 'mousemove',
-                    formatter: (params: any) => {
-                      if (params.dataType === 'edge') {
-                        return `${params.data.source} → ${params.data.target}<br/>金额: ¥${params.data.value.toLocaleString()}`;
-                      }
-                      return `${params.name}<br/>金额: ¥${params.value.toLocaleString()}`;
-                    }
-                  },
-                  animation: true,
-                  animationDuration: 1500,
-                  animationEasing: 'cubicOut',
-                  animationDurationUpdate: 1000,
-                  animationEasingUpdate: 'quinticInOut',
-                  series: [
-                    {
-                      type: 'sankey',
-                      layout: 'sankey',
-                      emphasis: {
-                        focus: 'adjacency',
-                        itemStyle: {
-                          shadowBlur: 10,
-                          shadowColor: 'rgba(0, 0, 0, 0.3)'
-                        },
-                        lineStyle: {
-                          width: 4,
-                          opacity: 0.8
-                        }
-                      },
-                      nodeAlign: 'left',
-                      left: '2%',
-                      right: isMobile ? '10%' : '5%',
-                      top: '5%',
-                      bottom: '5%',
-                      nodeWidth: 22,
-                      nodeGap: 12,
-                      layoutIterations: 32,
-                      draggable: true,
-                      progressive: 200,
-                      progressiveThreshold: 500,
-                      data: data.sankey.nodes.map((node, index) => {
-                           const colors = [
-                             '#166534', // 0: 工资收入 - 深绿
-                             '#15803D', // 1: 理财收益 - 深绿
-                             '#07C160', // 2: 微信钱包 - 绿色
-                             '#1677FF', // 3: 支付宝 - 蓝色
-                             '#22C55E', // 4: 餐饮美食 - 绿色
-                             '#3B82F6', // 5: 购物消费 - 蓝色
-                             '#06B6D4', // 6: 交通出行 - 青色
-                             '#14B8A6', // 7: 休闲娱乐 - 青色
-                             '#0EA5E9', // 8: 生活服务 - 浅蓝
-                             // 第4级 - 浅绿色系
-                             '#4ADE80', // 9: 星巴克
-                             '#86EFAC', // 10: 麦当劳
-                             '#A7F3D0', // 11: 瑞幸咖啡
-                             '#BBF7D0', // 12: 美团外卖
-                             '#93C5FD', // 13: 京东商城
-                             '#BFDBFE', // 14: 淘宝
-                             '#C7D2FE', // 15: 拼多多
-                             '#99F6E4', // 16: 滴滴出行
-                             '#CCFBF1', // 17: 地铁
-                             '#E0F2FE', // 18: 公交
-                             '#F0F9FF', // 19: 爱奇艺
-                             '#F1F5F9', // 20: 腾讯视频
-                             '#F8FAFC', // 21: 话费充值
-                             '#FCFCFD', // 22: 水电费
-                           ];
-                           return {
-                             name: node.name,
-                             itemStyle: {
-                               color: colors[index] || '#4ADE80',
-                               borderColor: 'transparent',
-                               borderWidth: 0
-                             },
-                             label: {
-                               show: true,
-                               position: 'right',
-                               fontSize: 12,
-                               color: '#333'
-                             }
-                           };
-                         }),
-                      links: data.sankey.links.map((link, index) => {
-                        const sourceNode = data.sankey.nodes[link.source];
-                        const targetNode = data.sankey.nodes[link.target];
-                        return {
-                          source: sourceNode.name,
-                          target: targetNode.name,
-                          value: link.value,
-                          lineStyle: {
-                            color: {
-                              type: 'linear',
-                              x: 0,
-                              y: 0,
-                              x2: 1,
-                              y2: 0,
-                              colorStops: [
-                                {
-                                  offset: 0,
-                                  color: 'rgba(22, 101, 52, 0.3)'
-                                },
-                                {
-                                  offset: 0.5,
-                                  color: 'rgba(22, 163, 74, 0.6)'
-                                },
-                                {
-                                  offset: 1,
-                                  color: 'rgba(34, 197, 94, 0.3)'
-                                }
-                              ]
-                            },
-                            curveness: 0.5,
-                            opacity: 0.4
-                          }
-                        };
-                      }),
-                      lineStyle: {
-                        color: 'gradient',
-                        curveness: 0.5,
-                        opacity: 0.4,
-                        width: 2
-                      },
-                      label: {
-                        show: true,
-                        position: 'right',
-                        fontSize: 12,
-                        color: '#333',
-                        formatter: '{b}',
-                      },
-                    },
-                  ],
-                }}
-                style={{ height: '100%', width: '100%' }}
-                opts={{ renderer: 'svg' }}
-                onEvents={{
-                  'sankeyDragEnd': (params: any) => {
-                    console.log('节点拖拽结束:', params);
-                  },
-                  'mouseover': (params: any) => {
-                    console.log('鼠标悬停:', params);
-                  }
-                }}
-              />
-                </DelayedRender>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        </DelayedRender>
-
-      {/* Row 7: Scatter & Histogram */}
-      <DelayedRender delay={400}>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">消费时段分布 (散点图)</CardTitle>
-            <CardDescription>24 小时消费习惯透视</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <DelayedRender delay={1080} lazy className="h-[300px] w-full">
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: {
-                    trigger: 'item',
-                    formatter: (params: any) => {
-                      const v = params.value;
-                      return `${v[0]}点<br/>金额: ¥${v[1]}<br/>分类: ${v[2]}`;
-                    }
-                  },
-                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
-                  xAxis: { type: 'value', min: 0, max: 24, name: '时间', splitLine: { show: false } },
-                  yAxis: { type: 'value', name: '金额', splitLine: { show: false } },
-                  series: [{
-                    name: '消费记录',
-                    type: 'scatter',
-                    data: data.scatter.map(item => [item.hour, item.amount, item.category]),
-                    symbolSize: (val: any[]) => Math.max(Math.min(val[1] / 10, 20), 5),
-                    itemStyle: { color: '#3b82f6', opacity: 0.7 }
-                  }]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">单笔金额分布 (直方图)</CardTitle>
-            <CardDescription>消费力度画像分析</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <DelayedRender delay={1200} lazy className="h-[300px] w-full">
-              <ReactECharts
-                autoResize={false}
-                option={{
-                  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                  grid: { left: '0%', right: '0%', bottom: '0%', top: '0%', containLabel: false },
-                  xAxis: { 
-                    type: 'category', 
-                    data: data.histogram.map(h => h.range),
-                    axisLine: { show: false },
-                    axisTick: { show: false }
-                  },
-                  yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
-                  series: [{
-                    name: '笔数',
-                    type: 'bar',
-                    data: data.histogram.map(h => ({ value: h.count, itemStyle: { color: h.fill, borderRadius: [4, 4, 0, 0] } })),
-                    label: { show: true, position: 'top' },
-                    barWidth: '60%'
-                  }]
-                }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            </DelayedRender>
-          </CardContent>
-        </Card>
-      </div>
-      </DelayedRender>
-
-      {/* Row 8: Transactions */}
-      <DelayedRender delay={450}>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between py-4">
-          <CardTitle className="text-base">交易明细</CardTitle>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 rounded text-xs bg-black text-white">支出</button>
-            <button className="px-3 py-1 rounded text-xs bg-gray-100">收入</button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <DelayedRender 
-            delay={840}
-            lazy 
-            fallback={
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                   <div key={i} className="flex items-center justify-between p-3 border-b last:border-0">
-                     <div className="space-y-2">
-                       <Skeleton className="h-4 w-32" />
-                       <div className="flex gap-2">
-                         <Skeleton className="h-3 w-16" />
-                         <Skeleton className="h-3 w-12" />
-                       </div>
-                     </div>
-                     <Skeleton className="h-5 w-20" />
-                   </div>
-                ))}
-              </div>
-            }
-          >
-            <div className="space-y-2">
-              {filteredTransactions.map(t => (
-                <div key={t.id} className="flex items-center justify-between p-3 border-b last:border-0 hover:bg-gray-50">
-                  <div>
-                    <div className="font-medium text-sm">{t.merchant}</div>
-                    <div className="text-xs text-gray-500 flex gap-2">
-                      <span>{t.date}</span>
-                      <span className="bg-gray-100 px-1 rounded">{t.category}</span>
-                      <span>{t.platform === "wechat" ? "微信" : "支付宝"}</span>
-                    </div>
-                  </div>
-                  <div className={cn("font-bold text-sm", t.type === "INCOME" ? "text-green-600" : "")}>
-                    {t.type === "EXPENSE" ? "-" : "+"}¥{Number(t.amount).toLocaleString()}
-                  </div>
+        <DelayedRender delay={180}>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">商户榜单</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">本期消费最高的商户</h2>
                 </div>
-              ))}
-            </div>
-          </DelayedRender>
-        </CardContent>
-      </Card>
-      </DelayedRender>
+                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                  Top {Math.min(6, data.merchants.length)}
+                </span>
+              </div>
 
-      {/* AI 记账对话框 */}
+              <div className="mt-5 space-y-2.5">
+                {data.merchants.slice(0, 6).map((merchant) => (
+                  <MerchantRow key={merchant.merchant} merchant={merchant.merchant} total={merchant.total} fill={merchant.fill} />
+                ))}
+              </div>
+
+              <div className="mt-6 h-[260px] w-full">
+                <ReactECharts option={categoryOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              </div>
+            </div>
+
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">平台 × 分类</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">消费热区矩阵</h2>
+                  <p className="mt-1 text-sm text-slate-500">快速看出不同支付平台上，哪类消费最集中。</p>
+                </div>
+                <div className="rounded-full bg-slate-100 p-2 text-slate-500">
+                  <Grid3X3 className="h-4 w-4" />
+                </div>
+              </div>
+
+              <div className="mt-5">
+                {data.heatmap.data.length === 0 ? (
+                  <EmptyState
+                    icon={Grid3X3}
+                    title="暂无热区数据"
+                    description="记录更多分类后，这里会显示平台和消费分类之间的分布关系。"
+                    className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50"
+                  />
+                ) : (
+                  <HeatmapGrid data={data.heatmap} />
+                )}
+              </div>
+            </div>
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={220}>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">收支对比</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">本期收入与支出</h2>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                  {incomeExpenseTotal > 0 ? `${((data.summary.totalExpense / incomeExpenseTotal) * 100).toFixed(0)}% 为支出` : "等待数据"}
+                </span>
+              </div>
+
+              <div className="mt-5 grid items-center gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+                <div className="mx-auto h-[180px] w-[180px]">
+                  <ReactECharts option={incomeExpenseOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                </div>
+
+                <div className="space-y-2.5">
+                  {data.incomeExpense.map((item) => (
+                    <div key={item.name} className="rounded-[18px] bg-slate-50 px-3 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-slate-900">{item.name}</span>
+                        <span className="text-sm font-semibold text-slate-950">{formatCurrency(item.value)}</span>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.max(8, (item.value / Math.max(incomeExpenseTotal, 1)) * 100)}%`,
+                            backgroundColor: item.fill,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">分类堆叠</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">每日消费分类组成</h2>
+                  <p className="mt-1 text-sm text-slate-500">看每一天的消费是由哪些主要分类堆出来的。</p>
+                </div>
+              </div>
+
+              <div className="mt-5 h-[320px] w-full">
+                <ReactECharts option={stackedBarOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              </div>
+            </div>
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={260}>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.96fr)]">
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">消费日历</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">每日消费强度分布</h2>
+                  <p className="mt-1 text-sm text-slate-500">把本期的高低消费日放到日历上，看月内节奏更直观。</p>
+                </div>
+                <div className="rounded-full bg-slate-100 p-2 text-slate-500">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <CalendarHeatGrid calendar={data.calendar} />
+              </div>
+            </div>
+
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">周内平均</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">按星期观察消费习惯</h2>
+                </div>
+                <div className="rounded-full bg-slate-100 p-2 text-slate-500">
+                  <TimerReset className="h-4 w-4" />
+                </div>
+              </div>
+
+              <div className="mt-5 h-[320px] w-full">
+                <ReactECharts option={weekdayOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              </div>
+            </div>
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={300}>
+          <section className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-slate-500">资金流向</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">消费路径桑基图</h2>
+                <p className="mt-1 text-sm text-slate-500">从支付平台流向分类，快速看清消费主路径。</p>
+              </div>
+              <div className="rounded-full bg-slate-100 p-2 text-slate-500">
+                <Network className="h-4 w-4" />
+              </div>
+            </div>
+
+            <div className="mt-5 h-[360px] w-full">
+              <ReactECharts option={sankeyOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+            </div>
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={340}>
+          <section className="grid gap-4 xl:grid-cols-2">
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div>
+                <p className="text-sm font-medium text-slate-500">消费时段分布</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">24 小时消费散点图</h2>
+              </div>
+
+              <div className="mt-5 h-[320px] w-full">
+                <ReactECharts option={scatterOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              </div>
+            </div>
+
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div>
+                <p className="text-sm font-medium text-slate-500">金额分布</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">单笔消费直方图</h2>
+              </div>
+
+              <div className="mt-5 h-[320px] w-full">
+                <ReactECharts option={histogramOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              </div>
+            </div>
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={380}>
+          <section className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-slate-500">交易明细</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">筛选后的消费流水</h2>
+                <p className="mt-1 text-sm text-slate-500">搜索商户、分类或按支付平台筛选最近交易。</p>
+              </div>
+
+              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                <Filter className="h-3.5 w-3.5" />
+                {filteredTransactions.length} 笔结果
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-2.5">
+              {filteredTransactions.length === 0 ? (
+                <EmptyState
+                  icon={ReceiptText}
+                  title="没有匹配到交易"
+                  description="换一个关键词或平台筛选条件试试。"
+                  className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50"
+                />
+              ) : (
+                filteredTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} />)
+              )}
+            </div>
+          </section>
+        </DelayedRender>
+      </div>
+
       <BottomSheet open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-        <BottomSheetContent className="max-w-md">
+        <BottomSheetContent className="max-w-lg">
           <BottomSheetHeader>
             <BottomSheetTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-blue-600" />
               AI 拍照记账
             </BottomSheetTitle>
           </BottomSheetHeader>
+
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>平台</Label>
+              <Select
+                value={formState.platform}
+                onValueChange={(value) =>
+                  setFormState((current) => ({ ...current, platform: value as TransactionFormState["platform"] }))
+                }
+              >
+                <SelectTrigger className="rounded-2xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alipay">支付宝</SelectItem>
+                  <SelectItem value="wechat">微信</SelectItem>
+                  <SelectItem value="unionpay">云闪付</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {!selectedImage ? (
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-600 mb-4">上传小票/账单照片，AI 自动识别</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageSelect}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                >
-                  选择图片
-                </button>
-              </div>
-            ) : selectedImage && !scanResult && !isScanning ? (
-              // 图片已选择，等待点击识别
-              <div className="space-y-4">
-                <div className="rounded-lg overflow-hidden border">
-                  <img src={selectedImage} alt="Receipt" className="w-full h-48 object-contain bg-gray-50" />
+              <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <Camera className="h-6 w-6" />
                 </div>
-                <Button onClick={handleAIScan} className="w-full gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  开始识别
+                <p className="mt-4 text-sm font-medium text-slate-900">上传票据或账单截图</p>
+                <p className="mt-1 text-sm text-slate-500">AI 会自动识别金额、商户、时间和消费分类。</p>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                <Button onClick={() => fileInputRef.current?.click()} className="mt-5 rounded-2xl bg-slate-900 hover:bg-slate-800">
+                  选择图片
                 </Button>
               </div>
-            ) : isScanning ? (
-              <div className="text-center py-8">
-                <Loader2 className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
-                <p className="text-sm text-gray-600">AI 正在识别中...</p>
-              </div>
-            ) : scanResult ? (
+            ) : (
               <div className="space-y-4">
-                <div className="rounded-lg overflow-hidden border">
-                  <img src={selectedImage} alt="Receipt" className="w-full h-48 object-contain bg-gray-50" />
+                <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
+                  <Image
+                    src={selectedImage}
+                    alt="Receipt"
+                    width={800}
+                    height={480}
+                    unoptimized
+                    className="h-56 w-full object-contain"
+                  />
                 </div>
-                <div className="space-y-4">
-                  {/* 平台选择 - 始终显示在最顶部 */}
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">平台</Label>
-                    <select
-                      className="w-full rounded-md border border-input px-3 py-2 text-sm bg-white"
-                      value={editForm.platform}
-                      onChange={e => setEditForm({ ...editForm, platform: e.target.value as "alipay" | "wechat" | "unionpay" })}
-                    >
-                      <option value="alipay">支付宝</option>
-                      <option value="wechat">微信</option>
-                      <option value="unionpay">云闪付</option>
-                    </select>
+
+                {!scanResult && !isScanning ? (
+                  <Button onClick={handleAIScan} className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    开始识别
+                  </Button>
+                ) : null}
+
+                {isScanning ? (
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 text-center">
+                    <Loader2 className="mx-auto h-10 w-10 animate-spin text-blue-600" />
+                    <p className="mt-3 text-sm font-medium text-slate-900">AI 正在识别票据</p>
+                    <p className="mt-1 text-sm text-slate-500">通常几秒内会返回结构化结果。</p>
                   </div>
+                ) : null}
+              </div>
+            )}
 
-                  {/* 金额 - 始终显示 */}
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">金额</Label>
-                    <Input
-                      type="number"
-                      value={editForm.amount}
-                      onChange={e => setEditForm({ ...editForm, amount: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
+            {(scanResult || selectedImage) && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>金额</Label>
+                  <Input
+                    type="number"
+                    value={formState.amount}
+                    onChange={(event) => setFormState((current) => ({ ...current, amount: event.target.value }))}
+                    placeholder="0.00"
+                    className="rounded-2xl"
+                  />
+                </div>
 
-                  {/* 云闪付专属字段 */}
-                  {editForm.platform === "unionpay" && (
-                    <>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">消费名称</Label>
-                        <Input
-                          value={editForm.tradeName}
-                          onChange={e => setEditForm({ ...editForm, tradeName: e.target.value })}
-                          placeholder="如: 消费"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">卡号</Label>
-                        <Input
-                          value={editForm.cardNo}
-                          onChange={e => setEditForm({ ...editForm, cardNo: e.target.value })}
-                          placeholder="如: ****1234"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">交易时间</Label>
-                        <Input
-                          type="datetime-local"
-                          step="1"
-                          value={editForm.tradeTime?.includes('T') ? editForm.tradeTime : editForm.date}
-                          onChange={e => setEditForm({ ...editForm, tradeTime: e.target.value, date: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">交易类别</Label>
-                        <Input
-                          value={editForm.tradeCategory}
-                          onChange={e => setEditForm({ ...editForm, tradeCategory: e.target.value })}
-                          placeholder="如: 消费"
-                        />
-                      </div>
-                    </>
-                  )}
+                <div className="space-y-2">
+                  <Label>商户</Label>
+                  <Input
+                    value={formState.merchant}
+                    onChange={(event) => setFormState((current) => ({ ...current, merchant: event.target.value }))}
+                    placeholder="商户名称"
+                    className="rounded-2xl"
+                  />
+                </div>
 
-                  {/* 微信专属字段 */}
-                  {editForm.platform === "wechat" && (
-                    <>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">商品</Label>
-                        <Input
-                          value={editForm.product}
-                          onChange={e => setEditForm({ ...editForm, product: e.target.value })}
-                          placeholder="如: 拿铁咖啡"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">商户全称</Label>
-                        <Input
-                          value={editForm.payeeFullName}
-                          onChange={e => setEditForm({ ...editForm, payeeFullName: e.target.value })}
-                          placeholder="如: 星巴克咖啡专营店"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">支付时间</Label>
-                        <Input
-                          type="datetime-local"
-                          step="1"
-                          value={editForm.date.includes('T') ? editForm.date : `${editForm.date}T00:00:00`}
-                          onChange={e => setEditForm({ ...editForm, date: e.target.value })}
-                        />
-                      </div>
-                    </>
-                  )}
+                <div className="space-y-2">
+                  <Label>日期</Label>
+                  <Input
+                    type="datetime-local"
+                    value={formState.date}
+                    onChange={(event) => setFormState((current) => ({ ...current, date: event.target.value }))}
+                    className="rounded-2xl"
+                  />
+                </div>
 
-                  {/* 通用字段 - 支付宝 */}
-                  {editForm.platform === "alipay" && (
-                    <>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">商户</Label>
-                        <Input
-                          value={editForm.merchant}
-                          onChange={e => setEditForm({ ...editForm, merchant: e.target.value })}
-                          placeholder="商户名称"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">支付时间</Label>
-                        <Input
-                          type="datetime-local"
-                          step="1"
-                          value={editForm.date.includes('T') ? editForm.date : `${editForm.date}T00:00:00`}
-                          onChange={e => setEditForm({ ...editForm, date: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">账单分类</Label>
-                        <Input
-                          value={editForm.billCategory}
-                          onChange={e => setEditForm({ ...editForm, billCategory: e.target.value })}
-                          placeholder="如: 爱车养车"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">付款方式</Label>
-                        <Input
-                          value={editForm.paymentMethod}
-                          onChange={e => setEditForm({ ...editForm, paymentMethod: e.target.value })}
-                          placeholder="如: 储蓄卡"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">收款方全称</Label>
-                        <Input
-                          value={editForm.payeeFullName}
-                          onChange={e => setEditForm({ ...editForm, payeeFullName: e.target.value })}
-                          placeholder="如: **秋(个人)"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">备注</Label>
-                        <Input
-                          value={editForm.remark}
-                          onChange={e => setEditForm({ ...editForm, remark: e.target.value })}
-                          placeholder="补充备注信息"
-                        />
-                      </div>
-                    </>
-                  )}
+                <div className="space-y-2">
+                  <Label>分类</Label>
+                  <Select
+                    value={formState.category || "其他"}
+                    onValueChange={(value) => setFormState((current) => ({ ...current, category: value }))}
+                  >
+                    <SelectTrigger className="rounded-2xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORY_OPTIONS.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  {/* 分类 - 云闪付和微信显示 */}
-                  {editForm.platform !== "alipay" && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">分类</Label>
-                      <select
-                        className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                        value={editForm.category}
-                        onChange={e => setEditForm({ ...editForm, category: e.target.value })}
-                      >
-                        <option value="">选择分类</option>
-                        <option value="餐饮">餐饮</option>
-                        <option value="购物">购物</option>
-                        <option value="交通">交通</option>
-                        <option value="娱乐">娱乐</option>
-                        <option value="生活">生活</option>
-                        <option value="医疗">医疗</option>
-                        <option value="教育">教育</option>
-                        <option value="其他">其他</option>
-                      </select>
-                    </div>
-                  )}
-
-                  {/* 支付宝的描述字段 */}
-                  {editForm.platform === "alipay" && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">描述</Label>
-                      <Input
-                        value={editForm.description}
-                        onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                        placeholder="商品说明 / 简短描述"
-                      />
-                    </div>
-                  )}
+                <div className="space-y-2 md:col-span-2">
+                  <Label>描述</Label>
+                  <textarea
+                    value={formState.description}
+                    onChange={(event) => setFormState((current) => ({ ...current, description: event.target.value }))}
+                    placeholder="补充商品、账单备注或识别结果说明"
+                    className="min-h-[96px] w-full rounded-[20px] border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  />
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
-          {scanResult && (
-            <BottomSheetFooter>
-              <Button variant="outline" onClick={() => { setSelectedImage(null); setSelectedFile(null); setScanResult(null); }}>
-                重新拍照
+
+          {selectedImage ? (
+            <BottomSheetFooter className="flex-row justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                onClick={() => {
+                  setSelectedImage(null);
+                  setSelectedFile(null);
+                  setScanResult(null);
+                }}
+              >
+                重新上传
               </Button>
-              <Button onClick={handleAIConfirm}>
+              <Button type="button" className="rounded-2xl bg-slate-900 hover:bg-slate-800" onClick={handleAIConfirm}>
                 确认记账
               </Button>
             </BottomSheetFooter>
-          )}
+          ) : null}
         </BottomSheetContent>
       </BottomSheet>
-      </div>
     </>
   );
 }
