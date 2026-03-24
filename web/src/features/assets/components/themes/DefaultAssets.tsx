@@ -28,6 +28,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
   THEME_SURFACE_CLASS,
+  THEME_WHITE_ACTION_BUTTON_CLASS,
   ThemeDarkPanel,
   ThemeHero,
   ThemeMetricCard,
@@ -436,7 +437,7 @@ export function AssetsDefaultTheme({
 
                 <Button
                   onClick={onOpenCreate}
-                  className="h-11 rounded-2xl bg-white text-slate-950 shadow-none hover:bg-blue-50"
+                  className={THEME_WHITE_ACTION_BUTTON_CLASS}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   新增资产

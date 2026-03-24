@@ -8,7 +8,7 @@ export default function ThemesPage() {
   const { themeId, setThemeId, themes } = useTheme();
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
           <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
@@ -59,8 +59,8 @@ export default function ThemesPage() {
 
                 <div className="mt-4 flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-950">{theme.name}</h3>
-                    <p className="mt-1 text-sm text-slate-500">{theme.description}</p>
+                    <h3 className="text-base font-semibold text-slate-950 sm:text-lg">{theme.name}</h3>
+                    <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">{theme.description}</p>
                   </div>
                   {isActive ? <CheckCircle2 className="h-5 w-5 shrink-0 text-blue-600" /> : null}
                 </div>

@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertCircle, Plus, ShieldAlert } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Plus, ShieldAlert } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
-import { BottomSheet, BottomSheetContent, BottomSheetFooter, BottomSheetHeader, BottomSheetTitle } from "@/components/ui/bottomsheet";
+import {
+  THEME_DIALOG_INPUT_CLASS,
+  THEME_DIALOG_SELECT_CLASS,
+  ThemeActionBar,
+  ThemeDialogSection,
+  ThemeFormField,
+  ThemeFormGrid,
+  ThemeHero,
+  ThemeMetricCard,
+  ThemeNotice,
+  ThemeSectionHeader,
+  ThemeSurface,
+} from "@/components/shared/theme-primitives";
+import { BottomSheet, BottomSheetContent, BottomSheetDescription, BottomSheetHeader, BottomSheetTitle } from "@/components/ui/bottomsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConfirm, useNoticeDialog } from "@/components/ui/confirm-dialog";
@@ -76,7 +88,7 @@ export default function BudgetsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadItems() {
+  const loadItems = useCallback(async () => {
     try {
       const data = await apiFetch<{ items: Array<Record<string, unknown>> }>("/api/budgets");
       setItems(
@@ -101,11 +113,11 @@ export default function BudgetsPage() {
         description: loadError instanceof Error ? loadError.message : "请稍后重试。",
       });
     }
-  }
+  }, [notify]);
 
   useEffect(() => {
     void loadItems();
-  }, []);
+  }, [loadItems]);
 
   function openCreate() {
     setEditingItem(null);
@@ -289,121 +301,113 @@ export default function BudgetsPage() {
         <BottomSheetContent className="max-w-md">
           <BottomSheetHeader>
             <BottomSheetTitle>{editingItem ? "编辑预算" : "新增预算"}</BottomSheetTitle>
+            <BottomSheetDescription>统一维护预算作用域、周期、限额和预警阈值。</BottomSheetDescription>
           </BottomSheetHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error ? (
-              <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
-              </div>
-            ) : null}
+            {error ? <ThemeNotice tone="red" description={error} /> : null}
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">作用域</span>
-                <select
-                  disabled={Boolean(editingItem)}
-                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm disabled:bg-slate-50"
-                  value={scopeType}
-                  onChange={(event) => setScopeType(event.target.value as typeof scopeType)}
-                >
-                  {SCOPE_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <ThemeDialogSection className="space-y-4">
+              <ThemeFormGrid>
+                <ThemeFormField label="作用域">
+                  <select
+                    disabled={Boolean(editingItem)}
+                    className={THEME_DIALOG_SELECT_CLASS}
+                    value={scopeType}
+                    onChange={(event) => setScopeType(event.target.value as typeof scopeType)}
+                  >
+                    {SCOPE_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </ThemeFormField>
 
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">周期</span>
-                <select
-                  disabled={Boolean(editingItem)}
-                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm disabled:bg-slate-50"
-                  value={period}
-                  onChange={(event) => setPeriod(event.target.value as typeof period)}
-                >
-                  <option value="MONTHLY">月度</option>
-                  <option value="YEARLY">年度</option>
-                </select>
-              </label>
-            </div>
+                <ThemeFormField label="周期">
+                  <select
+                    disabled={Boolean(editingItem)}
+                    className={THEME_DIALOG_SELECT_CLASS}
+                    value={period}
+                    onChange={(event) => setPeriod(event.target.value as typeof period)}
+                  >
+                    <option value="MONTHLY">月度</option>
+                    <option value="YEARLY">年度</option>
+                  </select>
+                </ThemeFormField>
+              </ThemeFormGrid>
 
-            <label className="space-y-1.5">
-              <span className="text-sm font-medium text-slate-700">分类</span>
-              <Input
-                required
-                disabled={Boolean(editingItem)}
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                list="budget-categories"
-                className="h-11 rounded-2xl"
-                placeholder="选择或输入分类"
-              />
-              <datalist id="budget-categories">
-                {COMMON_CATEGORIES.map((value) => (
-                  <option key={value} value={value} />
-                ))}
-              </datalist>
-            </label>
-
-            {scopeType === "PLATFORM" ? (
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">平台</span>
+              <ThemeFormField label="分类">
                 <Input
                   required
                   disabled={Boolean(editingItem)}
-                  value={platform}
-                  onChange={(event) => setPlatform(event.target.value)}
-                  list="budget-platforms"
-                  className="h-11 rounded-2xl"
-                  placeholder="选择或输入平台"
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                  list="budget-categories"
+                  className={THEME_DIALOG_INPUT_CLASS}
+                  placeholder="选择或输入分类"
                 />
-                <datalist id="budget-platforms">
-                  {COMMON_PLATFORMS.map((value) => (
+                <datalist id="budget-categories">
+                  {COMMON_CATEGORIES.map((value) => (
                     <option key={value} value={value} />
                   ))}
                 </datalist>
-              </label>
-            ) : null}
+              </ThemeFormField>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">限额</span>
-                <Input
-                  required
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  className="h-11 rounded-2xl"
-                />
-              </label>
+              {scopeType === "PLATFORM" ? (
+                <ThemeFormField label="平台">
+                  <Input
+                    required
+                    disabled={Boolean(editingItem)}
+                    value={platform}
+                    onChange={(event) => setPlatform(event.target.value)}
+                    list="budget-platforms"
+                    className={THEME_DIALOG_INPUT_CLASS}
+                    placeholder="选择或输入平台"
+                  />
+                  <datalist id="budget-platforms">
+                    {COMMON_PLATFORMS.map((value) => (
+                      <option key={value} value={value} />
+                    ))}
+                  </datalist>
+                </ThemeFormField>
+              ) : null}
 
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">预警阈值</span>
-                <Input
-                  required
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={alertPercent}
-                  onChange={(event) => setAlertPercent(event.target.value)}
-                  className="h-11 rounded-2xl"
-                />
-              </label>
-            </div>
+              <ThemeFormGrid>
+                <ThemeFormField label="限额">
+                  <Input
+                    required
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    className={THEME_DIALOG_INPUT_CLASS}
+                  />
+                </ThemeFormField>
 
-            <BottomSheetFooter>
+                <ThemeFormField label="预警阈值" hint="1-100 之间">
+                  <Input
+                    required
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={alertPercent}
+                    onChange={(event) => setAlertPercent(event.target.value)}
+                    className={THEME_DIALOG_INPUT_CLASS}
+                  />
+                </ThemeFormField>
+              </ThemeFormGrid>
+            </ThemeDialogSection>
+
+            <ThemeActionBar>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
                 取消
               </Button>
               <Button type="submit" disabled={loading} className="h-11 rounded-2xl sm:min-w-28">
                 {loading ? "保存中..." : "保存"}
               </Button>
-            </BottomSheetFooter>
+            </ThemeActionBar>
           </form>
         </BottomSheetContent>
       </BottomSheet>

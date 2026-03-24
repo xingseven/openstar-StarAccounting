@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import { THEME_LIST_ITEM_CLASS, ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -231,7 +231,7 @@ export default function AboutPage() {
 
   if (showInitialSkeleton) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
         <Skeleton className="h-[220px] rounded-[28px]" />
         <div className="grid gap-3 md:grid-cols-4">
           <Skeleton className="h-[110px] rounded-[20px]" />
@@ -248,7 +248,7 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
       <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
@@ -258,7 +258,7 @@ export default function AboutPage() {
             </div>
 
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">关于 OpenStar Accounting</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">关于 OpenStar Accounting</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
                 现在关于页面已经接入统一更新检查、网站镜像优先下载和网页版刷新更新能力。用户不需要直接跳转 GitHub，就能检查和获取新版本。
               </p>
@@ -308,7 +308,7 @@ export default function AboutPage() {
           />
 
           <div className={cn(
-            "mt-5 rounded-[22px] border px-4 py-4 text-sm",
+            "mt-5 rounded-[22px] border px-4 py-4 text-xs sm:text-sm",
             updateInfo.hasUpdate ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
           )}>
             <div className="flex items-center gap-3">
@@ -318,10 +318,10 @@ export default function AboutPage() {
           </div>
 
           <div className="mt-5 space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900">本次更新重点</h3>
+            <h3 className="text-xs font-semibold text-slate-900 sm:text-sm">本次更新重点</h3>
             <ul className="space-y-2">
               {(updateInfo.notes.length > 0 ? updateInfo.notes : ["当前更新清单暂无额外说明。"]).map((note, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:text-sm">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                   {note}
                 </li>
@@ -341,8 +341,8 @@ export default function AboutPage() {
             <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-950">网页版</h3>
-                  <p className="mt-1 text-sm text-slate-500">{updateInfo.web.description}</p>
+                  <h3 className="text-xs font-semibold text-slate-950 sm:text-sm">网页版</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">{updateInfo.web.description}</p>
                   <p className="mt-2 text-xs text-slate-400">
                     当前 v{updateInfo.web.currentVersion} · 最新 v{updateInfo.web.latestVersion}
                   </p>
@@ -361,8 +361,8 @@ export default function AboutPage() {
             <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-950">移动端 App</h3>
-                  <p className="mt-1 text-sm text-slate-500">{updateInfo.app.description}</p>
+                  <h3 className="text-xs font-semibold text-slate-950 sm:text-sm">移动端 App</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">{updateInfo.app.description}</p>
                   <p className="mt-2 text-xs text-slate-400">
                     当前 v{updateInfo.app.currentVersion} · 最新 v{updateInfo.app.latestVersion}
                   </p>
@@ -376,10 +376,10 @@ export default function AboutPage() {
                     <a
                       key={item.id}
                       href={item.proxyUrl}
-                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm transition hover:border-slate-300 hover:bg-slate-50"
+                      className={THEME_LIST_ITEM_CLASS}
                     >
                       <div>
-                        <div className="font-medium text-slate-900">{item.label}</div>
+                        <div className="text-sm font-medium text-slate-900">{item.label}</div>
                         <div className="mt-1 text-xs text-slate-500">
                           {item.fileName}
                           {item.size ? ` · ${item.size}` : ""}
@@ -390,7 +390,7 @@ export default function AboutPage() {
                     </a>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-4 text-xs leading-5 text-slate-500 sm:text-sm">
                     当前还没有上传新的安装包。把安装包放到网站镜像或 GitHub Release 后，这里会自动显示下载入口。
                   </div>
                 )}
@@ -432,7 +432,7 @@ export default function AboutPage() {
               >
                 <div className="flex items-center gap-3">
                   <VersionTypeBadge type={item.type} />
-                  <span className="text-sm font-semibold text-slate-900">v{item.version}</span>
+                  <span className="text-xs font-semibold text-slate-900 sm:text-sm">v{item.version}</span>
                   <span className="text-xs text-slate-400">{item.date}</span>
                 </div>
                 {expandedVersions.includes(item.version) ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
@@ -442,7 +442,7 @@ export default function AboutPage() {
                 <div className="border-t border-slate-200 px-4 pb-4 pt-3">
                   <ul className="space-y-2">
                     {item.highlights.map((highlight, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                      <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:text-sm">
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                         {highlight}
                       </li>
@@ -456,7 +456,7 @@ export default function AboutPage() {
           {!showAllVersions && versionHistory.length > 1 ? (
             <button
               onClick={() => setShowAllVersions(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 py-3 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 py-3 text-xs font-medium text-blue-600 transition hover:bg-blue-50 sm:text-sm"
             >
               查看全部历史版本 ({versionHistory.length})
               <ChevronDown className="h-4 w-4" />
@@ -479,7 +479,7 @@ export default function AboutPage() {
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                 <site.icon className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-950">{site.name}</h3>
+              <h3 className="text-xs font-semibold text-slate-950 sm:text-sm">{site.name}</h3>
               <p className="mt-1 text-xs text-slate-500">{site.description}</p>
               <div className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-600">
                 查看

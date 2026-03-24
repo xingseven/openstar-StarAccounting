@@ -4,9 +4,22 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle, Lock, Plus, Star, User, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import {
+  THEME_DIALOG_INPUT_CLASS,
+  THEME_STATUS_MUTED_SURFACE_CLASS,
+  THEME_STATUS_SUCCESS_SOFT_SURFACE_CLASS,
+  ThemeActionBar,
+  ThemeFormField,
+  ThemeHero,
+  ThemeMetricCard,
+  ThemeNotice,
+  ThemeSectionHeader,
+  ThemeSurface,
+} from "@/components/shared/theme-primitives";
 
 type AccountItem = {
   id: string;
@@ -57,7 +70,7 @@ export default function SettingsPage() {
       }
     }
 
-    loadData();
+    void loadData();
   }, []);
 
   async function handleUpdateProfile(event: React.FormEvent) {
@@ -146,7 +159,7 @@ export default function SettingsPage() {
 
   if (showInitialSkeleton || !user) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
         <Skeleton className="h-[180px] rounded-[28px]" />
         <div className="grid gap-3 md:grid-cols-3">
           <Skeleton className="h-[110px] rounded-[20px]" />
@@ -162,10 +175,11 @@ export default function SettingsPage() {
     );
   }
 
-  const defaultAccountName = accounts.find((account) => account.id === user.defaultAccountId)?.name || "未设置";
+  const defaultAccountName =
+    accounts.find((account) => account.id === user.defaultAccountId)?.name || "未设置";
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
       <DelayedRender delay={0}>
         <ThemeHero className="p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-4">
@@ -189,57 +203,47 @@ export default function SettingsPage() {
       </DelayedRender>
 
       {message ? (
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm">
-          <div className="flex items-center gap-3 text-sm text-green-700">
-            <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
+        <ThemeNotice tone="green">
+          <div className="flex items-center gap-3 text-sm">
+            <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
             {message}
           </div>
-        </div>
+        </ThemeNotice>
       ) : null}
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
-          <div className="flex items-center gap-3 text-sm text-red-700">
+        <ThemeNotice tone="red">
+          <div className="flex items-center gap-3 text-sm">
             <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
             {error}
           </div>
-        </div>
+        </ThemeNotice>
       ) : null}
 
       <DelayedRender delay={120}>
         <div className="grid gap-4 lg:grid-cols-3">
           <ThemeSurface className="p-4 sm:p-6 lg:p-8">
-            <ThemeSectionHeader eyebrow="基本信息" title="个人资料" description="更新你的显示名称和个人信息。" />
+            <ThemeSectionHeader eyebrow="基本信息" title="个人资料" description="更新你的显示名称和基础资料。" />
 
             <form onSubmit={handleUpdateProfile} className="mt-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-500">邮箱</label>
-                <input
-                  disabled
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500"
-                  value={user.email}
-                />
-              </div>
+              <ThemeFormField label="邮箱">
+                <Input disabled value={user.email} className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl bg-slate-50 text-slate-500")} />
+              </ThemeFormField>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-500">显示名称</label>
-                <input
+              <ThemeFormField label="显示名称">
+                <Input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="设置你的显示名称"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl")}
                 />
-              </div>
+              </ThemeFormField>
 
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
-                >
+              <ThemeActionBar>
+                <Button type="submit" disabled={loading} className="rounded-xl">
                   保存修改
-                </button>
-              </div>
+                </Button>
+              </ThemeActionBar>
             </form>
           </ThemeSurface>
 
@@ -247,73 +251,65 @@ export default function SettingsPage() {
             <ThemeSectionHeader eyebrow="安全设置" title="修改密码" description="定期更新密码，保持账户安全。" />
 
             <form onSubmit={handleUpdatePassword} className="mt-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-500">当前密码</label>
+              <ThemeFormField label="当前密码">
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <input
+                  <Input
                     required
                     type="password"
                     value={oldPassword}
                     onChange={(event) => setOldPassword(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl pl-11")}
                   />
                 </div>
-              </div>
+              </ThemeFormField>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-500">新密码</label>
+              <ThemeFormField label="新密码" hint="至少 6 位">
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
-                  <input
+                  <Input
                     required
                     type="password"
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
                     placeholder="至少 6 位"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl pl-11")}
                   />
                 </div>
-              </div>
+              </ThemeFormField>
 
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="rounded-xl border border-slate-900 px-5 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-50 disabled:opacity-50"
-                >
+              <ThemeActionBar>
+                <Button type="submit" variant="outline" disabled={loading} className="rounded-xl">
                   修改密码
-                </button>
-              </div>
+                </Button>
+              </ThemeActionBar>
             </form>
           </ThemeSurface>
 
           <ThemeSurface className="p-4 sm:p-6 lg:p-8">
             <ThemeSectionHeader eyebrow="账户管理" title="切换与创建账户" description="管理你的多账户工作空间和默认账户。" />
 
-            <form onSubmit={handleCreateAccount} className="mt-5 flex gap-3">
-              <input
-                type="text"
-                placeholder="新账户名称"
-                value={newAccountName}
-                onChange={(event) => setNewAccountName(event.target.value)}
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-              />
-              <button
-                type="submit"
-                disabled={accountLoading || !newAccountName.trim()}
-                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-green-700 disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" />
-                创建
-              </button>
+            <form onSubmit={handleCreateAccount} className="mt-5 space-y-4">
+              <ThemeFormField label="新账户名称">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Input
+                    type="text"
+                    placeholder="输入新账户名称"
+                    value={newAccountName}
+                    onChange={(event) => setNewAccountName(event.target.value)}
+                    className={cn(THEME_DIALOG_INPUT_CLASS, "flex-1 rounded-xl")}
+                  />
+                  <Button type="submit" disabled={accountLoading || !newAccountName.trim()} className="h-11 rounded-xl bg-green-600 hover:bg-green-700">
+                    <Plus className="mr-2 h-4 w-4" />
+                    创建
+                  </Button>
+                </div>
+              </ThemeFormField>
             </form>
 
             <div className="mt-5 space-y-3">
               {accounts.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                  暂无账户
-                </p>
+                <ThemeNotice tone="slate" description="暂无账户" />
               ) : (
                 accounts.map((account) => {
                   const isDefault = user.defaultAccountId === account.id;
@@ -323,7 +319,7 @@ export default function SettingsPage() {
                       key={account.id}
                       className={cn(
                         "flex items-center justify-between gap-3 rounded-xl border px-4 py-3 transition",
-                        isDefault ? "border-green-200 bg-green-50/70" : "border-slate-200 bg-slate-50/70"
+                        isDefault ? THEME_STATUS_SUCCESS_SOFT_SURFACE_CLASS : THEME_STATUS_MUTED_SURFACE_CLASS
                       )}
                     >
                       <div className="min-w-0">
@@ -334,14 +330,15 @@ export default function SettingsPage() {
                       {isDefault ? (
                         <span className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">默认账户</span>
                       ) : (
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => handleSetDefaultAccount(account.id)}
+                          variant="ghost"
+                          onClick={() => void handleSetDefaultAccount(account.id)}
                           disabled={accountLoading}
-                          className="rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                          className="h-auto rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100"
                         >
                           设为默认
-                        </button>
+                        </Button>
                       )}
                     </div>
                   );

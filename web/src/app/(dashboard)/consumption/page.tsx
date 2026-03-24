@@ -36,7 +36,15 @@ export default function ConsumptionPage() {
   const [consumptionData, setConsumptionData] = useState(MOCK_CONSUMPTION);
   const [loading, setLoading] = useState(true);
   const [usingMockData, setUsingMockData] = useState(false);
+  const [dateFilter, setDateFilter] = useState<"month" | "all">("month");
   const currentMonthRange = useMemo(() => getCurrentMonthRange(), []);
+  const activeRange = useMemo(
+    () =>
+      dateFilter === "month"
+        ? currentMonthRange
+        : { startDate: undefined, endDate: undefined, label: "全部时间" },
+    [currentMonthRange, dateFilter]
+  );
 
   // 恢复滚动位置 - 页面级别执行
   useEffect(() => {
@@ -70,7 +78,7 @@ export default function ConsumptionPage() {
     async function loadData() {
       setLoading(true);
       try {
-        const realData = await fetchConsumptionData(currentMonthRange.startDate, currentMonthRange.endDate);
+        const realData = await fetchConsumptionData(activeRange.startDate, activeRange.endDate);
         // 如果 API 返回空数据（没有交易记录），使用 mock 数据用于展示
         const hasNoData =
           realData.transactions.length === 0 &&
@@ -97,9 +105,9 @@ export default function ConsumptionPage() {
     }
 
     loadData();
-  }, []);
+  }, [activeRange.endDate, activeRange.startDate]);
 
-  const dateRangeLabel = currentMonthRange.label;
+  const dateRangeLabel = activeRange.label;
 
   return (
     <div className="w-full">
@@ -108,6 +116,8 @@ export default function ConsumptionPage() {
         dateRangeLabel={dateRangeLabel}
         loading={loading}
         usingMockData={usingMockData}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
       />
     </div>
   );

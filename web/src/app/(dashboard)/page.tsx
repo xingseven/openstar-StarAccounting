@@ -73,6 +73,10 @@ type Transaction = {
   merchant?: string;
 };
 
+type SavingsMetricItem = {
+  currentAmount: number | string;
+};
+
 async function fetchDashboardData(): Promise<DashboardData> {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -84,7 +88,7 @@ async function fetchDashboardData(): Promise<DashboardData> {
   const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData, savingsTxData, budgetAlertsData] = await Promise.all([
     apiFetch<{ items: Asset[] }>("/api/assets"),
     apiFetch<{ items: Loan[] }>("/api/loans"),
-    apiFetch<{ items: any[] }>("/api/savings"),
+    apiFetch<{ items: SavingsMetricItem[] }>("/api/savings"),
     apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsExpense}`),
     apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsIncome}`),
     apiFetch<{ items: Transaction[] }>(`/api/transactions?page=1&pageSize=5`),

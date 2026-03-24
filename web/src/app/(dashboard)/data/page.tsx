@@ -8,6 +8,7 @@ import {
   ThemeEmptyState,
   ThemeHero,
   ThemeMetricCard,
+  ThemeNotice,
   ThemeSectionHeader,
   ThemeSurface,
   ThemeTable,
@@ -233,7 +234,7 @@ export default function DataPage() {
 
   if (showInitialSkeleton || loading) {
     return (
-      <div className="mx-auto max-w-[1600px] space-y-4 p-4 sm:space-y-6 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1600px] space-y-4 py-4 sm:space-y-6 sm:p-6 lg:p-8">
         <Skeleton className="h-20 rounded-2xl" />
         <Skeleton className="h-12 rounded-xl" />
         <Skeleton className="h-96 rounded-2xl" />
@@ -242,7 +243,7 @@ export default function DataPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4 p-4 sm:space-y-6 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1600px] space-y-4 py-4 sm:space-y-6 sm:p-6 lg:p-8">
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
           <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
@@ -262,17 +263,21 @@ export default function DataPage() {
       </div>
 
       {message ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm">
-          <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
-          <p className="text-sm text-green-700">{message}</p>
-        </div>
+        <ThemeNotice tone="green">
+          <div className="flex items-center gap-3 text-sm">
+            <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
+            {message}
+          </div>
+        </ThemeNotice>
       ) : null}
 
       {error ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm">
-          <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
+        <ThemeNotice tone="red">
+          <div className="flex items-center gap-3 text-sm">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+            {error}
+          </div>
+        </ThemeNotice>
       ) : null}
 
       <ThemeSurface className="p-4 sm:p-6">

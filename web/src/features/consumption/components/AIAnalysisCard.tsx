@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
-import { Sparkles, TrendingUp, TrendingDown, AlertCircle, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Loader2, BarChart3 } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Loader2, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThemeNotice } from "@/components/shared/theme-primitives";
 
 type Insight = {
   type: "info" | "warning" | "success";
@@ -339,25 +341,18 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
 
   if (error) {
     return (
-      <div className={`rounded-2xl border border-red-200 bg-red-50 shadow-sm overflow-hidden ${className}`}>
-        <div className="p-4 md:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">AI 智能分析</h3>
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          </div>
+      <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+        <div className="space-y-4 p-4 md:p-6">
+          <ThemeNotice tone="red" title="AI 智能分析" description={error} />
 
-          <button
+          <Button
             onClick={handleAnalyze}
-            className="w-full py-3 px-4 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+            variant="outline"
+            className="h-11 w-full rounded-xl"
           >
             <RefreshCw className="w-4 h-4" />
             重试
-          </button>
+          </Button>
         </div>
       </div>
     );

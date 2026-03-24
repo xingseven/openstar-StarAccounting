@@ -1,4 +1,4 @@
-export type ThemeId = "default" | "graphite" | "spruce";
+export type ThemeId = "default" | "graphite" | "spruce" | "terracotta";
 
 export type ThemeDefinition = {
   id: ThemeId;
@@ -146,6 +146,50 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
       "theme-metric-bg": "#ffffff",
       "theme-metric-border": "#d1fae5",
       "theme-metric-shadow": "0 1px 2px rgba(15,118,110,0.04)",
+    },
+  },
+  terracotta: {
+    id: "terracotta",
+    name: "赤陶主题",
+    description: "温暖的陶土色工作台，适合想让财务界面更有气质的场景。",
+    preview: {
+      shell: "linear-gradient(180deg,#fff7f0 0%,#f6e7dc 100%)",
+      surface: "#fffdf9",
+      accent: "#c65d3a",
+      contrast: "#6f2f1d",
+    },
+    vars: {
+      "theme-app-bg": "linear-gradient(180deg,#fff7f0 0%,#f6e7dc 100%)",
+      "theme-shell-bg": "#fffdf9",
+      "theme-shell-border": "#efcfbe",
+      "theme-shell-shadow": "0 1px 3px rgba(124,58,32,0.08)",
+      "theme-header-bg": "#fffdf9",
+      "theme-header-border": "#efcfbe",
+      "theme-header-shadow": "0 1px 2px rgba(124,58,32,0.06)",
+      "theme-sidebar-bg": "#fff8f2",
+      "theme-sidebar-border": "#efcfbe",
+      "theme-sidebar-text": "#9a5b43",
+      "theme-sidebar-muted": "#c08a72",
+      "theme-sidebar-hover-bg": "#fff1e7",
+      "theme-sidebar-hover-text": "#7c3a20",
+      "theme-sidebar-active-bg": "#fde1d1",
+      "theme-sidebar-active-text": "#9f3415",
+      "theme-sidebar-icon-bg": "#fbe7dc",
+      "theme-sidebar-icon-text": "#b46949",
+      "theme-sidebar-icon-active-bg": "#fffdf9",
+      "theme-sidebar-icon-active-text": "#c65d3a",
+      "theme-surface-bg": "#fffdf9",
+      "theme-surface-border": "#efcfbe",
+      "theme-surface-shadow": "0 1px 2px rgba(124,58,32,0.06)",
+      "theme-hero-bg": "#fffaf5",
+      "theme-hero-border": "#efcfbe",
+      "theme-hero-shadow": "0 1px 2px rgba(124,58,32,0.06)",
+      "theme-dark-panel-bg": "#6f2f1d",
+      "theme-dark-panel-border": "rgba(111,47,29,0.14)",
+      "theme-dark-panel-shadow": "0 1px 2px rgba(111,47,29,0.2)",
+      "theme-metric-bg": "#fffdf9",
+      "theme-metric-border": "#efcfbe",
+      "theme-metric-shadow": "0 1px 2px rgba(124,58,32,0.05)",
     },
   },
 };

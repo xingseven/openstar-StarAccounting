@@ -37,7 +37,6 @@ import { GridDecoration } from "@/components/shared/GridDecoration";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
   THEME_SURFACE_CLASS,
-  ThemeDarkPanel,
   ThemeMetricCard,
   ThemeSurface,
 } from "@/components/shared/theme-primitives";
@@ -86,6 +85,14 @@ const ALERT_STYLE: Record<AlertStatus, { badge: string; line: string; text: stri
 };
 
 const CATEGORY_COLORS = ["#2563eb", "#0f766e", "#f59e0b", "#ef4444", "#7c3aed"];
+
+type InsightItem = {
+  label: string;
+  value: string;
+  description: string;
+  tone: Tone;
+  icon: LucideIcon;
+};
 
 export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   const [alertsDismissed, setAlertsDismissed] = useState(false);
@@ -155,33 +162,27 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
     ];
   }, [data.recentTransactions]);
 
-  const insightItems: Array<{
-    label: string;
-    value: string;
-    description: string;
-    progress: number;
-    tone: Tone;
-  }> = [
+  const insightItems: InsightItem[] = [
     {
       label: "负债占比",
       value: `${debtRatio.toFixed(0)}%`,
       description: data.totalDebt > 0 ? `总负债 ${formatCurrency(data.totalDebt)}` : "当前无负债压力",
-      progress: debtRatio,
       tone: "blue" as const,
+      icon: CreditCard,
     },
     {
       label: "预算预警",
       value: `${criticalAlerts.length} 项`,
       description: overdueAlerts > 0 ? `${overdueAlerts} 项已超支` : warningAlerts > 0 ? `${warningAlerts} 项接近上限` : "预算执行稳定",
-      progress: Math.min(100, criticalAlerts.length * 20),
       tone: criticalAlerts.length > 0 ? "red" : "blue",
+      icon: ShieldAlert,
     },
     {
       label: "储蓄净流入",
       value: formatCurrency(savingsDelta),
       description: savingsDelta >= 0 ? "本月存下来的钱在增加" : "本月储蓄有回撤",
-      progress: Math.max(8, Math.min(100, (Math.abs(savingsDelta) / Math.max(data.monthIncome || 1, 1)) * 100)),
       tone: savingsDelta >= 0 ? "green" : "amber",
+      icon: PiggyBank,
     },
   ];
 
@@ -218,7 +219,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           <div className="absolute left-6 top-0 h-28 w-28 rounded-full bg-white/80 blur-3xl sm:left-10 sm:h-40 sm:w-40" />
           <GridDecoration mode="light" opacity={0.05} className="mix-blend-multiply" />
 
-          <div className="relative z-10 grid gap-3 sm:gap-5 xl:grid-cols-[minmax(0,1.45fr)_380px]">
+          <div className="relative z-10">
             <div className="space-y-3 sm:space-y-5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-blue-700 ring-1 ring-blue-100 sm:gap-2 sm:px-3 sm:text-xs">
@@ -231,112 +232,60 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </span>
               </div>
 
-              <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.9fr)]">
-                <div className="space-y-2.5 sm:space-y-4">
-                  <div className="space-y-2 sm:space-y-3">
-                    <p className="hidden max-w-xl text-[13px] leading-5 text-slate-600 sm:block sm:text-sm sm:leading-6">
-                      资产、负债、现金流和预算风险放在同一屏里，优先看见本月真正影响决策的数字。
-                    </p>
-                    <div className="flex flex-wrap items-end gap-x-3 gap-y-2 sm:gap-x-6 sm:gap-y-3">
-                      <div>
-                        <p className="text-xs font-medium text-slate-500 sm:text-sm">当前净资产</p>
-                        <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-5xl">
-                          {formatCurrency(netWorth)}
-                        </h1>
-                      </div>
-                      <div
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm",
-                          monthlyBalance >= 0
-                            ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-                            : "bg-red-50 text-red-700 ring-red-100"
-                        )}
-                      >
-                        {monthlyBalance >= 0 ? <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                        本月结余 {formatCurrency(monthlyBalance)}
-                      </div>
+              <div className="space-y-2.5 sm:space-y-4">
+                <div className="space-y-2 sm:space-y-3">
+                  <p className="hidden max-w-xl text-[13px] leading-5 text-slate-600 sm:block sm:text-sm sm:leading-6">
+                    资产、负债、现金流和预算风险放在同一屏里，优先看见本月真正影响决策的数字。
+                  </p>
+                  <div className="flex flex-wrap items-end gap-x-3 gap-y-2 sm:gap-x-6 sm:gap-y-3">
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 sm:text-sm">当前净资产</p>
+                      <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-5xl">
+                        {formatCurrency(netWorth)}
+                      </h1>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                    <HeroStatCard
-                      label="总资产"
-                      value={formatCurrency(data.totalAssets)}
-                      mobileValue={formatCurrency(data.totalAssets, { compact: true })}
-                      detail="含资产和储蓄计划"
-                      tone="blue"
-                      icon={Wallet}
-                    />
-                    <HeroStatCard
-                      label="总负债"
-                      value={formatCurrency(data.totalDebt)}
-                      mobileValue={formatCurrency(data.totalDebt, { compact: true })}
-                      detail={data.totalDebt > 0 ? "持续关注偿付节奏" : "当前状态健康"}
-                      tone="red"
-                      icon={CreditCard}
-                    />
-                    <HeroStatCard
-                      label="储蓄净流入"
-                      value={formatCurrency(savingsDelta)}
-                      mobileValue={formatCurrency(savingsDelta, { compact: true })}
-                      detail={`${formatCurrency(data.monthSavingsIncome)} 流入 / ${formatCurrency(data.monthSavingsExpense)} 流出`}
-                      tone={savingsDelta >= 0 ? "green" : "amber"}
-                      icon={PiggyBank}
-                    />
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm",
+                        monthlyBalance >= 0
+                          ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                          : "bg-red-50 text-red-700 ring-red-100"
+                      )}
+                    >
+                      {monthlyBalance >= 0 ? <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                      本月结余 {formatCurrency(monthlyBalance)}
+                    </div>
                   </div>
                 </div>
 
-                <ThemeDarkPanel className="px-4 py-4 shadow-none sm:px-5 sm:py-5 sm:shadow-[0_20px_60px_rgba(15,23,42,0.28)]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs text-blue-100/80 sm:text-sm">资金体检</p>
-                      <h2 className="mt-1 text-lg font-semibold sm:text-xl">本月资金节奏</h2>
-                    </div>
-                    <div className="rounded-full bg-white/10 p-2 text-blue-100">
-                      <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <HeroStatCard
+                    label="总资产"
+                    value={formatCurrency(data.totalAssets)}
+                    mobileValue={formatCurrency(data.totalAssets, { compact: true })}
+                    detail="含资产和储蓄计划"
+                    tone="blue"
+                    icon={Wallet}
+                  />
+                  <HeroStatCard
+                    label="总负债"
+                    value={formatCurrency(data.totalDebt)}
+                    mobileValue={formatCurrency(data.totalDebt, { compact: true })}
+                    detail={data.totalDebt > 0 ? "持续关注偿付节奏" : "当前状态健康"}
+                    tone="red"
+                    icon={CreditCard}
+                  />
+                  <HeroStatCard
+                    label="储蓄净流入"
+                    value={formatCurrency(savingsDelta)}
+                    mobileValue={formatCurrency(savingsDelta, { compact: true })}
+                    detail={`${formatCurrency(data.monthSavingsIncome)} 流入 / ${formatCurrency(data.monthSavingsExpense)} 流出`}
+                    tone={savingsDelta >= 0 ? "green" : "amber"}
+                    icon={PiggyBank}
+                  />
+                </div>
 
-                  <div className="mt-3 grid gap-2 sm:mt-6 sm:gap-3 sm:grid-cols-1 min-[430px]:grid-cols-3 lg:grid-cols-1">
-                    {insightItems.map((item) => (
-                      <div key={item.label} className="rounded-[18px] border border-transparent bg-transparent p-2.5 sm:border-white/10 sm:bg-white/6 sm:rounded-2xl sm:p-3">
-                        <div className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-2 sm:hidden">
-                          <div className="min-w-0">
-                            <p className="text-[10px] uppercase tracking-[0.14em] text-white/55">{item.label}</p>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-blue-400 via-sky-300 to-cyan-200"
-                                  style={{ width: `${Math.max(8, Math.min(100, item.progress))}%` }}
-                                />
-                              </div>
-                              <span className="w-11 text-right text-[10px] font-semibold text-white/80">{item.value}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="hidden sm:block">
-                          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                            <div>
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-white/55 sm:text-xs sm:tracking-[0.18em]">{item.label}</p>
-                              <p className="mt-0.5 text-sm font-semibold sm:mt-1 sm:text-lg">{item.value}</p>
-                            </div>
-                            <span className={cn("hidden w-fit rounded-full px-2 py-1 text-[10px] font-medium ring-1 sm:inline-flex sm:px-2.5 sm:text-xs", STAT_TONE_CLASS[item.tone])}>
-                              {item.description}
-                            </span>
-                          </div>
-                          <div className="mt-2 hidden h-1.5 overflow-hidden rounded-full bg-white/10 sm:block sm:mt-3 sm:h-2">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-blue-400 via-sky-300 to-cyan-200"
-                              style={{ width: `${Math.max(8, Math.min(100, item.progress))}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ThemeDarkPanel>
+                <FundsHealthPanel items={insightItems} />
               </div>
 
               {criticalAlerts.length > 0 && !alertsDismissed ? (
@@ -421,7 +370,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         <section className="grid gap-3 sm:gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.92fr)]">
           <div className="space-y-3 sm:space-y-5">
             <div className="grid gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.85fr)]">
-              <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className={cn(SURFACE_CLASS, "self-start p-4 sm:p-5 lg:p-6")}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-slate-500 sm:text-sm">本月现金流</p>
@@ -439,8 +388,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   </span>
                 </div>
 
-                <div className="mt-3 grid gap-2.5 sm:mt-6 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_180px]">
-                  <div className="h-[160px] min-w-0 sm:h-[250px]">
+                <div className="mt-3 grid gap-2.5 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_170px]">
+                  <div className="h-[152px] min-w-0 sm:h-[210px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={cashFlowData} margin={{ top: 12, right: 6, left: -20, bottom: 0 }}>
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
@@ -469,7 +418,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     </ResponsiveContainer>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-1">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5 lg:grid-cols-1">
                     <CompactStat
                       label="收入覆盖支出"
                       value={data.monthExpense > 0 ? `${((data.monthIncome / data.monthExpense) * 100).toFixed(0)}%` : "100%"}
@@ -489,7 +438,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                 </div>
               </div>
 
-              <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className={cn(SURFACE_CLASS, "p-4 sm:min-h-[320px] sm:p-6")}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-slate-500 sm:text-sm">近期消费构成</p>
@@ -497,11 +446,11 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   </div>
                 </div>
 
-                <div className="mt-3 grid grid-cols-[122px_minmax(0,1fr)] items-center gap-2.5 sm:mt-5 sm:flex sm:flex-col sm:gap-5">
-                  <div className="mx-auto h-[120px] w-full max-w-[122px] sm:h-[210px] sm:max-w-[260px]">
+                <div className="mt-3 grid grid-cols-[118px_minmax(0,1fr)] items-center gap-3 sm:mt-5 sm:grid-cols-[156px_minmax(0,1fr)] sm:gap-5">
+                  <div className="mx-auto h-[118px] w-full max-w-[118px] sm:h-[156px] sm:max-w-[156px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={categoryDistribution} dataKey="value" nameKey="name" innerRadius={38} outerRadius={58} paddingAngle={3} className="sm:[&_*]:[transform:none]">
+                        <Pie data={categoryDistribution} dataKey="value" nameKey="name" innerRadius={38} outerRadius={56} paddingAngle={3}>
                           {categoryDistribution.map((item) => (
                             <Cell key={item.name} fill={item.color} />
                           ))}
@@ -588,6 +537,29 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         </section>
       </DelayedRender>
     </div>
+  );
+}
+
+function FundsHealthPanel({
+  items,
+}: {
+  items: InsightItem[];
+}) {
+  return (
+    <section className="grid grid-cols-3 gap-2 sm:gap-3">
+      {items.map((item) => (
+        <ThemeMetricCard
+          key={item.label}
+          label={item.label}
+          value={item.value}
+          detail={item.description}
+          tone={item.tone}
+          icon={item.icon}
+          className="border-black/80 sm:p-4"
+          hideDetailOnMobile
+        />
+      ))}
+    </section>
   );
 }
 

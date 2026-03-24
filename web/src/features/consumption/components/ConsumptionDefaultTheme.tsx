@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { siAlipay, siWechat } from "simple-icons";
 import {
@@ -47,6 +48,8 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
   THEME_SURFACE_CLASS,
+  THEME_TEXTAREA_CLASS,
+  THEME_WHITE_ACTION_BUTTON_CLASS,
   ThemeDarkPanel,
   ThemeHero,
   ThemeMetricCard,
@@ -54,6 +57,16 @@ import {
 
 const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 const CHART_RENDERER_OPTS = { renderer: "canvas" as const };
+const FILTER_BAR_TEXT = {
+  searchPlaceholder: "\u641c\u7d22\u5546\u6237\u6216\u5206\u7c7b",
+  allPlatform: "\u5168\u90e8\u5e73\u53f0",
+  wechat: "\u5fae\u4fe1",
+  alipay: "\u652f\u4ed8\u5b9d",
+  cloudpay: "\u4e91\u95ea\u4ed8",
+  allDate: "\u5168\u90e8\u65f6\u95f4",
+  currentMonth: "\u672c\u6708",
+  countSuffix: "\u7b14",
+};
 
 export type ConsumptionData = {
   summary: {
@@ -98,7 +111,20 @@ interface ConsumptionViewProps {
   dateRangeLabel: string;
   loading?: boolean;
   usingMockData?: boolean;
+  dateFilter?: "month" | "all";
+  onDateFilterChange?: (value: "month" | "all") => void;
 }
+
+type FilterBarProps = {
+  compact?: boolean;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  platformFilter: string;
+  onPlatformFilterChange: (value: string) => void;
+  dateFilter: "month" | "all";
+  onDateFilterChange?: (value: "month" | "all") => void;
+  filteredCount: number;
+};
 
 type ScanResponse = {
   amount: number;
@@ -182,6 +208,79 @@ function MetricCard({
 }) {
   return (
     <ThemeMetricCard label={label} value={value} detail={detail} tone={accent} detailPosition="badge" className="p-3.5 sm:p-4" />
+  );
+}
+
+function ConsumptionFilterBar({
+  compact = false,
+  searchTerm,
+  onSearchChange,
+  platformFilter,
+  onPlatformFilterChange,
+  dateFilter,
+  onDateFilterChange,
+  filteredCount,
+}: FilterBarProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-[22px] border border-slate-200 bg-white/96 backdrop-blur-md shadow-[0_16px_40px_rgba(15,23,42,0.12)]",
+        compact ? "rounded-[18px] border-slate-100 bg-slate-50 px-2.5 py-2 shadow-none" : "p-3 md:p-4"
+      )}
+    >
+      <div className={cn("flex flex-col gap-3 xl:flex-row xl:items-center", compact && "md:flex-row md:items-center md:gap-2.5")}>
+        <div className="relative flex-1">
+          <Search className={cn("pointer-events-none absolute left-3 text-slate-400", compact ? "top-2.5 h-4 w-4" : "top-3 h-4 w-4")} />
+          <Input
+            value={searchTerm}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder={FILTER_BAR_TEXT.searchPlaceholder}
+            className={cn("rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400", compact ? "h-9 rounded-[16px]" : "h-11")}
+          />
+        </div>
+
+        <div className={cn("grid gap-3", compact ? "md:grid-cols-[148px_auto] md:items-center md:gap-2.5 xl:w-[340px]" : "sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[420px]")}>
+          <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
+            <SelectTrigger className={cn("rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none", compact ? "h-9 rounded-[16px]" : "h-11")}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{FILTER_BAR_TEXT.allPlatform}</SelectItem>
+              <SelectItem value="wechat">{FILTER_BAR_TEXT.wechat}</SelectItem>
+              <SelectItem value="alipay">{FILTER_BAR_TEXT.alipay}</SelectItem>
+              <SelectItem value="cloudpay">{FILTER_BAR_TEXT.cloudpay}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className={cn("flex flex-wrap items-center gap-2", compact && "md:flex-nowrap md:justify-end")}>
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("month")}
+              className={cn(
+                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition",
+                dateFilter === "month" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+            >
+              {FILTER_BAR_TEXT.currentMonth}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("all")}
+              className={cn(
+                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition",
+                dateFilter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+            >
+              {FILTER_BAR_TEXT.allDate}
+            </button>
+            <div className={cn("inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600", compact && "px-2.5 py-1.5")}>
+              <Filter className="h-3.5 w-3.5" />
+              {`${filteredCount} ${FILTER_BAR_TEXT.countSuffix}`}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -341,14 +440,19 @@ export function ConsumptionDefaultTheme({
   dateRangeLabel,
   loading = false,
   usingMockData = false,
+  dateFilter = "month",
+  onDateFilterChange,
 }: ConsumptionViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
+  const [isFilterPinned, setIsFilterPinned] = useState(false);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  const [canEmbedFilterInHeader, setCanEmbedFilterInHeader] = useState(false);
   const [formState, setFormState] = useState<TransactionFormState>({
     amount: "",
     merchant: "",
@@ -392,6 +496,28 @@ export function ConsumptionDefaultTheme({
       }),
     [data.transactions, lowerSearchTerm, platformFilter]
   );
+
+  useEffect(() => {
+    const scrollArea = document.querySelector<HTMLElement>("[data-dashboard-scroll-area='true']");
+    if (!scrollArea) return;
+
+    const handleScroll = () => {
+      setIsFilterPinned(scrollArea.scrollTop > 24);
+    };
+
+    handleScroll();
+    scrollArea.addEventListener("scroll", handleScroll, { passive: true });
+    return () => scrollArea.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setHeaderSlot(document.getElementById("dashboard-header-inline-slot"));
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const sync = () => setCanEmbedFilterInHeader(mediaQuery.matches);
+    sync();
+    mediaQuery.addEventListener("change", sync);
+    return () => mediaQuery.removeEventListener("change", sync);
+  }, []);
 
   const trendOption = useMemo(
     () => ({
@@ -935,7 +1061,7 @@ export function ConsumptionDefaultTheme({
 
               <ThemeDarkPanel className="p-5 shadow-none sm:shadow-[0_20px_60px_rgba(15,23,42,0.28)]">
                 <div className="flex flex-col gap-3">
-                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
+                  <div className="hidden">
                     <div className="relative">
                       <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
                       <Input
@@ -964,7 +1090,7 @@ export function ConsumptionDefaultTheme({
 
                     <Button
                       onClick={openAIDialog}
-                      className="h-11 rounded-2xl bg-white text-slate-950 shadow-none hover:bg-blue-50"
+                      className={THEME_WHITE_ACTION_BUTTON_CLASS}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       AI 记账
@@ -1009,6 +1135,142 @@ export function ConsumptionDefaultTheme({
               </ThemeDarkPanel>
             </div>
           </ThemeHero>
+        </DelayedRender>
+
+        {isFilterPinned && canEmbedFilterInHeader && headerSlot
+          ? createPortal(
+              <div className="pointer-events-auto">
+                <ConsumptionFilterBar
+                  compact
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  platformFilter={platformFilter}
+                  onPlatformFilterChange={setPlatformFilter}
+                  dateFilter={dateFilter}
+                  onDateFilterChange={onDateFilterChange}
+                  filteredCount={filteredTransactions.length}
+                />
+              </div>,
+              headerSlot
+            )
+          : null}
+
+        <DelayedRender delay={30}>
+          {!isFilterPinned || !canEmbedFilterInHeader ? (
+            <section className="sticky top-2 z-30 md:top-3">
+            <div
+              className={cn(
+                "rounded-[22px] border p-3 backdrop-blur-md transition-all duration-200 md:p-4",
+                isFilterPinned
+                  ? "border-blue-200 bg-white/96 shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
+                  : "border-slate-200/80 bg-white/92 shadow-[0_12px_36px_rgba(15,23,42,0.08)]"
+              )}
+            >
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="搜索商户或分类"
+                    className="h-11 rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400"
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:w-[560px]">
+                  <Select value={platformFilter} onValueChange={setPlatformFilter}>
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部平台</SelectItem>
+                      <SelectItem value="wechat">微信</SelectItem>
+                      <SelectItem value="alipay">支付宝</SelectItem>
+                      <SelectItem value="cloudpay">云闪付</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={dateFilter}
+                    onValueChange={(value) => onDateFilterChange?.(value as "month" | "all")}
+                  >
+                    <SelectTrigger className="hidden h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">鍏ㄩ儴鏃堕棿</SelectItem>
+                      <SelectItem value="month">鏈湀</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <div className="col-span-full flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onDateFilterChange?.("month")}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                        dateFilter === "month"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      {FILTER_BAR_TEXT.currentMonth}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDateFilterChange?.("all")}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                        dateFilter === "all"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      {FILTER_BAR_TEXT.allDate}
+                    </button>
+                  </div>
+
+                  <div className="hidden">
+                    <button
+                      type="button"
+                      onClick={() => onDateFilterChange?.("month")}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                        dateFilter === "month"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      本月
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDateFilterChange?.("all")}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                        dateFilter === "all"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      全部时间
+                    </button>
+                  </div>
+
+                  <div className="inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+                    <Filter className="h-3.5 w-3.5" />
+                    {`${filteredTransactions.length} ${FILTER_BAR_TEXT.countSuffix}`}
+                  </div>
+
+                  <div className="hidden">
+                    <Filter className="h-3.5 w-3.5" />
+                    {filteredTransactions.length} 笔
+                  </div>
+                </div>
+              </div>
+            </div>
+            </section>
+          ) : null}
         </DelayedRender>
 
         <DelayedRender delay={60}>
@@ -1425,7 +1687,7 @@ export function ConsumptionDefaultTheme({
                     value={formState.description}
                     onChange={(event) => setFormState((current) => ({ ...current, description: event.target.value }))}
                     placeholder="补充商品、账单备注或识别结果说明"
-                    className="min-h-[96px] w-full rounded-[20px] border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                    className={THEME_TEXTAREA_CLASS}
                   />
                 </div>
               </div>

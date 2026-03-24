@@ -4,12 +4,31 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Loan } from "@/types";
 import { apiFetch } from "@/lib/api";
-import { BottomSheet, BottomSheetContent, BottomSheetDescription, BottomSheetFooter, BottomSheetHeader, BottomSheetTitle } from "@/components/ui/bottomsheet";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetDescription,
+  BottomSheetHeader,
+  BottomSheetTitle,
+} from "@/components/ui/bottomsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useConfirm, useNoticeDialog, usePromptDialog } from "@/components/ui/confirm-dialog";
-import { MOCK_LOANS, MOCK_LOANS_PAID_VS_REMAINING, MOCK_LOANS_PLATFORM_DATA } from "@/features/shared/mockData";
-import { ThemeActionBar, ThemeDialogSection } from "@/components/shared/theme-primitives";
+import { useNoticeDialog, usePromptDialog } from "@/components/ui/confirm-dialog";
+import {
+  MOCK_LOANS,
+  MOCK_LOANS_PAID_VS_REMAINING,
+  MOCK_LOANS_PLATFORM_DATA,
+} from "@/features/shared/mockData";
+import {
+  THEME_DIALOG_INPUT_CLASS,
+  THEME_DIALOG_SELECT_CLASS,
+  ThemeActionBar,
+  ThemeDialogSection,
+  ThemeFormField,
+  ThemeFormGrid,
+  ThemeNotice,
+  ThemeTable,
+} from "@/components/shared/theme-primitives";
 
 const LoansDefaultTheme = dynamic(
   () => import("@/features/loans/components/themes/DefaultLoans").then((mod) => mod.LoansDefaultTheme),
@@ -18,6 +37,19 @@ const LoansDefaultTheme = dynamic(
     loading: () => null,
   }
 );
+
+type RepayState = {
+  item: Loan | null;
+  amount: string;
+  description: string;
+};
+
+type ScheduleRow = {
+  index: number;
+  date: string;
+  amount: number;
+  remaining: number;
+};
 
 async function fetchLoansData(): Promise<Loan[]> {
   const data = await apiFetch<{ items: Array<Record<string, unknown>> }>("/api/loans");
@@ -31,14 +63,14 @@ async function fetchLoansData(): Promise<Loan[]> {
 
 function computeLoansDerivedData(items: Loan[]) {
   const platformData = items
-    .reduce((acc, item) => {
-      const existing = acc.find((entry) => entry.name === item.platform);
+    .reduce((accumulator, item) => {
+      const existing = accumulator.find((entry) => entry.name === item.platform);
       if (existing) {
         existing.value += item.remainingAmount;
       } else {
-        acc.push({ name: item.platform, value: item.remainingAmount });
+        accumulator.push({ name: item.platform, value: item.remainingAmount });
       }
-      return acc;
+      return accumulator;
     }, [] as Array<{ name: string; value: number }>)
     .map((item, index) => ({
       ...item,
@@ -54,14 +86,7 @@ function computeLoansDerivedData(items: Loan[]) {
   return { platformData, paidVsRemainingData };
 }
 
-type RepayState = {
-  item: Loan | null;
-  amount: string;
-  description: string;
-};
-
 export default function LoansPage() {
-  const { confirmAsync, ConfirmDialog } = useConfirm();
   const { notify, NoticeDialog } = useNoticeDialog();
   const { prompt, PromptDialog } = usePromptDialog();
   const [items, setItems] = useState<Loan[]>(MOCK_LOANS);
@@ -83,10 +108,14 @@ export default function LoansPage() {
 
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [scheduleItem, setScheduleItem] = useState<Loan | null>(null);
-  const [schedule, setSchedule] = useState<Array<{ index: number; date: string; amount: number; remaining: number }>>([]);
+  const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
 
   const [isRepayOpen, setIsRepayOpen] = useState(false);
-  const [repayState, setRepayState] = useState<RepayState>({ item: null, amount: "", description: "" });
+  const [repayState, setRepayState] = useState<RepayState>({
+    item: null,
+    amount: "",
+    description: "",
+  });
 
   async function loadItems() {
     setLoading(true);
@@ -116,8 +145,7 @@ export default function LoansPage() {
     void loadItems();
   }, []);
 
-  function openCreate() {
-    setEditingItem(null);
+  function resetForm() {
     setPlatform("");
     setTotalAmount("");
     setRemainingAmount("");
@@ -127,6 +155,11 @@ export default function LoansPage() {
     setDueDate("1");
     setStatus("ACTIVE");
     setError(null);
+  }
+
+  function openCreate() {
+    setEditingItem(null);
+    resetForm();
     setIsModalOpen(true);
   }
 
@@ -179,27 +212,6 @@ export default function LoansPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    const confirmed = await confirmAsync({
-      title: "确认删除贷款",
-      description: "删除后这条贷款记录将无法恢复。",
-      confirmText: "删除",
-      cancelText: "取消",
-      tone: "danger",
-    });
-    if (!confirmed) return;
-
-    try {
-      await apiFetch(`/api/loans/${id}`, { method: "DELETE" });
-      await loadItems();
-    } catch (deleteError) {
-      notify({
-        title: "删除失败",
-        description: deleteError instanceof Error ? deleteError.message : "请稍后重试。",
-      });
-    }
-  }
-
   function openRepay(item: Loan) {
     setRepayState({
       item,
@@ -241,10 +253,10 @@ export default function LoansPage() {
     }
   }
 
-  async function openSchedule(item: Loan) {
+  function openSchedule(item: Loan) {
     setScheduleItem(item);
 
-    const list = [];
+    const list: ScheduleRow[] = [];
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -255,7 +267,7 @@ export default function LoansPage() {
     let remaining = item.remainingAmount;
     const count = item.periods - item.paidPeriods;
 
-    for (let i = 1; i <= count; i += 1) {
+    for (let index = 1; index <= count; index += 1) {
       if (remaining <= 0) break;
       if (month > 11) {
         year += Math.floor(month / 12);
@@ -267,11 +279,12 @@ export default function LoansPage() {
       remaining -= amount;
 
       list.push({
-        index: i,
+        index,
         date: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`,
         amount,
         remaining: Math.max(0, remaining),
       });
+
       month += 1;
     }
 
@@ -311,60 +324,54 @@ export default function LoansPage() {
         <BottomSheetContent className="max-w-md">
           <BottomSheetHeader>
             <BottomSheetTitle>{editingItem ? "编辑贷款" : "新增贷款"}</BottomSheetTitle>
-            <BottomSheetDescription>移动端和桌面端都统一改成底部滑出的编辑面板。</BottomSheetDescription>
+            <BottomSheetDescription>移动端和桌面端统一使用底部滑出的编辑面板。</BottomSheetDescription>
           </BottomSheetHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+            {error ? <ThemeNotice tone="red" description={error} /> : null}
 
-            <label className="space-y-1.5">
-              <span className="text-sm font-medium text-slate-700">贷款平台 / 名称</span>
-              <Input required value={platform} onChange={(event) => setPlatform(event.target.value)} className="h-11 rounded-2xl" />
-            </label>
+            <ThemeDialogSection className="space-y-4">
+              <ThemeFormField label="贷款平台 / 名称">
+                <Input required value={platform} onChange={(event) => setPlatform(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+              </ThemeFormField>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">总金额</span>
-                <Input required type="number" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className="h-11 rounded-2xl" />
-              </label>
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">剩余金额</span>
-                <Input type="number" step="0.01" value={remainingAmount} onChange={(event) => setRemainingAmount(event.target.value)} className="h-11 rounded-2xl" />
-              </label>
-            </div>
+              <ThemeFormGrid>
+                <ThemeFormField label="总金额">
+                  <Input required type="number" step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+                </ThemeFormField>
+                <ThemeFormField label="剩余金额">
+                  <Input type="number" step="0.01" value={remainingAmount} onChange={(event) => setRemainingAmount(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+                </ThemeFormField>
+              </ThemeFormGrid>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">总期数</span>
-                <Input type="number" value={periods} onChange={(event) => setPeriods(event.target.value)} className="h-11 rounded-2xl" />
-              </label>
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">已还期数</span>
-                <Input type="number" value={paidPeriods} onChange={(event) => setPaidPeriods(event.target.value)} className="h-11 rounded-2xl" />
-              </label>
-            </div>
+              <ThemeFormGrid>
+                <ThemeFormField label="总期数">
+                  <Input type="number" value={periods} onChange={(event) => setPeriods(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+                </ThemeFormField>
+                <ThemeFormField label="已还期数">
+                  <Input type="number" value={paidPeriods} onChange={(event) => setPaidPeriods(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+                </ThemeFormField>
+              </ThemeFormGrid>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">每月还款额</span>
-                <Input type="number" step="0.01" value={monthlyPayment} onChange={(event) => setMonthlyPayment(event.target.value)} className="h-11 rounded-2xl" />
-              </label>
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">还款日</span>
-                <Input type="number" value={dueDate} onChange={(event) => setDueDate(event.target.value)} className="h-11 rounded-2xl" />
-              </label>
-            </div>
+              <ThemeFormGrid>
+                <ThemeFormField label="每月还款额">
+                  <Input type="number" step="0.01" value={monthlyPayment} onChange={(event) => setMonthlyPayment(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+                </ThemeFormField>
+                <ThemeFormField label="还款日">
+                  <Input type="number" value={dueDate} onChange={(event) => setDueDate(event.target.value)} className={THEME_DIALOG_INPUT_CLASS} />
+                </ThemeFormField>
+              </ThemeFormGrid>
 
-            {editingItem ? (
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">状态</span>
-                <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm">
-                  <option value="ACTIVE">还款中</option>
-                  <option value="PAID_OFF">已结清</option>
-                  <option value="OVERDUE">已逾期</option>
-                </select>
-              </label>
-            ) : null}
+              {editingItem ? (
+                <ThemeFormField label="状态">
+                  <select value={status} onChange={(event) => setStatus(event.target.value)} className={THEME_DIALOG_SELECT_CLASS}>
+                    <option value="ACTIVE">还款中</option>
+                    <option value="PAID_OFF">已结清</option>
+                    <option value="OVERDUE">已逾期</option>
+                  </select>
+                </ThemeFormField>
+              ) : null}
+            </ThemeDialogSection>
 
             <ThemeActionBar>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
@@ -388,31 +395,31 @@ export default function LoansPage() {
           </BottomSheetHeader>
 
           <form onSubmit={handleRepaySubmit} className="space-y-4">
-            <label className="space-y-1.5">
-              <span className="text-sm font-medium text-slate-700">还款金额</span>
-              <Input
-                type="number"
-                step="0.01"
-                value={repayState.amount}
-                onChange={(event) => setRepayState((current) => ({ ...current, amount: event.target.value }))}
-                className="h-11 rounded-2xl"
-              />
-            </label>
-
-            <label className="space-y-1.5">
-              <span className="text-sm font-medium text-slate-700">备注</span>
-              <div className="flex gap-2">
+            <ThemeDialogSection className="space-y-4">
+              <ThemeFormField label="还款金额">
                 <Input
-                  value={repayState.description}
-                  onChange={(event) => setRepayState((current) => ({ ...current, description: event.target.value }))}
-                  className="h-11 rounded-2xl"
-                  placeholder="备注（可选）"
+                  type="number"
+                  step="0.01"
+                  value={repayState.amount}
+                  onChange={(event) => setRepayState((current) => ({ ...current, amount: event.target.value }))}
+                  className={THEME_DIALOG_INPUT_CLASS}
                 />
-                <Button type="button" variant="outline" onClick={() => void handleAddRemarkTemplate()} className="h-11 rounded-2xl">
-                  编辑
-                </Button>
-              </div>
-            </label>
+              </ThemeFormField>
+
+              <ThemeFormField label="备注">
+                <div className="flex gap-2">
+                  <Input
+                    value={repayState.description}
+                    onChange={(event) => setRepayState((current) => ({ ...current, description: event.target.value }))}
+                    className={THEME_DIALOG_INPUT_CLASS}
+                    placeholder="备注（可选）"
+                  />
+                  <Button type="button" variant="outline" onClick={() => void handleAddRemarkTemplate()} className="h-11 rounded-2xl">
+                    编辑
+                  </Button>
+                </div>
+              </ThemeFormField>
+            </ThemeDialogSection>
 
             <ThemeActionBar>
               <Button type="button" variant="outline" onClick={() => setIsRepayOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
@@ -433,7 +440,7 @@ export default function LoansPage() {
             <BottomSheetDescription>按期查看后续还款金额与剩余本金。</BottomSheetDescription>
           </BottomSheetHeader>
 
-          <div className="max-h-[60vh] overflow-auto rounded-2xl border border-slate-200">
+          <ThemeTable className="max-h-[60vh] overflow-auto">
             {schedule.length === 0 ? (
               <div className="px-4 py-10 text-center text-sm text-slate-500">当前贷款已全部结清。</div>
             ) : (
@@ -442,8 +449,8 @@ export default function LoansPage() {
                   <tr>
                     <th className="px-4 py-3 font-medium">期数</th>
                     <th className="px-4 py-3 font-medium">预计还款日</th>
-                    <th className="px-4 py-3 font-medium text-right">应还金额</th>
-                    <th className="px-4 py-3 font-medium text-right">剩余本金</th>
+                    <th className="px-4 py-3 text-right font-medium">应还金额</th>
+                    <th className="px-4 py-3 text-right font-medium">剩余本金</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -458,11 +465,10 @@ export default function LoansPage() {
                 </tbody>
               </table>
             )}
-          </div>
+          </ThemeTable>
         </BottomSheetContent>
       </BottomSheet>
 
-      {ConfirmDialog}
       {NoticeDialog}
       {PromptDialog}
     </>

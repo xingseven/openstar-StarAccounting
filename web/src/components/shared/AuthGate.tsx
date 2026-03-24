@@ -44,7 +44,7 @@ async function validateAuth(): Promise<User> {
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(Boolean(cachedUser));
   const [user, setUser] = useState<User | null>(cachedUser);
 
   useEffect(() => {
@@ -56,25 +56,30 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 已经有缓存用户，直接ready
     if (cachedUser) {
-      setUser(cachedUser);
-      setReady(true);
       return;
     }
 
+    let active = true;
+
     validateAuth()
       .then((userData) => {
+        if (!active) return;
         setUser(userData);
         setReady(true);
       })
       .catch((err) => {
+        if (!active) return;
         console.error("AuthGate failed:", err);
         cachedUser = null;
         clearAccessToken();
         const next = pathname ? `?next=${encodeURIComponent(pathname)}` : "";
         router.replace(`/auth/login${next}`);
       });
+
+    return () => {
+      active = false;
+    };
   }, [pathname, router]);
 
   if (!ready) {
@@ -89,8 +94,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <UserProvider initialUser={user}>
-      {children}
-    </UserProvider>
+    <UserProvider initialUser={user}>{children}</UserProvider>
   );
 }

@@ -6,7 +6,10 @@ import { KeyRound, Mail, User, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { setAccessToken } from "@/lib/auth";
-import { ThemeHero, ThemeSurface } from "@/components/shared/theme-primitives";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { THEME_DIALOG_INPUT_CLASS, ThemeFormField, ThemeHero, ThemeNotice, ThemeSurface } from "@/components/shared/theme-primitives";
 
 type RegisterResponse = {
   accessToken: string;
@@ -73,15 +76,14 @@ export default function RegisterPage() {
             <p className="mt-1 text-sm text-slate-500">填写基础信息，创建你的 OpenStar 账户。</p>
           </div>
 
-          {error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+          {error ? <ThemeNotice tone="red" className="mb-4" description={error} /> : null}
 
           <form className="space-y-4" onSubmit={onSubmit}>
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-slate-600">邮箱</span>
+            <ThemeFormField label="邮箱">
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-10 py-3 text-sm outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                <Input
+                  className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl pl-10")}
                   name="email"
                   type="email"
                   autoComplete="email"
@@ -89,28 +91,26 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-            </label>
+            </ThemeFormField>
 
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-slate-600">显示名称（可选）</span>
+            <ThemeFormField label="显示名称（可选）">
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-10 py-3 text-sm outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                <Input
+                  className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl pl-10")}
                   name="name"
                   autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
-            </label>
+            </ThemeFormField>
 
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-slate-600">密码</span>
+            <ThemeFormField label="密码">
               <div className="relative">
                 <KeyRound className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                <input
-                  className="w-full rounded-xl border border-slate-200 px-10 py-3 text-sm outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                <Input
+                  className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl pl-10")}
                   name="password"
                   type="password"
                   autoComplete="new-password"
@@ -118,11 +118,11 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-            </label>
+            </ThemeFormField>
 
-            <button className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60" type="submit" disabled={loading}>
+            <Button className="h-11 w-full rounded-xl bg-slate-900 hover:bg-slate-800" type="submit" disabled={loading}>
               {loading ? "注册中..." : "注册"}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-5 flex items-center justify-between text-sm text-slate-500">

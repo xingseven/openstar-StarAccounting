@@ -26,16 +26,20 @@ import { Button } from "@/components/ui/button";
 import {
   BottomSheet,
   BottomSheetContent,
-  BottomSheetDescription,
-  BottomSheetHeader,
-  BottomSheetTitle,
 } from "@/components/ui/bottomsheet";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import {
+  THEME_COMPACT_SELECT_CLASS,
+  THEME_ICON_BUTTON_CLASS,
+  ThemeHero,
+  ThemeMetricCard,
+  ThemeSectionHeader,
+  ThemeSurface,
+} from "@/components/shared/theme-primitives";
 import { cn } from "@/lib/utils";
 import type { SavingsGoal } from "@/types";
 
@@ -177,7 +181,7 @@ function SavingsGoalCard({
             <Image src={item.image} alt={item.name} width={48} height={48} className="h-12 w-12 object-cover" unoptimized />
           </button>
         ) : (
-          <button type="button" onClick={onOpenImage} className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400">
+          <button type="button" onClick={onOpenImage} className={THEME_ICON_BUTTON_CLASS}>
             <ImageIcon className="h-4 w-4" />
           </button>
         )}
@@ -373,13 +377,13 @@ export function SavingsDefaultTheme({
                       className="rounded-2xl pl-10"
                     />
                   </div>
-                  <select value={filterBy} onChange={(event) => setFilterBy(event.target.value as FilterOption)} className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+                  <select value={filterBy} onChange={(event) => setFilterBy(event.target.value as FilterOption)} className={THEME_COMPACT_SELECT_CLASS}>
                     <option value="active">进行中</option>
                     <option value="completed">已完成</option>
                     <option value="archived">已归档</option>
                     <option value="all">全部</option>
                   </select>
-                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)} className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm">
+                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)} className={THEME_COMPACT_SELECT_CLASS}>
                     <option value="progress">按进度</option>
                     <option value="deadline">按截止日</option>
                     <option value="name">按名称</option>

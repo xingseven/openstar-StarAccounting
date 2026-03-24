@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { PageContainer } from "@/components/shared/PageContainer";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import { ThemeHero, ThemeMetricCard, ThemeNotice, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 
 type GenerateData = {
   connectionId: string;
@@ -286,9 +286,7 @@ export default function ConnectionsPage() {
       </ThemeHero>
 
       {error ? (
-        <div className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <ThemeNotice tone="red" description={error} />
       ) : null}
 
       <ThemeSurface>

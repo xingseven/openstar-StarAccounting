@@ -19,6 +19,7 @@ import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
+  THEME_ICON_BUTTON_CLASS,
   ThemeHero,
   ThemeMetricCard,
   ThemeSectionHeader,
@@ -81,7 +82,7 @@ function LoanCard({
         <button
           type="button"
           onClick={() => onOpenEdit(item)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition hover:border-slate-300 hover:text-slate-700"
+          className={`${THEME_ICON_BUTTON_CLASS} h-9 w-9`}
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>

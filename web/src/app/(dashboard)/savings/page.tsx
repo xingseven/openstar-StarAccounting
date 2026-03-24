@@ -1,10 +1,11 @@
 "use client";
 
 import { apiFetch } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
 import { MOCK_SAVINGS, MOCK_SAVINGS_TRANSACTIONS } from "@/features/shared/mockData";
+import { useNoticeDialog } from "@/components/ui/confirm-dialog";
 
 const SavingsDefaultTheme = dynamic(
   () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
@@ -17,9 +18,14 @@ import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDial
 import { SavingsPlanDialog } from "@/features/savings/components/SavingsPlanDialog";
 import { SavingsWithdrawalDialog } from "@/features/savings/components/SavingsWithdrawalDialog";
 
+type SavingsApiItem = Omit<SavingsGoal, "targetAmount" | "currentAmount"> & {
+  targetAmount: number | string;
+  currentAmount: number | string;
+};
+
 async function fetchSavingsData() {
   const [goalsData, transactionsData] = await Promise.all([
-    apiFetch<{ items: any[] }>("/api/savings"),
+    apiFetch<{ items: SavingsApiItem[] }>("/api/savings"),
     apiFetch<{ items: TransactionItem[] }>("/api/transactions?pageSize=100"),
   ]);
 
@@ -33,10 +39,10 @@ async function fetchSavingsData() {
 }
 
 export default function SavingsPage() {
+  const { notify, NoticeDialog } = useNoticeDialog();
   const [items, setItems] = useState<SavingsGoal[]>(MOCK_SAVINGS);
   const [transactions, setTransactions] = useState<TransactionItem[]>(MOCK_SAVINGS_TRANSACTIONS);
   const [loading, setLoading] = useState(false);
-  const [usingMockData, setUsingMockData] = useState(false);
 
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +52,7 @@ export default function SavingsPage() {
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
   const [withdrawalItem, setWithdrawalItem] = useState<SavingsGoal | null>(null);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchSavingsData();
@@ -54,25 +60,22 @@ export default function SavingsPage() {
       if (data.items.length === 0) {
         setItems(MOCK_SAVINGS);
         setTransactions(MOCK_SAVINGS_TRANSACTIONS);
-        setUsingMockData(true);
       } else {
         setItems(data.items);
         setTransactions(data.transactions);
-        setUsingMockData(false);
       }
-    } catch (e) {
-      console.warn("Failed to fetch savings data, using mock data:", e);
+    } catch (loadError) {
+      console.warn("Failed to fetch savings data, using mock data:", loadError);
       setItems(MOCK_SAVINGS);
       setTransactions(MOCK_SAVINGS_TRANSACTIONS);
-      setUsingMockData(true);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    void loadData();
+  }, [loadData]);
 
   function openCreate() {
     setEditingItem(null);
@@ -108,9 +111,12 @@ export default function SavingsPage() {
         });
       }
       setIsModalOpen(false);
-      loadData();
+      await loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "操作失败");
+      notify({
+        title: "保存储蓄目标失败",
+        description: err instanceof Error ? err.message : "请稍后重试。",
+      });
       throw err;
     }
   }
@@ -119,10 +125,13 @@ export default function SavingsPage() {
     try {
       await apiFetch(`/api/savings/${id}`, { method: "DELETE" });
       setIsModalOpen(false);
-      loadData();
-    } catch (e) {
-      alert("删除失败");
-      throw e;
+      await loadData();
+    } catch (deleteError) {
+      notify({
+        title: "删除储蓄目标失败",
+        description: deleteError instanceof Error ? deleteError.message : "请稍后重试。",
+      });
+      throw deleteError;
     }
   }
 
@@ -132,46 +141,62 @@ export default function SavingsPage() {
         method: "PUT",
         body: JSON.stringify({ ...item, status: "ARCHIVED" }),
       });
-      loadData();
-    } catch (e) {
-      alert("归档失败");
-      throw e;
+      await loadData();
+    } catch (archiveError) {
+      notify({
+        title: "归档储蓄目标失败",
+        description: archiveError instanceof Error ? archiveError.message : "请稍后重试。",
+      });
+      throw archiveError;
     }
   }
 
   async function handleBatchDelete(ids: string[]) {
     try {
-      await Promise.all(ids.map(id => apiFetch(`/api/savings/${id}`, { method: "DELETE" })));
-      loadData();
-    } catch (e) {
-      alert("批量删除失败");
-      throw e;
+      await Promise.all(ids.map((id) => apiFetch(`/api/savings/${id}`, { method: "DELETE" })));
+      await loadData();
+    } catch (deleteError) {
+      notify({
+        title: "批量删除失败",
+        description: deleteError instanceof Error ? deleteError.message : "请稍后重试。",
+      });
+      throw deleteError;
     }
   }
 
   async function handleBatchArchive(ids: string[]) {
     try {
-      await Promise.all(ids.map(id => {
-        const item = items.find(i => i.id === id);
-        if (item) {
+      await Promise.all(
+        ids.map((id) => {
+          const item = items.find((entry) => entry.id === id);
+          if (!item) {
+            return Promise.resolve(undefined);
+          }
           return apiFetch(`/api/savings/${id}`, {
             method: "PUT",
             body: JSON.stringify({ ...item, status: "ARCHIVED" }),
           });
-        }
-        return Promise.resolve();
-      }));
-      loadData();
-    } catch (e) {
-      alert("批量归档失败");
-      throw e;
+        })
+      );
+      await loadData();
+    } catch (archiveError) {
+      notify({
+        title: "批量归档失败",
+        description: archiveError instanceof Error ? archiveError.message : "请稍后重试。",
+      });
+      throw archiveError;
     }
   }
 
   function handleCopy(item: SavingsGoal) {
     // Open create dialog with copied data
-    const { id, createdAt, currentAmount, ...rest } = item;
-    setEditingItem({ ...rest, id: "", name: `${item.name} (副本)`, currentAmount: 0, createdAt: new Date().toISOString() });
+    setEditingItem({
+      ...item,
+      id: "",
+      name: `${item.name} (副本)`,
+      currentAmount: 0,
+      createdAt: new Date().toISOString(),
+    });
     setIsModalOpen(true);
   }
 
@@ -181,9 +206,12 @@ export default function SavingsPage() {
         method: "PUT",
         body: JSON.stringify({ ...item, image }),
       });
-      loadData();
-    } catch (e) {
-      alert("保存图片失败");
+      await loadData();
+    } catch (imageError) {
+      notify({
+        title: "保存图片失败",
+        description: imageError instanceof Error ? imageError.message : "请稍后重试。",
+      });
     }
   }
 
@@ -234,6 +262,8 @@ export default function SavingsPage() {
         goal={withdrawalItem}
         onWithdrawalChanged={loadData}
       />
+
+      {NoticeDialog}
     </>
   );
 }

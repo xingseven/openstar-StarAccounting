@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+const CHART_SKELETON_BAR_HEIGHTS = ["28%", "54%", "41%", "72%", "35%", "63%"];
+
 /**
  * 通用骨架屏基础组件
  */
@@ -42,8 +44,8 @@ export function ChartSkeleton({ className }: { className?: string }) {
         <Skeleton className="h-4 w-32 mb-2" />
       </div>
       <div className="flex-1 relative w-full h-full min-h-[150px] flex items-end justify-between gap-2">
-        {[...Array(6)].map((_, i) => (
-          <Skeleton key={i} className="w-full rounded-t-md" style={{ height: `${20 + Math.random() * 60}%` }} />
+        {CHART_SKELETON_BAR_HEIGHTS.map((height, i) => (
+          <Skeleton key={i} className="w-full rounded-t-md" style={{ height }} />
         ))}
       </div>
     </div>

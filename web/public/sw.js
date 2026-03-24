@@ -1,4 +1,3 @@
-const CACHE_NAME = 'openstar-StarAccounting-v1';
 const STATIC_CACHE_NAME = 'openstar-StarAccounting-static-v1';
 const DYNAMIC_CACHE_NAME = 'openstar-StarAccounting-dynamic-v1';
 
@@ -85,8 +84,7 @@ async function cacheFirst(request) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
-    console.error('[SW] Cache first failed:', error);
+  } catch {
     return caches.match('/offline.html');
   }
 }
@@ -99,7 +97,7 @@ async function networkFirst(request) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     console.log('[SW] Network first fallback to cache:', request.url);
     const cached = await caches.match(request);
     if (cached) {
@@ -122,8 +120,7 @@ async function staleWhileRevalidate(request) {
       cache.put(request, response.clone());
     }
     return response;
-  }).catch((error) => {
-    console.log('[SW] Fetch failed:', error);
+  }).catch(() => {
     return cached || caches.match('/offline.html');
   });
   
@@ -133,7 +130,7 @@ async function staleWhileRevalidate(request) {
 async function networkOnly(request) {
   try {
     return await fetch(request);
-  } catch (error) {
+  } catch {
     return new Response(JSON.stringify({ error: '离线状态' }), {
       status: 503,
       headers: { 'Content-Type': 'application/json' }
@@ -149,7 +146,7 @@ self.addEventListener('push', (event) => {
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (e) {
+    } catch {
       data.body = event.data.text();
     }
   }
