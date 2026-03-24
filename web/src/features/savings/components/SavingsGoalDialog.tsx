@@ -21,6 +21,7 @@ import { Loader2, CalendarIcon, PiggyBank, Wallet, Plus, Trash2, ArrowRight } fr
 import { SavingsGoal } from "./themes/DefaultSavings";
 import { clsx } from "clsx";
 import { apiFetch } from "@/lib/api";
+import { ThemeActionBar } from "@/components/shared/theme-primitives";
 
 interface SavingsGoalDialogProps {
   open: boolean;
@@ -519,11 +520,11 @@ export function SavingsGoalDialog({
               </div>
             </div>
 
-            <BottomSheetFooter>
+            <ThemeActionBar>
               <Button onClick={handleNext} className="w-full h-11 bg-blue-500 hover:bg-blue-600 rounded-lg">
                 下一步 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </BottomSheetFooter>
+            </ThemeActionBar>
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
@@ -716,7 +717,7 @@ export function SavingsGoalDialog({
               </table>
             </div>
 
-            <BottomSheetFooter className="pt-4 border-t mt-auto flex-row justify-between">
+            <ThemeActionBar className="mt-auto justify-between">
               {step === 2 && (
                 <Button variant="outline" onClick={() => setStep(1)} className="rounded-lg h-11">上一步</Button>
               )}
@@ -724,7 +725,7 @@ export function SavingsGoalDialog({
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 {initialData ? "保存计划" : "确认创建"}
               </Button>
-            </BottomSheetFooter>
+            </ThemeActionBar>
           </div>
         )}
       </BottomSheetContent>

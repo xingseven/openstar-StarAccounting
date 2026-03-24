@@ -1,5 +1,5 @@
 {
-  "version": "2.3.8",
+  "version": "2.3.9",
   "publishedAt": "2026-03-24",
   "notes": [
     "关于页面已接入统一更新检查入口。",
@@ -7,13 +7,13 @@
     "网页版支持刷新更新，移动端 App 支持下载安装包更新。"
   ],
   "web": {
-    "version": "2.3.8",
+    "version": "2.3.9",
     "action": "refresh",
     "description": "网页版部署新版本后，用户在关于页面点击“刷新并更新”即可拉取最新资源。",
     "downloads": []
   },
   "app": {
-    "version": "2.3.8",
+    "version": "2.3.9",
     "action": "reinstall",
     "description": "移动端 App 暂未上传新的安装包。后续将安装包放到网站镜像或 GitHub Release 后，这里会自动显示下载入口。",
     "downloads": []

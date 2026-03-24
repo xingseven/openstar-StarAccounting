@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import {
   BottomSheet,
   BottomSheetContent,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SavingsGoal } from "./themes/DefaultSavings";
 import { apiFetch } from "@/lib/api";
+import { ThemeActionBar, ThemeDialogSection } from "@/components/shared/theme-primitives";
 
 interface SavingsWithdrawalDialogProps {
   open: boolean;
@@ -110,12 +111,12 @@ export function SavingsWithdrawalDialog({
 
         <div className="space-y-4 py-4">
           {/* Current Amount Display */}
-          <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
+          <ThemeDialogSection className="border-blue-200 bg-blue-50">
             <div className="text-sm text-blue-700 mb-1">当前存款</div>
             <div className="text-2xl font-bold text-blue-900">
               ¥{goal.currentAmount.toLocaleString()}
             </div>
-          </div>
+          </ThemeDialogSection>
 
           {/* Error Message */}
           {error && (
@@ -126,7 +127,7 @@ export function SavingsWithdrawalDialog({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <ThemeDialogSection className="space-y-2">
               <Label htmlFor="amount">取款金额</Label>
               <Input
                 id="amount"
@@ -143,9 +144,9 @@ export function SavingsWithdrawalDialog({
               <div className="text-xs text-gray-500">
                 最大可取：¥{goal.currentAmount.toLocaleString()}
               </div>
-            </div>
+            </ThemeDialogSection>
 
-            <div className="space-y-2">
+            <ThemeDialogSection className="space-y-2">
               <Label htmlFor="description">备注说明</Label>
               <Input
                 id="description"
@@ -154,17 +155,17 @@ export function SavingsWithdrawalDialog({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-            </div>
+            </ThemeDialogSection>
 
             {/* Warning */}
-            <div className="rounded-lg bg-amber-50 p-3 border border-amber-200">
+            <ThemeDialogSection className="border-amber-200 bg-amber-50 p-3">
               <div className="text-sm text-amber-800">
                 <strong>注意：</strong> 取款后将减少该目标的当前存款，且无法撤销。
               </div>
-            </div>
+            </ThemeDialogSection>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4">
+            <ThemeActionBar>
               <Button
                 type="button"
                 variant="outline"
@@ -180,7 +181,7 @@ export function SavingsWithdrawalDialog({
               >
                 {loading ? "处理中..." : "确认取款"}
               </Button>
-            </div>
+            </ThemeActionBar>
           </form>
         </div>
       </BottomSheetContent>

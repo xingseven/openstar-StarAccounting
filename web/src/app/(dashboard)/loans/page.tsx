@@ -366,14 +366,14 @@ export default function LoansPage() {
               </label>
             ) : null}
 
-            <BottomSheetFooter>
+            <ThemeActionBar>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
                 取消
               </Button>
               <Button type="submit" className="h-11 rounded-2xl sm:min-w-28">
                 保存
               </Button>
-            </BottomSheetFooter>
+            </ThemeActionBar>
           </form>
         </BottomSheetContent>
       </BottomSheet>
@@ -414,14 +414,14 @@ export default function LoansPage() {
               </div>
             </label>
 
-            <BottomSheetFooter>
+            <ThemeActionBar>
               <Button type="button" variant="outline" onClick={() => setIsRepayOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
                 取消
               </Button>
               <Button type="submit" className="h-11 rounded-2xl sm:min-w-28">
                 确认还款
               </Button>
-            </BottomSheetFooter>
+            </ThemeActionBar>
           </form>
         </BottomSheetContent>
       </BottomSheet>

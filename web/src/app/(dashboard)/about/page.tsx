@@ -65,7 +65,7 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
-    version: "2.3.8",
+    version: "2.3.9",
     date: "2026-03-24",
     type: "feature",
     highlights: [
@@ -85,8 +85,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.8",
-  latestVersion: "2.3.8",
+  currentVersion: "2.3.9",
+  latestVersion: "2.3.9",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -99,16 +99,16 @@ const fallbackUpdateInfo: UpdateInfo = {
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.8",
-    latestVersion: "2.3.8",
+    currentVersion: "2.3.9",
+    latestVersion: "2.3.9",
     hasUpdate: false,
     action: "refresh",
     description: "网页版更新后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.8",
-    latestVersion: "2.3.8",
+    currentVersion: "2.3.9",
+    latestVersion: "2.3.9",
     hasUpdate: false,
     action: "reinstall",
     description: "移动端 App 更新后需要重新下载安装。",
