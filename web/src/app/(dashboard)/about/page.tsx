@@ -65,6 +65,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.12",
+    date: "2026-03-24",
+    type: "feature",
+    highlights: [
+      "主题系统收尾完成，并新增 terracotta 赤陶主题作为验收样本。",
+      "共享表单、提示和常用控件样式继续收口到 shared primitive。",
+    ],
+  },
+  {
     version: "2.3.9",
     date: "2026-03-24",
     type: "feature",
@@ -85,8 +94,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.9",
-  latestVersion: "2.3.9",
+  currentVersion: "2.3.12",
+  latestVersion: "2.3.12",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -95,23 +104,23 @@ const fallbackUpdateInfo: UpdateInfo = {
     url: null,
   },
   notes: [
-    "当前版本已经接入统一更新检查入口。",
+    "当前版本已完成主题系统收尾与验收主题同步。",
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.9",
-    latestVersion: "2.3.9",
+    currentVersion: "2.3.12",
+    latestVersion: "2.3.12",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.12 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.9",
-    latestVersion: "2.3.9",
+    currentVersion: "2.3.12",
+    latestVersion: "2.3.12",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.12 后需要重新下载安装。",
     downloads: [],
   },
 };

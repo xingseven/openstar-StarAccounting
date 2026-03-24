@@ -1,19 +1,19 @@
 {
-  "version": "2.3.9",
+  "version": "2.3.12",
   "publishedAt": "2026-03-24",
   "notes": [
-    "关于页面已接入统一更新检查入口。",
-    "更新源支持网站镜像优先、GitHub 备用。",
-    "网页版支持刷新更新，移动端 App 支持下载安装包更新。"
+    "主题系统收尾完成，并新增赤陶主题作为验收样本。",
+    "共享表单、提示和常用控件样式已继续收口到 shared primitive。",
+    "网页版与移动端更新信息已统一同步到 2.3.12。"
   ],
   "web": {
-    "version": "2.3.9",
+    "version": "2.3.12",
     "action": "refresh",
-    "description": "网页版部署新版本后，用户在关于页面点击“刷新并更新”即可拉取最新资源。",
+    "description": "网页版部署 2.3.12 后，刷新页面即可获取新的主题系统和界面统一改造。",
     "downloads": []
   },
   "app": {
-    "version": "2.3.9",
+    "version": "2.3.12",
     "action": "reinstall",
     "description": "移动端 App 暂未上传新的安装包。后续将安装包放到网站镜像或 GitHub Release 后，这里会自动显示下载入口。",
     "downloads": []

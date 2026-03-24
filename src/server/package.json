@@ -1,6 +1,6 @@
 {
   "name": "openstar-staraccounting-server",
-  "version": "0.1.0",
+  "version": "2.3.12",
   "private": true,
   "type": "module",
   "scripts": {
