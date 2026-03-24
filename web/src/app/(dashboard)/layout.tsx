@@ -23,7 +23,10 @@ export default function DashboardLayout({
                 <Header />
               </div>
 
-              <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-stable px-2 pb-28 pt-3 md:px-4 md:pb-6 md:pt-4">
+              <main
+                data-dashboard-scroll-area="true"
+                className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-stable px-2 pb-24 pt-3 md:px-4 md:pb-6 md:pt-4"
+              >
                 {children}
               </main>
             </div>

@@ -147,3 +147,89 @@ export function ThemeMetricCard({
     </div>
   );
 }
+
+export function ThemeToolbar({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-3 rounded-[18px] border [background:var(--theme-surface-bg)] [border-color:var(--theme-surface-border)] [box-shadow:var(--theme-surface-shadow)] px-4 py-3 sm:rounded-[20px]",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function ThemeTable({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn(THEME_SURFACE_CLASS, "overflow-hidden", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function ThemeEmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+  className,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col items-center justify-center px-4 py-12 text-center", className)}>
+      <div className="mb-4 rounded-full bg-slate-100 p-4">
+        <Icon className="h-8 w-8 text-slate-300" />
+      </div>
+      <h3 className="mb-1 text-sm font-medium text-slate-900">{title}</h3>
+      {description ? <p className="mb-4 max-w-sm text-xs text-slate-500">{description}</p> : null}
+      {action ? <div>{action}</div> : null}
+    </div>
+  );
+}
+
+export function ThemeDialogSection({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-[18px] border border-slate-200 bg-slate-50/70 p-4", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function ThemeActionBar({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-row justify-end gap-3 border-t border-slate-200 pt-4", className)}>
+      {children}
+    </div>
+  );
+}

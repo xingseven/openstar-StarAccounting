@@ -1,7 +1,10 @@
 import cors from "cors";
 import crypto from "crypto";
 import express, { type Request, type Response } from "express";
+import fs from "fs";
 import multer from "multer";
+import path from "path";
+import { Readable } from "stream";
 import { getPrisma } from "./lib/prisma.js";
 import { importCsvBuffer } from "./etl/importCsv.js";
 import { mapRowToTransaction } from "./etl/mapTransaction.js";
@@ -23,6 +26,31 @@ type ApiError = {
   code: number;
   message: string;
   detail?: string;
+};
+
+type UpdateDownloadItem = {
+  id: string;
+  label: string;
+  fileName: string;
+  url: string;
+  size?: string;
+  contentType?: string;
+  description?: string;
+};
+
+type UpdateChannelManifest = {
+  version?: string;
+  action?: "refresh" | "download" | "reinstall";
+  description?: string;
+  downloads?: UpdateDownloadItem[];
+};
+
+type UpdateManifest = {
+  version: string;
+  publishedAt?: string;
+  notes?: string[];
+  web?: UpdateChannelManifest;
+  app?: UpdateChannelManifest;
 };
 
 type TransactionRecord = {
@@ -220,6 +248,201 @@ function getPublicConnectHost(req: Request) {
   }
 
   return normalizeIp(getRequestIp(req)) ?? "127.0.0.1";
+}
+
+function getRepoRootCandidates() {
+  const cwd = process.cwd();
+  return Array.from(
+    new Set([
+      cwd,
+      path.resolve(cwd, ".."),
+      path.resolve(cwd, "..", ".."),
+    ])
+  );
+}
+
+function findExistingFileByRelativePath(relativePath: string) {
+  for (const root of getRepoRootCandidates()) {
+    const candidate = path.join(root, relativePath);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function getChangelogPath() {
+  return findExistingFileByRelativePath("CHANGELOG.md");
+}
+
+function parseChangelogVersions(content: string) {
+  const lines = content.split("\n");
+  const versions: Array<{
+    version: string;
+    date: string;
+    type: string;
+    highlights: string[];
+  }> = [];
+  let currentVersion: { version: string; date: string; type: string; highlights: string[] } | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const versionMatch = trimmed.match(/^##\s+([\d.]+)\s+-\s+(\d{4}-\d{2}-\d{2})/);
+
+    if (versionMatch) {
+      if (currentVersion) versions.push(currentVersion);
+      currentVersion = {
+        version: versionMatch[1],
+        date: versionMatch[2],
+        type: "feature",
+        highlights: [],
+      };
+      continue;
+    }
+
+    if (!currentVersion) continue;
+
+    const typeMatch = trimmed.match(/^###\s+(.+)$/);
+    if (typeMatch) {
+      const title = typeMatch[1].toLowerCase();
+      if (title.includes("bug") || title.includes("fix")) currentVersion.type = "bugfix";
+      else if (title.includes("major")) currentVersion.type = "major";
+      continue;
+    }
+
+    const listMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (listMatch) {
+      let text = listMatch[1].trim();
+      text = text.replace(/\*\*(.+?)\*\*:\s*/g, "").replace(/\*\*/g, "").replace(/`/g, "");
+      if (text && currentVersion.highlights.length < 10) {
+        currentVersion.highlights.push(text);
+      }
+    }
+  }
+
+  if (currentVersion) versions.push(currentVersion);
+  return versions;
+}
+
+function getCurrentReleaseVersion() {
+  const changelogPath = getChangelogPath();
+  if (changelogPath) {
+    const versions = parseChangelogVersions(fs.readFileSync(changelogPath, "utf-8"));
+    if (versions.length > 0) {
+      return versions[0].version;
+    }
+  }
+  return process.env.APP_CURRENT_VERSION?.trim() || "0.0.0";
+}
+
+function compareVersionStrings(left: string, right: string) {
+  const leftParts = left.split(".").map((part) => Number(part));
+  const rightParts = right.split(".").map((part) => Number(part));
+  const length = Math.max(leftParts.length, rightParts.length);
+
+  for (let i = 0; i < length; i += 1) {
+    const a = leftParts[i] ?? 0;
+    const b = rightParts[i] ?? 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
+  }
+  return 0;
+}
+
+function getUpdateManifestSourceUrls() {
+  const configured = process.env.UPDATE_MANIFEST_URLS?.split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (configured && configured.length > 0) {
+    return configured;
+  }
+
+  return [
+    "https://raw.githubusercontent.com/xingseven/openstar-StarAccounting/main/web/public/updates/latest.json",
+  ];
+}
+
+function getLocalUpdateManifestPath() {
+  const configured = process.env.UPDATE_LOCAL_MANIFEST_PATH?.trim();
+  if (configured) {
+    return findExistingFileByRelativePath(configured);
+  }
+
+  return findExistingFileByRelativePath(path.join("web", "public", "updates", "latest.json"));
+}
+
+function parseUpdateManifest(input: string) {
+  const parsed = JSON.parse(input) as UpdateManifest;
+  if (!parsed || typeof parsed.version !== "string" || parsed.version.trim().length === 0) {
+    throw new Error("Invalid update manifest");
+  }
+  return parsed;
+}
+
+async function loadResolvedUpdateManifest() {
+  const localPath = getLocalUpdateManifestPath();
+  if (localPath) {
+    return {
+      manifest: parseUpdateManifest(fs.readFileSync(localPath, "utf-8")),
+      source: {
+        type: "local" as const,
+        label: "网站本地更新源",
+        path: localPath,
+      },
+    };
+  }
+
+  for (const url of getUpdateManifestSourceUrls()) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
+      clearTimeout(timer);
+      if (!response.ok) continue;
+      const text = await response.text();
+      return {
+        manifest: parseUpdateManifest(text),
+        source: {
+          type: "remote" as const,
+          label: "远程更新源",
+          url,
+        },
+      };
+    } catch {
+    }
+  }
+
+  return null;
+}
+
+function resolveLocalPublicAssetPath(assetUrl: string) {
+  if (!assetUrl.startsWith("/")) return null;
+  const normalized = assetUrl.split("?")[0].replace(/^\/+/, "");
+  if (normalized.includes("..")) return null;
+
+  for (const root of getRepoRootCandidates()) {
+    const candidate = path.join(root, "web", "public", normalized);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function getContentTypeFromFileName(fileName: string) {
+  const ext = path.extname(fileName).toLowerCase();
+  const map: Record<string, string> = {
+    ".apk": "application/vnd.android.package-archive",
+    ".zip": "application/zip",
+    ".exe": "application/vnd.microsoft.portable-executable",
+    ".dmg": "application/x-apple-diskimage",
+    ".msix": "application/vnd.ms-appx",
+    ".txt": "text/plain; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+  };
+  return map[ext] ?? "application/octet-stream";
 }
 
 function getOtpHashSecret() {
@@ -698,6 +921,35 @@ type DailyCategoryMetricRow = DailyMetricRow & {
   category: string | null;
 };
 
+type ConsumptionDashboardRow = {
+  id: string;
+  date: Date | string;
+  type: string;
+  amount: unknown;
+  category: string | null;
+  platform: string | null;
+  merchant: string | null;
+  description: string | null;
+};
+
+type DashboardPlatformKey = "wechat" | "alipay" | "cloudpay" | "unknown";
+
+const DASHBOARD_PLATFORM_LABELS: Record<DashboardPlatformKey, string> = {
+  wechat: "微信",
+  alipay: "支付宝",
+  cloudpay: "云闪付",
+  unknown: "其他",
+};
+
+const DASHBOARD_PLATFORM_COLORS: Record<DashboardPlatformKey, string> = {
+  wechat: "#16a34a",
+  alipay: "#1677ff",
+  cloudpay: "#0ea5e9",
+  unknown: "#94a3b8",
+};
+
+const DASHBOARD_CATEGORY_COLORS = ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"];
+
 function formatMetricBucket(date: Date, groupBy: "day" | "month" = "day") {
   return date.toISOString().slice(0, groupBy === "month" ? 7 : 10);
 }
@@ -755,6 +1007,280 @@ function aggregateDailyCategoryMetrics(rows: DailyCategoryMetricRow[]) {
     });
 }
 
+function normalizeDashboardPlatform(platform: string | null | undefined): DashboardPlatformKey {
+  const value = (platform ?? "").trim().toLowerCase();
+  if (!value) return "unknown";
+  if (value === "wechat" || value.includes("微信")) return "wechat";
+  if (value === "alipay" || value.includes("支付宝")) return "alipay";
+  if (
+    value === "cloudpay"
+    || value === "unionpay"
+    || value.includes("云闪付")
+    || value.includes("银联")
+  ) {
+    return "cloudpay";
+  }
+  return "unknown";
+}
+
+function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
+  const expensePlatformMap = new Map<DashboardPlatformKey, number>();
+  const incomePlatformMap = new Map<DashboardPlatformKey, number>();
+  const categoryMap = new Map<string, { value: number; count: number }>();
+  const merchantMap = new Map<string, number>();
+  const dailyRows: DailyMetricRow[] = [];
+  const dailyCategoryRows: DailyCategoryMetricRow[] = [];
+  const platformCategoryMap = new Map<string, { platform: DashboardPlatformKey; category: string; total: number }>();
+  const recentTransactions = [...rows]
+    .sort((a, b) => new Date(String(b.date)).getTime() - new Date(String(a.date)).getTime())
+    .slice(0, 50);
+
+  let totalExpense = 0;
+  let totalIncome = 0;
+  let expenseCount = 0;
+
+  const histogram = [
+    { range: "0-50", count: 0, fill: "#dbeafe" },
+    { range: "50-200", count: 0, fill: "#93c5fd" },
+    { range: "200-500", count: 0, fill: "#60a5fa" },
+    { range: "500-1k", count: 0, fill: "#3b82f6" },
+    { range: "1k-5k", count: 0, fill: "#2563eb" },
+    { range: "5k+", count: 0, fill: "#1d4ed8" },
+  ];
+
+  const scatter = rows
+    .filter((row) => row.type === "EXPENSE")
+    .sort((a, b) => new Date(String(b.date)).getTime() - new Date(String(a.date)).getTime())
+    .slice(0, 300)
+    .map((row, index) => {
+      const date = new Date(String(row.date));
+      return {
+        id: index,
+        hour: date.getHours() + date.getMinutes() / 60,
+        amount: Number(row.amount ?? 0),
+        category: row.category || "未分类",
+      };
+    });
+
+  for (const row of rows) {
+    const amount = Number(row.amount ?? 0);
+    if (!Number.isFinite(amount)) continue;
+
+    const platformKey = normalizeDashboardPlatform(row.platform);
+    const category = row.category?.trim() || "未分类";
+
+    if (row.type === "EXPENSE") {
+      totalExpense += amount;
+      expenseCount += 1;
+      expensePlatformMap.set(platformKey, (expensePlatformMap.get(platformKey) ?? 0) + amount);
+
+      const categoryEntry = categoryMap.get(category) ?? { value: 0, count: 0 };
+      categoryEntry.value += amount;
+      categoryEntry.count += 1;
+      categoryMap.set(category, categoryEntry);
+
+      const merchant = row.merchant?.trim() || "未知商户";
+      merchantMap.set(merchant, (merchantMap.get(merchant) ?? 0) + amount);
+
+      dailyRows.push({ date: row.date, amount });
+      dailyCategoryRows.push({ date: row.date, amount, category });
+
+      const platformCategoryKey = `${platformKey}__${category}`;
+      const platformCategoryEntry = platformCategoryMap.get(platformCategoryKey) ?? {
+        platform: platformKey,
+        category,
+        total: 0,
+      };
+      platformCategoryEntry.total += amount;
+      platformCategoryMap.set(platformCategoryKey, platformCategoryEntry);
+
+      if (amount < 50) histogram[0].count++;
+      else if (amount < 200) histogram[1].count++;
+      else if (amount < 500) histogram[2].count++;
+      else if (amount < 1000) histogram[3].count++;
+      else if (amount < 5000) histogram[4].count++;
+      else histogram[5].count++;
+    } else if (row.type === "INCOME") {
+      totalIncome += amount;
+      incomePlatformMap.set(platformKey, (incomePlatformMap.get(platformKey) ?? 0) + amount);
+    }
+  }
+
+  const platformDistribution = Array.from(expensePlatformMap.entries())
+    .filter(([, total]) => total > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([platform, total]) => ({
+      name: DASHBOARD_PLATFORM_LABELS[platform],
+      value: total,
+      fill: DASHBOARD_PLATFORM_COLORS[platform],
+    }));
+
+  const incomeExpense = [
+    { name: "支出", value: totalExpense, fill: "#ef4444" },
+    { name: "收入", value: totalIncome, fill: "#16a34a" },
+  ];
+
+  const merchants = Array.from(merchantMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([merchant, total], index) => ({
+      merchant,
+      total,
+      fill: DASHBOARD_CATEGORY_COLORS[index % DASHBOARD_CATEGORY_COLORS.length],
+    }));
+
+  const trend = aggregateDailyMetrics(dailyRows).map((item) => ({
+    day: item.day,
+    total: Number(item.total),
+  }));
+
+  const dailyCategoryItems = aggregateDailyCategoryMetrics(dailyCategoryRows).map((item) => ({
+    day: item.day,
+    category: item.category,
+    total: Number(item.total),
+  }));
+
+  const stackedCategories = [...new Set(dailyCategoryItems.map((item) => item.category))];
+  const stackedBar = trend.map((item) => {
+    const row: Record<string, string | number> = { day: item.day };
+    for (const category of stackedCategories) {
+      const found = dailyCategoryItems.find(
+        (dailyCategoryItem) => dailyCategoryItem.day === item.day && dailyCategoryItem.category === category
+      );
+      row[category] = found ? found.total : 0;
+    }
+    return row;
+  });
+
+  const sortedCategories = Array.from(categoryMap.entries())
+    .map(([name, value]) => ({ name, value: value.value, count: value.count }))
+    .sort((a, b) => b.value - a.value);
+
+  let cumulative = 0;
+  const totalCategoryValue = sortedCategories.reduce((sum, item) => sum + item.value, 0);
+  const pareto = sortedCategories.map((item, index) => {
+    cumulative += item.value;
+    return {
+      name: item.name,
+      value: item.value,
+      cumulativePercentage: totalCategoryValue > 0 ? (cumulative / totalCategoryValue) * 100 : 0,
+      fill: DASHBOARD_CATEGORY_COLORS[index % DASHBOARD_CATEGORY_COLORS.length],
+    };
+  });
+
+  const weekdayMap: Record<string, number> = {
+    "周一": 0,
+    "周二": 0,
+    "周三": 0,
+    "周四": 0,
+    "周五": 0,
+    "周六": 0,
+    "周日": 0,
+  };
+  const weekdayCount: Record<string, number> = {
+    "周一": 0,
+    "周二": 0,
+    "周三": 0,
+    "周四": 0,
+    "周五": 0,
+    "周六": 0,
+    "周日": 0,
+  };
+  const dayNames = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  for (const item of trend) {
+    const date = new Date(item.day);
+    if (Number.isNaN(date.getTime())) continue;
+    const dayName = dayNames[date.getDay()];
+    weekdayMap[dayName] += item.total;
+    weekdayCount[dayName] += 1;
+  }
+  const weekdayWeekend = Object.entries(weekdayMap).map(([name, total]) => ({
+    name,
+    value: weekdayCount[name] > 0 ? Math.round(total / weekdayCount[name]) : 0,
+    fill: name === "周六" || name === "周日" ? "#1d4ed8" : "#93c5fd",
+  }));
+
+  const calendar = trend.map((item) => ({
+    date: item.day,
+    day: new Date(item.day).getDate(),
+    value: item.total,
+  }));
+
+  const heatmapRows = Array.from(platformCategoryMap.values());
+  const heatmapPlatforms = [...new Set(heatmapRows.map((item) => DASHBOARD_PLATFORM_LABELS[item.platform]))];
+  const heatmapCategories = [...new Set(heatmapRows.map((item) => item.category))];
+  const heatmap = {
+    platforms: heatmapPlatforms,
+    categories: heatmapCategories,
+    data: heatmapRows.map((item) => ({
+      platform: DASHBOARD_PLATFORM_LABELS[item.platform],
+      category: item.category,
+      total: item.total,
+    })),
+  };
+
+  const sankeyNodes = [
+    ...heatmap.platforms.map((name) => ({ name })),
+    ...heatmap.categories.map((name) => ({ name })),
+  ];
+  const platformIndexMap = new Map(heatmap.platforms.map((name, index) => [name, index]));
+  const categoryOffset = heatmap.platforms.length;
+  const sankeyLinks = heatmap.data
+    .map((item) => {
+      const source = platformIndexMap.get(item.platform);
+      const targetIndex = heatmap.categories.indexOf(item.category);
+      if (source === undefined || targetIndex < 0) return null;
+      return {
+        source,
+        target: categoryOffset + targetIndex,
+        value: item.total,
+      };
+    })
+    .filter((item): item is { source: number; target: number; value: number } => item !== null);
+
+  const transactions = recentTransactions.map((row) => ({
+    id: row.id,
+    merchant: row.merchant?.trim() || "未知商户",
+    date: new Date(String(row.date)).toISOString(),
+    category: row.category?.trim() || "未分类",
+    platform: normalizeDashboardPlatform(row.platform),
+    type: row.type,
+    amount: String(row.amount ?? 0),
+  }));
+
+  return {
+    summary: {
+      totalExpense,
+      totalIncome,
+      expenseCount,
+      wechat: {
+        expense: expensePlatformMap.get("wechat") ?? 0,
+        income: incomePlatformMap.get("wechat") ?? 0,
+      },
+      alipay: {
+        expense: expensePlatformMap.get("alipay") ?? 0,
+        income: incomePlatformMap.get("alipay") ?? 0,
+      },
+    },
+    platformDistribution,
+    incomeExpense,
+    merchants,
+    trend,
+    stackedBar,
+    pareto,
+    weekdayWeekend,
+    calendar,
+    heatmap,
+    sankey: {
+      nodes: sankeyNodes,
+      links: sankeyLinks,
+    },
+    scatter,
+    histogram,
+    transactions,
+  };
+}
+
 app.get("/api/metrics/consumption/summary", async (req, res) => {
   const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
@@ -804,6 +1330,66 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
     expenseCount: count,
     avgExpense: count > 0 ? (total / count).toFixed(2) : "0",
   });
+});
+
+app.get("/api/consumption/dashboard", async (req, res) => {
+  const { start, end } = parseQuery(req);
+  const userId = await requireUserId(req, res);
+  if (!userId) return;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const where: Record<string, unknown> = { userId };
+      if (start || end) {
+        where.date = {
+          ...(start ? { gte: start } : {}),
+          ...(end ? { lte: end } : {}),
+        };
+      }
+
+      const rows = await prisma.transaction.findMany({
+        where,
+        select: {
+          id: true,
+          date: true,
+          type: true,
+          amount: true,
+          category: true,
+          platform: true,
+          merchant: true,
+          description: true,
+        },
+      });
+
+      jsonOk(res, buildConsumptionDashboard(rows));
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const rows = (transactionsByUser.get(userId) ?? []).map((item) => ({
+    id: item.id,
+    date: item.date,
+    type: item.type,
+    amount: item.amount,
+    category: item.category,
+    platform: item.platform,
+    merchant: item.merchant,
+    description: item.description,
+  }));
+
+  const filtered = rows.filter((row) => {
+    const ts = new Date(String(row.date)).getTime();
+    if (start && ts < start.getTime()) return false;
+    if (end && ts > end.getTime()) return false;
+    return true;
+  });
+
+  jsonOk(res, buildConsumptionDashboard(filtered));
 });
 
 app.get("/api/metrics/consumption/by-platform", async (req, res) => {
@@ -3923,73 +4509,155 @@ app.put("/api/admin/users/:id/role", async (req, res) => {
   jsonFail(res, 404, 50000, "NOT_FOUND", "用户不存在");
 });
 
+app.get("/api/update/check", async (_req, res) => {
+  const currentVersion = getCurrentReleaseVersion();
+  const resolved = await loadResolvedUpdateManifest();
+
+  if (!resolved) {
+    jsonOk(res, {
+      currentVersion,
+      latestVersion: currentVersion,
+      hasUpdate: false,
+      checkedAt: new Date().toISOString(),
+      source: {
+        label: "未找到可用更新源",
+      },
+      notes: [],
+      web: {
+        currentVersion,
+        latestVersion: currentVersion,
+        hasUpdate: false,
+        action: "refresh",
+        description: "当前没有检测到新的网页版本。",
+        downloads: [],
+      },
+      app: {
+        currentVersion,
+        latestVersion: currentVersion,
+        hasUpdate: false,
+        action: "reinstall",
+        description: "当前没有检测到新的 App 安装包。",
+        downloads: [],
+      },
+    });
+    return;
+  }
+
+  const { manifest, source } = resolved;
+  const latestVersion = manifest.version;
+  const hasUpdate = compareVersionStrings(latestVersion, currentVersion) > 0;
+  const webVersion = manifest.web?.version || latestVersion;
+  const appVersion = manifest.app?.version || latestVersion;
+
+  jsonOk(res, {
+    currentVersion,
+    latestVersion,
+    hasUpdate,
+    checkedAt: new Date().toISOString(),
+    source: {
+      label: source.label,
+      type: source.type,
+      url: source.url ?? null,
+    },
+    notes: manifest.notes ?? [],
+    web: {
+      currentVersion,
+      latestVersion: webVersion,
+      hasUpdate: compareVersionStrings(webVersion, currentVersion) > 0,
+      action: manifest.web?.action ?? "refresh",
+      description: manifest.web?.description ?? "网页版更新后刷新页面即可生效。",
+      downloads: (manifest.web?.downloads ?? []).map((item) => ({
+        ...item,
+        proxyUrl: `/api/update/download/web/${item.id}`,
+      })),
+    },
+    app: {
+      currentVersion,
+      latestVersion: appVersion,
+      hasUpdate: compareVersionStrings(appVersion, currentVersion) > 0,
+      action: manifest.app?.action ?? "reinstall",
+      description: manifest.app?.description ?? "移动端 App 更新后需要重新下载安装。",
+      downloads: (manifest.app?.downloads ?? []).map((item) => ({
+        ...item,
+        proxyUrl: `/api/update/download/app/${item.id}`,
+      })),
+    },
+  });
+});
+
+app.get("/api/update/download/:channel/:downloadId", async (req, res) => {
+  const { channel, downloadId } = req.params;
+  if (channel !== "web" && channel !== "app") {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "channel 仅支持 web 或 app");
+    return;
+  }
+
+  const resolved = await loadResolvedUpdateManifest();
+  if (!resolved) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "未找到可用更新源");
+    return;
+  }
+
+  const channelManifest = channel === "web" ? resolved.manifest.web : resolved.manifest.app;
+  const download = channelManifest?.downloads?.find((item) => item.id === downloadId);
+
+  if (!download) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "未找到对应的更新包");
+    return;
+  }
+
+  const contentType = download.contentType || getContentTypeFromFileName(download.fileName);
+
+  if (download.url.startsWith("/")) {
+    const localPath = resolveLocalPublicAssetPath(download.url);
+    if (!localPath) {
+      jsonFail(res, 404, 50000, "NOT_FOUND", "本地更新包尚未上传");
+      return;
+    }
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(download.fileName)}`);
+    res.setHeader("Cache-Control", "no-store");
+    fs.createReadStream(localPath).pipe(res);
+    return;
+  }
+
+  if (!/^https?:\/\//.test(download.url)) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "更新包地址无效");
+    return;
+  }
+
+  try {
+    const response = await fetch(download.url);
+    if (!response.ok || !response.body) {
+      jsonFail(res, 502, 50000, "REMOTE_FETCH_FAILED", "远程更新包不可用");
+      return;
+    }
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(download.fileName)}`);
+    res.setHeader("Cache-Control", "no-store");
+    const remoteType = response.headers.get("content-type");
+    if (remoteType) {
+      res.setHeader("Content-Type", remoteType);
+    }
+
+    Readable.fromWeb(response.body as never).pipe(res);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown";
+    jsonFail(res, 502, 50000, "REMOTE_FETCH_FAILED", message);
+  }
+});
+
 const port = Number(process.env.PORT ?? 3006);
 
 app.get("/api/changelog", async (_req, res) => {
-  const fs = await import("fs");
-  const path = await import("path");
-
-  // CHANGELOG.md 位于项目根目录
-  const changelogCandidates = [
-    path.join(process.cwd(), "CHANGELOG.md"),
-    path.resolve(process.cwd(), "..", "..", "CHANGELOG.md"),
-  ];
-  const changelogPath = changelogCandidates.find((candidate) => fs.existsSync(candidate));
-
   try {
+    const changelogPath = getChangelogPath();
     if (!changelogPath) {
-      console.warn("Changelog file not found. Candidates:", changelogCandidates);
+      console.warn("Changelog file not found");
       return jsonOk(res, { versions: [] });
     }
-
-    const content = fs.readFileSync(changelogPath, "utf-8");
-    const lines = content.split("\n");
-    
-    const versions: any[] = [];
-    let currentVersion: any = null;
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      
-      // 匹配版本标题: ## 1.8.36 - 2026-03-17
-      const versionMatch = trimmed.match(/^##\s+([\d\.]+)\s+-\s+(\d{4}-\d{2}-\d{2})/);
-      
-      if (versionMatch) {
-        if (currentVersion) versions.push(currentVersion);
-        currentVersion = {
-          version: versionMatch[1],
-          date: versionMatch[2],
-          type: "feature",
-          highlights: []
-        };
-        continue;
-      }
-
-      if (!currentVersion) continue;
-
-      // 匹配类型标题: ### Features
-      const typeMatch = trimmed.match(/^###\s+(.+)$/);
-      if (typeMatch) {
-        const title = typeMatch[1].toLowerCase();
-        if (title.includes("bug") || title.includes("fix")) currentVersion.type = "bugfix";
-        else if (title.includes("major")) currentVersion.type = "major";
-        continue;
-      }
-
-      // 匹配列表项: - 修复了 xxx
-      const listMatch = trimmed.match(/^[-*]\s+(.+)$/);
-      if (listMatch) {
-        let text = listMatch[1].trim();
-        // 移除 Markdown 加粗和代码块语法
-        text = text.replace(/\*\*(.+?)\*\*:\s*/g, "").replace(/\*\*/g, "").replace(/`/g, "");
-        if (text && currentVersion.highlights.length < 10) {
-          currentVersion.highlights.push(text);
-        }
-      }
-    }
-
-    if (currentVersion) versions.push(currentVersion);
-
+    const versions = parseChangelogVersions(fs.readFileSync(changelogPath, "utf-8"));
     jsonOk(res, { versions: versions.slice(0, 50) });
   } catch (e) {
     console.error("Parse changelog error:", e);

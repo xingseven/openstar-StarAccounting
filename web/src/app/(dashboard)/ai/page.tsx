@@ -22,13 +22,12 @@ import { Label } from "@/components/ui/label";
 import {
   BottomSheet,
   BottomSheetContent,
-  BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
 } from "@/components/ui/bottomsheet";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import { ThemeActionBar, ThemeDialogSection, ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 import { cn } from "@/lib/utils";
 
 interface AIModel {
@@ -301,11 +300,11 @@ export default function AIPage() {
             <BottomSheetTitle>{editingModel ? "编辑模型" : "添加新模型"}</BottomSheetTitle>
           </BottomSheetHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <ThemeDialogSection className="space-y-2">
               <Label>模型名称</Label>
               <Input value={formData.name} onChange={(event) => setFormData({ ...formData, name: event.target.value })} placeholder="例如：豆包视觉模型" required />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>提供商</Label>
                 <select
@@ -334,16 +333,16 @@ export default function AIPage() {
                   <option value="text">文本模型</option>
                 </select>
               </div>
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>API 端点</Label>
               <Input value={formData.endpoint} onChange={(event) => setFormData({ ...formData, endpoint: event.target.value })} placeholder="https://ark.cn-beijing.volces.com/api/v3" />
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>模型 ID</Label>
               <Input value={formData.modelId} onChange={(event) => setFormData({ ...formData, modelId: event.target.value })} placeholder="例如：doubao-vision-pro-xxx" />
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>API Key</Label>
               <div className="relative">
                 <Input
@@ -357,17 +356,17 @@ export default function AIPage() {
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>描述</Label>
               <Input value={formData.description} onChange={(event) => setFormData({ ...formData, description: event.target.value })} placeholder="简短描述此模型的用途" />
-            </div>
-            <BottomSheetFooter>
+            </ThemeDialogSection>
+            <ThemeActionBar>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                 取消
               </Button>
               <Button type="submit">保存</Button>
-            </BottomSheetFooter>
+            </ThemeActionBar>
           </form>
         </BottomSheetContent>
       </BottomSheet>
@@ -378,23 +377,23 @@ export default function AIPage() {
             <BottomSheetTitle>配置模型</BottomSheetTitle>
           </BottomSheetHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
+            <ThemeDialogSection className="space-y-2">
               <Label>模型名称</Label>
               <Input value={configForm.name} onChange={(event) => setConfigForm({ ...configForm, name: event.target.value })} />
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>提供商</Label>
               <Input value={configForm.provider} onChange={(event) => setConfigForm({ ...configForm, provider: event.target.value })} />
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>API 端点</Label>
               <Input value={configForm.endpoint} onChange={(event) => setConfigForm({ ...configForm, endpoint: event.target.value })} />
-            </div>
-            <div className="space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <Label>模型 ID</Label>
               <Input value={configForm.modelId} onChange={(event) => setConfigForm({ ...configForm, modelId: event.target.value })} />
-            </div>
-            <div className="rounded-lg bg-slate-50 p-4 space-y-2">
+            </ThemeDialogSection>
+            <ThemeDialogSection className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <Key className="h-4 w-4" />
                 <span>API Key</span>
@@ -405,7 +404,7 @@ export default function AIPage() {
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-            </div>
+            </ThemeDialogSection>
             <Button
               type="button"
               variant="outline"
@@ -445,12 +444,12 @@ export default function AIPage() {
               )}
             </Button>
           </div>
-          <BottomSheetFooter>
+          <ThemeActionBar>
             <Button type="button" variant="outline" onClick={() => setIsConfigModalOpen(false)}>
               取消
             </Button>
             <Button onClick={handleConfigSave}>保存配置</Button>
-          </BottomSheetFooter>
+          </ThemeActionBar>
         </BottomSheetContent>
       </BottomSheet>
     </div>

@@ -12,7 +12,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeTable } from "@/components/shared/theme-primitives";
 import { ListTableSkeleton, StatsCardSkeleton } from "@/components/shared/Skeletons";
 
 type AdminStats = {
@@ -64,7 +64,7 @@ export default function AdminPage() {
         method: "PUT",
         body: JSON.stringify({ role: newRole }),
       });
-      loadUsers(page);
+      await loadUsers(page);
     } catch {
       alert("修改失败");
     }
@@ -83,12 +83,12 @@ export default function AdminPage() {
       }
     }
 
-    load();
+    void load();
   }, []);
 
   useEffect(() => {
     if (!loading) {
-      loadUsers(page).catch(() => {});
+      void loadUsers(page);
     }
   }, [page, loading]);
 
@@ -137,10 +137,12 @@ export default function AdminPage() {
         </div>
       ) : null}
 
-      <ThemeSurface className="p-4 sm:p-6">
-        <ThemeSectionHeader eyebrow="用户管理" title="用户与角色" description="查看用户核心使用情况，并调整后台权限。" />
+      <ThemeTable>
+        <div className="p-4 sm:p-6">
+          <ThemeSectionHeader eyebrow="用户管理" title="用户与角色" description="查看用户核心使用情况，并调整后台权限。" />
+        </div>
 
-        <div className="mt-5 overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-slate-50 text-left">
               <tr>
@@ -160,11 +162,7 @@ export default function AdminPage() {
                   <td className="px-4 py-3 text-slate-700">{user.email}</td>
                   <td className="px-4 py-3 text-slate-700">{user.name || "-"}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        user.role === "ADMIN" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${user.role === "ADMIN" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-700"}`}>
                       {user.role === "ADMIN" ? "管理员" : "用户"}
                     </span>
                   </td>
@@ -176,7 +174,7 @@ export default function AdminPage() {
                     <select
                       value={user.role}
                       onChange={(event) => handleRoleChange(user.id, event.target.value as "USER" | "ADMIN")}
-                      className="rounded-lg border border-slate-300 px-2 py-1 text-xs"
+                      className="rounded border border-slate-300 px-2 py-1 text-xs"
                     >
                       <option value="USER">用户</option>
                       <option value="ADMIN">管理员</option>
@@ -189,29 +187,19 @@ export default function AdminPage() {
         </div>
 
         {total > 10 ? (
-          <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
-            <p className="text-sm text-slate-500">
-              共 {total} 个用户，第 {page} 页
-            </p>
+          <div className="flex items-center justify-between border-t border-slate-200 p-4 sm:px-6">
+            <p className="text-sm text-slate-500">共 {total} 个用户，第 {page} 页</p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page === 1}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
-              >
+              <button onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50">
                 上一页
               </button>
-              <button
-                onClick={() => setPage((current) => current + 1)}
-                disabled={page * 10 >= total}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
-              >
+              <button onClick={() => setPage((current) => current + 1)} disabled={page * 10 >= total} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50">
                 下一页
               </button>
             </div>
           </div>
         ) : null}
-      </ThemeSurface>
+      </ThemeTable>
     </div>
   );
 }

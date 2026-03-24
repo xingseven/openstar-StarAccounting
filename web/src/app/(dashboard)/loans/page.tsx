@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConfirm, useNoticeDialog, usePromptDialog } from "@/components/ui/confirm-dialog";
 import { MOCK_LOANS, MOCK_LOANS_PAID_VS_REMAINING, MOCK_LOANS_PLATFORM_DATA } from "@/features/shared/mockData";
+import { ThemeActionBar, ThemeDialogSection } from "@/components/shared/theme-primitives";
 
 const LoansDefaultTheme = dynamic(
   () => import("@/features/loans/components/themes/DefaultLoans").then((mod) => mod.LoansDefaultTheme),

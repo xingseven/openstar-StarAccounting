@@ -53,6 +53,7 @@ import {
 } from "@/components/shared/theme-primitives";
 
 const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
+const CHART_RENDERER_OPTS = { renderer: "canvas" as const };
 
 export type ConsumptionData = {
   summary: {
@@ -341,7 +342,6 @@ export function ConsumptionDefaultTheme({
   loading = false,
   usingMockData = false,
 }: ConsumptionViewProps) {
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
@@ -359,18 +359,26 @@ export function ConsumptionDefaultTheme({
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const isSkeletonVisible = loading || showInitialSkeleton;
+  const isSkeletonVisible = loading;
   const balance = data.summary.totalIncome - data.summary.totalExpense;
   const avgPerExpense = data.summary.expenseCount > 0 ? data.summary.totalExpense / data.summary.expenseCount : 0;
   const topCategory = data.pareto[0];
   const topMerchant = data.merchants[0];
   const lowerSearchTerm = searchTerm.trim().toLowerCase();
   const incomeExpenseTotal = data.incomeExpense.reduce((accumulator, item) => accumulator + item.value, 0);
+  const aiTransactions = useMemo(
+    () =>
+      data.transactions.map((transaction) => ({
+        id: transaction.id,
+        amount: parseFloat(transaction.amount) || 0,
+        category: transaction.category,
+        platform: transaction.platform,
+        date: transaction.date,
+        merchant: transaction.merchant,
+        description: "",
+      })),
+    [data.transactions]
+  );
 
   const filteredTransactions = useMemo(
     () =>
@@ -952,20 +960,7 @@ export function ConsumptionDefaultTheme({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <AIAnalysisCard
-                      transactions={data.transactions.map((transaction) => ({
-                        id: transaction.id,
-                        amount: parseFloat(transaction.amount) || 0,
-                        category: transaction.category,
-                        platform: transaction.platform,
-                        date: transaction.date,
-                        merchant: transaction.merchant,
-                        description: "",
-                      }))}
-                      budgets={[]}
-                      compact
-                      className="w-full"
-                    />
+                    <AIAnalysisCard transactions={aiTransactions} budgets={[]} compact className="w-full" />
 
                     <Button
                       onClick={openAIDialog}
@@ -1025,7 +1020,7 @@ export function ConsumptionDefaultTheme({
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={120}>
+        <DelayedRender delay={120} lazy>
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.92fr)]">
             <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1040,7 +1035,7 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className="mt-5 h-[300px] w-full">
-                <ReactECharts option={trendOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts option={trendOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
               </div>
             </div>
 
@@ -1053,7 +1048,7 @@ export function ConsumptionDefaultTheme({
 
                 <div className="mt-5 grid items-center gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
                   <div className="mx-auto h-[180px] w-[180px]">
-                    <ReactECharts option={platformOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                    <ReactECharts option={platformOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
                   </div>
 
                   <div className="space-y-2.5">
@@ -1075,23 +1070,12 @@ export function ConsumptionDefaultTheme({
                 </div>
               </div>
 
-              <AIAnalysisCard
-                transactions={data.transactions.map((transaction) => ({
-                  id: transaction.id,
-                  amount: parseFloat(transaction.amount) || 0,
-                  category: transaction.category,
-                  platform: transaction.platform,
-                  date: transaction.date,
-                  merchant: transaction.merchant,
-                  description: "",
-                }))}
-                budgets={[]}
-              />
+              <AIAnalysisCard transactions={aiTransactions} budgets={[]} />
             </div>
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={180}>
+        <DelayedRender delay={180} lazy>
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
             <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1111,7 +1095,7 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className="mt-6 h-[260px] w-full">
-                <ReactECharts option={categoryOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts option={categoryOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
               </div>
             </div>
 
@@ -1143,7 +1127,7 @@ export function ConsumptionDefaultTheme({
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={220}>
+        <DelayedRender delay={220} lazy>
           <section className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
             <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1158,7 +1142,7 @@ export function ConsumptionDefaultTheme({
 
               <div className="mt-5 grid items-center gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
                 <div className="mx-auto h-[180px] w-[180px]">
-                  <ReactECharts option={incomeExpenseOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                  <ReactECharts option={incomeExpenseOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
                 </div>
 
                 <div className="space-y-2.5">
@@ -1193,13 +1177,13 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className="mt-5 h-[320px] w-full">
-                <ReactECharts option={stackedBarOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts option={stackedBarOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
               </div>
             </div>
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={260}>
+        <DelayedRender delay={260} lazy>
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.96fr)]">
             <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1230,13 +1214,13 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className="mt-5 h-[320px] w-full">
-                <ReactECharts option={weekdayOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts option={weekdayOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
               </div>
             </div>
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={300}>
+        <DelayedRender delay={300} lazy>
           <section className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1250,12 +1234,12 @@ export function ConsumptionDefaultTheme({
             </div>
 
             <div className="mt-5 h-[360px] w-full">
-              <ReactECharts option={sankeyOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+              <ReactECharts option={sankeyOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
             </div>
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={340}>
+        <DelayedRender delay={340} lazy>
           <section className="grid gap-4 xl:grid-cols-2">
             <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
               <div>
@@ -1264,7 +1248,7 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className="mt-5 h-[320px] w-full">
-                <ReactECharts option={scatterOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts option={scatterOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
               </div>
             </div>
 
@@ -1275,13 +1259,13 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className="mt-5 h-[320px] w-full">
-                <ReactECharts option={histogramOption} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />
+                <ReactECharts option={histogramOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
               </div>
             </div>
           </section>
         </DelayedRender>
 
-        <DelayedRender delay={380}>
+        <DelayedRender delay={380} lazy>
           <section className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>

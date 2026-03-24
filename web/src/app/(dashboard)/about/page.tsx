@@ -1,24 +1,27 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
-  CheckCircle,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
+  CloudDownload,
+  Download,
   ExternalLink,
   Github,
-  HeartHandshake,
-  Shield,
+  Globe,
+  RefreshCw,
+  ShieldCheck,
+  Smartphone,
   Sparkles,
-  TrendingUp,
-  Users,
-  Zap,
+  UploadCloud,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Skeleton } from "@/components/shared/Skeletons";
 import { ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type VersionItem = {
   version: string;
@@ -27,155 +30,202 @@ type VersionItem = {
   highlights: string[];
 };
 
-type Contributor = {
-  login: string;
-  avatar_url: string;
-  html_url: string;
-  contributions: number;
+type UpdateDownloadItem = {
+  id: string;
+  label: string;
+  fileName: string;
+  size?: string;
+  description?: string;
+  proxyUrl: string;
+};
+
+type UpdateChannelInfo = {
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  action: string;
+  description: string;
+  downloads: UpdateDownloadItem[];
+};
+
+type UpdateInfo = {
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  checkedAt: string;
+  source: {
+    label: string;
+    type?: string;
+    url?: string | null;
+  };
+  notes: string[];
+  web: UpdateChannelInfo;
+  app: UpdateChannelInfo;
 };
 
 const fallbackVersionHistory: VersionItem[] = [
   {
-    version: "2.3.4",
+    version: "2.3.8",
+    date: "2026-03-24",
+    type: "feature",
+    highlights: [
+      "新增全局主题系统与页面视觉统一能力。",
+      "关于页面开始接入版本与更新相关能力。",
+    ],
+  },
+  {
+    version: "2.3.6",
     date: "2026-03-23",
     type: "feature",
     highlights: [
-      "统一项目名称与展示文案。",
-      "关于页面接入动态版本记录。",
-      "继续完善导入、消费分析与系统配置能力。",
-    ],
-  },
-  {
-    version: "2.3.3",
-    date: "2026-03-22",
-    type: "bugfix",
-    highlights: [
-      "修复账单导入重复数据统计不准确的问题。",
-      "优化导入结果提示，避免出现 0/0/0 的误导信息。",
-    ],
-  },
-  {
-    version: "2.3.2",
-    date: "2026-03-21",
-    type: "feature",
-    highlights: [
-      "优化微信 / 支付宝账单导入识别逻辑。",
-      "统一导入分类和状态映射。",
+      "新增 App 交易同步接口。",
+      "连接验证码升级为哈希保存与校验。",
     ],
   },
 ];
 
-const DEFAULT_VERSION = fallbackVersionHistory[0]?.version ?? "2.3.4";
-
-const features = [
-  { icon: TrendingUp, label: "资产管理" },
-  { icon: Sparkles, label: "消费分析" },
-  { icon: Shield, label: "储蓄目标" },
-  { icon: Zap, label: "贷款追踪" },
-];
+const fallbackUpdateInfo: UpdateInfo = {
+  currentVersion: "2.3.8",
+  latestVersion: "2.3.8",
+  hasUpdate: false,
+  checkedAt: new Date().toISOString(),
+  source: {
+    label: "本地更新清单",
+    type: "local",
+    url: null,
+  },
+  notes: [
+    "当前版本已经接入统一更新检查入口。",
+    "网站镜像优先，GitHub 可作为备用更新源。",
+  ],
+  web: {
+    currentVersion: "2.3.8",
+    latestVersion: "2.3.8",
+    hasUpdate: false,
+    action: "refresh",
+    description: "网页版更新后，刷新页面即可获取新资源。",
+    downloads: [],
+  },
+  app: {
+    currentVersion: "2.3.8",
+    latestVersion: "2.3.8",
+    hasUpdate: false,
+    action: "reinstall",
+    description: "移动端 App 更新后需要重新下载安装。",
+    downloads: [],
+  },
+};
 
 const websites = [
   {
     name: "GitHub 仓库",
-    url: "https://github.com/openstar-project/StarAccounting",
+    url: "https://github.com/xingseven/openstar-StarAccounting",
     icon: Github,
     description: "查看源码、提交 Issue 或参与开发。",
   },
   {
-    name: "问题反馈",
-    url: "https://github.com/openstar-project/StarAccounting/issues",
-    icon: Zap,
-    description: "报告 Bug 或提出功能建议。",
+    name: "版本发布说明",
+    url: "/updates/README.txt",
+    icon: UploadCloud,
+    description: "查看如何把安装包放到网站镜像和 GitHub 备用源。",
   },
   {
-    name: "功能讨论",
-    url: "https://github.com/openstar-project/StarAccounting/discussions",
-    icon: Sparkles,
-    description: "参与产品和技术讨论，分享想法。",
-  },
-];
-
-const acknowledgements = [
-  {
-    title: "开源生态",
-    description: "感谢 Next.js、Prisma、Tailwind CSS、Lucide 等开源项目提供的底层能力。",
-    note: "后续可继续补充具体依赖、工具链或特别感谢的项目。",
-    icon: HeartHandshake,
-  },
-  {
-    title: "社区反馈",
-    description: "感谢提交 Issue、参与讨论、帮助测试和提供建议的用户与贡献者。",
-    note: "后续可补充具体成员、测试同学、合作伙伴或支持者名单。",
-    icon: Users,
-  },
-  {
-    title: "参考与启发",
-    description: "感谢设计灵感、产品参考、技术实践文章和示例项目带来的启发。",
-    note: "后续可添加博客、仓库、老师朋友或任何值得致谢的来源。",
-    icon: Sparkles,
+    name: "更新清单",
+    url: "/updates/latest.json",
+    icon: Globe,
+    description: "网站本地更新清单，部署后可直接被关于页面读取。",
   },
 ];
 
 function VersionTypeBadge({ type }: { type: string }) {
-  const config: Record<string, string> = {
-    major: "bg-slate-100 text-slate-700 border border-slate-200",
-    feature: "bg-blue-100 text-blue-700 border border-blue-200",
-    bugfix: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+  const styleMap: Record<string, string> = {
+    major: "border-slate-200 bg-slate-100 text-slate-700",
+    feature: "border-blue-200 bg-blue-50 text-blue-700",
+    bugfix: "border-emerald-200 bg-emerald-50 text-emerald-700",
   };
-
   const labelMap: Record<string, string> = {
     major: "重大更新",
-    feature: "新功能",
-    bugfix: "Bug 修复",
+    feature: "功能更新",
+    bugfix: "修复更新",
   };
 
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${config[type] || config.feature}`}>
-      {labelMap[type] || type}
+    <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", styleMap[type] ?? styleMap.feature)}>
+      {labelMap[type] ?? type}
     </span>
   );
 }
 
+function formatDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function AboutPage() {
-  const [expandedVersions, setExpandedVersions] = useState<string[]>([DEFAULT_VERSION]);
-  const [currentVersion, setCurrentVersion] = useState(DEFAULT_VERSION);
-  const [githubContributors, setGithubContributors] = useState<Contributor[]>([]);
+  const [expandedVersions, setExpandedVersions] = useState<string[]>([fallbackVersionHistory[0].version]);
   const [versionHistory, setVersionHistory] = useState<VersionItem[]>(fallbackVersionHistory);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo>(fallbackUpdateInfo);
   const [showAllVersions, setShowAllVersions] = useState(false);
   const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const [isRefreshingWeb, setIsRefreshingWeb] = useState(false);
+
+  async function loadVersionHistory() {
+    try {
+      const data = await apiFetch<{ versions: VersionItem[] }>("/api/changelog");
+      if (data.versions?.length) {
+        setVersionHistory(data.versions);
+        setExpandedVersions([data.versions[0].version]);
+      }
+    } catch {
+      setVersionHistory(fallbackVersionHistory);
+    }
+  }
+
+  async function loadUpdateInfo() {
+    setIsCheckingUpdates(true);
+    try {
+      const data = await apiFetch<UpdateInfo>("/api/update/check");
+      setUpdateInfo(data);
+    } catch {
+      setUpdateInfo(fallbackUpdateInfo);
+    } finally {
+      setIsCheckingUpdates(false);
+    }
+  }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
+    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 500);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    apiFetch<{ versions: VersionItem[] }>("/api/changelog")
-      .then((data) => {
-        const versions = data.versions ?? [];
-        if (versions.length > 0) {
-          setVersionHistory(versions);
-          setCurrentVersion(versions[0].version);
-          setExpandedVersions([versions[0].version]);
-        }
-      })
-      .catch(() => {
-        setVersionHistory(fallbackVersionHistory);
-        setCurrentVersion(fallbackVersionHistory[0]?.version ?? DEFAULT_VERSION);
-        setExpandedVersions([fallbackVersionHistory[0]?.version ?? DEFAULT_VERSION]);
-      });
+    void Promise.all([loadVersionHistory(), loadUpdateInfo()]);
   }, []);
 
-  useEffect(() => {
-    fetch("https://api.github.com/repos/xingseven/openstar-xfdashborad/contributors")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setGithubContributors(data);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const currentVersion = useMemo(
+    () => versionHistory[0]?.version ?? updateInfo.currentVersion ?? fallbackUpdateInfo.currentVersion,
+    [updateInfo.currentVersion, versionHistory]
+  );
+
+  async function handleRefreshWeb() {
+    setIsRefreshingWeb(true);
+    try {
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.update()));
+      }
+    } finally {
+      window.location.reload();
+    }
+  }
 
   const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, 1);
 
@@ -190,8 +240,8 @@ export default function AboutPage() {
           <Skeleton className="h-[110px] rounded-[20px]" />
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-[320px] rounded-[24px]" />
-          <Skeleton className="h-[320px] rounded-[24px]" />
+          <Skeleton className="h-[340px] rounded-[24px]" />
+          <Skeleton className="h-[340px] rounded-[24px]" />
         </div>
       </div>
     );
@@ -199,90 +249,153 @@ export default function AboutPage() {
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 p-4 sm:space-y-5 sm:p-6 lg:p-8">
-      <ThemeHero className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-700">
-            OS
+      <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+              Open Source Workspace
+            </div>
+
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">关于 OpenStar Accounting</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                现在关于页面已经接入统一更新检查、网站镜像优先下载和网页版刷新更新能力。用户不需要直接跳转 GitHub，就能检查和获取新版本。
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-sm">
+              {["更新检查", "网站镜像优先", "App 安装包下载", "网页版刷新更新"].map((item) => (
+                <span key={item} className="rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-slate-600 shadow-sm">
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">OpenStar Accounting</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              一个用于管理资产、消费、储蓄和贷款的个人财务工作台。
-            </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <ThemeMetricCard label="当前版本" value={`v${currentVersion}`} tone="blue" icon={Sparkles} detail="来自 CHANGELOG 最新版本记录" />
+            <ThemeMetricCard
+              label="更新源"
+              value={updateInfo.source.label}
+              tone={updateInfo.source.type === "remote" ? "amber" : "green"}
+              icon={CloudDownload}
+              detail={updateInfo.source.url ?? "当前使用本地网站更新清单"}
+            />
           </div>
         </div>
       </ThemeHero>
 
       <div className="grid gap-3 md:grid-cols-4">
-        {features.map((feature) => (
-          <ThemeMetricCard
-            key={feature.label}
-            label={feature.label}
-            value="已接入"
-            detail="核心模块"
-            tone="blue"
-            icon={feature.icon}
-            className="p-4"
-            hideDetailOnMobile
-          />
-        ))}
+        <ThemeMetricCard label="资产 / 预算" value="已接入" detail="核心账务模块" tone="blue" icon={Globe} className="p-4" hideDetailOnMobile />
+        <ThemeMetricCard label="版本检查" value={updateInfo.hasUpdate ? "有更新" : "最新"} detail="统一更新入口" tone={updateInfo.hasUpdate ? "amber" : "green"} icon={RefreshCw} className="p-4" hideDetailOnMobile />
+        <ThemeMetricCard label="网页版更新" value={updateInfo.web.action === "refresh" ? "刷新更新" : "下载安装"} detail="适配网页端发布" tone="slate" icon={Globe} className="p-4" hideDetailOnMobile />
+        <ThemeMetricCard label="App 更新" value={updateInfo.app.action === "reinstall" ? "重新安装" : "下载安装"} detail="适配移动端发布" tone="violet" icon={Smartphone} className="p-4" hideDetailOnMobile />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ThemeSurface className="p-4 sm:p-6">
           <ThemeSectionHeader
-            eyebrow="当前版本"
-            title={`v${currentVersion}`}
-            description={versionHistory[0]?.date || "版本信息同步中"}
+            eyebrow="版本状态"
+            title={`最新检测：v${updateInfo.latestVersion}`}
+            description={`上次检查时间：${formatDateTime(updateInfo.checkedAt)}`}
+            action={
+              <Button variant="outline" className="rounded-2xl" onClick={() => void loadUpdateInfo()} disabled={isCheckingUpdates}>
+                <RefreshCw className={cn("h-4 w-4", isCheckingUpdates && "animate-spin")} />
+                检查更新
+              </Button>
+            }
           />
-          <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm font-medium text-green-700">
+
+          <div className={cn(
+            "mt-5 rounded-[22px] border px-4 py-4 text-sm",
+            updateInfo.hasUpdate ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          )}>
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              当前已是最新版本
+              <CheckCircle2 className="h-5 w-5" />
+              {updateInfo.hasUpdate ? `检测到新版本 v${updateInfo.latestVersion}` : "当前已经是最新版本"}
             </div>
           </div>
-          <a
-            href="https://github.com/openstar-project/StarAccounting/releases"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            <Github className="h-4 w-4" />
-            查看所有版本
-            <ExternalLink className="h-4 w-4" />
-          </a>
+
+          <div className="mt-5 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900">本次更新重点</h3>
+            <ul className="space-y-2">
+              {(updateInfo.notes.length > 0 ? updateInfo.notes : ["当前更新清单暂无额外说明。"]).map((note, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </div>
         </ThemeSurface>
 
         <ThemeSurface className="p-4 sm:p-6">
           <ThemeSectionHeader
-            eyebrow="贡献者"
-            title="社区与核心团队"
-            description="感谢所有让 OpenStar 持续进化的参与者。"
+            eyebrow="更新动作"
+            title="在当前页面内完成更新"
+            description="网页端刷新获取新资源，移动端直接下载安装包。"
           />
-          <div className="mt-5 grid grid-cols-4 gap-3 sm:grid-cols-6">
-            {githubContributors.length > 0 ? (
-              githubContributors.map((contributor) => (
-                <a
-                  key={contributor.login}
-                  href={contributor.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center gap-2"
-                >
-                  <Image
-                    src={contributor.avatar_url}
-                    alt={contributor.login}
-                    width={40}
-                    height={40}
-                    unoptimized
-                    className="h-10 w-10 rounded-full border border-slate-200 object-cover"
-                  />
-                  <span className="max-w-full truncate text-[11px] text-slate-500">{contributor.login}</span>
-                </a>
-              ))
-            ) : (
-              <p className="col-span-full text-sm text-slate-400">Loading contributors...</p>
-            )}
+
+          <div className="mt-5 grid gap-4">
+            <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-950">网页版</h3>
+                  <p className="mt-1 text-sm text-slate-500">{updateInfo.web.description}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    当前 v{updateInfo.web.currentVersion} · 最新 v{updateInfo.web.latestVersion}
+                  </p>
+                </div>
+                <Globe className="h-5 w-5 text-slate-400" />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button className="rounded-2xl" onClick={() => void handleRefreshWeb()} disabled={isRefreshingWeb}>
+                  <RefreshCw className={cn("h-4 w-4", isRefreshingWeb && "animate-spin")} />
+                  刷新并更新
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-950">移动端 App</h3>
+                  <p className="mt-1 text-sm text-slate-500">{updateInfo.app.description}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    当前 v{updateInfo.app.currentVersion} · 最新 v{updateInfo.app.latestVersion}
+                  </p>
+                </div>
+                <Smartphone className="h-5 w-5 text-slate-400" />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2">
+                {updateInfo.app.downloads.length > 0 ? (
+                  updateInfo.app.downloads.map((item) => (
+                    <a
+                      key={item.id}
+                      href={item.proxyUrl}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <div>
+                        <div className="font-medium text-slate-900">{item.label}</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          {item.fileName}
+                          {item.size ? ` · ${item.size}` : ""}
+                        </div>
+                        {item.description ? <div className="mt-1 text-xs text-slate-400">{item.description}</div> : null}
+                      </div>
+                      <Download className="h-4 w-4 text-slate-500" />
+                    </a>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
+                    当前还没有上传新的安装包。把安装包放到网站镜像或 GitHub Release 后，这里会自动显示下载入口。
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </ThemeSurface>
       </div>
@@ -295,16 +408,10 @@ export default function AboutPage() {
           action={
             showAllVersions ? (
               <div className="flex gap-2">
-                <button
-                  onClick={() => setExpandedVersions(versionHistory.map((item) => item.version))}
-                  className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100"
-                >
+                <button onClick={() => setExpandedVersions(versionHistory.map((item) => item.version))} className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100">
                   展开全部
                 </button>
-                <button
-                  onClick={() => setExpandedVersions([])}
-                  className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100"
-                >
+                <button onClick={() => setExpandedVersions([])} className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100">
                   收起全部
                 </button>
               </div>
@@ -314,18 +421,11 @@ export default function AboutPage() {
 
         <div className="mt-5 space-y-3">
           {visibleVersions.map((item) => (
-            <div
-              key={item.version}
-              className={`overflow-hidden rounded-xl border transition-all ${
-                item.version === currentVersion ? "border-blue-200 bg-blue-50/50" : "border-slate-200"
-              }`}
-            >
+            <div key={item.version} className={cn("overflow-hidden rounded-xl border transition-all", item.version === currentVersion ? "border-blue-200 bg-blue-50/50" : "border-slate-200")}>
               <button
                 onClick={() =>
                   setExpandedVersions((prev) =>
-                    prev.includes(item.version)
-                      ? prev.filter((version) => version !== item.version)
-                      : [...prev, item.version]
+                    prev.includes(item.version) ? prev.filter((version) => version !== item.version) : [...prev, item.version]
                   )
                 }
                 className="flex w-full items-center justify-between p-4 text-left"
@@ -335,11 +435,7 @@ export default function AboutPage() {
                   <span className="text-sm font-semibold text-slate-900">v{item.version}</span>
                   <span className="text-xs text-slate-400">{item.date}</span>
                 </div>
-                {expandedVersions.includes(item.version) ? (
-                  <ChevronUp className="h-4 w-4 text-slate-400" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
-                )}
+                {expandedVersions.includes(item.version) ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
               </button>
 
               {expandedVersions.includes(item.version) ? (
@@ -347,7 +443,7 @@ export default function AboutPage() {
                   <ul className="space-y-2">
                     {item.highlights.map((highlight, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
-                        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                         {highlight}
                       </li>
                     ))}
@@ -370,18 +466,14 @@ export default function AboutPage() {
       </ThemeSurface>
 
       <ThemeSurface className="p-4 sm:p-6">
-        <ThemeSectionHeader
-          eyebrow="相关链接"
-          title="更多信息"
-          description="访问仓库、反馈问题或参与讨论。"
-        />
+        <ThemeSectionHeader eyebrow="相关链接" title="开源与镜像" description="GitHub 仓库继续保留，但更新下载入口统一收敛在关于页和网站镜像。" />
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {websites.map((site) => (
             <a
               key={site.name}
               href={site.url}
-              target="_blank"
-              rel="noopener noreferrer"
+              target={site.url.startsWith("http") ? "_blank" : undefined}
+              rel={site.url.startsWith("http") ? "noopener noreferrer" : undefined}
               className="group rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
             >
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -390,30 +482,10 @@ export default function AboutPage() {
               <h3 className="text-sm font-semibold text-slate-950">{site.name}</h3>
               <p className="mt-1 text-xs text-slate-500">{site.description}</p>
               <div className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-600">
-                访问
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                查看
+                {site.url.startsWith("http") ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
               </div>
             </a>
-          ))}
-        </div>
-      </ThemeSurface>
-
-      <ThemeSurface className="p-4 sm:p-6">
-        <ThemeSectionHeader
-          eyebrow="鸣谢"
-          title="致谢与感谢"
-          description="这里预留给后续补充致谢对象、参考来源、协作者和支持者。"
-        />
-        <div className="mt-5 grid gap-3 lg:grid-cols-3">
-          {acknowledgements.map((item) => (
-            <div key={item.title} className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm">
-                <item.icon className="h-5 w-5" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-950">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-              <p className="mt-3 text-xs leading-5 text-slate-400">{item.note}</p>
-            </div>
           ))}
         </div>
       </ThemeSurface>
