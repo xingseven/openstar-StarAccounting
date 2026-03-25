@@ -397,11 +397,11 @@ export function SavingsGoalDialog({
     <BottomSheet open={open} onOpenChange={handleOpenChange}>
       <BottomSheetContent className={cn("flex flex-col transition-all duration-300", step === 2 ? "h-[85vh]" : "")} hideClose>
         <BottomSheetHeader>
-          <BottomSheetTitle className="flex items-center gap-2 text-xl">
+          <BottomSheetTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <div className="rounded-full bg-blue-50 p-2 text-blue-600">{step === 1 ? <Wallet className="h-5 w-5" /> : <PiggyBank className="h-5 w-5" />}</div>
             {step === 1 ? "新建储蓄目标" : `制定计划 - ${name}`}
           </BottomSheetTitle>
-          <BottomSheetDescription>{step === 1 ? "填写目标基础信息并进入逐月计划表。" : "按月份逐行编辑计划与金额。"}</BottomSheetDescription>
+          <BottomSheetDescription className="text-sm leading-6">{step === 1 ? "填写目标基础信息并进入逐月计划表。" : "按月份逐行编辑计划与金额。"}</BottomSheetDescription>
         </BottomSheetHeader>
 
         {step === 1 ? (
@@ -414,7 +414,7 @@ export function SavingsGoalDialog({
 
             <ThemeDialogSection className="space-y-4">
               <ThemeFormGrid>
-                <ThemeFormField label="存钱模式" labelClassName="text-xs text-slate-500">
+                <ThemeFormField label="存钱模式" labelClassName="text-sm text-slate-500">
                   <Select value={type} onValueChange={(value) => handleBasicInfoChange("type", value)}>
                     <SelectTrigger className="h-10 rounded-lg bg-white">
                       <SelectValue />
@@ -428,7 +428,7 @@ export function SavingsGoalDialog({
                     </SelectContent>
                   </Select>
                 </ThemeFormField>
-                <ThemeFormField label="资金性质" labelClassName="text-xs text-slate-500">
+                <ThemeFormField label="资金性质" labelClassName="text-sm text-slate-500">
                   <Select value={depositType} onValueChange={(value) => handleBasicInfoChange("depositType", value)}>
                     <SelectTrigger className="h-10 rounded-lg bg-white">
                       <SelectValue />
@@ -445,10 +445,10 @@ export function SavingsGoalDialog({
 
             <ThemeDialogSection className="space-y-4">
               <ThemeFormGrid>
-                <ThemeFormField label="开始月份" labelClassName="text-xs text-slate-500">
+                <ThemeFormField label="开始月份" labelClassName="text-sm text-slate-500">
                   <Input type="month" value={startMonth} onChange={(event) => handleBasicInfoChange("startMonth", event.target.value)} className="h-10 rounded-lg bg-white" />
                 </ThemeFormField>
-                <ThemeFormField label="持续月数" labelClassName="text-xs text-slate-500">
+                <ThemeFormField label="持续月数" labelClassName="text-sm text-slate-500">
                   <Input type="number" value={duration} onChange={(event) => handleBasicInfoChange("duration", Number(event.target.value))} className="h-10 rounded-lg bg-white" />
                 </ThemeFormField>
               </ThemeFormGrid>
@@ -471,9 +471,9 @@ export function SavingsGoalDialog({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <ThemeToolbar className="mb-3 justify-between">
-              <div className="text-sm text-slate-500">提示：修改第一行数据可作为后续月份的参考模板。</div>
+              <div className="text-base text-slate-500">提示：修改第一行数据可作为后续月份的参考模板。</div>
               {type !== "MONTHLY" ? (
-                <Button variant="outline" size="sm" onClick={() => {
+                <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 text-sm font-medium" onClick={() => {
                   const nextName = prompt("请输入列名(如：房租)");
                   if (!nextName) return;
                   setExpenseColumns((current) => [...current, { id: Math.random().toString(36).slice(2, 7), name: nextName }]);
@@ -487,7 +487,7 @@ export function SavingsGoalDialog({
 
             <ThemeTable className="flex-1 min-h-0">
               <div ref={tableScrollRef} className="flex-1 min-h-0 overflow-auto">
-                <table className="relative table-auto text-left text-sm" style={{ width: "max-content", minWidth: type === "MONTHLY" ? "100%" : "1400px" }}>
+                <table className="relative table-auto text-left text-base" style={{ width: "max-content", minWidth: type === "MONTHLY" ? "100%" : "1400px" }}>
                   <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 shadow-sm">
                     <tr>
                       <th className="sticky left-0 z-20 min-w-[80px] whitespace-nowrap bg-slate-50 p-3 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">月份</th>
@@ -556,7 +556,7 @@ export function SavingsGoalDialog({
                           <button
                             type="button"
                             onClick={() => updateRow(index, { status: row.status === "COMPLETED" ? "PENDING" : "COMPLETED" })}
-                            className={cn("rounded px-2 py-1 text-xs font-medium", row.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600")}
+                            className={cn("rounded-lg px-3 py-2 text-sm font-medium", row.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600")}
                           >
                             {row.status === "COMPLETED" ? "已存款" : "未存款"}
                           </button>
@@ -579,14 +579,14 @@ export function SavingsGoalDialog({
                             }}
                           >
                             <label htmlFor={`proof-${row.id}`} className="inline-flex cursor-pointer items-center gap-2">
-                              <span className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700 hover:bg-slate-200">上传</span>
+                              <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200">上传</span>
                             </label>
                             <input id={`proof-${row.id}`} type="file" accept="image/*" className="hidden" onChange={(event) => handleProofUpload(index, event.target.files?.[0])} />
-                            <div className="mt-1 text-[11px] text-slate-400">支持拖入图片</div>
+                            <div className="mt-1 text-sm text-slate-400">支持拖入图片</div>
                             {row.proofImage ? (
                               <div className="mt-2 space-y-1">
                                 <Image src={row.proofImage} alt="打卡凭证" width={56} height={56} unoptimized className="h-14 w-14 rounded border object-cover" />
-                                <button type="button" className="block text-xs text-blue-600 hover:underline" onClick={() => window.open(row.proofImage, "_blank")}>
+                                <button type="button" className="block text-sm text-blue-600 hover:underline" onClick={() => window.open(row.proofImage, "_blank")}>
                                   查看大图
                                 </button>
                               </div>
@@ -638,7 +638,7 @@ export function SavingsGoalDialog({
 
       <div className="fixed bottom-4 right-4 z-[100] space-y-2">
         {toasts.map((toast) => (
-          <div key={toast.id} className="max-w-sm rounded-lg bg-black px-4 py-3 text-sm text-white shadow-lg">
+          <div key={toast.id} className="max-w-sm rounded-lg bg-black px-4 py-3 text-base text-white shadow-lg">
             {toast.message}
           </div>
         ))}

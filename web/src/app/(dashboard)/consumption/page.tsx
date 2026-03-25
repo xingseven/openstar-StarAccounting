@@ -1,15 +1,15 @@
 "use client";
 
-import { startTransition, useMemo, useEffect, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
 import { fetchConsumptionData } from "@/features/consumption/api";
 
 const ConsumptionDefaultTheme = dynamic(
-  () => import("@/features/consumption/components/ConsumptionDefaultTheme").then(mod => mod.ConsumptionDefaultTheme),
+  () => import("@/features/consumption/components/ConsumptionDefaultTheme").then((mod) => mod.ConsumptionDefaultTheme),
   {
     ssr: false,
-    loading: () => null
+    loading: () => null,
   }
 );
 
@@ -36,25 +36,53 @@ export default function ConsumptionPage() {
   const [consumptionData, setConsumptionData] = useState(MOCK_CONSUMPTION);
   const [loading, setLoading] = useState(true);
   const [usingMockData, setUsingMockData] = useState(false);
-  const [dateFilter, setDateFilter] = useState<"month" | "all">("month");
+  const [dateFilter, setDateFilter] = useState<"month" | "all" | "custom">("month");
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  });
   const currentMonthRange = useMemo(() => getCurrentMonthRange(), []);
-  const activeRange = useMemo(
-    () =>
-      dateFilter === "month"
-        ? currentMonthRange
-        : { startDate: undefined, endDate: undefined, label: "全部时间" },
-    [currentMonthRange, dateFilter]
-  );
 
-  // 恢复滚动位置 - 页面级别执行
+  const activeRange = useMemo(() => {
+    if (dateFilter === "month") {
+      return currentMonthRange;
+    }
+
+    if (dateFilter === "all") {
+      return { startDate: undefined, endDate: undefined, label: "全部时间" };
+    }
+
+    const startDate = customDateRange.startDate
+      ? new Date(`${customDateRange.startDate}T00:00:00`).toISOString()
+      : undefined;
+    const endDate = customDateRange.endDate
+      ? new Date(`${customDateRange.endDate}T23:59:59.999`).toISOString()
+      : undefined;
+
+    let label = "自定义时间段";
+    if (customDateRange.startDate && customDateRange.endDate) {
+      label = `${customDateRange.startDate} - ${customDateRange.endDate}`;
+    } else if (customDateRange.startDate) {
+      label = `${customDateRange.startDate} - 至今`;
+    } else if (customDateRange.endDate) {
+      label = `开始 - ${customDateRange.endDate}`;
+    }
+
+    return {
+      startDate,
+      endDate,
+      label,
+    };
+  }, [currentMonthRange, customDateRange.endDate, customDateRange.startDate, dateFilter]);
+
   useEffect(() => {
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (!mainContent) return;
-    const STORAGE_KEY = 'consumption-scroll-position';
-    const savedPosition = sessionStorage.getItem(STORAGE_KEY);
+    const storageKey = "consumption-scroll-position";
+    const savedPosition = sessionStorage.getItem(storageKey);
     if (savedPosition) {
       const position = parseInt(savedPosition, 10);
-      if (!isNaN(position) && position > 0) {
+      if (!Number.isNaN(position) && position > 0) {
         requestAnimationFrame(() => {
           mainContent.scrollTop = position;
         });
@@ -62,16 +90,15 @@ export default function ConsumptionPage() {
     }
   }, []);
 
-  // 保存滚动位置 - 页面级别执行
   useEffect(() => {
-    const mainContent = document.querySelector('main');
+    const mainContent = document.querySelector("main");
     if (!mainContent) return;
-    const STORAGE_KEY = 'consumption-scroll-position';
+    const storageKey = "consumption-scroll-position";
     const handleScroll = () => {
-      sessionStorage.setItem(STORAGE_KEY, mainContent.scrollTop.toString());
+      sessionStorage.setItem(storageKey, mainContent.scrollTop.toString());
     };
-    mainContent.addEventListener('scroll', handleScroll, { passive: true });
-    return () => mainContent.removeEventListener('scroll', handleScroll);
+    mainContent.addEventListener("scroll", handleScroll, { passive: true });
+    return () => mainContent.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -79,11 +106,11 @@ export default function ConsumptionPage() {
       setLoading(true);
       try {
         const realData = await fetchConsumptionData(activeRange.startDate, activeRange.endDate);
-        // 如果 API 返回空数据（没有交易记录），使用 mock 数据用于展示
         const hasNoData =
           realData.transactions.length === 0 &&
           realData.summary.totalExpense === 0 &&
           realData.summary.totalIncome === 0;
+
         startTransition(() => {
           if (hasNoData) {
             setConsumptionData(MOCK_CONSUMPTION);
@@ -104,20 +131,21 @@ export default function ConsumptionPage() {
       }
     }
 
-    loadData();
+    void loadData();
   }, [activeRange.endDate, activeRange.startDate]);
-
-  const dateRangeLabel = activeRange.label;
 
   return (
     <div className="w-full">
       <ConsumptionDefaultTheme
         data={consumptionData}
-        dateRangeLabel={dateRangeLabel}
+        dateRangeLabel={activeRange.label}
         loading={loading}
         usingMockData={usingMockData}
         dateFilter={dateFilter}
         onDateFilterChange={setDateFilter}
+        customStartDate={customDateRange.startDate}
+        customEndDate={customDateRange.endDate}
+        onCustomDateRangeChange={setCustomDateRange}
       />
     </div>
   );

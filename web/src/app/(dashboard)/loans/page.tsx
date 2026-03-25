@@ -323,8 +323,8 @@ export default function LoansPage() {
       <BottomSheet open={isModalOpen} onOpenChange={setIsModalOpen}>
         <BottomSheetContent className="max-w-md">
           <BottomSheetHeader>
-            <BottomSheetTitle>{editingItem ? "编辑贷款" : "新增贷款"}</BottomSheetTitle>
-            <BottomSheetDescription>移动端和桌面端统一使用底部滑出的编辑面板。</BottomSheetDescription>
+            <BottomSheetTitle className="text-lg sm:text-xl">{editingItem ? "编辑贷款" : "新增贷款"}</BottomSheetTitle>
+            <BottomSheetDescription className="text-sm leading-6">移动端和桌面端统一使用底部滑出的编辑面板。</BottomSheetDescription>
           </BottomSheetHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -388,8 +388,8 @@ export default function LoansPage() {
       <BottomSheet open={isRepayOpen} onOpenChange={setIsRepayOpen}>
         <BottomSheetContent className="max-w-md">
           <BottomSheetHeader>
-            <BottomSheetTitle>登记还款</BottomSheetTitle>
-            <BottomSheetDescription>
+            <BottomSheetTitle className="text-lg sm:text-xl">登记还款</BottomSheetTitle>
+            <BottomSheetDescription className="text-sm leading-6">
               {repayState.item ? `当前剩余 ¥${repayState.item.remainingAmount.toFixed(2)}` : "为当前贷款记录补一笔还款。"}
             </BottomSheetDescription>
           </BottomSheetHeader>
@@ -436,15 +436,15 @@ export default function LoansPage() {
       <BottomSheet open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
         <BottomSheetContent className="max-w-3xl">
           <BottomSheetHeader>
-            <BottomSheetTitle>{scheduleItem ? `还款计划 · ${scheduleItem.platform}` : "还款计划"}</BottomSheetTitle>
-            <BottomSheetDescription>按期查看后续还款金额与剩余本金。</BottomSheetDescription>
+            <BottomSheetTitle className="text-lg sm:text-xl">{scheduleItem ? `还款计划 · ${scheduleItem.platform}` : "还款计划"}</BottomSheetTitle>
+            <BottomSheetDescription className="text-sm leading-6">按期查看后续还款金额与剩余本金。</BottomSheetDescription>
           </BottomSheetHeader>
 
           <ThemeTable className="max-h-[60vh] overflow-auto">
             {schedule.length === 0 ? (
-              <div className="px-4 py-10 text-center text-sm text-slate-500">当前贷款已全部结清。</div>
+              <div className="px-4 py-10 text-center text-base text-slate-500">当前贷款已全部结清。</div>
             ) : (
-              <table className="w-full min-w-[560px] text-sm">
+              <table className="w-full min-w-[560px] text-sm sm:text-base">
                 <thead className="sticky top-0 bg-slate-50 text-left text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">期数</th>

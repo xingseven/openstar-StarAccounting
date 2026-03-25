@@ -234,7 +234,7 @@ export default function DataPage() {
 
   if (showInitialSkeleton || loading) {
     return (
-      <div className="mx-auto max-w-[1600px] space-y-4 py-4 sm:space-y-6 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-6 sm:py-6 lg:py-8">
         <Skeleton className="h-20 rounded-2xl" />
         <Skeleton className="h-12 rounded-xl" />
         <Skeleton className="h-96 rounded-2xl" />
@@ -243,7 +243,7 @@ export default function DataPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4 py-4 sm:space-y-6 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-6 sm:py-6 lg:py-8">
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
           <div className="rounded-xl bg-slate-100 p-3 text-slate-700">

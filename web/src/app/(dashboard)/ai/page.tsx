@@ -354,7 +354,7 @@ export default function AIPage() {
 
   if (showInitialSkeleton) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
         <Skeleton className="h-[180px] rounded-[28px]" />
         <div className="grid gap-3 md:grid-cols-3">
           <Skeleton className="h-[110px] rounded-[20px]" />
@@ -368,7 +368,7 @@ export default function AIPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
           <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">

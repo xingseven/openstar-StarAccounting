@@ -93,7 +93,7 @@ export function SavingsWithdrawalDialog({
     <BottomSheet open={open} onOpenChange={onOpenChange}>
       <BottomSheetContent className="max-w-md">
         <BottomSheetHeader>
-          <BottomSheetTitle className="flex items-center gap-2">
+          <BottomSheetTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <LogOut className="h-5 w-5 text-red-500" />
             取款 - {goal.name}
           </BottomSheetTitle>
@@ -101,7 +101,7 @@ export function SavingsWithdrawalDialog({
 
         <div className="space-y-4 py-4">
           <ThemeNotice tone="blue" title="当前存款">
-            <div className="text-2xl font-bold">¥{goal.currentAmount.toLocaleString()}</div>
+            <div className="text-3xl font-bold">¥{goal.currentAmount.toLocaleString()}</div>
           </ThemeNotice>
 
           {error ? <ThemeNotice tone="red" description={error} /> : null}
@@ -123,7 +123,7 @@ export function SavingsWithdrawalDialog({
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   required
-                  className="focus:ring-2 focus:ring-red-500"
+                  className="h-11 rounded-2xl text-sm focus:ring-2 focus:ring-red-500"
                 />
               </ThemeFormField>
 
@@ -134,6 +134,7 @@ export function SavingsWithdrawalDialog({
                   placeholder="例如：应急使用、购买大件等"
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
+                  className="h-11 rounded-2xl text-sm"
                 />
               </ThemeFormField>
 
@@ -149,10 +150,10 @@ export function SavingsWithdrawalDialog({
             </ThemeDialogSection>
 
             <ThemeActionBar>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="h-11 rounded-2xl px-4 text-sm font-medium">
                 取消
               </Button>
-              <Button type="submit" disabled={loading} className="bg-red-500 hover:bg-red-600">
+              <Button type="submit" disabled={loading} className="h-11 rounded-2xl bg-red-500 px-4 text-sm font-medium hover:bg-red-600">
                 {loading ? "处理中..." : "确认取款"}
               </Button>
             </ThemeActionBar>

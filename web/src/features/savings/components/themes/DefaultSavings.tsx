@@ -155,20 +155,22 @@ function SavingsGoalCard({
   const progress = item.targetAmount > 0 ? Math.min(100, (item.currentAmount / item.targetAmount) * 100) : 0;
   const daysLeft = getDaysUntilDeadline(item.deadline);
   const behind = isBehindSchedule(item);
+  const mobileLightOutlineButtonClass =
+    "h-10 justify-center rounded-xl border-transparent bg-slate-100 px-4 text-xs font-medium text-slate-700 hover:bg-slate-200 sm:border-border sm:bg-background sm:text-sm sm:text-foreground sm:hover:bg-muted";
 
   return (
     <ThemeSurface className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <button type="button" onClick={onToggleSelect} className="text-slate-400 hover:text-slate-700">
+          <button type="button" onClick={onToggleSelect} className="-m-1 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             {selected ? <CheckSquare className="h-4.5 w-4.5 text-blue-600" /> : <Square className="h-4.5 w-4.5" />}
           </button>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-blue-600">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-slate-50 text-blue-600 sm:border-slate-200">
             <Target className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-slate-950">{item.name}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+            <p className="truncate text-base font-semibold text-slate-950 sm:text-lg">{item.name}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 sm:text-sm">
               <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">{getGoalModeLabel(item.type)}</span>
               <span>{getDepositTypeLabel(item.depositType)}</span>
               {behind && item.status === "ACTIVE" ? <span className="text-amber-600">进度偏慢</span> : null}
@@ -177,58 +179,76 @@ function SavingsGoalCard({
         </div>
 
         {item.image ? (
-          <button type="button" onClick={onOpenImage} className="overflow-hidden rounded-xl border border-slate-200">
+          <button type="button" onClick={onOpenImage} className="overflow-hidden rounded-xl border border-transparent sm:border-slate-200">
             <Image src={item.image} alt={item.name} width={48} height={48} className="h-12 w-12 object-cover" unoptimized />
           </button>
         ) : (
-          <button type="button" onClick={onOpenImage} className={THEME_ICON_BUTTON_CLASS}>
+          <button type="button" onClick={onOpenImage} className={`${THEME_ICON_BUTTON_CLASS} h-10 w-10 rounded-xl`}>
             <ImageIcon className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 space-y-3.5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-slate-500">当前 / 目标</p>
-            <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
+            <p className="text-xs font-medium text-slate-500 sm:text-sm">当前 / 目标</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
               ¥{item.currentAmount.toLocaleString()} / ¥{item.targetAmount.toLocaleString()}
             </p>
           </div>
-          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{progress.toFixed(0)}%</span>
+          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 sm:text-sm">{progress.toFixed(0)}%</span>
         </div>
 
         <div>
           <Progress value={progress} className="h-2" indicatorClassName="bg-blue-600" />
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500 sm:text-sm">
             <span>{item.status === "COMPLETED" ? "已完成" : item.status === "ARCHIVED" ? "已归档" : "进行中"}</span>
             <span>{item.deadline ? `${daysLeft} 天到期` : "无截止日期"}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <Button type="button" variant="outline" className="rounded-xl" onClick={onOpenPunch}>
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <Button type="button" variant="outline" className={mobileLightOutlineButtonClass} onClick={onOpenPunch}>
             打卡
           </Button>
-          <Button type="button" variant="outline" className="rounded-xl" onClick={onOpenWithdrawal}>
+          <Button type="button" variant="outline" className={mobileLightOutlineButtonClass} onClick={onOpenWithdrawal}>
             取款
-          </Button>
-          <Button type="button" variant="outline" className="rounded-xl" onClick={onOpenEdit}>
-            编辑
-          </Button>
-          <Button type="button" variant="outline" className="rounded-xl" onClick={onCopy}>
-            复制
           </Button>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+        <div className="flex flex-wrap gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onOpenEdit}
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+          >
+            编辑
+          </button>
+          {onCopy ? (
+            <button
+              type="button"
+              onClick={onCopy}
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+            >
+              复制
+            </button>
+          ) : null}
           {onArchive ? (
-            <button type="button" onClick={onArchive} className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900">
+            <button
+              type="button"
+              onClick={onArchive}
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+            >
               <Archive className="h-3.5 w-3.5" />
               归档
             </button>
           ) : null}
-          <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700">
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 hover:text-red-700 sm:text-sm"
+          >
             <Trash2 className="h-3.5 w-3.5" />
             删除
           </button>
@@ -337,7 +357,7 @@ export function SavingsDefaultTheme({
 
   return (
     <>
-      <div className="mx-auto max-w-[1680px] space-y-4 sm:space-y-5">
+      <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5">
         <DelayedRender delay={0}>
           <ThemeHero className="p-4 sm:p-6 lg:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -345,7 +365,7 @@ export function SavingsDefaultTheme({
                 <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">储蓄工作台</h1>
                 <p className="mt-1 text-sm text-slate-500">统一查看储蓄目标、完成进度和最近存取款动作。</p>
               </div>
-              <Button onClick={onOpenCreate} className="rounded-2xl bg-slate-900 hover:bg-slate-800">
+              <Button onClick={onOpenCreate} className="h-10 rounded-2xl bg-slate-900 px-4 text-sm font-medium hover:bg-slate-800">
                 <Plus className="mr-2 h-4 w-4" />
                 新建目标
               </Button>
@@ -362,98 +382,12 @@ export function SavingsDefaultTheme({
         </DelayedRender>
 
         <DelayedRender delay={120}>
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
-            <ThemeSurface className="p-4 sm:p-6">
-              <ThemeSectionHeader eyebrow="筛选工具" title="查找与批量操作" description="按状态、名称和排序方式管理你的储蓄目标。" />
-
-              <div className="mt-5 space-y-3">
-                <div className="flex flex-wrap gap-3">
-                  <div className="relative min-w-[220px] flex-1">
-                    <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="搜索目标"
-                      className="rounded-2xl pl-10"
-                    />
-                  </div>
-                  <select value={filterBy} onChange={(event) => setFilterBy(event.target.value as FilterOption)} className={THEME_COMPACT_SELECT_CLASS}>
-                    <option value="active">进行中</option>
-                    <option value="completed">已完成</option>
-                    <option value="archived">已归档</option>
-                    <option value="all">全部</option>
-                  </select>
-                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)} className={THEME_COMPACT_SELECT_CLASS}>
-                    <option value="progress">按进度</option>
-                    <option value="deadline">按截止日</option>
-                    <option value="name">按名称</option>
-                    <option value="createdAt">按创建时间</option>
-                  </select>
-                </div>
-
-                {selectedIds.size > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3 text-sm">
-                    <span className="font-medium text-slate-700">已选择 {selectedIds.size} 项</span>
-                    {onBatchArchive ? (
-                      <Button variant="outline" className="rounded-xl" onClick={() => onBatchArchive(Array.from(selectedIds))}>
-                        <Archive className="mr-2 h-4 w-4" />
-                        批量归档
-                      </Button>
-                    ) : null}
-                    {onBatchDelete ? (
-                      <Button variant="outline" className="rounded-xl text-red-600" onClick={() => onBatchDelete(Array.from(selectedIds))}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        批量删除
-                      </Button>
-                    ) : null}
-                    <Button variant="ghost" className="rounded-xl" onClick={() => setSelectedIds(new Set())}>
-                      取消
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            </ThemeSurface>
-
-            <ThemeSurface className="p-4 sm:p-6">
-              <ThemeSectionHeader eyebrow="目标分布" title="储蓄模式占比" description="看钱主要沉淀在月度、年度还是长期储蓄计划。" />
-              <div className="mt-5 grid items-center gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
-                <div className="mx-auto h-[180px] w-[180px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={distributionData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={4}>
-                        {distributionData.map((item) => (
-                          <Cell key={item.name} fill={item.fill} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="space-y-2.5">
-                  {distributionData.map((item) => (
-                    <div key={item.name} className="rounded-[18px] bg-slate-50 px-3 py-2.5">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
-                          <span className="truncate text-sm font-medium text-slate-900">{item.name}</span>
-                        </div>
-                        <span className="text-sm font-semibold text-slate-950">¥{item.value.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </ThemeSurface>
-          </div>
-        </DelayedRender>
-
-        <DelayedRender delay={180}>
           {filteredGoals.length === 0 ? (
             <ThemeSurface className="p-8">
               <EmptyState icon={Target} title="暂无储蓄目标" description="开始创建你的第一个储蓄目标吧。" />
             </ThemeSurface>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredGoals.map((item) => (
                 <SavingsGoalCard
                   key={item.id}
@@ -482,31 +416,117 @@ export function SavingsDefaultTheme({
           )}
         </DelayedRender>
 
+        <DelayedRender delay={180}>
+          <div className="grid gap-3 sm:gap-4 xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
+            <ThemeSurface className="p-4 sm:p-5 lg:p-6">
+              <ThemeSectionHeader eyebrow="筛选工具" title="查找与批量操作" description="按状态、名称和排序方式管理你的储蓄目标。" />
+
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap gap-3">
+                  <div className="relative min-w-[220px] flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="搜索目标"
+                      className="rounded-2xl pl-10"
+                    />
+                  </div>
+                  <select value={filterBy} onChange={(event) => setFilterBy(event.target.value as FilterOption)} className={THEME_COMPACT_SELECT_CLASS}>
+                    <option value="active">进行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="archived">已归档</option>
+                    <option value="all">全部</option>
+                  </select>
+                  <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortOption)} className={THEME_COMPACT_SELECT_CLASS}>
+                    <option value="progress">按进度</option>
+                    <option value="deadline">按截止日</option>
+                    <option value="name">按名称</option>
+                    <option value="createdAt">按创建时间</option>
+                  </select>
+                </div>
+
+                {selectedIds.size > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3 text-sm">
+                    <span className="text-xs font-medium text-slate-700 sm:text-sm">已选择 {selectedIds.size} 项</span>
+                    {onBatchArchive ? (
+                      <Button variant="outline" className="h-10 rounded-xl px-4 text-xs font-medium sm:text-sm" onClick={() => onBatchArchive(Array.from(selectedIds))}>
+                        <Archive className="mr-2 h-4 w-4" />
+                        批量归档
+                      </Button>
+                    ) : null}
+                    {onBatchDelete ? (
+                      <Button variant="outline" className="h-10 rounded-xl px-4 text-xs font-medium text-red-600 sm:text-sm" onClick={() => onBatchDelete(Array.from(selectedIds))}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        批量删除
+                      </Button>
+                    ) : null}
+                    <Button variant="ghost" className="h-10 rounded-xl px-4 text-xs font-medium sm:text-sm" onClick={() => setSelectedIds(new Set())}>
+                      取消
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            </ThemeSurface>
+
+            <ThemeSurface className="p-4 sm:p-5 lg:p-6">
+              <ThemeSectionHeader eyebrow="目标分布" title="储蓄模式占比" description="看钱主要沉淀在月度、年度还是长期储蓄计划。" />
+              <div className="mt-4 grid items-center gap-3 sm:gap-4 sm:grid-cols-[180px_minmax(0,1fr)]">
+                <div className="mx-auto h-[180px] w-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={distributionData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={78} paddingAngle={4}>
+                        {distributionData.map((item) => (
+                          <Cell key={item.name} fill={item.fill} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="space-y-2.5">
+                  {distributionData.map((item) => (
+                    <div key={item.name} className="rounded-[18px] bg-slate-50 px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                          <span className="truncate text-sm font-medium text-slate-900 sm:text-base">{item.name}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-950 sm:text-base">¥{item.value.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ThemeSurface>
+          </div>
+        </DelayedRender>
+
         <DelayedRender delay={240}>
-          <ThemeSurface className="p-4 sm:p-6">
+          <ThemeSurface className="p-4 sm:p-5 lg:p-6">
             <ThemeSectionHeader eyebrow="最近动态" title="最近存取款记录" description="最近发生的储蓄相关交易。" />
-            <div className="mt-5 space-y-2.5">
+            <div className="mt-4 space-y-2.5">
               {transactions.length === 0 ? (
                 <EmptyState icon={PiggyBank} title="暂无储蓄交易" description="打卡或取款后，这里会显示最近记录。" />
               ) : (
                 transactions.slice(0, 8).map((transaction) => {
                   const isIncome = transaction.type === "INCOME";
                   return (
-                    <div key={transaction.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-slate-100 bg-slate-50/80 px-4 py-3">
+                    <div key={transaction.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-transparent bg-slate-50/80 px-4 py-3 sm:border-slate-100">
                       <div className="flex min-w-0 items-center gap-3">
                         <div className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600")}>
                           {isIncome ? <ArrowUpRight className="h-4.5 w-4.5" /> : <ArrowDownLeft className="h-4.5 w-4.5" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-950">{transaction.category}</p>
-                          <p className="mt-1 text-xs text-slate-500">{transaction.date}</p>
+                          <p className="truncate text-sm font-medium text-slate-950 sm:text-base">{transaction.category}</p>
+                          <p className="mt-1 text-xs text-slate-500 sm:text-sm">{transaction.date}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={cn("text-sm font-semibold", isIncome ? "text-blue-600" : "text-red-600")}>
+                        <p className={cn("text-sm font-semibold sm:text-base", isIncome ? "text-blue-600" : "text-red-600")}>
                           {isIncome ? "+" : "-"}¥{Number(transaction.amount).toLocaleString()}
                         </p>
-                        {transaction.description ? <p className="mt-1 text-xs text-slate-500">{transaction.description}</p> : null}
+                        {transaction.description ? <p className="mt-1 text-xs text-slate-500 sm:text-sm">{transaction.description}</p> : null}
                       </div>
                     </div>
                   );
@@ -524,7 +544,7 @@ export function SavingsDefaultTheme({
             <div className="mt-5 space-y-4">
               {previewImage ? (
                 <>
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                  <div className="overflow-hidden rounded-2xl border border-transparent bg-slate-50 sm:border-slate-200">
                     <Image src={previewImage} alt={imageDialogGoal.name} width={640} height={420} className="h-auto w-full object-contain" unoptimized />
                   </div>
                   <div className="flex gap-2">
@@ -566,7 +586,7 @@ export function SavingsDefaultTheme({
                 </>
               ) : (
                 <div
-                  className="flex h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-center"
+                  className="flex h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50 text-center sm:border-slate-200"
                   onClick={() => {
                     const input = document.createElement("input");
                     input.type = "file";
@@ -586,8 +606,8 @@ export function SavingsDefaultTheme({
                   }}
                 >
                   <ImageIcon className="h-10 w-10 text-slate-400" />
-                  <p className="mt-3 text-sm font-medium text-slate-900">点击上传图片</p>
-                  <p className="mt-1 text-sm text-slate-500">支持 JPG、PNG、GIF</p>
+                  <p className="mt-3 text-base font-medium text-slate-900">点击上传图片</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">支持 JPG、PNG、GIF</p>
                 </div>
               )}
 

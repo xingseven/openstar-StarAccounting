@@ -111,8 +111,11 @@ interface ConsumptionViewProps {
   dateRangeLabel: string;
   loading?: boolean;
   usingMockData?: boolean;
-  dateFilter?: "month" | "all";
-  onDateFilterChange?: (value: "month" | "all") => void;
+  dateFilter?: "month" | "all" | "custom";
+  onDateFilterChange?: (value: "month" | "all" | "custom") => void;
+  customStartDate?: string;
+  customEndDate?: string;
+  onCustomDateRangeChange?: (value: { startDate: string; endDate: string }) => void;
 }
 
 type FilterBarProps = {
@@ -121,8 +124,11 @@ type FilterBarProps = {
   onSearchChange: (value: string) => void;
   platformFilter: string;
   onPlatformFilterChange: (value: string) => void;
-  dateFilter: "month" | "all";
-  onDateFilterChange?: (value: "month" | "all") => void;
+  dateFilter: "month" | "all" | "custom";
+  onDateFilterChange?: (value: "month" | "all" | "custom") => void;
+  customStartDate?: string;
+  customEndDate?: string;
+  onCustomDateRangeChange?: (value: { startDate: string; endDate: string }) => void;
   filteredCount: number;
 };
 
@@ -219,6 +225,9 @@ function ConsumptionFilterBar({
   onPlatformFilterChange,
   dateFilter,
   onDateFilterChange,
+  customStartDate = "",
+  customEndDate = "",
+  onCustomDateRangeChange,
   filteredCount,
 }: FilterBarProps) {
   return (
@@ -239,7 +248,7 @@ function ConsumptionFilterBar({
           />
         </div>
 
-        <div className={cn("grid gap-3", compact ? "md:grid-cols-[148px_auto] md:items-center md:gap-2.5 xl:w-[340px]" : "sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[420px]")}>
+        <div className={cn("grid gap-3", compact ? "md:grid-cols-[156px_max-content] md:items-center md:gap-3.5 xl:w-[360px]" : "sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[420px]")}>
           <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
             <SelectTrigger className={cn("rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none", compact ? "h-9 rounded-[16px]" : "h-11")}>
               <SelectValue />
@@ -252,7 +261,7 @@ function ConsumptionFilterBar({
             </SelectContent>
           </Select>
 
-          <div className={cn("flex flex-wrap items-center gap-2", compact && "md:flex-nowrap md:justify-end")}>
+          <div className={cn("flex flex-wrap items-center gap-2", compact && "md:flex-nowrap md:justify-end md:gap-2.5 md:pl-1")}>
             <button
               type="button"
               onClick={() => onDateFilterChange?.("month")}
@@ -273,6 +282,16 @@ function ConsumptionFilterBar({
             >
               {FILTER_BAR_TEXT.allDate}
             </button>
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("custom")}
+              className={cn(
+                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition",
+                dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+            >
+              时间段
+            </button>
             <div className={cn("inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600", compact && "px-2.5 py-1.5")}>
               <Filter className="h-3.5 w-3.5" />
               {`${filteredCount} ${FILTER_BAR_TEXT.countSuffix}`}
@@ -280,7 +299,148 @@ function ConsumptionFilterBar({
           </div>
         </div>
       </div>
+
+      {dateFilter === "custom" ? (
+        <div className={cn("mt-3 grid gap-2 sm:grid-cols-2", compact && "md:mt-2")}>
+          <Input
+            type="date"
+            value={customStartDate}
+            onChange={(event) =>
+              onCustomDateRangeChange?.({
+                startDate: event.target.value,
+                endDate: customEndDate,
+              })
+            }
+            className={cn("rounded-2xl border-slate-200 bg-white text-slate-900", compact ? "h-9 rounded-[16px]" : "h-11")}
+          />
+          <Input
+            type="date"
+            value={customEndDate}
+            onChange={(event) =>
+              onCustomDateRangeChange?.({
+                startDate: customStartDate,
+                endDate: event.target.value,
+              })
+            }
+            className={cn("rounded-2xl border-slate-200 bg-white text-slate-900", compact ? "h-9 rounded-[16px]" : "h-11")}
+          />
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function MobileFilterSheet({
+  open,
+  onOpenChange,
+  searchTerm,
+  onSearchChange,
+  platformFilter,
+  onPlatformFilterChange,
+  dateFilter,
+  onDateFilterChange,
+  customStartDate = "",
+  customEndDate = "",
+  onCustomDateRangeChange,
+  filteredCount,
+}: FilterBarProps & { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return (
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      <BottomSheetContent className="max-w-md">
+        <BottomSheetHeader>
+          <BottomSheetTitle>筛选消费流水</BottomSheetTitle>
+        </BottomSheetHeader>
+
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={FILTER_BAR_TEXT.searchPlaceholder}
+              className="h-11 rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400"
+            />
+          </div>
+
+          <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
+            <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{FILTER_BAR_TEXT.allPlatform}</SelectItem>
+              <SelectItem value="wechat">{FILTER_BAR_TEXT.wechat}</SelectItem>
+              <SelectItem value="alipay">{FILTER_BAR_TEXT.alipay}</SelectItem>
+              <SelectItem value="cloudpay">{FILTER_BAR_TEXT.cloudpay}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("month")}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition",
+                dateFilter === "month" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+            >
+              {FILTER_BAR_TEXT.currentMonth}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("all")}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition",
+                dateFilter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+            >
+              {FILTER_BAR_TEXT.allDate}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("custom")}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition",
+                dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              )}
+            >
+              时间段
+            </button>
+          </div>
+
+          {dateFilter === "custom" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                type="date"
+                value={customStartDate}
+                onChange={(event) =>
+                  onCustomDateRangeChange?.({
+                    startDate: event.target.value,
+                    endDate: customEndDate,
+                  })
+                }
+                className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
+              />
+              <Input
+                type="date"
+                value={customEndDate}
+                onChange={(event) =>
+                  onCustomDateRangeChange?.({
+                    startDate: customStartDate,
+                    endDate: event.target.value,
+                  })
+                }
+                className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
+              />
+            </div>
+          ) : null}
+
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+            <Filter className="h-3.5 w-3.5" />
+            {`${filteredCount} ${FILTER_BAR_TEXT.countSuffix}`}
+          </div>
+        </div>
+      </BottomSheetContent>
+    </BottomSheet>
   );
 }
 
@@ -442,6 +602,9 @@ export function ConsumptionDefaultTheme({
   usingMockData = false,
   dateFilter = "month",
   onDateFilterChange,
+  customStartDate = "",
+  customEndDate = "",
+  onCustomDateRangeChange,
 }: ConsumptionViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
@@ -453,6 +616,8 @@ export function ConsumptionDefaultTheme({
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [canEmbedFilterInHeader, setCanEmbedFilterInHeader] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [formState, setFormState] = useState<TransactionFormState>({
     amount: "",
     merchant: "",
@@ -512,11 +677,19 @@ export function ConsumptionDefaultTheme({
 
   useEffect(() => {
     setHeaderSlot(document.getElementById("dashboard-header-inline-slot"));
-    const mediaQuery = window.matchMedia("(min-width: 768px)");
-    const sync = () => setCanEmbedFilterInHeader(mediaQuery.matches);
+    const desktopQuery = window.matchMedia("(min-width: 768px)");
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    const sync = () => {
+      setCanEmbedFilterInHeader(desktopQuery.matches);
+      setIsMobileViewport(mobileQuery.matches);
+    };
     sync();
-    mediaQuery.addEventListener("change", sync);
-    return () => mediaQuery.removeEventListener("change", sync);
+    desktopQuery.addEventListener("change", sync);
+    mobileQuery.addEventListener("change", sync);
+    return () => {
+      desktopQuery.removeEventListener("change", sync);
+      mobileQuery.removeEventListener("change", sync);
+    };
   }, []);
 
   const trendOption = useMemo(
@@ -1148,6 +1321,9 @@ export function ConsumptionDefaultTheme({
                   onPlatformFilterChange={setPlatformFilter}
                   dateFilter={dateFilter}
                   onDateFilterChange={onDateFilterChange}
+                  customStartDate={customStartDate}
+                  customEndDate={customEndDate}
+                  onCustomDateRangeChange={onCustomDateRangeChange}
                   filteredCount={filteredTransactions.length}
                 />
               </div>,
@@ -1155,8 +1331,36 @@ export function ConsumptionDefaultTheme({
             )
           : null}
 
+        {isFilterPinned && isMobileViewport ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="fixed bottom-28 right-3 z-40 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-[0_16px_40px_rgba(15,23,42,0.16)] transition hover:border-slate-300 hover:text-slate-950 md:hidden"
+            >
+              <Filter className="h-4 w-4" />
+              筛选
+            </button>
+
+            <MobileFilterSheet
+              open={isMobileFilterOpen}
+              onOpenChange={setIsMobileFilterOpen}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              platformFilter={platformFilter}
+              onPlatformFilterChange={setPlatformFilter}
+              dateFilter={dateFilter}
+              onDateFilterChange={onDateFilterChange}
+              customStartDate={customStartDate}
+              customEndDate={customEndDate}
+              onCustomDateRangeChange={onCustomDateRangeChange}
+              filteredCount={filteredTransactions.length}
+            />
+          </>
+        ) : null}
+
         <DelayedRender delay={30}>
-          {!isFilterPinned || !canEmbedFilterInHeader ? (
+          {!isFilterPinned || (!canEmbedFilterInHeader && !isMobileViewport) ? (
             <section className="sticky top-2 z-30 md:top-3">
             <div
               className={cn(
@@ -1192,7 +1396,7 @@ export function ConsumptionDefaultTheme({
 
                   <Select
                     value={dateFilter}
-                    onValueChange={(value) => onDateFilterChange?.(value as "month" | "all")}
+                    onValueChange={(value) => onDateFilterChange?.(value as "month" | "all" | "custom")}
                   >
                     <SelectTrigger className="hidden h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
                       <SelectValue />
@@ -1228,7 +1432,46 @@ export function ConsumptionDefaultTheme({
                     >
                       {FILTER_BAR_TEXT.allDate}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => onDateFilterChange?.("custom")}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                        dateFilter === "custom"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                    >
+                      时间段
+                    </button>
                   </div>
+
+                  {dateFilter === "custom" ? (
+                    <div className="col-span-full grid gap-3 sm:grid-cols-2">
+                      <Input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(event) =>
+                          onCustomDateRangeChange?.({
+                            startDate: event.target.value,
+                            endDate: customEndDate,
+                          })
+                        }
+                        className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
+                      />
+                      <Input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(event) =>
+                          onCustomDateRangeChange?.({
+                            startDate: customStartDate,
+                            endDate: event.target.value,
+                          })
+                        }
+                        className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
+                      />
+                    </div>
+                  ) : null}
 
                   <div className="hidden">
                     <button

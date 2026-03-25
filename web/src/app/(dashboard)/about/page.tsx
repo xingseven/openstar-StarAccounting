@@ -65,6 +65,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.13",
+    date: "2026-03-25",
+    type: "improvement",
+    highlights: [
+      "移动端主题壳层、储蓄页和贷款页卡片继续减轻层级与边框。",
+      "贷款页还款进度图表图例移动到顶部，避免与 X 轴标签重叠。",
+    ],
+  },
+  {
     version: "2.3.12",
     date: "2026-03-24",
     type: "feature",
@@ -94,8 +103,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.12",
-  latestVersion: "2.3.12",
+  currentVersion: "2.3.13",
+  latestVersion: "2.3.13",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -104,26 +113,41 @@ const fallbackUpdateInfo: UpdateInfo = {
     url: null,
   },
   notes: [
-    "当前版本已完成主题系统收尾与验收主题同步。",
+    "当前版本已补充移动端主题减负与列表优先布局优化。",
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.12",
-    latestVersion: "2.3.12",
+    currentVersion: "2.3.13",
+    latestVersion: "2.3.13",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.12 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.13 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.12",
-    latestVersion: "2.3.12",
+    currentVersion: "2.3.13",
+    latestVersion: "2.3.13",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.12 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.13 后需要重新下载安装。",
     downloads: [],
   },
 };
+
+const aboutStory = [
+  {
+    title: "项目初心",
+    description: "把资产、预算、储蓄、贷款和更新入口放进一个长期可维护的个人财务工作台，减少工具切换成本。",
+  },
+  {
+    title: "为什么开源",
+    description: "希望你可以自己部署、继续扩展、按自己的记账方式改造，而不是被固定产品流程绑定。",
+  },
+  {
+    title: "当前方向",
+    description: "继续围绕统一主题系统、多端体验、更新分发和 AI 记账收口，让整套系统更稳定也更好用。",
+  },
+];
 
 const websites = [
   {
@@ -131,6 +155,24 @@ const websites = [
     url: "https://github.com/xingseven/openstar-StarAccounting",
     icon: Github,
     description: "查看源码、提交 Issue 或参与开发。",
+  },
+  {
+    name: "问题反馈",
+    url: "https://github.com/xingseven/openstar-StarAccounting/issues",
+    icon: ShieldCheck,
+    description: "集中提交 Bug、功能建议与体验反馈。",
+  },
+  {
+    name: "版本发布",
+    url: "https://github.com/xingseven/openstar-StarAccounting/releases",
+    icon: Download,
+    description: "查看 Release 记录和已发布安装包。",
+  },
+  {
+    name: "项目说明",
+    url: "https://github.com/xingseven/openstar-StarAccounting#readme",
+    icon: Sparkles,
+    description: "快速了解项目定位、功能与部署方式。",
   },
   {
     name: "版本发布说明",
@@ -223,6 +265,7 @@ export default function AboutPage() {
     () => versionHistory[0]?.version ?? updateInfo.currentVersion ?? fallbackUpdateInfo.currentVersion,
     [updateInfo.currentVersion, versionHistory]
   );
+  const recentMilestones = useMemo(() => versionHistory.slice(0, 3), [versionHistory]);
 
   async function handleRefreshWeb() {
     setIsRefreshingWeb(true);
@@ -240,7 +283,7 @@ export default function AboutPage() {
 
   if (showInitialSkeleton) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
         <Skeleton className="h-[220px] rounded-[28px]" />
         <div className="grid gap-3 md:grid-cols-4">
           <Skeleton className="h-[110px] rounded-[20px]" />
@@ -257,7 +300,7 @@ export default function AboutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
       <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
@@ -301,6 +344,107 @@ export default function AboutPage() {
         <ThemeMetricCard label="网页版更新" value={updateInfo.web.action === "refresh" ? "刷新更新" : "下载安装"} detail="适配网页端发布" tone="slate" icon={Globe} className="p-4" hideDetailOnMobile />
         <ThemeMetricCard label="App 更新" value={updateInfo.app.action === "reinstall" ? "重新安装" : "下载安装"} detail="适配移动端发布" tone="violet" icon={Smartphone} className="p-4" hideDetailOnMobile />
       </div>
+
+      <ThemeSurface className="p-4 sm:p-6">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <div>
+            <ThemeSectionHeader
+              eyebrow="关于我们"
+              title="项目初心与演进节奏"
+              description="OpenStar Accounting 不是一次性的展示页，而是一套持续迭代的个人财务工作台。"
+            />
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {aboutStory.map((item) => (
+                <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">我们的定位</p>
+                  <h3 className="mt-1 text-lg font-semibold text-slate-950">把财务管理做成一个长期可维护的工作台</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    OpenStar Accounting 关注的不是单次展示，而是把资产、预算、储蓄、贷款、更新与 AI
+                    工具整合进一个可以持续演进的个人财务系统，让你能自己部署、自己扩展，也能长期积累自己的数据与流程。
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+                  Open Source
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {["个人财务工作台", "开源可部署", "持续迭代", "网站与 App 更新统一入口"].map((item) => (
+                  <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <div className="mb-3 flex items-center gap-2">
+                <Globe className="h-4 w-4 text-blue-600" />
+                <p className="text-sm font-semibold text-slate-950">其他网站连接</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {websites.map((site) => (
+                  <a
+                    key={site.name}
+                    href={site.url}
+                    target={site.url.startsWith("http") ? "_blank" : undefined}
+                    rel={site.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className="group rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
+                  >
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                      <site.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-950">{site.name}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">{site.description}</p>
+                    <div className="mt-3 flex items-center gap-1 text-sm font-medium text-blue-600">
+                      查看
+                      {site.url.startsWith("http") ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-slate-500">版本脉络</p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-950">最近迭代节点</h3>
+              </div>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">当前 v{currentVersion}</span>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {recentMilestones.map((item, index) => (
+                <div key={item.version} className="relative pl-5">
+                  {index < recentMilestones.length - 1 ? <div className="absolute left-[7px] top-6 h-[calc(100%+12px)] w-px bg-slate-200" /> : null}
+                  <div className="absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full bg-blue-500 ring-4 ring-blue-50" />
+                  <div className="rounded-[20px] border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-slate-950">v{item.version}</span>
+                      <VersionTypeBadge type={item.type} />
+                      <span className="text-xs text-slate-400">{item.date}</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.highlights[0] ?? "当前版本暂无额外说明。"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+      </ThemeSurface>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ThemeSurface className="p-4 sm:p-6">
@@ -474,30 +618,6 @@ export default function AboutPage() {
         </div>
       </ThemeSurface>
 
-      <ThemeSurface className="p-4 sm:p-6">
-        <ThemeSectionHeader eyebrow="相关链接" title="开源与镜像" description="GitHub 仓库继续保留，但更新下载入口统一收敛在关于页和网站镜像。" />
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {websites.map((site) => (
-            <a
-              key={site.name}
-              href={site.url}
-              target={site.url.startsWith("http") ? "_blank" : undefined}
-              rel={site.url.startsWith("http") ? "noopener noreferrer" : undefined}
-              className="group rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                <site.icon className="h-5 w-5" />
-              </div>
-              <h3 className="text-xs font-semibold text-slate-950 sm:text-sm">{site.name}</h3>
-              <p className="mt-1 text-xs text-slate-500">{site.description}</p>
-              <div className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-600">
-                查看
-                {site.url.startsWith("http") ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
-              </div>
-            </a>
-          ))}
-        </div>
-      </ThemeSurface>
     </div>
   );
 }
