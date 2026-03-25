@@ -17,7 +17,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold tracking-tight text-slate-950">OpenStar Accounting</p>
-            <p className="mt-0.5 truncate text-xs [color:var(--theme-sidebar-muted)]">Finance workspace</p>
+            <p className="mt-0.5 truncate text-xs [color:var(--theme-sidebar-muted)]">分析过去，规划未来</p>
           </div>
         </div>
       </div>
