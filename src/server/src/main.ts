@@ -131,6 +131,7 @@ const savingsGoalsByUser = new Map<string, SavingsGoal[]>();
 type Loan = {
   id: string;
   userId: string;
+  accountId?: string;
   platform: string;
   totalAmount: string;
   remainingAmount: string;
@@ -140,6 +141,7 @@ type Loan = {
   dueDate: number;
   status: string;
   createdAt: string;
+  matchKeywords?: string[] | null;
 };
 const loansByUser = new Map<string, Loan[]>();
 
@@ -603,6 +605,185 @@ async function requireAccountId(req: Request, res: Response): Promise<{ userId: 
   }
 
   return { userId, accountId: user.defaultAccountId };
+}
+
+type LoanMatchCandidate = {
+  id: string;
+  platform: string;
+  totalAmount: number;
+  remainingAmount: number;
+  periods: number;
+  paidPeriods: number;
+  createdAt: Date;
+  status: string;
+  matchKeywords?: unknown;
+};
+
+type ImportedTransactionForMatch = {
+  id?: string;
+  orderId: string | null;
+  date: Date;
+  type: string;
+  amount: string;
+  category: string;
+  platform: string;
+  merchant: string | null;
+  description: string | null;
+  paymentMethod: string | null;
+  status: string | null;
+  loanId?: string | null;
+};
+
+function normalizeLoanMatchText(value: string | null | undefined) {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[\s()（）【】\[\]{}\-_/&、·.]/g, "")
+    .trim();
+}
+
+function parseMatchKeywords(raw: unknown) {
+  if (Array.isArray(raw)) {
+    return raw.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  }
+  if (typeof raw === "string" && raw.trim().length > 0) {
+    return raw
+      .split(/[,，|、\n]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [] as string[];
+}
+
+function expandLoanAlias(term: string) {
+  const normalized = normalizeLoanMatchText(term);
+  if (!normalized) return [] as string[];
+
+  const set = new Set<string>([normalized]);
+  if (normalized.includes("信用卡")) {
+    set.add(normalized.replace(/信用卡/g, ""));
+  }
+  if (normalized.includes("银行卡")) {
+    set.add(normalized.replace(/银行卡/g, ""));
+  }
+
+  if (normalized.includes("招商")) {
+    set.add("招商银行");
+    set.add("招商信用卡");
+    set.add("招行");
+  }
+  if (normalized.includes("中信")) {
+    set.add("中信银行");
+    set.add("中信信用卡");
+  }
+  if (normalized.includes("建设") || normalized.includes("建行")) {
+    set.add("建设银行");
+    set.add("建行");
+    set.add("建设信用卡");
+  }
+  if (normalized.includes("工商") || normalized.includes("工行")) {
+    set.add("工商银行");
+    set.add("工行");
+    set.add("工商信用卡");
+  }
+  if (normalized.includes("农业") || normalized.includes("农行")) {
+    set.add("农业银行");
+    set.add("农行");
+  }
+  if (normalized.includes("中国银行") || normalized.includes("中行")) {
+    set.add("中国银行");
+    set.add("中行");
+  }
+  if (normalized.includes("花呗")) set.add("花呗");
+  if (normalized.includes("借呗")) set.add("借呗");
+  if (normalized.includes("备用金")) set.add("备用金");
+
+  return Array.from(set).filter((item) => item.length >= 2);
+}
+
+function collectLoanMatchTerms(loan: LoanMatchCandidate) {
+  const rawTerms = [loan.platform, ...parseMatchKeywords(loan.matchKeywords)];
+  const set = new Set<string>();
+
+  rawTerms.forEach((term) => {
+    expandLoanAlias(term).forEach((alias) => set.add(alias));
+  });
+
+  return Array.from(set);
+}
+
+function isSuccessfulTransactionStatus(status: string | null | undefined) {
+  if (!status) return true;
+  return status === "SUCCESS" || status.includes("成功");
+}
+
+function isRepaymentLikeTransaction(transaction: ImportedTransactionForMatch) {
+  if (transaction.type === "REPAYMENT") return true;
+  if (!isSuccessfulTransactionStatus(transaction.status)) return false;
+
+  const category = transaction.category ?? "";
+  const combined = `${transaction.merchant ?? ""} ${transaction.description ?? ""} ${transaction.paymentMethod ?? ""}`;
+
+  if (category.includes("贷款还款") || category.includes("信用卡还款")) {
+    return true;
+  }
+
+  if (category.includes("信用借还")) {
+    if (/(还款|归还)/.test(combined) && !/(放款|取出至余额)/.test(combined)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function findMatchedLoanForRepaymentTransaction(
+  transaction: ImportedTransactionForMatch,
+  loans: LoanMatchCandidate[],
+) {
+  if (!isRepaymentLikeTransaction(transaction)) return null;
+
+  const sourceText = normalizeLoanMatchText(`${transaction.merchant ?? ""} ${transaction.description ?? ""}`);
+  if (!sourceText) return null;
+
+  const candidates = loans
+    .map((loan) => {
+      const score = collectLoanMatchTerms(loan).reduce((maxScore, term) => {
+        if (!term) return maxScore;
+        return sourceText.includes(term) ? Math.max(maxScore, term.length) : maxScore;
+      }, 0);
+
+      return { loan, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0].loan;
+  if (candidates[0].score > candidates[1].score) return candidates[0].loan;
+  return null;
+}
+
+function canAutoSyncImportedRepayment(loan: LoanMatchCandidate) {
+  return loan.paidPeriods === 0 && Math.abs(loan.remainingAmount - loan.totalAmount) < 0.000001;
+}
+
+function computeReconciledLoanState(
+  loan: LoanMatchCandidate,
+  transactions: ImportedTransactionForMatch[],
+) {
+  const repaymentTransactions = transactions.filter((transaction) => isRepaymentLikeTransaction(transaction) && isSuccessfulTransactionStatus(transaction.status));
+  const totalRepaid = repaymentTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+  const nextRemaining = Math.max(0, loan.totalAmount - totalRepaid);
+  const nextPaidPeriods = Math.min(loan.periods, repaymentTransactions.length);
+  const nextStatus = nextRemaining <= 0 ? "PAID_OFF" : "ACTIVE";
+
+  return {
+    repaymentTransactions,
+    totalRepaid,
+    nextRemaining,
+    nextPaidPeriods,
+    nextStatus,
+  };
 }
 
 async function requireAdmin(req: Request, res: Response): Promise<string | null> {
@@ -2176,6 +2357,33 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
   if (prisma) {
     try {
       const orderIds = valid.map((v) => v.orderId).filter((v): v is string => !!v);
+      const loans = await prisma.loan.findMany({
+        where: { userId, accountId },
+        select: {
+          id: true,
+          platform: true,
+          totalAmount: true,
+          remainingAmount: true,
+          periods: true,
+          paidPeriods: true,
+          createdAt: true,
+          status: true,
+          matchKeywords: true,
+        },
+      });
+
+      const loanCandidates: LoanMatchCandidate[] = loans.map((loan) => ({
+        id: loan.id,
+        platform: loan.platform,
+        totalAmount: Number(loan.totalAmount),
+        remainingAmount: Number(loan.remainingAmount),
+        periods: Number(loan.periods),
+        paidPeriods: Number(loan.paidPeriods),
+        createdAt: new Date(loan.createdAt),
+        status: String(loan.status),
+        matchKeywords: loan.matchKeywords,
+      }));
+
       const existing: Array<{ orderId: string | null }> =
         orderIds.length > 0
           ? await prisma.transaction.findMany({
@@ -2184,40 +2392,127 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
             })
           : [];
       const existingSet = new Set(existing.map((e) => e.orderId).filter((v): v is string => !!v));
-      const duplicateCount = valid.filter((v) => v.orderId && existingSet.has(v.orderId)).length;
+      let localDuplicateCount = 0;
+      const seenOrderIds = new Set(existingSet);
+      const toInsert = valid.filter((transaction) => {
+        if (!transaction.orderId) return true;
+        if (seenOrderIds.has(transaction.orderId)) {
+          localDuplicateCount += 1;
+          return false;
+        }
+        seenOrderIds.add(transaction.orderId);
+        return true;
+      });
+      const prepared = toInsert.map((transaction) => {
+        const matchedLoan = findMatchedLoanForRepaymentTransaction(transaction, loanCandidates);
+        return {
+          ...transaction,
+          matchedLoanId: matchedLoan?.id ?? null,
+          shouldAutoSync: matchedLoan ? canAutoSyncImportedRepayment(matchedLoan) : false,
+        };
+      });
 
-      const toInsert = valid.filter((v) => !v.orderId || !existingSet.has(v.orderId));
-      // @ts-ignore - Prisma type mismatch
-      const result =
-        toInsert.length > 0
-          ? await prisma.transaction.createMany({
-              data: toInsert.map((t) => ({
-                id: crypto.randomUUID(),
-                userId,
-                accountId,
-                orderId: t.orderId,
-                date: t.date,
-                type: t.type as any,
-                amount: t.amount,
-                category: t.category,
-                platform: t.platform,
-                merchant: t.merchant,
-                description: t.description,
-                paymentMethod: t.paymentMethod,
-                status: t.status,
-                updatedAt: new Date(),
-              })),
-              skipDuplicates: true,
-            })
-          : { count: 0 };
+      const plainInserts = prepared.filter((item) => !item.matchedLoanId && !item.shouldAutoSync);
+      const linkedInserts = prepared.filter((item) => item.matchedLoanId || item.shouldAutoSync);
 
-      const dbSkippedCount = toInsert.length - result.count;
+      let linkedCount = 0;
+      let syncedCount = 0;
+      let batchInsertedCount = 0;
+      const loanStateMap = new Map(
+        loanCandidates.map((loan) => [
+          loan.id,
+          {
+            remainingAmount: loan.remainingAmount,
+            totalAmount: loan.totalAmount,
+            periods: loan.periods,
+            paidPeriods: loan.paidPeriods,
+          },
+        ]),
+      );
+
+      await prisma.$transaction(async (tx) => {
+        if (plainInserts.length > 0) {
+          const batchResult = await tx.transaction.createMany({
+            data: plainInserts.map((t) => ({
+              id: crypto.randomUUID(),
+              userId,
+              accountId,
+              orderId: t.orderId,
+              date: t.date,
+              type: t.type as any,
+              amount: t.amount,
+              category: t.category,
+              platform: t.platform,
+              merchant: t.merchant,
+              description: t.description,
+              paymentMethod: t.paymentMethod,
+              status: t.status,
+              updatedAt: new Date(),
+            })),
+            skipDuplicates: true,
+          });
+          batchInsertedCount = batchResult.count;
+        }
+
+        for (const transaction of linkedInserts.sort((a, b) => a.date.getTime() - b.date.getTime())) {
+          const created = await tx.transaction.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId,
+              accountId,
+              orderId: transaction.orderId,
+              date: transaction.date,
+              type: transaction.type as any,
+              amount: transaction.amount,
+              category: transaction.category,
+              platform: transaction.platform,
+              merchant: transaction.merchant,
+              description: transaction.description,
+              paymentMethod: transaction.paymentMethod,
+              status: transaction.status,
+              loanId: transaction.matchedLoanId ?? undefined,
+              updatedAt: new Date(),
+            },
+          });
+
+          if (created.loanId) {
+            linkedCount += 1;
+          }
+
+          if (transaction.shouldAutoSync && transaction.matchedLoanId) {
+            const state = loanStateMap.get(transaction.matchedLoanId);
+            if (!state) continue;
+
+            const nextRemaining = Math.max(0, state.remainingAmount - Number(transaction.amount));
+            const nextPaidPeriods = Math.min(state.periods, state.paidPeriods + 1);
+            const nextStatus = nextRemaining <= 0 ? "PAID_OFF" : "ACTIVE";
+
+            await tx.loan.update({
+              where: { id: transaction.matchedLoanId },
+              data: {
+                remainingAmount: nextRemaining,
+                paidPeriods: nextPaidPeriods,
+                status: nextStatus,
+              },
+            });
+
+            state.remainingAmount = nextRemaining;
+            state.paidPeriods = nextPaidPeriods;
+            syncedCount += 1;
+          }
+        }
+      });
+
+      const insertedCount = batchInsertedCount + linkedInserts.length;
+      const dbSkippedCount = toInsert.length - insertedCount;
 
       jsonOk(res, {
         totalRows: imported.rows.length,
-        insertedCount: result.count,
-        duplicateCount: duplicateCount + dbSkippedCount,
+        insertedCount,
+        duplicateCount: localDuplicateCount + dbSkippedCount,
         invalidCount,
+        linkedLoanCount: linkedCount,
+        syncedLoanCount: syncedCount,
       });
       return;
     } catch (e) {
@@ -3300,14 +3595,15 @@ app.delete("/api/savings/plans/:planId", async (req, res) => {
 
 // Loan API
 app.get("/api/loans", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
       const loans = await prisma.loan.findMany({
-        where: { userId },
+        where: { userId, accountId },
         orderBy: { createdAt: "desc" },
       });
       jsonOk(res, { items: loans });
@@ -3324,8 +3620,9 @@ app.get("/api/loans", async (req, res) => {
 });
 
 app.post("/api/loans", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const { platform, totalAmount, periods, monthlyPayment, dueDate } = req.body ?? {};
   if (typeof platform !== "string" || !platform.trim()) {
@@ -3345,7 +3642,7 @@ app.post("/api/loans", async (req, res) => {
         data: {
           id: crypto.randomUUID(),
           userId,
-          accountId: userId, // fallback to userId for single-account mode
+          accountId,
           platform,
           totalAmount: Number(totalAmount),
           remainingAmount: Number(totalAmount),
@@ -3386,16 +3683,27 @@ app.post("/api/loans", async (req, res) => {
 });
 
 app.put("/api/loans/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const id = req.params.id;
   const { platform, totalAmount, remainingAmount, periods, paidPeriods, monthlyPayment, dueDate, status } = req.body ?? {};
 
   const prisma = getPrisma();
   if (prisma) {
     try {
+      const existing = await prisma.loan.findFirst({
+        where: { id, userId, accountId },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "贷款不存在");
+        return;
+      }
+
       const loan = await prisma.loan.update({
-        where: { id, userId },
+        where: { id: existing.id },
         data: {
           ...(platform ? { platform } : {}),
           ...(totalAmount !== undefined ? { totalAmount: Number(totalAmount) } : {}),
@@ -3439,14 +3747,19 @@ app.put("/api/loans/:id", async (req, res) => {
 });
 
 app.delete("/api/loans/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const id = req.params.id;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      await prisma.loan.delete({ where: { id, userId } });
+      const result = await prisma.loan.deleteMany({ where: { id, userId, accountId } });
+      if (result.count === 0) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "贷款不存在");
+        return;
+      }
       jsonOk(res, { deleted: true });
       return;
     } catch (e) {
@@ -3463,8 +3776,9 @@ app.delete("/api/loans/:id", async (req, res) => {
 });
 
 app.post("/api/loans/:id/repay", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const id = req.params.id;
   const { amount, date, description } = req.body ?? {};
   const repayAmount = Number(amount);
@@ -3477,7 +3791,7 @@ app.post("/api/loans/:id/repay", async (req, res) => {
   if (prisma) {
     try {
       const result = await prisma.$transaction(async (tx) => {
-        const loan = await tx.loan.findFirst({ where: { id, userId } });
+        const loan = await tx.loan.findFirst({ where: { id, userId, accountId } });
         if (!loan) {
           throw new Error("贷款不存在");
         }
@@ -3497,7 +3811,7 @@ app.post("/api/loans/:id/repay", async (req, res) => {
           data: {
             id: crypto.randomUUID(),
             userId,
-            accountId: userId, // fallback to userId for single-account mode
+            accountId,
             amount: repayAmount,
             type: "REPAYMENT",
             category: "贷款还款",
@@ -3525,6 +3839,171 @@ app.post("/api/loans/:id/repay", async (req, res) => {
   }
 
   jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Memory mode not supported for repay");
+});
+
+app.post("/api/loans/:id/reconcile", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
+  const id = req.params.id;
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const [loan, allLoans, allTransactions] = await Promise.all([
+          tx.loan.findFirst({
+            where: { id, userId, accountId },
+            select: {
+              id: true,
+              platform: true,
+              totalAmount: true,
+              remainingAmount: true,
+              periods: true,
+              paidPeriods: true,
+              createdAt: true,
+              status: true,
+              matchKeywords: true,
+            },
+          }),
+          tx.loan.findMany({
+            where: { userId, accountId },
+            select: {
+              id: true,
+              platform: true,
+              totalAmount: true,
+              remainingAmount: true,
+              periods: true,
+              paidPeriods: true,
+              createdAt: true,
+              status: true,
+              matchKeywords: true,
+            },
+          }),
+          tx.transaction.findMany({
+            where: { userId, accountId },
+            orderBy: { date: "asc" },
+            select: {
+              id: true,
+              orderId: true,
+              date: true,
+              type: true,
+              amount: true,
+              category: true,
+              platform: true,
+              merchant: true,
+              description: true,
+              paymentMethod: true,
+              status: true,
+              loanId: true,
+            },
+          }),
+        ]);
+
+        if (!loan) {
+          throw new Error("贷款不存在");
+        }
+
+        const loanCandidates: LoanMatchCandidate[] = allLoans.map((item) => ({
+          id: item.id,
+          platform: item.platform,
+          totalAmount: Number(item.totalAmount),
+          remainingAmount: Number(item.remainingAmount),
+          periods: Number(item.periods),
+          paidPeriods: Number(item.paidPeriods),
+          createdAt: new Date(item.createdAt),
+          status: String(item.status),
+          matchKeywords: item.matchKeywords,
+        }));
+
+        const targetLoan = loanCandidates.find((item) => item.id === loan.id)!;
+
+        const unlinkedMatches = allTransactions.filter((transaction) => {
+          if (transaction.loanId) return false;
+          const matchedLoan = findMatchedLoanForRepaymentTransaction(
+            {
+              id: transaction.id,
+              orderId: transaction.orderId,
+              date: new Date(transaction.date),
+              type: String(transaction.type),
+              amount: String(transaction.amount),
+              category: transaction.category,
+              platform: transaction.platform,
+              merchant: transaction.merchant,
+              description: transaction.description,
+              paymentMethod: transaction.paymentMethod,
+              status: transaction.status,
+              loanId: transaction.loanId,
+            },
+            loanCandidates,
+          );
+          return matchedLoan?.id === loan.id;
+        });
+
+        if (unlinkedMatches.length > 0) {
+          await tx.transaction.updateMany({
+            where: { id: { in: unlinkedMatches.map((transaction) => transaction.id) } },
+            data: { loanId: loan.id, type: "REPAYMENT" as any },
+          });
+        }
+
+        const reconciledTransactions = allTransactions
+          .filter((transaction) => transaction.loanId === loan.id)
+          .concat(
+            unlinkedMatches.map((transaction) => ({
+              ...transaction,
+              type: "REPAYMENT",
+              loanId: loan.id,
+            })),
+          )
+          .map((transaction) => ({
+            id: transaction.id,
+            orderId: transaction.orderId,
+            date: new Date(transaction.date),
+            type: String(transaction.type),
+            amount: String(transaction.amount),
+            category: transaction.category,
+            platform: transaction.platform,
+            merchant: transaction.merchant,
+            description: transaction.description,
+            paymentMethod: transaction.paymentMethod,
+            status: transaction.status,
+            loanId: transaction.loanId,
+          }));
+
+        const reconciled = computeReconciledLoanState(targetLoan, reconciledTransactions);
+
+        const updatedLoan = await tx.loan.update({
+          where: { id: loan.id },
+          data: {
+            remainingAmount: reconciled.nextRemaining,
+            paidPeriods: reconciled.nextPaidPeriods,
+            status: reconciled.nextStatus as any,
+          },
+        });
+
+        return {
+          item: updatedLoan,
+          matchedCount: unlinkedMatches.length,
+          repaymentCount: reconciled.repaymentTransactions.length,
+          totalRepaid: Number(reconciled.totalRepaid.toFixed(2)),
+        };
+      });
+
+      jsonOk(res, result);
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown";
+      if (message.includes("贷款不存在")) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "贷款不存在");
+        return;
+      }
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Memory mode not supported for reconcile");
 });
 
 // Asset API

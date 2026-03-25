@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle, Lock, Plus, Star, User, Users } from "lucide-react";
+import { AlertCircle, CheckCircle, Lock, LogOut, Plus, Star, User, Users } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { clearAccessToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,6 +158,11 @@ export default function SettingsPage() {
     }
   }
 
+  function handleLogout() {
+    clearAccessToken();
+    window.location.href = "/auth/login";
+  }
+
   if (showInitialSkeleton || !user) {
     return (
       <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
@@ -190,6 +196,12 @@ export default function SettingsPage() {
               <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">设置</h1>
               <p className="mt-1 text-sm text-slate-500">管理你的账户资料、安全信息和默认工作账户。</p>
             </div>
+          </div>
+          <div className="mt-4 flex justify-start sm:justify-end">
+            <Button type="button" variant="outline" onClick={handleLogout} className="h-10 rounded-2xl px-4 text-slate-700">
+              <LogOut className="mr-2 h-4 w-4" />
+              閫€鍑虹櫥褰?
+            </Button>
           </div>
         </ThemeHero>
       </DelayedRender>

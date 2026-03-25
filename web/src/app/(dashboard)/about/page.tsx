@@ -65,6 +65,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.15",
+    date: "2026-03-25",
+    type: "feature",
+    highlights: [
+      "数据管理页手动录入升级为收入 / 支出双模式，并补充云闪付、现金等消费补录场景。",
+      "贷款页支持扫描历史还款记录，把已导入账单回溯关联到贷款。",
+    ],
+  },
+  {
     version: "2.3.14",
     date: "2026-03-25",
     type: "feature",
@@ -112,8 +121,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.14",
-  latestVersion: "2.3.14",
+  currentVersion: "2.3.15",
+  latestVersion: "2.3.15",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -122,23 +131,23 @@ const fallbackUpdateInfo: UpdateInfo = {
     url: null,
   },
   notes: [
-    "当前版本已支持手动收入补录与账户级交易统一处理。",
+    "当前版本已支持手动收支录入与贷款历史还款回溯。",
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.14",
-    latestVersion: "2.3.14",
+    currentVersion: "2.3.15",
+    latestVersion: "2.3.15",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.14 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.15 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.14",
-    latestVersion: "2.3.14",
+    currentVersion: "2.3.15",
+    latestVersion: "2.3.15",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.14 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.15 后需要重新下载安装。",
     downloads: [],
   },
 };

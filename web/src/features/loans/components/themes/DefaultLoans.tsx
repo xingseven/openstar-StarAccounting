@@ -37,10 +37,12 @@ interface LoansViewProps {
   platformData: Array<{ name: string; value: number; fill: string }>;
   paidVsRemainingData: Array<{ platform: string; paid: number; remaining: number }>;
   loading?: boolean;
+  reconcileLoadingId?: string | null;
   onOpenCreate: () => void;
   onOpenEdit: (item: Loan) => void;
   onOpenSchedule: (item: Loan) => void;
   onRepay: (item: Loan) => void;
+  onReconcile: (item: Loan) => void;
 }
 
 function getIcon(platform: string) {
@@ -55,11 +57,15 @@ function LoanCard({
   onOpenEdit,
   onOpenSchedule,
   onRepay,
+  onReconcile,
+  isReconciling,
 }: {
   item: Loan;
   onOpenEdit: (item: Loan) => void;
   onOpenSchedule: (item: Loan) => void;
   onRepay: (item: Loan) => void;
+  onReconcile: (item: Loan) => void;
+  isReconciling: boolean;
 }) {
   const progress = item.totalAmount > 0 ? Math.min(100, ((item.totalAmount - item.remainingAmount) / item.totalAmount) * 100) : 0;
   const mobileLightOutlineButtonClass =
@@ -129,6 +135,16 @@ function LoanCard({
             登记还款
           </Button>
         </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-10 w-full justify-center rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+          onClick={() => onReconcile(item)}
+          disabled={isReconciling}
+        >
+          {isReconciling ? "扫描中..." : "扫描历史还款"}
+        </Button>
       </div>
     </ThemeSurface>
   );
@@ -139,10 +155,12 @@ export function LoansDefaultTheme({
   platformData,
   paidVsRemainingData,
   loading = false,
+  reconcileLoadingId = null,
   onOpenCreate,
   onOpenEdit,
   onOpenSchedule,
   onRepay,
+  onReconcile,
 }: LoansViewProps) {
   const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
 
@@ -279,6 +297,8 @@ export function LoansDefaultTheme({
                 onOpenEdit={onOpenEdit}
                 onOpenSchedule={onOpenSchedule}
                 onRepay={onRepay}
+                onReconcile={onReconcile}
+                isReconciling={reconcileLoadingId === item.id}
               />
             ))}
             </div>

@@ -140,6 +140,42 @@ function parseDirection(raw: string) {
   return null;
 }
 
+function inferLoanLikeType(params: {
+  source: Source;
+  originalCategory: string;
+  merchant: string;
+  title: string;
+  remark: string;
+  statusRaw: string;
+}) {
+  const { source, originalCategory, merchant, title, remark, statusRaw } = params;
+  const combined = [originalCategory, merchant, title, remark, statusRaw].join(" ");
+
+  if (source === "wechat" && originalCategory.includes("信用卡还款")) {
+    return "REPAYMENT" as const;
+  }
+
+  if (source === "alipay" && originalCategory.includes("信用借还")) {
+    if (
+      combined.includes("还款")
+      || combined.includes("归还")
+      || statusRaw.includes("还款成功")
+    ) {
+      return "REPAYMENT" as const;
+    }
+
+    if (
+      combined.includes("放款")
+      || combined.includes("取出至余额")
+      || statusRaw.includes("放款成功")
+    ) {
+      return "TRANSFER" as const;
+    }
+  }
+
+  return null;
+}
+
 function joinDesc(...parts: string[]) {
   const s = parts
     .map((p) => p.trim())
@@ -224,6 +260,15 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
 
   const description = joinDesc(title, remark);
 
+  const loanLikeType = inferLoanLikeType({
+    source,
+    originalCategory,
+    merchant,
+    title,
+    remark,
+    statusRaw,
+  });
+
   const paymentMethod = getValue(row, "支付方式", "收/付款方式");
   const orderId =
     source === "wechat"
@@ -233,7 +278,7 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
   const mapped: MappedTransaction = {
     orderId: orderId || null,
     date,
-    type: inferredType,
+    type: loanLikeType ?? inferredType,
     amount: amountInfo.abs,
     category,
     platform: PLATFORM_MAP[source],

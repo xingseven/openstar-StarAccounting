@@ -51,6 +51,13 @@ type ScheduleRow = {
   remaining: number;
 };
 
+type ReconcileLoanResult = {
+  item: Loan;
+  matchedCount: number;
+  repaymentCount: number;
+  totalRepaid: number;
+};
+
 async function fetchLoansData(): Promise<Loan[]> {
   const data = await apiFetch<{ items: Array<Record<string, unknown>> }>("/api/loans");
   return data.items.map((item) => ({
@@ -111,6 +118,7 @@ export default function LoansPage() {
   const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
 
   const [isRepayOpen, setIsRepayOpen] = useState(false);
+  const [reconcileLoadingId, setReconcileLoadingId] = useState<string | null>(null);
   const [repayState, setRepayState] = useState<RepayState>({
     item: null,
     amount: "",
@@ -253,6 +261,30 @@ export default function LoansPage() {
     }
   }
 
+  async function handleReconcile(item: Loan) {
+    setReconcileLoadingId(item.id);
+    try {
+      const result = await apiFetch<ReconcileLoanResult>(`/api/loans/${item.id}/reconcile`, {
+        method: "POST",
+      });
+      notify({
+        title: result.matchedCount > 0 ? "历史还款已匹配" : "未发现可匹配记录",
+        description:
+          result.matchedCount > 0
+            ? `新关联 ${result.matchedCount} 条历史还款，累计识别 ${result.repaymentCount} 条，还款总额 ¥${result.totalRepaid.toFixed(2)}。`
+            : "当前账户下没有识别到可回溯到这笔贷款的历史还款记录。",
+      });
+      await loadItems();
+    } catch (reconcileError) {
+      notify({
+        title: "扫描历史还款失败",
+        description: reconcileError instanceof Error ? reconcileError.message : "请稍后重试。",
+      });
+    } finally {
+      setReconcileLoadingId(null);
+    }
+  }
+
   function openSchedule(item: Loan) {
     setScheduleItem(item);
 
@@ -314,10 +346,12 @@ export default function LoansPage() {
         platformData={platformData}
         paidVsRemainingData={paidVsRemainingData}
         loading={loading}
+        reconcileLoadingId={reconcileLoadingId}
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
         onOpenSchedule={openSchedule}
         onRepay={openRepay}
+        onReconcile={(item) => void handleReconcile(item)}
       />
 
       <BottomSheet open={isModalOpen} onOpenChange={setIsModalOpen}>

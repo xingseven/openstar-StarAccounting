@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
   THEME_DIALOG_INPUT_CLASS,
+  THEME_DIALOG_SELECT_CLASS,
   ThemeActionBar,
   ThemeDialogSection,
   ThemeEmptyState,
@@ -38,6 +39,8 @@ type ImportResult = {
   insertedCount: number;
   duplicateCount: number;
   invalidCount: number;
+  linkedLoanCount?: number;
+  syncedLoanCount?: number;
 };
 
 type TransactionListResponse = {
@@ -49,7 +52,35 @@ type TransactionListResponse = {
 
 const PAGE_SIZE = 50;
 const MANUAL_INCOME_CATEGORIES = ["工资", "奖金", "报销", "兼职收入", "转账收入", "理财收益", "其他收入"];
-const MANUAL_INCOME_PLATFORMS = ["银行卡", "支付宝", "微信", "现金", "其他"];
+const MANUAL_EXPENSE_CATEGORIES = [
+  "餐饮",
+  "购物",
+  "交通",
+  "娱乐",
+  "生活",
+  "医疗",
+  "教育",
+  "住房",
+  "通讯",
+  "还款",
+  "信用卡还款",
+  "贷款还款",
+  "转账支出",
+  "其他支出",
+];
+const MANUAL_TRANSACTION_PLATFORMS = ["云闪付", "银行卡", "支付宝", "微信", "现金", "其他"];
+type ManualEntryMode = "income" | "expense";
+
+function getDefaultManualForm(mode: ManualEntryMode) {
+  return {
+    amount: "",
+    category: mode === "income" ? "工资" : "餐饮",
+    platform: mode === "expense" ? "云闪付" : "银行卡",
+    merchant: "",
+    date: getCurrentDateTimeLocal(),
+    description: "",
+  };
+}
 
 function getCurrentDateTimeLocal() {
   const now = new Date();
@@ -92,15 +123,9 @@ export default function DataPage() {
   const [total, setTotal] = useState(0);
   const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [manualIncomeLoading, setManualIncomeLoading] = useState(false);
-  const [manualIncomeForm, setManualIncomeForm] = useState({
-    amount: "",
-    category: "工资",
-    platform: "银行卡",
-    merchant: "",
-    date: getCurrentDateTimeLocal(),
-    description: "",
-  });
+  const [manualEntryMode, setManualEntryMode] = useState<ManualEntryMode>("income");
+  const [manualTransactionLoading, setManualTransactionLoading] = useState(false);
+  const [manualTransactionForm, setManualTransactionForm] = useState(getDefaultManualForm("income"));
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const startItem = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
@@ -244,7 +269,11 @@ export default function DataPage() {
       });
 
       setImportResult(response);
-      setMessage(`导入完成：成功 ${response.insertedCount} 条，重复 ${response.duplicateCount} 条，无效 ${response.invalidCount} 条`);
+      const loanSummary =
+        response.linkedLoanCount || response.syncedLoanCount
+          ? `，关联贷款 ${response.linkedLoanCount ?? 0} 条，同步余额 ${response.syncedLoanCount ?? 0} 条`
+          : "";
+      setMessage(`导入完成：成功 ${response.insertedCount} 条，重复 ${response.duplicateCount} 条，无效 ${response.invalidCount} 条${loanSummary}`);
 
       if (currentPage !== 1) setCurrentPage(1);
       else await loadTransactions({ page: 1 });
@@ -256,49 +285,49 @@ export default function DataPage() {
     }
   }
 
-  async function handleManualIncomeSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleManualTransactionSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const amount = Number(manualIncomeForm.amount);
+    const amount = Number(manualTransactionForm.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError("收入金额必须大于 0");
+      setError(`${manualEntryMode === "income" ? "收入" : "支出"}金额必须大于 0`);
       return;
     }
 
-    setManualIncomeLoading(true);
+    setManualTransactionLoading(true);
     setMessage(null);
     setError(null);
 
     try {
+      const category = manualTransactionForm.category.trim();
+      const platform = manualTransactionForm.platform.trim();
+      const merchant =
+        manualTransactionForm.merchant.trim()
+        || category
+        || (manualEntryMode === "income" ? "手动收入" : "手动支出");
+
       await apiFetch("/api/transactions", {
         method: "POST",
         body: JSON.stringify({
           amount: amount.toFixed(2),
-          type: "INCOME",
-          category: manualIncomeForm.category.trim(),
-          platform: manualIncomeForm.platform.trim(),
-          merchant: manualIncomeForm.merchant.trim() || undefined,
-          date: new Date(manualIncomeForm.date).toISOString(),
-          description: manualIncomeForm.description.trim() || undefined,
+          type: manualEntryMode === "income" ? "INCOME" : "EXPENSE",
+          category,
+          platform,
+          merchant,
+          date: new Date(manualTransactionForm.date).toISOString(),
+          description: manualTransactionForm.description.trim() || undefined,
         }),
       });
 
-      setMessage(`已新增一笔收入：¥${amount.toFixed(2)}`);
-      setManualIncomeForm({
-        amount: "",
-        category: "工资",
-        platform: "银行卡",
-        merchant: "",
-        date: getCurrentDateTimeLocal(),
-        description: "",
-      });
+      setMessage(`已新增一笔${manualEntryMode === "income" ? "收入" : "支出"}：¥${amount.toFixed(2)}`);
+      setManualTransactionForm(getDefaultManualForm(manualEntryMode));
 
       if (currentPage !== 1) setCurrentPage(1);
       await loadTransactions({ page: 1 });
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "新增收入失败");
+      setError(createError instanceof Error ? createError.message : `新增${manualEntryMode === "income" ? "收入" : "支出"}失败`);
     } finally {
-      setManualIncomeLoading(false);
+      setManualTransactionLoading(false);
     }
   }
 
@@ -377,6 +406,9 @@ export default function DataPage() {
         {importResult ? (
           <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
             总行数：{importResult.totalRows} | 成功：{importResult.insertedCount} | 重复：{importResult.duplicateCount} | 无效：{importResult.invalidCount}
+            {importResult.linkedLoanCount || importResult.syncedLoanCount
+              ? ` | 关联贷款：${importResult.linkedLoanCount ?? 0} | 同步余额：${importResult.syncedLoanCount ?? 0}`
+              : ""}
           </div>
         ) : null}
       </ThemeSurface>
@@ -384,89 +416,130 @@ export default function DataPage() {
       <ThemeSurface className="p-4 sm:p-6">
         <ThemeSectionHeader
           eyebrow="手动补录"
-          title="新增银行卡收入"
-          description="工资、奖金等无法通过账单导入的入账，可以在这里手动补录，避免账目只有支出没有收入。"
+          title="手动录入收支"
+          description="工资、奖金这类银行卡收入，以及云闪付、现金等无法导出的消费，都可以在这里直接补录。"
         />
 
-        <form onSubmit={handleManualIncomeSubmit} className="mt-5 space-y-4">
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setManualEntryMode("income");
+              setManualTransactionForm(getDefaultManualForm("income"));
+            }}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              manualEntryMode === "income"
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            录入收入
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setManualEntryMode("expense");
+              setManualTransactionForm(getDefaultManualForm("expense"));
+            }}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              manualEntryMode === "expense"
+                ? "bg-red-100 text-red-700"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            录入支出
+          </button>
+        </div>
+
+        <form onSubmit={handleManualTransactionSubmit} className="mt-4 space-y-4">
           <ThemeNotice
-            tone="blue"
+            tone={manualEntryMode === "income" ? "blue" : "amber"}
             title="推荐场景"
-            description="适合记录工资、奖金、报销或其他打到银行卡里的收入，后续统计会自动计入收入侧。"
+            description={
+              manualEntryMode === "income"
+                ? "适合记录工资、奖金、报销或其他打到银行卡里的收入，后续统计会自动计入收入侧。"
+                : "适合补录云闪付、银行卡、现金等无法批量导出的消费，保持账目收支完整。"
+            }
           />
 
           <ThemeDialogSection className="space-y-4">
             <ThemeFormGrid>
-              <ThemeFormField label="收入金额">
+              <ThemeFormField label={`${manualEntryMode === "income" ? "收入" : "支出"}金额`}>
                 <Input
                   required
                   type="number"
                   min="0"
                   step="0.01"
-                  value={manualIncomeForm.amount}
-                  onChange={(event) => setManualIncomeForm((current) => ({ ...current, amount: event.target.value }))}
+                  value={manualTransactionForm.amount}
+                  onChange={(event) => setManualTransactionForm((current) => ({ ...current, amount: event.target.value }))}
                   placeholder="例如：12000"
                   className={THEME_DIALOG_INPUT_CLASS}
                 />
               </ThemeFormField>
 
-              <ThemeFormField label="入账时间">
+              <ThemeFormField label={manualEntryMode === "income" ? "入账时间" : "消费时间"}>
                 <Input
                   required
                   type="datetime-local"
-                  value={manualIncomeForm.date}
-                  onChange={(event) => setManualIncomeForm((current) => ({ ...current, date: event.target.value }))}
+                  value={manualTransactionForm.date}
+                  onChange={(event) => setManualTransactionForm((current) => ({ ...current, date: event.target.value }))}
                   className={THEME_DIALOG_INPUT_CLASS}
                 />
               </ThemeFormField>
             </ThemeFormGrid>
 
             <ThemeFormGrid>
-              <ThemeFormField label="收入分类">
-                <Input
+              <ThemeFormField label={manualEntryMode === "income" ? "收入分类" : "支出分类"}>
+                <select
                   required
-                  value={manualIncomeForm.category}
-                  onChange={(event) => setManualIncomeForm((current) => ({ ...current, category: event.target.value }))}
-                  list="manual-income-categories"
-                  className={THEME_DIALOG_INPUT_CLASS}
-                />
-                <datalist id="manual-income-categories">
-                  {MANUAL_INCOME_CATEGORIES.map((item) => (
-                    <option key={item} value={item} />
+                  value={manualTransactionForm.category}
+                  onChange={(event) => setManualTransactionForm((current) => ({ ...current, category: event.target.value }))}
+                  className={THEME_DIALOG_SELECT_CLASS}
+                >
+                  {(manualEntryMode === "income" ? MANUAL_INCOME_CATEGORIES : MANUAL_EXPENSE_CATEGORIES).map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </ThemeFormField>
 
-              <ThemeFormField label="入账平台">
-                <Input
+              <ThemeFormField label={manualEntryMode === "income" ? "入账平台" : "支付平台"}>
+                <select
                   required
-                  value={manualIncomeForm.platform}
-                  onChange={(event) => setManualIncomeForm((current) => ({ ...current, platform: event.target.value }))}
-                  list="manual-income-platforms"
-                  className={THEME_DIALOG_INPUT_CLASS}
-                />
-                <datalist id="manual-income-platforms">
-                  {MANUAL_INCOME_PLATFORMS.map((item) => (
-                    <option key={item} value={item} />
+                  value={manualTransactionForm.platform}
+                  onChange={(event) => setManualTransactionForm((current) => ({ ...current, platform: event.target.value }))}
+                  className={THEME_DIALOG_SELECT_CLASS}
+                >
+                  {MANUAL_TRANSACTION_PLATFORMS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </ThemeFormField>
             </ThemeFormGrid>
 
             <ThemeFormGrid>
-              <ThemeFormField label="来源 / 发放方" hint="可选，例如公司名称或转账来源。">
+              <ThemeFormField
+                label={manualEntryMode === "income" ? "来源 / 发放方" : "商户 / 收款方"}
+                hint={manualEntryMode === "income" ? "可选，例如公司名称或转账来源。" : "可选，例如商户名称或收款对象。"}
+              >
                 <Input
-                  value={manualIncomeForm.merchant}
-                  onChange={(event) => setManualIncomeForm((current) => ({ ...current, merchant: event.target.value }))}
-                  placeholder="例如：公司工资"
+                  value={manualTransactionForm.merchant}
+                  onChange={(event) => setManualTransactionForm((current) => ({ ...current, merchant: event.target.value }))}
+                  placeholder={manualEntryMode === "income" ? "例如：公司工资" : "例如：超市 / 房租"}
                   className={THEME_DIALOG_INPUT_CLASS}
                 />
               </ThemeFormField>
 
-              <ThemeFormField label="备注" hint="可选，例如 3 月工资、季度奖金。">
+              <ThemeFormField
+                label="备注"
+                hint={manualEntryMode === "income" ? "可选，例如 3 月工资、季度奖金。" : "可选，例如 午餐、路费、生活采购。"}
+              >
                 <Input
-                  value={manualIncomeForm.description}
-                  onChange={(event) => setManualIncomeForm((current) => ({ ...current, description: event.target.value }))}
+                  value={manualTransactionForm.description}
+                  onChange={(event) => setManualTransactionForm((current) => ({ ...current, description: event.target.value }))}
                   placeholder="补充说明"
                   className={THEME_DIALOG_INPUT_CLASS}
                 />
@@ -475,8 +548,8 @@ export default function DataPage() {
           </ThemeDialogSection>
 
           <ThemeActionBar>
-            <Button type="submit" disabled={manualIncomeLoading} className="h-11 rounded-2xl sm:min-w-32">
-              {manualIncomeLoading ? (
+            <Button type="submit" disabled={manualTransactionLoading} className="h-11 rounded-2xl sm:min-w-32">
+              {manualTransactionLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   保存中...
@@ -484,7 +557,7 @@ export default function DataPage() {
               ) : (
                 <>
                   <Banknote className="mr-2 h-4 w-4" />
-                  手动新增收入
+                  {manualEntryMode === "income" ? "手动新增收入" : "手动新增支出"}
                 </>
               )}
             </Button>

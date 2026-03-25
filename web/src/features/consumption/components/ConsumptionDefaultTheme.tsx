@@ -164,6 +164,8 @@ const PLATFORM_LABELS: Record<string, string> = {
   alipay: "支付宝",
   cloudpay: "云闪付",
   unionpay: "云闪付",
+  bankcard: "银行卡",
+  cash: "现金",
   unknown: "其他",
 };
 

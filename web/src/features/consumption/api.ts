@@ -43,12 +43,14 @@ type TransactionsResponse = {
   }>;
 };
 
-type PlatformKey = "wechat" | "alipay" | "cloudpay" | "unknown";
+type PlatformKey = "wechat" | "alipay" | "cloudpay" | "bankcard" | "cash" | "unknown";
 
 const PLATFORM_COLORS: Record<PlatformKey, string> = {
   wechat: "#16a34a",
   alipay: "#1677ff",
   cloudpay: "#0ea5e9",
+  bankcard: "#475569",
+  cash: "#b45309",
   unknown: "#94a3b8",
 };
 
@@ -58,6 +60,8 @@ const PLATFORM_NAMES: Record<PlatformKey, string> = {
   wechat: "微信",
   alipay: "支付宝",
   cloudpay: "云闪付",
+  bankcard: "银行卡",
+  cash: "现金",
   unknown: "其他",
 };
 
@@ -73,6 +77,19 @@ function normalizePlatform(platform: string | null | undefined): PlatformKey {
     || value.includes("银联")
   ) {
     return "cloudpay";
+  }
+  if (
+    value === "bankcard"
+    || value === "bank_card"
+    || value.includes("银行卡")
+    || value.includes("储蓄卡")
+    || value.includes("借记卡")
+    || value.includes("工资卡")
+  ) {
+    return "bankcard";
+  }
+  if (value === "cash" || value.includes("现金")) {
+    return "cash";
   }
   return "unknown";
 }
