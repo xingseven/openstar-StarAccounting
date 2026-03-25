@@ -1,6 +1,6 @@
 {
   "name": "openstar-staraccounting-web",
-  "version": "2.3.13",
+  "version": "2.3.14",
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",

@@ -65,6 +65,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.14",
+    date: "2026-03-25",
+    type: "feature",
+    highlights: [
+      "数据管理页新增银行卡收入手动补录表单。",
+      "交易接口统一切换到当前账户作用域，收入与支出统计口径更一致。",
+    ],
+  },
+  {
     version: "2.3.13",
     date: "2026-03-25",
     type: "improvement",
@@ -103,8 +112,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.13",
-  latestVersion: "2.3.13",
+  currentVersion: "2.3.14",
+  latestVersion: "2.3.14",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -113,23 +122,23 @@ const fallbackUpdateInfo: UpdateInfo = {
     url: null,
   },
   notes: [
-    "当前版本已补充移动端主题减负与列表优先布局优化。",
+    "当前版本已支持手动收入补录与账户级交易统一处理。",
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.13",
-    latestVersion: "2.3.13",
+    currentVersion: "2.3.14",
+    latestVersion: "2.3.14",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.13 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.14 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.13",
-    latestVersion: "2.3.13",
+    currentVersion: "2.3.14",
+    latestVersion: "2.3.14",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.13 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.14 后需要重新下载安装。",
     downloads: [],
   },
 };

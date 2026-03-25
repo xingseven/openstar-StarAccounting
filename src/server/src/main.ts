@@ -1721,8 +1721,9 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
 });
 
 app.get("/api/transactions", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const page = Number(req.query.page ?? 1);
   const pageSize = Math.min(200, Number(req.query.pageSize ?? 20));
   const startDate =
@@ -1744,7 +1745,7 @@ app.get("/api/transactions", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId };
+      const where: Record<string, unknown> = { userId, accountId };
       if (startDate || endDate) {
         where.date = {
           ...(startDate ? { gte: new Date(startDate) } : {}),
@@ -1793,7 +1794,7 @@ app.get("/api/transactions", async (req, res) => {
     }
   }
 
-  const all = transactionsByUser.get(userId) ?? [];
+  const all = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const filtered = all.filter((t) => {
     if (type && t.type !== type) return false;
     if (platform && t.platform !== platform) return false;
@@ -1823,16 +1824,27 @@ app.get("/api/transactions", async (req, res) => {
 });
 
 app.put("/api/transactions/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const id = req.params.id;
   const { amount, category, merchant, description, type, platform, date } = req.body ?? {};
 
   const prisma = getPrisma();
   if (prisma) {
     try {
+      const existing = await prisma.transaction.findFirst({
+        where: { id, userId, accountId },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "交易不存在");
+        return;
+      }
+
       const tx = await prisma.transaction.update({
-        where: { id, userId },
+        where: { id: existing.id },
         data: {
           ...(amount ? { amount: String(amount) } : {}),
           ...(category ? { category } : {}),
@@ -1852,7 +1864,7 @@ app.put("/api/transactions/:id", async (req, res) => {
     }
   }
 
-  const list = transactionsByUser.get(userId) ?? [];
+  const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const idx = list.findIndex((t) => t.id === id);
   if (idx < 0) {
     jsonFail(res, 404, 50000, "NOT_FOUND", "交易不存在");
@@ -1871,18 +1883,25 @@ app.put("/api/transactions/:id", async (req, res) => {
     updatedAt: new Date().toISOString(),
   };
   list[idx] = updated;
+  transactionsByAccount.set(accountId, list);
+  transactionsByUser.set(userId, list);
   jsonOk(res, { item: updated });
 });
 
 app.delete("/api/transactions/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const id = req.params.id;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      await prisma.transaction.delete({ where: { id, userId } });
+      const result = await prisma.transaction.deleteMany({ where: { id, userId, accountId } });
+      if (result.count === 0) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "交易不存在");
+        return;
+      }
       jsonOk(res, { deleted: true });
       return;
     } catch (e) {
@@ -1892,15 +1911,17 @@ app.delete("/api/transactions/:id", async (req, res) => {
     }
   }
 
-  const list = transactionsByUser.get(userId) ?? [];
+  const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const newList = list.filter((t) => t.id !== id);
+  transactionsByAccount.set(accountId, newList);
   transactionsByUser.set(userId, newList);
   jsonOk(res, { deleted: true });
 });
 
 app.post("/api/transactions/batch", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const { action, ids, category } = req.body ?? {};
 
   if (!action || !ids || !Array.isArray(ids) || ids.length === 0) {
@@ -1913,13 +1934,13 @@ app.post("/api/transactions/batch", async (req, res) => {
     try {
       if (action === "delete") {
         const result = await prisma.transaction.deleteMany({
-          where: { id: { in: ids }, userId },
+          where: { id: { in: ids }, userId, accountId },
         });
         jsonOk(res, { deleted: result.count });
         return;
       } else if (action === "updateCategory" && category) {
         const result = await prisma.transaction.updateMany({
-          where: { id: { in: ids }, userId },
+          where: { id: { in: ids }, userId, accountId },
           data: { category },
         });
         jsonOk(res, { updated: result.count });
@@ -1935,9 +1956,10 @@ app.post("/api/transactions/batch", async (req, res) => {
     }
   }
 
-  const list = transactionsByUser.get(userId) ?? [];
+  const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   if (action === "delete") {
     const newList = list.filter((t) => !ids.includes(t.id));
+    transactionsByAccount.set(accountId, newList);
     transactionsByUser.set(userId, newList);
     jsonOk(res, { deleted: ids.length });
     return;
@@ -1950,6 +1972,7 @@ app.post("/api/transactions/batch", async (req, res) => {
       }
       return t;
     });
+    transactionsByAccount.set(accountId, newList);
     transactionsByUser.set(userId, newList);
     jsonOk(res, { updated: count });
     return;
@@ -2032,8 +2055,9 @@ app.delete("/api/import-errors/:id", async (req, res) => {
 });
 
 app.post("/api/transactions", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const { amount, type, category, platform, merchant, date, description } = req.body ?? {};
 
   if (!amount || !type || !category || !platform || !date) {
@@ -2049,7 +2073,7 @@ app.post("/api/transactions", async (req, res) => {
         data: {
           id: crypto.randomUUID(),
           userId,
-          accountId: userId, // fallback to userId for single-account mode
+          accountId,
           amount: String(amount),
           type: type as any,
           category,
@@ -2069,7 +2093,27 @@ app.post("/api/transactions", async (req, res) => {
     }
   }
 
-  jsonFail(res, 500, 50000, "INTERNAL_ERROR", "Database not available");
+  const created: TransactionRecord = {
+    id: crypto.randomUUID(),
+    accountId,
+    orderId: null,
+    amount: String(amount),
+    type: String(type),
+    category: String(category),
+    platform: String(platform),
+    merchant: typeof merchant === "string" ? merchant : null,
+    date: String(date),
+    description: typeof description === "string" ? description : null,
+    paymentMethod: null,
+    status: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
+  const nextList = [created, ...list];
+  transactionsByAccount.set(accountId, nextList);
+  transactionsByUser.set(userId, nextList);
+  jsonOk(res, { item: created });
 });
 
 app.post("/api/transactions/import", upload.single("file"), async (req, res) => {

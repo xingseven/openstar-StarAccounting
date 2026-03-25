@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.14 - 2026-03-25
+
+### Added
+
+- **数据管理页新增手动收入补录表单**:
+  - 新增“银行卡收入”手动补录区，支持记录工资、奖金、报销等无法从银行卡账单自动导入的收入。
+  - 支持填写金额、入账时间、收入分类、入账平台、来源 / 发放方和备注。
+  - 保存后会自动刷新数据管理列表，便于快速校对收支平衡。
+
+### Modified
+
+- **交易接口统一切换到当前账户作用域**:
+  - `GET /api/transactions`
+  - `POST /api/transactions`
+  - `PUT /api/transactions/:id`
+  - `DELETE /api/transactions/:id`
+  - `POST /api/transactions/batch`
+  - 上述接口改为统一使用 `requireAccountId`，避免交易数据只按用户维度读写而忽略当前账户。
+
 ## 2.3.13 - 2026-03-25
 
 ### Modified
