@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { siAlipay, siWechat } from "simple-icons";
 import {
@@ -75,6 +74,14 @@ export type ConsumptionData = {
     expenseCount: number;
     wechat: { expense: number; income: number };
     alipay: { expense: number; income: number };
+    comparison: {
+      totalExpenseRate: number | null;
+      totalIncomeRate: number | null;
+      wechatExpenseRate: number | null;
+      wechatIncomeRate: number | null;
+      alipayExpenseRate: number | null;
+      alipayIncomeRate: number | null;
+    };
   };
   platformDistribution: Array<{ name: string; value: number; fill: string }>;
   incomeExpense: Array<{ name: string; value: number; fill: string }>;
@@ -109,13 +116,18 @@ export type ConsumptionData = {
 interface ConsumptionViewProps {
   data: ConsumptionData;
   dateRangeLabel: string;
+  comparisonLabel?: string;
   loading?: boolean;
+  refreshing?: boolean;
   usingMockData?: boolean;
   dateFilter?: "month" | "all" | "custom";
   onDateFilterChange?: (value: "month" | "all" | "custom") => void;
-  customStartDate?: string;
-  customEndDate?: string;
-  onCustomDateRangeChange?: (value: { startDate: string; endDate: string }) => void;
+  customPeriod?: {
+    mode: "year" | "month";
+    year: string;
+    month: string;
+  };
+  onCustomPeriodChange?: (value: { mode: "year" | "month"; year: string; month: string }) => void;
 }
 
 type FilterBarProps = {
@@ -126,9 +138,12 @@ type FilterBarProps = {
   onPlatformFilterChange: (value: string) => void;
   dateFilter: "month" | "all" | "custom";
   onDateFilterChange?: (value: "month" | "all" | "custom") => void;
-  customStartDate?: string;
-  customEndDate?: string;
-  onCustomDateRangeChange?: (value: { startDate: string; endDate: string }) => void;
+  customPeriod?: {
+    mode: "year" | "month";
+    year: string;
+    month: string;
+  };
+  onCustomPeriodChange?: (value: { mode: "year" | "month"; year: string; month: string }) => void;
   filteredCount: number;
 };
 
@@ -219,115 +234,106 @@ function MetricCard({
   );
 }
 
-function ConsumptionFilterBar({
-  compact = false,
-  searchTerm,
-  onSearchChange,
-  platformFilter,
-  onPlatformFilterChange,
-  dateFilter,
-  onDateFilterChange,
-  customStartDate = "",
-  customEndDate = "",
-  onCustomDateRangeChange,
-  filteredCount,
-}: FilterBarProps) {
+function PlatformOverviewCard({
+  title,
+  subtitle,
+  total,
+  expense,
+  income,
+  platform,
+  expenseRate,
+  incomeRate,
+  comparisonLabel,
+}: {
+  title: string;
+  subtitle: string;
+  total: number;
+  expense: number;
+  income: number;
+  platform: "total" | "wechat" | "alipay";
+  expenseRate: number | null;
+  incomeRate: number | null;
+  comparisonLabel?: string;
+}) {
+  const cardClass =
+    platform === "wechat"
+      ? "border-[#07c160]/15 bg-[linear-gradient(145deg,rgba(7,193,96,0.08)_0%,rgba(255,255,255,0.98)_58%)]"
+      : platform === "alipay"
+        ? "border-[#1677ff]/15 bg-[linear-gradient(145deg,rgba(22,119,255,0.08)_0%,rgba(255,255,255,0.98)_58%)]"
+        : "border-slate-200 bg-[linear-gradient(145deg,rgba(15,23,42,0.05)_0%,rgba(255,255,255,0.98)_58%)]";
+
+  const totalLabel = platform === "total" ? "本期总流水" : "平台总流水";
+  const getComparisonTone = (value: number | null) =>
+    value === null
+      ? "bg-slate-100 text-slate-500"
+      : value >= 0
+        ? "bg-emerald-50 text-emerald-700"
+        : "bg-red-50 text-red-700";
+  const getComparisonText = (value: number | null) =>
+    value === null
+      ? "暂无环比"
+      : `${value >= 0 ? "+" : ""}${value.toFixed(1)}%`;
+
   return (
-    <div
-      className={cn(
-        "rounded-[22px] border border-slate-200 bg-white/96 backdrop-blur-md shadow-[0_16px_40px_rgba(15,23,42,0.12)]",
-        compact ? "rounded-[18px] border-slate-100 bg-slate-50 px-2.5 py-2 shadow-none" : "p-3 md:p-4"
-      )}
-    >
-      <div className={cn("flex flex-col gap-3 xl:flex-row xl:items-center", compact && "md:flex-row md:items-center md:gap-2.5")}>
-        <div className="relative flex-1">
-          <Search className={cn("pointer-events-none absolute left-3 text-slate-400", compact ? "top-2.5 h-4 w-4" : "top-3 h-4 w-4")} />
-          <Input
-            value={searchTerm}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={FILTER_BAR_TEXT.searchPlaceholder}
-            className={cn("rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400", compact ? "h-9 rounded-[16px]" : "h-11")}
-          />
+    <div className={cn("relative overflow-hidden rounded-[22px] border p-4 shadow-[0_14px_30px_rgba(15,23,42,0.06)]", cardClass)}>
+      <div className="pointer-events-none absolute inset-y-0 right-0 overflow-hidden">
+        {platform === "wechat" ? (
+          <svg viewBox="0 0 24 24" className="absolute right-[-8px] top-[-6px] h-20 w-20 text-[#07c160]/12">
+            <path d={siWechat.path} fill="currentColor" transform="translate(2 2) scale(0.83)" />
+          </svg>
+        ) : null}
+        {platform === "alipay" ? (
+          <svg viewBox="0 0 24 24" className="absolute right-[-8px] top-[-6px] h-20 w-20 text-[#1677ff]/12">
+            <path d={siAlipay.path} fill="currentColor" transform="translate(2 2) scale(0.83)" />
+          </svg>
+        ) : null}
+        {platform === "total" ? (
+          <>
+            <svg viewBox="0 0 24 24" className="absolute right-[34px] top-[-10px] h-16 w-16 text-[#07c160]/10">
+              <path d={siWechat.path} fill="currentColor" transform="translate(2 2) scale(0.83)" />
+            </svg>
+            <svg viewBox="0 0 24 24" className="absolute right-[-6px] top-[22px] h-16 w-16 text-[#1677ff]/10">
+              <path d={siAlipay.path} fill="currentColor" transform="translate(2 2) scale(0.83)" />
+            </svg>
+          </>
+        ) : null}
+      </div>
+
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-950">{title}</p>
+            <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+          </div>
+          <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200/70">
+            {totalLabel}
+          </span>
         </div>
 
-        <div className={cn("grid gap-3", compact ? "md:grid-cols-[156px_max-content] md:items-center md:gap-3.5 xl:w-[360px]" : "sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[420px]")}>
-          <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
-            <SelectTrigger className={cn("rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none", compact ? "h-9 rounded-[16px]" : "h-11")}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{FILTER_BAR_TEXT.allPlatform}</SelectItem>
-              <SelectItem value="wechat">{FILTER_BAR_TEXT.wechat}</SelectItem>
-              <SelectItem value="alipay">{FILTER_BAR_TEXT.alipay}</SelectItem>
-              <SelectItem value="cloudpay">{FILTER_BAR_TEXT.cloudpay}</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="mt-4">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">Total</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{formatCurrency(total)}</p>
+        </div>
 
-          <div className={cn("flex flex-wrap items-center gap-2", compact && "md:flex-nowrap md:justify-end md:gap-2.5 md:pl-1")}>
-            <button
-              type="button"
-              onClick={() => onDateFilterChange?.("month")}
-              className={cn(
-                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition",
-                dateFilter === "month" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              )}
-            >
-              {FILTER_BAR_TEXT.currentMonth}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDateFilterChange?.("all")}
-              className={cn(
-                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition",
-                dateFilter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              )}
-            >
-              {FILTER_BAR_TEXT.allDate}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDateFilterChange?.("custom")}
-              className={cn(
-                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition",
-                dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              )}
-            >
-              时间段
-            </button>
-            <div className={cn("inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600", compact && "px-2.5 py-1.5")}>
-              <Filter className="h-3.5 w-3.5" />
-              {`${filteredCount} ${FILTER_BAR_TEXT.countSuffix}`}
-            </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-white/90 backdrop-blur-sm">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">支出</p>
+            <p className="mt-1 text-sm font-semibold text-red-600">{formatCurrency(expense)}</p>
+            <span className={cn("mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-medium", getComparisonTone(expenseRate))}>
+              {comparisonLabel ? `${comparisonLabel} ` : ""}
+              {getComparisonText(expenseRate)}
+            </span>
+          </div>
+          <div className="rounded-2xl bg-white/80 px-3 py-3 ring-1 ring-white/90 backdrop-blur-sm">
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">收入</p>
+            <p className="mt-1 text-sm font-semibold text-emerald-600">{formatCurrency(income)}</p>
+            <span className={cn("mt-2 inline-flex rounded-full px-2 py-1 text-[11px] font-medium", getComparisonTone(incomeRate))}>
+              {comparisonLabel ? `${comparisonLabel} ` : ""}
+              {getComparisonText(incomeRate)}
+            </span>
           </div>
         </div>
       </div>
-
-      {dateFilter === "custom" ? (
-        <div className={cn("mt-3 grid gap-2 sm:grid-cols-2", compact && "md:mt-2")}>
-          <Input
-            type="date"
-            value={customStartDate}
-            onChange={(event) =>
-              onCustomDateRangeChange?.({
-                startDate: event.target.value,
-                endDate: customEndDate,
-              })
-            }
-            className={cn("rounded-2xl border-slate-200 bg-white text-slate-900", compact ? "h-9 rounded-[16px]" : "h-11")}
-          />
-          <Input
-            type="date"
-            value={customEndDate}
-            onChange={(event) =>
-              onCustomDateRangeChange?.({
-                startDate: customStartDate,
-                endDate: event.target.value,
-              })
-            }
-            className={cn("rounded-2xl border-slate-200 bg-white text-slate-900", compact ? "h-9 rounded-[16px]" : "h-11")}
-          />
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -341,9 +347,8 @@ function MobileFilterSheet({
   onPlatformFilterChange,
   dateFilter,
   onDateFilterChange,
-  customStartDate = "",
-  customEndDate = "",
-  onCustomDateRangeChange,
+  customPeriod = { mode: "month", year: "", month: "" },
+  onCustomPeriodChange,
   filteredCount,
 }: FilterBarProps & { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
@@ -354,27 +359,29 @@ function MobileFilterSheet({
         </BottomSheetHeader>
 
         <div className="space-y-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder={FILTER_BAR_TEXT.searchPlaceholder}
-              className="h-11 rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400"
-            />
-          </div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                value={searchTerm}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder={FILTER_BAR_TEXT.searchPlaceholder}
+                className="h-11 rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400"
+              />
+            </div>
 
-          <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
-            <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{FILTER_BAR_TEXT.allPlatform}</SelectItem>
-              <SelectItem value="wechat">{FILTER_BAR_TEXT.wechat}</SelectItem>
-              <SelectItem value="alipay">{FILTER_BAR_TEXT.alipay}</SelectItem>
-              <SelectItem value="cloudpay">{FILTER_BAR_TEXT.cloudpay}</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
+              <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{FILTER_BAR_TEXT.allPlatform}</SelectItem>
+                <SelectItem value="wechat">{FILTER_BAR_TEXT.wechat}</SelectItem>
+                <SelectItem value="alipay">{FILTER_BAR_TEXT.alipay}</SelectItem>
+                <SelectItem value="cloudpay">{FILTER_BAR_TEXT.cloudpay}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -410,29 +417,66 @@ function MobileFilterSheet({
           </div>
 
           {dateFilter === "custom" ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input
-                type="date"
-                value={customStartDate}
-                onChange={(event) =>
-                  onCustomDateRangeChange?.({
-                    startDate: event.target.value,
-                    endDate: customEndDate,
+            <div className="grid gap-3 sm:grid-cols-[120px_minmax(0,1fr)]">
+              <Select
+                value={customPeriod.mode}
+                onValueChange={(value) =>
+                  onCustomPeriodChange?.({
+                    ...customPeriod,
+                    mode: value as "year" | "month",
                   })
                 }
-                className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
-              />
-              <Input
-                type="date"
-                value={customEndDate}
-                onChange={(event) =>
-                  onCustomDateRangeChange?.({
-                    startDate: customStartDate,
-                    endDate: event.target.value,
-                  })
-                }
-                className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
-              />
+              >
+                <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year">按年</SelectItem>
+                  <SelectItem value="month">按月份</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className={cn("grid gap-3", customPeriod.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
+                <Input
+                  type="number"
+                  min="2000"
+                  max="2099"
+                  value={customPeriod.year}
+                  onChange={(event) =>
+                    onCustomPeriodChange?.({
+                      ...customPeriod,
+                      year: event.target.value,
+                    })
+                  }
+                  placeholder="年份"
+                  className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
+                />
+                {customPeriod.mode === "month" ? (
+                  <Select
+                    value={customPeriod.month}
+                    onValueChange={(value) =>
+                      onCustomPeriodChange?.({
+                        ...customPeriod,
+                        month: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 12 }).map((_, index) => {
+                        const value = String(index + 1).padStart(2, "0");
+                        return (
+                          <SelectItem key={value} value={value}>
+                            {value} 月
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+              </div>
             </div>
           ) : null}
 
@@ -443,6 +487,159 @@ function MobileFilterSheet({
         </div>
       </BottomSheetContent>
     </BottomSheet>
+  );
+}
+
+function DesktopFilterFloat({
+  open,
+  searchTerm,
+  onSearchChange,
+  platformFilter,
+  onPlatformFilterChange,
+  dateFilter,
+  onDateFilterChange,
+  customPeriod = { mode: "month", year: "", month: "" },
+  onCustomPeriodChange,
+  filteredCount,
+}: FilterBarProps & { open: boolean }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed bottom-24 right-6 z-40 hidden w-[420px] rounded-[24px] border border-slate-200 bg-white/96 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.16)] backdrop-blur-md md:block">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-950">筛选消费流水</p>
+          <p className="mt-1 text-xs text-slate-500">右侧悬浮筛选卡片</p>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+          <Filter className="h-3.5 w-3.5" />
+          {`${filteredCount} ${FILTER_BAR_TEXT.countSuffix}`}
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_150px]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={FILTER_BAR_TEXT.searchPlaceholder}
+              className="h-11 rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400"
+            />
+          </div>
+
+          <Select value={platformFilter} onValueChange={onPlatformFilterChange}>
+            <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{FILTER_BAR_TEXT.allPlatform}</SelectItem>
+              <SelectItem value="wechat">{FILTER_BAR_TEXT.wechat}</SelectItem>
+              <SelectItem value="alipay">{FILTER_BAR_TEXT.alipay}</SelectItem>
+              <SelectItem value="cloudpay">{FILTER_BAR_TEXT.cloudpay}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onDateFilterChange?.("month")}
+            className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition",
+              dateFilter === "month" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            )}
+          >
+            {FILTER_BAR_TEXT.currentMonth}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDateFilterChange?.("all")}
+            className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition",
+              dateFilter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            )}
+          >
+            {FILTER_BAR_TEXT.allDate}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDateFilterChange?.("custom")}
+            className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition",
+              dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            )}
+          >
+            时间段
+          </button>
+        </div>
+
+        {dateFilter === "custom" ? (
+          <div className="grid gap-3 md:grid-cols-[120px_minmax(0,1fr)]">
+            <Select
+              value={customPeriod.mode}
+              onValueChange={(value) =>
+                onCustomPeriodChange?.({
+                  ...customPeriod,
+                  mode: value as "year" | "month",
+                })
+              }
+            >
+              <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="year">按年</SelectItem>
+                <SelectItem value="month">按月份</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className={cn("grid gap-3", customPeriod.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
+              <Input
+                type="number"
+                min="2000"
+                max="2099"
+                value={customPeriod.year}
+                onChange={(event) =>
+                  onCustomPeriodChange?.({
+                    ...customPeriod,
+                    year: event.target.value,
+                  })
+                }
+                placeholder="年份"
+                className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
+              />
+              {customPeriod.mode === "month" ? (
+                <Select
+                  value={customPeriod.month}
+                  onValueChange={(value) =>
+                    onCustomPeriodChange?.({
+                      ...customPeriod,
+                      month: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }).map((_, index) => {
+                      const value = String(index + 1).padStart(2, "0");
+                      return (
+                        <SelectItem key={value} value={value}>
+                          {value} 月
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -542,7 +739,61 @@ function HeatmapGrid({ data }: { data: ConsumptionData["heatmap"] }) {
   );
 }
 
-function CalendarHeatGrid({ calendar }: { calendar: ConsumptionData["calendar"] }) {
+function CalendarHeatGrid({
+  calendar,
+  mode = "day",
+}: {
+  calendar: ConsumptionData["calendar"];
+  mode?: "day" | "month";
+}) {
+  if (mode === "month") {
+    const monthMap = new Map<string, number>();
+    calendar.forEach((item) => {
+      const date = new Date(item.date);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      monthMap.set(key, (monthMap.get(key) ?? 0) + item.value);
+    });
+
+    const monthItems = Array.from(monthMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-12)
+      .map(([month, value]) => ({ month, value }));
+    const maxValue = Math.max(...monthItems.map((item) => item.value), 1);
+
+    return (
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        {monthItems.map((item) => {
+          const intensity = item.value / maxValue;
+          const background =
+            intensity < 0.18
+              ? "rgba(191,219,254,0.45)"
+              : intensity < 0.4
+                ? "rgba(96,165,250,0.55)"
+                : intensity < 0.7
+                  ? "rgba(37,99,235,0.65)"
+                  : "rgba(30,64,175,0.8)";
+
+          return (
+            <div
+              key={item.month}
+              className="flex min-h-[82px] flex-col justify-between rounded-2xl border border-white/70 px-3 py-3 shadow-sm"
+              style={{ backgroundColor: background }}
+              title={`${item.month}: ${formatCurrency(item.value)}`}
+            >
+              <span className={cn("text-xs font-semibold", intensity > 0.45 ? "text-white" : "text-slate-800")}>
+                {item.month.slice(5)} 月
+              </span>
+              <span className={cn("text-[11px] font-medium", intensity > 0.45 ? "text-blue-50" : "text-slate-600")}>
+                {formatCurrency(item.value, { compact: true })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   const weekDays = ["日", "一", "二", "三", "四", "五", "六"];
   const firstDate = calendar[0]?.date ? new Date(calendar[0].date) : null;
   const leadingBlanks = firstDate ? firstDate.getDay() : 0;
@@ -600,26 +851,25 @@ function CalendarHeatGrid({ calendar }: { calendar: ConsumptionData["calendar"] 
 export function ConsumptionDefaultTheme({
   data,
   dateRangeLabel,
+  comparisonLabel,
   loading = false,
+  refreshing = false,
   usingMockData = false,
   dateFilter = "month",
   onDateFilterChange,
-  customStartDate = "",
-  customEndDate = "",
-  onCustomDateRangeChange,
+  customPeriod = { mode: "month", year: "", month: "" },
+  onCustomPeriodChange,
 }: ConsumptionViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [platformFilter, setPlatformFilter] = useState("all");
-  const [isFilterPinned, setIsFilterPinned] = useState(false);
   const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
-  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
-  const [canEmbedFilterInHeader, setCanEmbedFilterInHeader] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
   const [formState, setFormState] = useState<TransactionFormState>({
     amount: "",
     merchant: "",
@@ -629,14 +879,21 @@ export function ConsumptionDefaultTheme({
     platform: "alipay",
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const desktopFilterRef = useRef<HTMLDivElement>(null);
 
   const isSkeletonVisible = loading;
   const balance = data.summary.totalIncome - data.summary.totalExpense;
-  const avgPerExpense = data.summary.expenseCount > 0 ? data.summary.totalExpense / data.summary.expenseCount : 0;
   const topCategory = data.pareto[0];
   const topMerchant = data.merchants[0];
   const lowerSearchTerm = searchTerm.trim().toLowerCase();
   const incomeExpenseTotal = data.incomeExpense.reduce((accumulator, item) => accumulator + item.value, 0);
+  const calendarMode = useMemo(() => {
+    if (dateFilter === "all") return "month" as const;
+    if (dateFilter === "custom" && customPeriod.mode === "year") {
+      return "month" as const;
+    }
+    return "day" as const;
+  }, [customPeriod.mode, dateFilter]);
   const aiTransactions = useMemo(
     () =>
       data.transactions.map((transaction) => ({
@@ -663,36 +920,34 @@ export function ConsumptionDefaultTheme({
       }),
     [data.transactions, lowerSearchTerm, platformFilter]
   );
+  const visibleTransactions = useMemo(() => filteredTransactions.slice(0, 10), [filteredTransactions]);
 
   useEffect(() => {
-    const scrollArea = document.querySelector<HTMLElement>("[data-dashboard-scroll-area='true']");
-    if (!scrollArea) return;
-
-    const handleScroll = () => {
-      setIsFilterPinned(scrollArea.scrollTop > 24);
-    };
-
-    handleScroll();
-    scrollArea.addEventListener("scroll", handleScroll, { passive: true });
-    return () => scrollArea.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setHeaderSlot(document.getElementById("dashboard-header-inline-slot"));
-    const desktopQuery = window.matchMedia("(min-width: 768px)");
     const mobileQuery = window.matchMedia("(max-width: 767px)");
     const sync = () => {
-      setCanEmbedFilterInHeader(desktopQuery.matches);
       setIsMobileViewport(mobileQuery.matches);
+      if (mobileQuery.matches) {
+        setIsDesktopFilterOpen(false);
+      }
     };
     sync();
-    desktopQuery.addEventListener("change", sync);
     mobileQuery.addEventListener("change", sync);
     return () => {
-      desktopQuery.removeEventListener("change", sync);
       mobileQuery.removeEventListener("change", sync);
     };
   }, []);
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (!isDesktopFilterOpen) return;
+      if (!desktopFilterRef.current?.contains(event.target as Node)) {
+        setIsDesktopFilterOpen(false);
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [isDesktopFilterOpen]);
 
   const trendOption = useMemo(
     () => ({
@@ -1187,6 +1442,12 @@ export function ConsumptionDefaultTheme({
                     <CreditCard className="h-3.5 w-3.5" />
                     {usingMockData ? "演示数据" : "真实数据"}
                   </span>
+                  {refreshing ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-100">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      正在更新
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="space-y-3">
@@ -1223,13 +1484,38 @@ export function ConsumptionDefaultTheme({
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <MetricCard label="支出笔数" value={`${data.summary.expenseCount} 笔`} detail="本期记录" accent="blue" />
-                  <MetricCard label="笔均支出" value={formatCurrency(avgPerExpense)} detail="平均客单价" accent="slate" />
-                  <MetricCard
-                    label="最高分类"
-                    value={topCategory ? topCategory.name : "暂无"}
-                    detail={topCategory ? `${topCategory.cumulativePercentage.toFixed(0)}% 累积贡献` : "等待数据"}
-                    accent="green"
+                  <PlatformOverviewCard
+                    title="总消费"
+                    subtitle="全部平台"
+                    total={data.summary.totalExpense + data.summary.totalIncome}
+                    expense={data.summary.totalExpense}
+                    income={data.summary.totalIncome}
+                    platform="total"
+                    expenseRate={data.summary.comparison.totalExpenseRate}
+                    incomeRate={data.summary.comparison.totalIncomeRate}
+                    comparisonLabel={comparisonLabel}
+                  />
+                  <PlatformOverviewCard
+                    title="微信"
+                    subtitle="微信账单"
+                    total={data.summary.wechat.expense + data.summary.wechat.income}
+                    expense={data.summary.wechat.expense}
+                    income={data.summary.wechat.income}
+                    platform="wechat"
+                    expenseRate={data.summary.comparison.wechatExpenseRate}
+                    incomeRate={data.summary.comparison.wechatIncomeRate}
+                    comparisonLabel={comparisonLabel}
+                  />
+                  <PlatformOverviewCard
+                    title="支付宝"
+                    subtitle="支付宝账单"
+                    total={data.summary.alipay.expense + data.summary.alipay.income}
+                    expense={data.summary.alipay.expense}
+                    income={data.summary.alipay.income}
+                    platform="alipay"
+                    expenseRate={data.summary.comparison.alipayExpenseRate}
+                    incomeRate={data.summary.comparison.alipayIncomeRate}
+                    comparisonLabel={comparisonLabel}
                   />
                 </div>
               </div>
@@ -1273,7 +1559,7 @@ export function ConsumptionDefaultTheme({
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[22px] border border-transparent bg-transparent p-0 sm:border-white/10 sm:bg-white/6 sm:p-4">
+                <div className="mt-5 rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-blue-100/60">Leading Merchant</p>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-blue-100">
@@ -1312,28 +1598,7 @@ export function ConsumptionDefaultTheme({
           </ThemeHero>
         </DelayedRender>
 
-        {isFilterPinned && canEmbedFilterInHeader && headerSlot
-          ? createPortal(
-              <div className="pointer-events-auto">
-                <ConsumptionFilterBar
-                  compact
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  platformFilter={platformFilter}
-                  onPlatformFilterChange={setPlatformFilter}
-                  dateFilter={dateFilter}
-                  onDateFilterChange={onDateFilterChange}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                  onCustomDateRangeChange={onCustomDateRangeChange}
-                  filteredCount={filteredTransactions.length}
-                />
-              </div>,
-              headerSlot
-            )
-          : null}
-
-        {isFilterPinned && isMobileViewport ? (
+        {isMobileViewport ? (
           <>
             <button
               type="button"
@@ -1353,170 +1618,40 @@ export function ConsumptionDefaultTheme({
               onPlatformFilterChange={setPlatformFilter}
               dateFilter={dateFilter}
               onDateFilterChange={onDateFilterChange}
-              customStartDate={customStartDate}
-              customEndDate={customEndDate}
-              onCustomDateRangeChange={onCustomDateRangeChange}
+              customPeriod={customPeriod}
+              onCustomPeriodChange={onCustomPeriodChange}
               filteredCount={filteredTransactions.length}
             />
           </>
         ) : null}
 
-        <DelayedRender delay={30}>
-          {!isFilterPinned || (!canEmbedFilterInHeader && !isMobileViewport) ? (
-            <section className="sticky top-2 z-30 md:top-3">
-            <div
-              className={cn(
-                "rounded-[22px] border p-3 backdrop-blur-md transition-all duration-200 md:p-4",
-                isFilterPinned
-                  ? "border-blue-200 bg-white/96 shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
-                  : "border-slate-200/80 bg-white/92 shadow-[0_12px_36px_rgba(15,23,42,0.08)]"
-              )}
+        {!isMobileViewport ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsDesktopFilterOpen((current) => !current)}
+              className="fixed bottom-8 right-6 z-40 hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-[0_18px_44px_rgba(15,23,42,0.16)] transition hover:border-slate-300 hover:text-slate-950 md:inline-flex"
             >
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                  <Input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="搜索商户或分类"
-                    className="h-11 rounded-2xl border-slate-200 bg-white pl-10 text-slate-900 placeholder:text-slate-400"
-                  />
-                </div>
+              <Filter className="h-4 w-4" />
+              筛选
+            </button>
 
-                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:w-[560px]">
-                  <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                    <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全部平台</SelectItem>
-                      <SelectItem value="wechat">微信</SelectItem>
-                      <SelectItem value="alipay">支付宝</SelectItem>
-                      <SelectItem value="cloudpay">云闪付</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={dateFilter}
-                    onValueChange={(value) => onDateFilterChange?.(value as "month" | "all" | "custom")}
-                  >
-                    <SelectTrigger className="hidden h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">鍏ㄩ儴鏃堕棿</SelectItem>
-                      <SelectItem value="month">鏈湀</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <div className="col-span-full flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onDateFilterChange?.("month")}
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                        dateFilter === "month"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                    >
-                      {FILTER_BAR_TEXT.currentMonth}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDateFilterChange?.("all")}
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                        dateFilter === "all"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                    >
-                      {FILTER_BAR_TEXT.allDate}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDateFilterChange?.("custom")}
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                        dateFilter === "custom"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                    >
-                      时间段
-                    </button>
-                  </div>
-
-                  {dateFilter === "custom" ? (
-                    <div className="col-span-full grid gap-3 sm:grid-cols-2">
-                      <Input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(event) =>
-                          onCustomDateRangeChange?.({
-                            startDate: event.target.value,
-                            endDate: customEndDate,
-                          })
-                        }
-                        className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
-                      />
-                      <Input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(event) =>
-                          onCustomDateRangeChange?.({
-                            startDate: customStartDate,
-                            endDate: event.target.value,
-                          })
-                        }
-                        className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
-                      />
-                    </div>
-                  ) : null}
-
-                  <div className="hidden">
-                    <button
-                      type="button"
-                      onClick={() => onDateFilterChange?.("month")}
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                        dateFilter === "month"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                    >
-                      本月
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDateFilterChange?.("all")}
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                        dateFilter === "all"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                    >
-                      全部时间
-                    </button>
-                  </div>
-
-                  <div className="inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
-                    <Filter className="h-3.5 w-3.5" />
-                    {`${filteredTransactions.length} ${FILTER_BAR_TEXT.countSuffix}`}
-                  </div>
-
-                  <div className="hidden">
-                    <Filter className="h-3.5 w-3.5" />
-                    {filteredTransactions.length} 笔
-                  </div>
-                </div>
-              </div>
+            <div ref={desktopFilterRef}>
+              <DesktopFilterFloat
+                open={isDesktopFilterOpen}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                platformFilter={platformFilter}
+                onPlatformFilterChange={setPlatformFilter}
+                dateFilter={dateFilter}
+                onDateFilterChange={onDateFilterChange}
+                customPeriod={customPeriod}
+                onCustomPeriodChange={onCustomPeriodChange}
+                filteredCount={filteredTransactions.length}
+              />
             </div>
-            </section>
-          ) : null}
-        </DelayedRender>
+          </>
+        ) : null}
 
         <DelayedRender delay={60}>
           <section className="grid gap-3 md:grid-cols-4">
@@ -1696,16 +1831,23 @@ export function ConsumptionDefaultTheme({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-slate-500">消费日历</p>
-                  <h2 className="mt-1 text-xl font-semibold text-slate-950">每日消费强度分布</h2>
-                  <p className="mt-1 text-sm text-slate-500">把本期的高低消费日放到日历上，看月内节奏更直观。</p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                    {calendarMode === "month" ? "按月份查看消费强度" : "每日消费强度分布"}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {calendarMode === "month"
+                      ? "长时间范围下按月份汇总，只展示最近 12 个月的消费节奏。"
+                      : "把本期的高低消费日放到日历上，看月内节奏更直观。"}
+                  </p>
                 </div>
-                <div className="rounded-full bg-slate-100 p-2 text-slate-500">
-                  <CalendarDays className="h-4 w-4" />
+                <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {calendarMode === "month" ? "12 个月" : `${data.calendar.length} 天`}
                 </div>
               </div>
 
               <div className="mt-5">
-                <CalendarHeatGrid calendar={data.calendar} />
+                <CalendarHeatGrid calendar={data.calendar} mode={calendarMode} />
               </div>
             </div>
 
@@ -1778,12 +1920,12 @@ export function ConsumptionDefaultTheme({
               <div>
                 <p className="text-sm font-medium text-slate-500">交易明细</p>
                 <h2 className="mt-1 text-xl font-semibold text-slate-950">筛选后的消费流水</h2>
-                <p className="mt-1 text-sm text-slate-500">搜索商户、分类或按支付平台筛选最近交易。</p>
+                <p className="mt-1 text-sm text-slate-500">只展示最近 10 条，避免长列表拖慢页面交互。</p>
               </div>
 
               <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
                 <Filter className="h-3.5 w-3.5" />
-                {filteredTransactions.length} 笔结果
+                最近 {Math.min(10, filteredTransactions.length)} / 共 {filteredTransactions.length} 笔
               </div>
             </div>
 
@@ -1796,7 +1938,7 @@ export function ConsumptionDefaultTheme({
                   className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50"
                 />
               ) : (
-                filteredTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} />)
+                visibleTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} />)
               )}
             </div>
           </section>

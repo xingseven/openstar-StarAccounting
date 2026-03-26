@@ -1,4 +1,4 @@
-OpenStar Accounting 更新发布说明
+Star Accounting 更新发布说明
 
 1. 本地更新清单:
    /updates/latest.json

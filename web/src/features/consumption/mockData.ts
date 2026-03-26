@@ -6,6 +6,14 @@ export const MOCK_SUMMARY = {
   expenseCount: 42,
   wechat: { expense: 5230.00, income: 8000.00 },
   alipay: { expense: 7350.50, income: 17000.00 },
+  comparison: {
+    totalExpenseRate: 12.4,
+    totalIncomeRate: 6.8,
+    wechatExpenseRate: 4.9,
+    wechatIncomeRate: 3.2,
+    alipayExpenseRate: 18.7,
+    alipayIncomeRate: 8.5,
+  },
 };
 
 export const MOCK_PLATFORM_DISTRIBUTION = [

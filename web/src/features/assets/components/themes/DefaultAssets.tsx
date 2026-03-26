@@ -127,7 +127,7 @@ function AssetAvatar({ item, className }: { item: Asset; className?: string }) {
   const Icon = meta.icon;
 
   return (
-    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200/70 bg-white shadow-sm", className)}>
+    <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-[0_8px_18px_rgba(15,23,42,0.06)]", className)}>
       {logo ? (
         <Image src={logo} alt={item.name} width={28} height={28} className="h-7 w-7 object-contain" />
       ) : (
@@ -262,7 +262,7 @@ function AssetCard({
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200/70 bg-white/80 text-slate-400 transition hover:border-slate-300 hover:text-slate-700"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/80 text-slate-400 transition hover:bg-white hover:text-slate-700"
               aria-label={`编辑${item.name}`}
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -280,7 +280,7 @@ function AssetCard({
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <div className="mt-5 flex items-center justify-between gap-3 pt-3">
           <div>
             <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Portfolio</p>
             <p className="mt-1 text-sm font-medium text-slate-900">{isLiability ? "负债类账户" : "资产类账户"}</p>
@@ -382,10 +382,10 @@ export function AssetsDefaultTheme({
           <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.16),transparent_70%)] lg:block" />
           <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-blue-200/35 blur-3xl sm:h-56 sm:w-56" />
 
-          <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.88fr)]">
+          <div className="relative z-10 space-y-4 sm:space-y-5">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-100">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-blue-700">
                   <Sparkles className="h-3.5 w-3.5" />
                   资产工作台
                 </span>
@@ -406,7 +406,7 @@ export function AssetsDefaultTheme({
                       {formatMoney(totalAssets, displayCurrency, { maximumFractionDigits: Math.abs(totalAssets) < 1000 ? 2 : 0 })}
                     </h1>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/82 px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-white/70">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/82 px-3 py-1.5 text-sm font-medium text-slate-700">
                     <Wallet className="h-4 w-4 text-blue-600" />
                     共 {accountCount} 个账户，覆盖 {currencyCount} 种货币
                   </div>
@@ -444,7 +444,8 @@ export function AssetsDefaultTheme({
                 </Button>
               </div>
 
-              <div className="mt-5 rounded-[22px] border border-transparent bg-transparent p-0 sm:border-white/10 sm:bg-white/6 sm:p-4">
+              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(260px,0.92fr)_minmax(0,1.4fr)] xl:items-stretch">
+                <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-blue-100/60">Largest Holding</p>
                 <div className="mt-3 flex items-center gap-3">
                   {largestAsset ? <AssetAvatar item={largestAsset} className="border-white/12 bg-white/10" /> : null}
@@ -455,9 +456,9 @@ export function AssetsDefaultTheme({
                     </p>
                   </div>
                 </div>
-              </div>
+                </div>
 
-              <div className="mt-4 grid gap-3">
+                <div className="grid gap-3 xl:grid-cols-3">
                 <StructureRow
                   label="流动资产"
                   value={formatMoney(liquidAssets, displayCurrency, { compact: true })}
@@ -479,6 +480,7 @@ export function AssetsDefaultTheme({
                   progress={(liabilities / structureBase) * 100}
                   tone="red"
                 />
+              </div>
               </div>
             </ThemeDarkPanel>
           </div>

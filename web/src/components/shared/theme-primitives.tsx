@@ -16,52 +16,52 @@ const TONE_CLASS_MAP: Record<ThemeTone, string> = {
 };
 
 const NOTICE_CLASS_MAP: Record<ThemeTone, string> = {
-  blue: "border-transparent bg-blue-50 text-blue-900 sm:border-blue-200",
-  green: "border-transparent bg-emerald-50 text-emerald-900 sm:border-emerald-200",
-  emerald: "border-transparent bg-emerald-50 text-emerald-900 sm:border-emerald-200",
-  violet: "border-transparent bg-violet-50 text-violet-900 sm:border-violet-200",
-  red: "border-transparent bg-red-50 text-red-900 sm:border-red-200",
-  amber: "border-transparent bg-amber-50 text-amber-900 sm:border-amber-200",
-  slate: "border-transparent bg-slate-50 text-slate-900 sm:border-slate-200",
+  blue: "border-transparent bg-blue-50/90 text-blue-900",
+  green: "border-transparent bg-emerald-50/90 text-emerald-900",
+  emerald: "border-transparent bg-emerald-50/90 text-emerald-900",
+  violet: "border-transparent bg-violet-50/90 text-violet-900",
+  red: "border-transparent bg-red-50/90 text-red-900",
+  amber: "border-transparent bg-amber-50/90 text-amber-900",
+  slate: "border-transparent bg-slate-50/90 text-slate-900",
 };
 
 export const THEME_SURFACE_CLASS =
-  "relative overflow-hidden rounded-[20px] border border-transparent [background:var(--theme-surface-bg)] [box-shadow:none] sm:rounded-[24px] sm:[border-color:var(--theme-surface-border)] sm:[box-shadow:var(--theme-surface-shadow)]";
+  "relative overflow-hidden rounded-[20px] border [border-color:var(--theme-surface-border)] [background:var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] sm:rounded-[24px]";
 
 export const THEME_HERO_CLASS =
-  "relative overflow-hidden rounded-[24px] border border-transparent [background:var(--theme-hero-bg)] [box-shadow:none] p-4 sm:rounded-[28px] sm:[border-color:var(--theme-hero-border)] sm:[box-shadow:var(--theme-hero-shadow)] sm:p-6 lg:p-8";
+  "relative overflow-hidden rounded-[24px] border [border-color:var(--theme-hero-border)] [background:var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-4 sm:rounded-[28px] sm:p-6 lg:p-8";
 
 export const THEME_DARK_PANEL_CLASS =
-  "relative overflow-hidden rounded-[20px] border border-transparent [background:var(--theme-dark-panel-bg)] [box-shadow:none] text-white sm:rounded-[24px] sm:[border-color:var(--theme-dark-panel-border)] sm:[box-shadow:var(--theme-dark-panel-shadow)]";
+  "relative overflow-hidden rounded-[20px] border [border-color:var(--theme-dark-panel-border)] [background:var(--theme-dark-panel-bg)] [box-shadow:var(--theme-dark-panel-shadow)] text-white sm:rounded-[24px]";
 
 export const THEME_DIALOG_INPUT_CLASS =
-  "h-11 rounded-2xl border-slate-100 bg-white text-slate-950 placeholder:text-slate-400 shadow-none sm:border-slate-200";
+  "h-11 rounded-2xl border border-slate-200/80 bg-white/90 text-slate-950 placeholder:text-slate-400 shadow-none";
 
 export const THEME_DIALOG_SELECT_CLASS =
-  "h-11 w-full appearance-none rounded-2xl border border-slate-100 bg-white px-3 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 sm:border-slate-200";
+  "h-11 w-full appearance-none rounded-2xl border border-slate-200/80 bg-white/90 px-3 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20";
 
 export const THEME_TEXTAREA_CLASS =
-  "min-h-[96px] w-full rounded-[20px] border border-slate-100 bg-white px-3 py-2.5 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:border-slate-200";
+  "min-h-[96px] w-full rounded-[20px] border border-slate-200/80 bg-white/90 px-3 py-2.5 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export const THEME_COMPACT_SELECT_CLASS =
-  "rounded-2xl border border-slate-100 bg-white px-4 py-2.5 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:border-slate-200";
+  "rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-2.5 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export const THEME_WHITE_ACTION_BUTTON_CLASS =
   "h-11 rounded-2xl bg-white text-slate-950 shadow-none hover:bg-blue-50";
 
 export const THEME_ICON_BUTTON_CLASS =
-  "inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-transparent bg-white text-slate-400 transition hover:bg-slate-50 hover:text-slate-700 sm:border-slate-200 sm:hover:border-slate-300";
+  "inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-white text-slate-400 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700";
 
 export const THEME_LIST_ITEM_CLASS =
-  "flex items-center justify-between rounded-2xl border border-transparent bg-white px-4 py-3 text-xs transition hover:bg-slate-50 sm:border-slate-200 sm:text-sm sm:hover:border-slate-300";
+  "flex items-center justify-between rounded-2xl border [border-color:var(--theme-surface-border)] bg-white px-4 py-3 text-xs shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition hover:bg-slate-50 sm:text-sm";
 
-export const THEME_STATUS_SUCCESS_SURFACE_CLASS = "border-transparent bg-green-50 sm:border-green-200";
+export const THEME_STATUS_SUCCESS_SURFACE_CLASS = "border-emerald-200 bg-green-50";
 
-export const THEME_STATUS_SUCCESS_SOFT_SURFACE_CLASS = "border-transparent bg-green-50/70 sm:border-green-200";
+export const THEME_STATUS_SUCCESS_SOFT_SURFACE_CLASS = "border-emerald-200/70 bg-green-50/70";
 
-export const THEME_STATUS_NEUTRAL_SURFACE_CLASS = "border-transparent bg-white hover:bg-slate-50 sm:border-slate-200 sm:hover:border-slate-300";
+export const THEME_STATUS_NEUTRAL_SURFACE_CLASS = "border-slate-200 bg-white hover:bg-slate-50";
 
-export const THEME_STATUS_MUTED_SURFACE_CLASS = "border-transparent bg-slate-50/70 sm:border-slate-200";
+export const THEME_STATUS_MUTED_SURFACE_CLASS = "border-slate-200/80 bg-slate-50/70";
 
 export function getThemeToneClass(tone: ThemeTone) {
   return TONE_CLASS_MAP[tone];
@@ -151,7 +151,12 @@ export function ThemeMetricCard({
   const showDesktopIcon = Icon && (iconVisibility === "always" || iconVisibility === "desktop");
 
   return (
-    <div className={cn("rounded-[18px] border border-transparent [background:var(--theme-metric-bg)] [box-shadow:none] p-3 sm:rounded-[20px] sm:[border-color:var(--theme-metric-border)] sm:[box-shadow:var(--theme-metric-shadow)] sm:p-4", className)}>
+    <div
+      className={cn(
+        "rounded-[18px] border [border-color:var(--theme-metric-border)] [background:var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-3 sm:rounded-[20px] sm:p-4",
+        className
+      )}
+    >
       <div className="flex items-start justify-between gap-2.5 sm:gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 sm:block">
@@ -197,7 +202,7 @@ export function ThemeToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-[18px] border border-transparent [background:var(--theme-surface-bg)] [box-shadow:none] px-4 py-3 sm:rounded-[20px] sm:[border-color:var(--theme-surface-border)] sm:[box-shadow:var(--theme-surface-shadow)]",
+        "flex flex-wrap items-center gap-3 rounded-[18px] border [border-color:var(--theme-surface-border)] [background:var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] px-4 py-3 sm:rounded-[20px]",
         className
       )}
     >
@@ -328,7 +333,7 @@ export function ThemeDialogSection({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-[18px] border border-transparent bg-slate-50/60 p-4 sm:border-slate-200 sm:bg-slate-50/70", className)}>
+    <div className={cn("rounded-[18px] border border-slate-200/80 bg-slate-50/70 p-4", className)}>
       {children}
     </div>
   );
@@ -342,7 +347,7 @@ export function ThemeActionBar({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-row justify-end gap-3 border-t border-transparent pt-4 sm:border-slate-200", className)}>
+    <div className={cn("flex flex-row justify-end gap-3 pt-4", className)}>
       {children}
     </div>
   );

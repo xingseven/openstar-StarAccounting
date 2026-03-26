@@ -28,6 +28,8 @@ export const MOCK_DASHBOARD: DashboardData = {
   totalDebt: 125000,
   monthExpense: 8560,
   monthIncome: 25000,
+  lastMonthExpense: 7980,
+  lastMonthIncome: 23800,
   monthSavingsIncome: 5000,
   monthSavingsExpense: 1200,
   recentTransactions: [

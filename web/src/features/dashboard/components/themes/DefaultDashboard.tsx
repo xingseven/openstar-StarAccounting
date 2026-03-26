@@ -9,7 +9,6 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
-  Banknote,
   CalendarDays,
   CreditCard,
   PiggyBank,
@@ -57,6 +56,12 @@ const STAT_TONE_CLASS: Record<"blue" | "red" | "green" | "amber", string> = {
   green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   amber: "bg-amber-50 text-amber-700 ring-amber-100",
 };
+
+const MOM_BADGE_CLASS = {
+  positive: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  negative: "bg-red-50 text-red-700 ring-red-100",
+  neutral: "bg-slate-100 text-slate-600 ring-slate-200",
+} as const;
 
 type Tone = "blue" | "red" | "green" | "amber";
 
@@ -213,7 +218,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   return (
     <div className="mx-auto max-w-[1680px] space-y-3 pb-1 sm:space-y-5 sm:pb-2">
       <DelayedRender delay={0}>
-        <section className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-[28px] sm:p-6 lg:p-8">
+        <section className="relative overflow-hidden rounded-[24px] border [border-color:var(--theme-hero-border)] [background:var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-3.5 sm:rounded-[28px] sm:p-6 lg:p-8">
           <div className="absolute inset-y-0 right-0 hidden w-[36%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.14),transparent_70%)] lg:block" />
           <div className="absolute -right-20 top-8 h-40 w-40 rounded-full bg-blue-200/35 blur-3xl sm:-right-24 sm:top-10 sm:h-56 sm:w-56" />
           <div className="absolute left-6 top-0 h-28 w-28 rounded-full bg-white/80 blur-3xl sm:left-10 sm:h-40 sm:w-40" />
@@ -289,7 +294,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </div>
 
               {criticalAlerts.length > 0 && !alertsDismissed ? (
-                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[20px] border border-amber-200/70 bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm sm:flex sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3">
+                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[20px] bg-amber-50/80 px-3 py-2.5 shadow-[0_10px_24px_rgba(245,158,11,0.08)] backdrop-blur-sm sm:flex sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3">
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-amber-100 p-2 text-amber-700 sm:rounded-2xl">
                       <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -312,7 +317,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     <button
                       type="button"
                       onClick={() => setAlertsDismissed(true)}
-                      className="rounded-full border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900 sm:px-3 sm:py-2 sm:text-sm"
+                      className="rounded-full bg-white/80 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 sm:px-3 sm:py-2 sm:text-sm"
                     >
                       暂时收起
                     </button>
@@ -331,22 +336,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       </DelayedRender>
 
       <DelayedRender delay={60}>
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-          <MetricRailCard
-            label="本月支出"
-            value={formatCurrency(data.monthExpense)}
-            mobileValue={formatCurrency(data.monthExpense, { compact: true })}
-            detail="本月消费总额"
-            icon={CreditCard}
-            tone="red"
-          />
-          <MetricRailCard
-            label="本月收入"
-            value={formatCurrency(data.monthIncome)}
-            mobileValue={formatCurrency(data.monthIncome, { compact: true })}
-            detail="已记录入账"
-            icon={Banknote}
-            tone="blue"
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1.45fr)_repeat(2,minmax(0,1fr))]">
+          <IncomeExpenseCard
+            income={data.monthIncome}
+            expense={data.monthExpense}
+            lastMonthIncome={data.lastMonthIncome}
+            lastMonthExpense={data.lastMonthExpense}
+            balance={formatCurrency(monthlyBalance)}
+            positiveBalance={monthlyBalance >= 0}
           />
           <MetricRailCard
             label="本月结余率"
@@ -499,8 +496,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
               <div className="mt-4 space-y-2 sm:mt-5 sm:space-y-3">
                 {data.recentTransactions.length === 0 ? (
-                  <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] border border-dashed border-slate-200 bg-slate-50 px-3 text-center sm:min-h-[220px] sm:rounded-[24px]">
-                    <div className="rounded-full bg-white p-2.5 shadow-sm sm:p-3">
+                  <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] bg-slate-50/80 px-3 text-center sm:min-h-[220px] sm:rounded-[24px]">
+                    <div className="rounded-full bg-white p-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)] sm:p-3">
                       <CalendarDays className="h-4 w-4 text-slate-400 sm:h-5 sm:w-5" />
                     </div>
                     <p className="mt-3 text-sm font-medium text-slate-700 sm:mt-4 sm:text-base">还没有最近交易</p>
@@ -518,20 +515,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           <div className="space-y-3 sm:space-y-5">
             <div className="hidden xl:block">
               <BudgetFocusPanel alerts={data.budgetAlerts} />
-            </div>
-
-            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
-              <div>
-                <p className="text-xs font-medium text-slate-500 sm:text-sm">快捷入口</p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">高频动作放在手边</h3>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3">
-                <QuickLink href="/assets" icon={Wallet} title="资产管理" detail="查看账户与余额" tone="blue" />
-                <QuickLink href="/budgets" icon={CreditCard} title="预算管理" detail="调整分类限额" tone="red" />
-                <QuickLink href="/savings" icon={PiggyBank} title="储蓄目标" detail="追踪计划进度" tone="green" />
-                <QuickLink href="/loans" icon={Banknote} title="贷款管理" detail="跟进还款状态" tone="amber" />
-              </div>
             </div>
           </div>
         </section>
@@ -555,7 +538,7 @@ function FundsHealthPanel({
           detail={item.description}
           tone={item.tone}
           icon={item.icon}
-          className="border-black/80 sm:p-4"
+          className="sm:p-4"
           hideDetailOnMobile
         />
       ))}
@@ -580,7 +563,7 @@ function BudgetFocusPanel({ alerts }: { alerts: DashboardData["budgetAlerts"] })
 
       <div className="mt-4 space-y-2 sm:mt-5 sm:space-y-3">
         {alerts.length === 0 ? (
-          <div className="rounded-[20px] border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center sm:rounded-[24px] sm:py-6">
+          <div className="rounded-[20px] bg-slate-50/80 px-4 py-5 text-center sm:rounded-[24px] sm:py-6">
             <p className="text-sm font-medium text-slate-700 sm:text-base">预算执行稳定</p>
             <p className="mt-1 text-xs text-slate-500 sm:text-sm">当前没有需要提醒的预算异常。</p>
           </div>
@@ -652,6 +635,112 @@ function MetricRailCard({
   );
 }
 
+function IncomeExpenseCard({
+  income,
+  expense,
+  lastMonthIncome,
+  lastMonthExpense,
+  balance,
+  positiveBalance,
+}: {
+  income: number;
+  expense: number;
+  lastMonthIncome: number;
+  lastMonthExpense: number;
+  balance: string;
+  positiveBalance: boolean;
+}) {
+  const incomeChange = getMonthOverMonthMeta(income, lastMonthIncome, true);
+  const expenseChange = getMonthOverMonthMeta(expense, lastMonthExpense, false);
+
+  return (
+    <div className={cn(SURFACE_CLASS, "col-span-2 p-4 sm:p-5 xl:col-span-1")}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-slate-500 sm:text-sm">本月收支</p>
+          <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">收入与支出概览</h3>
+        </div>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:px-3 sm:text-xs",
+            positiveBalance ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-red-50 text-red-700 ring-red-100"
+          )}
+        >
+          结余 {balance}
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3">
+        <div className="rounded-[18px] bg-red-50/80 p-3 ring-1 ring-red-100 sm:rounded-[20px] sm:p-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-red-700 sm:text-sm">
+            <ArrowDownLeft className="h-4 w-4" />
+            本月支出
+          </div>
+          <p className="mt-2 break-all text-base font-semibold tracking-tight text-slate-950 sm:hidden">{formatCurrency(expense, { compact: true })}</p>
+          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight text-slate-950 sm:block">{formatCurrency(expense)}</p>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">本月消费总额</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:text-xs", expenseChange.badgeClass)}>
+              <expenseChange.icon className="h-3.5 w-3.5" />
+              {expenseChange.label}
+            </span>
+            <span className="text-xs text-slate-500 sm:text-sm">{expenseChange.previousLabel}</span>
+          </div>
+        </div>
+
+        <div className="rounded-[18px] bg-blue-50/80 p-3 ring-1 ring-blue-100 sm:rounded-[20px] sm:p-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-blue-700 sm:text-sm">
+            <ArrowUpRight className="h-4 w-4" />
+            本月收入
+          </div>
+          <p className="mt-2 break-all text-base font-semibold tracking-tight text-slate-950 sm:hidden">{formatCurrency(income, { compact: true })}</p>
+          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight text-slate-950 sm:block">{formatCurrency(income)}</p>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">已记录入账</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:text-xs", incomeChange.badgeClass)}>
+              <incomeChange.icon className="h-3.5 w-3.5" />
+              {incomeChange.label}
+            </span>
+            <span className="text-xs text-slate-500 sm:text-sm">{incomeChange.previousLabel}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function getMonthOverMonthMeta(current: number, previous: number, favorableWhenIncreasing: boolean) {
+  if (previous <= 0) {
+    return {
+      label: current === 0 ? "环比 0%" : "环比 新增",
+      previousLabel: "上月无记录",
+      badgeClass: MOM_BADGE_CLASS.neutral,
+      icon: ArrowRight,
+    };
+  }
+
+  const delta = ((current - previous) / previous) * 100;
+
+  if (Math.abs(delta) < 0.1) {
+    return {
+      label: "环比 0%",
+      previousLabel: `上月 ${formatCurrency(previous)}`,
+      badgeClass: MOM_BADGE_CLASS.neutral,
+      icon: ArrowRight,
+    };
+  }
+
+  const rising = delta > 0;
+  const favorable = favorableWhenIncreasing ? rising : !rising;
+
+  return {
+    label: `环比 ${delta > 0 ? "+" : ""}${Math.abs(delta) >= 10 ? delta.toFixed(0) : delta.toFixed(1)}%`,
+    previousLabel: `上月 ${formatCurrency(previous)}`,
+    badgeClass: favorable ? MOM_BADGE_CLASS.positive : MOM_BADGE_CLASS.negative,
+    icon: rising ? ArrowUp : TrendingDown,
+  };
+}
+
 function CompactStat({
   label,
   value,
@@ -681,7 +770,7 @@ function TransactionRow({
   const isIncome = transaction.type === "INCOME";
 
   return (
-    <div className={cn("flex items-center justify-between gap-2.5 rounded-[18px] border border-slate-100 bg-slate-50/70 px-3 py-2.5 transition hover:border-slate-200 hover:bg-white sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3", className)}>
+    <div className={cn("flex items-center justify-between gap-2.5 rounded-[18px] bg-slate-50/70 px-3 py-2.5 transition hover:bg-white sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3", className)}>
       <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <div
           className={cn(
@@ -723,7 +812,7 @@ function BudgetAlertCard({
   const scopeLabel = alert.category === "ALL" ? "总预算" : alert.category;
 
   return (
-    <div className={cn("relative overflow-hidden rounded-[18px] border border-slate-100 bg-slate-50/80 p-3 sm:rounded-[24px] sm:p-4", className)}>
+    <div className={cn("relative overflow-hidden rounded-[18px] bg-slate-50/80 p-3 sm:rounded-[24px] sm:p-4", className)}>
       <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", style.line)} />
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
@@ -763,35 +852,5 @@ function BudgetAlertCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function QuickLink({
-  href,
-  icon: Icon,
-  title,
-  detail,
-  tone,
-}: {
-  href: string;
-  icon: LucideIcon;
-  title: string;
-  detail: string;
-  tone: Tone;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-[18px] border border-slate-100 bg-slate-50/80 p-3 transition hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:shadow-lg sm:rounded-[24px] sm:p-4"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className={cn("rounded-xl p-2.5 ring-1 transition sm:rounded-2xl sm:p-3", STAT_TONE_CLASS[tone])}>
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-        </div>
-        <ArrowRight className="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-700 sm:h-4 sm:w-4" />
-      </div>
-      <p className="mt-3 text-sm font-semibold text-slate-950 sm:mt-4 sm:text-base">{title}</p>
-      <p className="mt-1 hidden text-sm text-slate-500 sm:block">{detail}</p>
-    </Link>
   );
 }
