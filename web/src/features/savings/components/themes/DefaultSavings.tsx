@@ -365,8 +365,6 @@ export function SavingsDefaultTheme({
       <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5" style={getThemeModuleStyle("savings")}>
         <DelayedRender delay={0}>
           <ThemeHero className="p-4 sm:p-6 lg:p-8">
-            <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_72%)] lg:block" />
-            <div className="absolute -right-20 top-8 h-40 w-40 rounded-full bg-emerald-200/40 blur-3xl sm:h-52 sm:w-52" />
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>储蓄工作台</h1>

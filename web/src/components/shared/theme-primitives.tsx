@@ -28,10 +28,10 @@ const NOTICE_CLASS_MAP: Record<ThemeTone, string> = {
 };
 
 export const THEME_SURFACE_CLASS =
-  "relative overflow-hidden rounded-[18px] border [border-color:var(--module-surface-border)] [background:linear-gradient(145deg,var(--module-surface-tint)_0%,transparent_58%),var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] sm:rounded-[22px]";
+  "relative overflow-hidden rounded-[18px] border [border-color:var(--module-surface-border)] [background:var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] sm:rounded-[22px]";
 
 export const THEME_HERO_CLASS =
-  "relative overflow-hidden rounded-[22px] border [border-color:var(--module-hero-border)] [background:linear-gradient(145deg,var(--module-hero-tint)_0%,transparent_46%),var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8";
+  "relative overflow-hidden rounded-[22px] border [border-color:var(--module-hero-border)] [background:var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8";
 
 export const THEME_DARK_PANEL_CLASS =
   "relative overflow-hidden rounded-[18px] [background:var(--theme-dark-panel-bg)] [box-shadow:var(--theme-dark-panel-shadow)] text-white sm:rounded-[22px]";
@@ -55,7 +55,7 @@ export const THEME_ICON_BUTTON_CLASS =
   "inline-flex h-10 w-10 items-center justify-center rounded-[18px] [background:var(--theme-input-bg)] [color:var(--theme-muted-text)] transition hover:brightness-105 hover:[color:var(--theme-body-text)]";
 
 export const THEME_LIST_ITEM_CLASS =
-  "flex items-center justify-between rounded-[18px] border [border-color:var(--module-surface-border)] [background:linear-gradient(145deg,var(--module-surface-tint)_0%,transparent_58%),var(--theme-surface-bg)] px-4 py-3 text-xs transition hover:brightness-105 sm:text-sm";
+  "flex items-center justify-between rounded-[18px] border [border-color:var(--module-surface-border)] [background:var(--theme-surface-bg)] px-4 py-3 text-xs transition hover:brightness-105 sm:text-sm";
 
 const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
   dashboard: {
@@ -70,7 +70,7 @@ const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
     "--module-accent-soft": "rgba(59, 130, 246, 0.14)",
     "--module-accent-ring": "rgba(59, 130, 246, 0.16)",
     "--module-progress-gradient": "linear-gradient(90deg, #2563eb 0%, #60a5fa 100%)",
-    "--module-soft-panel": "rgba(239, 246, 255, 0.8)",
+    "--module-soft-panel": "#eff6ff",
   } as CSSProperties,
   consumption: {
     "--module-surface-tint": "rgba(13, 148, 136, 0.08)",
@@ -84,7 +84,7 @@ const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
     "--module-accent-soft": "rgba(16, 185, 129, 0.14)",
     "--module-accent-ring": "rgba(14, 165, 233, 0.14)",
     "--module-progress-gradient": "linear-gradient(90deg, #07c160 0%, #1677ff 100%)",
-    "--module-soft-panel": "rgba(236, 253, 245, 0.78)",
+    "--module-soft-panel": "#ecfdf5",
   } as CSSProperties,
   assets: {
     "--module-surface-tint": "rgba(99, 102, 241, 0.12)",
@@ -98,7 +98,7 @@ const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
     "--module-accent-soft": "rgba(99, 102, 241, 0.14)",
     "--module-accent-ring": "rgba(129, 140, 248, 0.16)",
     "--module-progress-gradient": "linear-gradient(90deg, #4f46e5 0%, #8b5cf6 100%)",
-    "--module-soft-panel": "rgba(238, 242, 255, 0.82)",
+    "--module-soft-panel": "#eef2ff",
   } as CSSProperties,
   loans: {
     "--module-surface-tint": "rgba(245, 158, 11, 0.12)",
@@ -112,7 +112,7 @@ const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
     "--module-accent-soft": "rgba(245, 158, 11, 0.14)",
     "--module-accent-ring": "rgba(245, 158, 11, 0.16)",
     "--module-progress-gradient": "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)",
-    "--module-soft-panel": "rgba(255, 247, 237, 0.84)",
+    "--module-soft-panel": "#fff7ed",
   } as CSSProperties,
   savings: {
     "--module-surface-tint": "rgba(16, 185, 129, 0.12)",
@@ -126,7 +126,7 @@ const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
     "--module-accent-soft": "rgba(16, 185, 129, 0.14)",
     "--module-accent-ring": "rgba(52, 211, 153, 0.16)",
     "--module-progress-gradient": "linear-gradient(90deg, #059669 0%, #34d399 100%)",
-    "--module-soft-panel": "rgba(236, 253, 245, 0.82)",
+    "--module-soft-panel": "#ecfdf5",
   } as CSSProperties,
 };
 
@@ -247,8 +247,8 @@ export function ThemeMetricCard({
 
   return (
     <div
-      className={cn(
-        "rounded-[16px] border [border-color:var(--module-metric-border)] [background:linear-gradient(160deg,var(--module-metric-tint)_0%,transparent_72%),var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-3 sm:rounded-[18px] sm:p-4",
+        className={cn(
+        "rounded-[16px] border [border-color:var(--module-metric-border)] [background:var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-3 sm:rounded-[18px] sm:p-4",
         className
       )}
     >

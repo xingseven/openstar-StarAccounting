@@ -32,7 +32,6 @@ import {
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
 import { DelayedRender } from "@/components/shared/DelayedRender";
-import { GridDecoration } from "@/components/shared/GridDecoration";
 import { DashboardLoadingShell } from "./DashboardLoadingShell";
 import {
   THEME_SURFACE_CLASS,
@@ -197,11 +196,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
     >
       <DelayedRender delay={0}>
         <ThemeHero className="p-3.5 sm:p-6 lg:p-8">
-          <div className="absolute inset-y-0 right-0 hidden w-[36%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.14),transparent_70%)] lg:block" />
-          <div className="absolute -right-20 top-8 h-40 w-40 rounded-full bg-blue-200/35 blur-3xl sm:-right-24 sm:top-10 sm:h-56 sm:w-56" />
-          <div className="absolute left-6 top-0 h-28 w-28 rounded-full bg-white/80 blur-3xl sm:left-10 sm:h-40 sm:w-40" />
-          <GridDecoration mode="light" opacity={0.05} className="mix-blend-multiply" />
-
           <div className="relative z-10">
             <div className="space-y-3 sm:space-y-5">
               <div className="flex flex-wrap items-center gap-2">
@@ -279,7 +273,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </div>
 
               {criticalAlerts.length > 0 && !alertsDismissed ? (
-                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[18px] bg-amber-50/70 px-3 py-2.5 backdrop-blur-sm sm:flex sm:gap-3 sm:rounded-[20px] sm:px-4 sm:py-3">
+                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[18px] border border-amber-100 bg-amber-50 px-3 py-2.5 sm:flex sm:gap-3 sm:rounded-[20px] sm:px-4 sm:py-3">
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-amber-100 p-2 text-amber-700 sm:rounded-2xl">
                       <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -303,8 +297,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     <button
                       type="button"
                       onClick={() => setAlertsDismissed(true)}
-                      className="rounded-full bg-white/80 px-2.5 py-1.5 text-xs font-medium transition hover:bg-white hover:text-slate-900 sm:px-3 sm:py-2 sm:text-sm"
-                      style={{ color: "var(--theme-label-text)" }}
+                      className="rounded-full px-2.5 py-1.5 text-xs font-medium transition hover:brightness-95 sm:px-3 sm:py-2 sm:text-sm"
+                      style={{ color: "var(--theme-label-text)", background: "var(--theme-input-bg)" }}
                     >
                       暂时收起
                     </button>

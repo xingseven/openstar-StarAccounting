@@ -276,10 +276,10 @@ function PlatformOverviewCard({
 }) {
   const cardClass =
     platform === "wechat"
-      ? "border-[#07c160]/15 bg-[linear-gradient(145deg,rgba(7,193,96,0.08)_0%,rgba(255,255,255,0.98)_58%)]"
+      ? "border-[#07c160]/20 bg-[#f0fdf4]"
       : platform === "alipay"
-        ? "border-[#1677ff]/15 bg-[linear-gradient(145deg,rgba(22,119,255,0.08)_0%,rgba(255,255,255,0.98)_58%)]"
-        : "border-slate-200 bg-[linear-gradient(145deg,rgba(15,23,42,0.05)_0%,rgba(255,255,255,0.98)_58%)]";
+        ? "border-[#1677ff]/20 bg-[#eff6ff]"
+        : "border-slate-200 bg-slate-50";
 
   const totalLabel = platform === "total" ? "本期总流水" : "平台总流水";
   const getComparisonTone = (value: number | null) =>
@@ -356,7 +356,7 @@ function PlatformOverviewCard({
             <p className="text-[15px] font-semibold text-slate-950 sm:text-sm">{title}</p>
             <p className="mt-0.5 hidden text-[11px] text-slate-500 sm:block sm:mt-1 sm:text-xs">{subtitle}</p>
           </div>
-          <span className="hidden rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200/70 sm:inline-flex sm:px-2.5 sm:py-1 sm:text-[11px]">
+          <span className="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600 ring-1 ring-slate-200 sm:inline-flex sm:px-2.5 sm:py-1 sm:text-[11px]">
             {totalLabel}
           </span>
         </div>
@@ -743,7 +743,7 @@ function DesktopFilterFloat({
   }
 
   return (
-    <div className="fixed bottom-24 right-6 z-40 hidden w-[432px] rounded-[24px] border border-slate-200 bg-white/96 p-3.5 shadow-[0_24px_60px_rgba(15,23,42,0.16)] backdrop-blur-md md:block">
+    <div className="fixed bottom-24 right-6 z-40 hidden w-[432px] rounded-[24px] border border-slate-200 bg-white p-3.5 shadow-[0_24px_60px_rgba(15,23,42,0.12)] md:block">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-950">筛选消费流水</p>
@@ -1766,9 +1766,6 @@ export function ConsumptionDefaultTheme({
       <div className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5" style={getThemeModuleStyle("consumption")}>
         <DelayedRender delay={0}>
         <ThemeHero className="p-3.5 sm:p-6 lg:p-8">
-            <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(13,148,136,0.18),transparent_70%)] lg:block" />
-            <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-emerald-200/35 blur-3xl sm:h-56 sm:w-56" />
-
             <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.92fr)]">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
@@ -1894,7 +1891,7 @@ export function ConsumptionDefaultTheme({
                   </div>
 
                   {/* Top 商户 */}
-                  <div className="hidden xl:block rounded-[18px] bg-white/72 px-3.5 py-3 backdrop-blur-sm ring-1 ring-white/65 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+                  <div className="hidden xl:block rounded-[18px] border border-slate-200 bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Top 商户</p>
                     <div className="mt-2 flex items-center gap-2.5">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/12 text-blue-600">
@@ -1910,7 +1907,7 @@ export function ConsumptionDefaultTheme({
                   </div>
 
                   {/* 消费笔数 */}
-                  <div className="hidden xl:block rounded-[18px] bg-white/72 px-3.5 py-3 backdrop-blur-sm ring-1 ring-white/65 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+                  <div className="hidden xl:block rounded-[18px] border border-slate-200 bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">消费笔数</p>
                     <div className="mt-2 flex items-center gap-2.5">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/12 text-violet-600">
@@ -1930,7 +1927,7 @@ export function ConsumptionDefaultTheme({
                   </div>
 
                   {/* 收支结余 */}
-                  <div className="hidden xl:block rounded-[18px] bg-white/72 px-3.5 py-3 backdrop-blur-sm ring-1 ring-white/65 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
+                  <div className="hidden xl:block rounded-[18px] border border-slate-200 bg-white px-3.5 py-3 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">收支结余</p>
                     <p className={cn("mt-1.5 text-xl font-semibold tracking-tight", balance >= 0 ? "text-emerald-400" : "text-red-400")}>
                       {balance >= 0 ? "+" : ""}{formatCurrency(balance)}
@@ -2006,9 +2003,9 @@ export function ConsumptionDefaultTheme({
         {/* 鈹€鈹€ 妗岄潰绔細sticky 鍐呰仈绛涢€夊伐鍏锋爮 鈹€鈹€ */}
         <div className="hidden">
           <div
-            className="overflow-hidden rounded-[22px] border px-4 py-3 backdrop-blur-md"
+            className="overflow-hidden rounded-[22px] border px-4 py-3"
             style={{
-              background: "var(--theme-header-bg,rgba(255,255,255,0.88))",
+              background: "var(--theme-header-bg)",
               borderColor: "var(--theme-surface-border,rgba(148,163,184,0.12))",
               boxShadow: "0 4px 20px rgba(15,23,42,0.08)",
             }}

@@ -355,9 +355,6 @@ export function AssetsDefaultTheme({
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5" style={getThemeModuleStyle("assets")}>
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
-          <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.18),transparent_70%)] lg:block" />
-          <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-indigo-200/35 blur-3xl sm:h-56 sm:w-56" />
-
           <div className="relative z-10 space-y-4 sm:space-y-5">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -424,7 +421,7 @@ export function AssetsDefaultTheme({
               </div>
 
               <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(260px,0.92fr)_minmax(0,1.4fr)] xl:items-stretch">
-                <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">
+                <div className="rounded-[22px] border border-white/10 bg-slate-900/40 p-4">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-blue-100/60">Largest Holding</p>
                 <div className="mt-3 flex items-center gap-3">
                   {largestAsset ? <AssetAvatar item={largestAsset} className="border-white/12 bg-white/10" /> : null}
