@@ -53,7 +53,7 @@ export function Header() {
   }
 
   return (
-    <header className="rounded-[18px] border [border-color:var(--theme-header-border)] [background:var(--theme-header-bg)] [box-shadow:var(--theme-header-shadow)] backdrop-blur-sm sm:rounded-[20px]">
+    <header className="rounded-[16px] [background:var(--theme-header-bg)] backdrop-blur-md sm:rounded-[18px]">
       <div className="flex min-h-[52px] items-center gap-2 px-3 py-2 sm:min-h-[60px] sm:gap-3 sm:px-5 sm:py-3">
         <div className={cn("min-w-0 shrink-0 md:max-w-[240px] lg:max-w-[280px]", hasInlineContent && "md:hidden")}>
           <h1 className="truncate text-[15px] font-semibold tracking-tight text-slate-950 sm:text-xl">{pageMeta.title}</h1>
@@ -70,7 +70,7 @@ export function Header() {
           <button
             type="button"
             aria-label="通知"
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-[18px] border border-slate-200/80 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 sm:h-10 sm:w-10 sm:rounded-2xl"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-[16px] bg-white/74 text-slate-500 transition hover:bg-white hover:text-slate-950 sm:h-10 sm:w-10 sm:rounded-[18px]"
           >
             <Bell className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             <span className="absolute right-[10px] top-[10px] h-1.5 w-1.5 rounded-full bg-blue-500 ring-2 ring-white sm:right-3 sm:top-3 sm:h-2 sm:w-2" />
@@ -81,13 +81,13 @@ export function Header() {
               type="button"
               onClick={() => setShowDropdown((value) => !value)}
               className={cn(
-                "group flex items-center gap-1.5 rounded-[18px] border border-slate-200/80 bg-white px-1 py-1 transition hover:border-slate-300 hover:bg-slate-50 sm:gap-2 sm:rounded-[20px] sm:px-1.5 sm:py-1.5",
-                showDropdown && "bg-slate-50 border-slate-300"
+                "group flex items-center gap-1.5 rounded-[16px] bg-white/74 px-1 py-1 transition hover:bg-white sm:gap-2 sm:rounded-[18px] sm:px-1.5 sm:py-1.5",
+                showDropdown && "bg-white"
               )}
               aria-label="用户菜单"
               aria-expanded={showDropdown}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-[16px] bg-slate-100 text-slate-700 sm:h-9 sm:w-9 sm:rounded-2xl">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[14px] bg-slate-100/85 text-slate-700 sm:h-9 sm:w-9 sm:rounded-[16px]">
                 <UserIcon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
               </div>
 
@@ -100,8 +100,8 @@ export function Header() {
             </button>
 
             {showDropdown ? (
-              <div className="absolute right-0 top-full z-50 mt-3 w-[240px] rounded-[22px] border border-slate-200/80 bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
-                <div className="rounded-[18px] bg-slate-50 p-3">
+              <div className="absolute right-0 top-full z-50 mt-3 w-[240px] rounded-[20px] bg-white/94 p-2 shadow-[0_20px_48px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+                <div className="rounded-[16px] bg-slate-50/90 p-3">
                   <p className="truncate text-sm font-semibold text-slate-950">{displayName}</p>
                   <p className="mt-1 truncate text-xs text-slate-500">{emailText}</p>
                 </div>

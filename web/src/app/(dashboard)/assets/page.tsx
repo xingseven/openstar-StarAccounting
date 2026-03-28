@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import type { Asset } from "@/types";
 import { MOCK_ASSETS } from "@/features/shared/mockData";
+import { AssetsLoadingShell } from "@/features/assets/components/themes/AssetsLoadingShell";
 import {
   BottomSheet,
   BottomSheetContent,
@@ -31,7 +32,7 @@ const AssetsDefaultTheme = dynamic(
   () => import("@/features/assets/components/themes/DefaultAssets").then(mod => mod.AssetsDefaultTheme),
   {
     ssr: false,
-    loading: () => null
+    loading: () => <AssetsLoadingShell />
   }
 );
 
@@ -155,10 +156,11 @@ export default function AssetsPage() {
   const [balance, setBalance] = useState("");
   const [currency, setCurrency] = useState("CNY");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await fetchAssetsData(displayCurrency);
       // 如果 API 返回空数据，使用 mock 数据用于展示

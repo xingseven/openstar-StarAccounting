@@ -43,10 +43,22 @@ export const MOCK_MERCHANTS = [
   return { ...item, fill: colors[i % 5] };
 });
 
-export const MOCK_TREND = Array.from({ length: 30 }, (_, i) => ({
-  day: `2024-03-${String(i + 1).padStart(2, "0")}`,
-  total: Math.floor(Math.random() * 1000) + 100,
-}));
+export const MOCK_TREND = Array.from({ length: 30 }, (_, i) => {
+  const expense = Math.floor(Math.random() * 1000) + 100;
+  const income = Math.floor(Math.random() * 1200) + 200;
+  return {
+    day: `2024-03-${String(i + 1).padStart(2, "0")}`,
+    expense,
+    income,
+    total: expense + income,
+  };
+});
+
+export const MOCK_TREND_YEARLY = [
+  { day: "2022", expense: 85600, income: 168000, total: 253600 },
+  { day: "2023", expense: 104200, income: 182500, total: 286700 },
+  { day: "2024", expense: 12580, income: 25000, total: 37580 },
+];
 
 export const MOCK_STACKED_BAR = MOCK_TREND.slice(0, 14).map(d => ({
   day: d.day,

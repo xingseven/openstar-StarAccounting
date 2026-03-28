@@ -6,12 +6,13 @@ import dynamic from "next/dynamic";
 import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
 import { MOCK_SAVINGS, MOCK_SAVINGS_TRANSACTIONS } from "@/features/shared/mockData";
 import { useNoticeDialog } from "@/components/ui/confirm-dialog";
+import { SavingsLoadingShell } from "@/features/savings/components/themes/SavingsLoadingShell";
 
 const SavingsDefaultTheme = dynamic(
   () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
   {
     ssr: false,
-    loading: () => null
+    loading: () => <SavingsLoadingShell />
   }
 );
 import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
@@ -42,7 +43,7 @@ export default function SavingsPage() {
   const { notify, NoticeDialog } = useNoticeDialog();
   const [items, setItems] = useState<SavingsGoal[]>(MOCK_SAVINGS);
   const [transactions, setTransactions] = useState<TransactionItem[]>(MOCK_SAVINGS_TRANSACTIONS);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);

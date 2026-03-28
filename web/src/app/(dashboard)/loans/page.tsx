@@ -19,6 +19,7 @@ import {
   MOCK_LOANS_PAID_VS_REMAINING,
   MOCK_LOANS_PLATFORM_DATA,
 } from "@/features/shared/mockData";
+import { LoansLoadingShell } from "@/features/loans/components/themes/LoansLoadingShell";
 import {
   THEME_DIALOG_INPUT_CLASS,
   THEME_DIALOG_SELECT_CLASS,
@@ -34,7 +35,7 @@ const LoansDefaultTheme = dynamic(
   () => import("@/features/loans/components/themes/DefaultLoans").then((mod) => mod.LoansDefaultTheme),
   {
     ssr: false,
-    loading: () => null,
+    loading: () => <LoansLoadingShell />,
   }
 );
 
@@ -99,7 +100,7 @@ export default function LoansPage() {
   const [items, setItems] = useState<Loan[]>(MOCK_LOANS);
   const [platformData, setPlatformData] = useState(MOCK_LOANS_PLATFORM_DATA);
   const [paidVsRemainingData, setPaidVsRemainingData] = useState(MOCK_LOANS_PAID_VS_REMAINING);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Loan | null>(null);

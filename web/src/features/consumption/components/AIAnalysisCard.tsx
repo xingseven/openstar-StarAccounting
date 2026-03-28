@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import {
+  AlertCircle,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { Sparkles, TrendingUp, AlertCircle, Lightbulb, ChevronDown, ChevronUp, RefreshCw, Loader2, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ThemeNotice } from "@/components/shared/theme-primitives";
 
 type Insight = {
@@ -57,94 +68,98 @@ interface AIAnalysisCardProps {
   compact?: boolean;
 }
 
-// 打字机效果 Hook
-function useTypingEffect(text: string, speed: number = 30, startDelay: number = 0) {
+function useTypingEffect(text: string, speed = 30, startDelay = 0) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (!text) {
-      setDisplayedText("");
-      return;
+      const resetTimeout = window.setTimeout(() => {
+        setDisplayedText("");
+        setIsTyping(false);
+      }, 0);
+
+      return () => window.clearTimeout(resetTimeout);
     }
 
-    setDisplayedText("");
-    setIsTyping(true);
+    let interval: number | undefined;
+    const delayTimeout = window.setTimeout(() => {
+      setDisplayedText("");
+      setIsTyping(true);
 
-    const delayTimeout = setTimeout(() => {
       let currentIndex = 0;
-      const interval = setInterval(() => {
+      interval = window.setInterval(() => {
         if (currentIndex <= text.length) {
           setDisplayedText(text.slice(0, currentIndex));
-          currentIndex++;
+          currentIndex += 1;
         } else {
-          clearInterval(interval);
+          if (interval !== undefined) {
+            window.clearInterval(interval);
+          }
           setIsTyping(false);
         }
       }, speed);
-
-      return () => clearInterval(interval);
     }, startDelay);
 
-    return () => clearTimeout(delayTimeout);
+    return () => {
+      if (interval !== undefined) {
+        window.clearInterval(interval);
+      }
+      window.clearTimeout(delayTimeout);
+    };
   }, [text, speed, startDelay]);
 
   return { displayedText, isTyping };
 }
 
-// 骨架屏动画组件 - 优化动画节奏
 function SkeletonLoader() {
   return (
     <div className="space-y-4">
-      {/* Header skeleton */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-200 to-blue-200 animate-pulse" />
-        <div className="space-y-2 flex-1">
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
-          <div className="h-3 bg-gray-100 rounded animate-pulse w-40" />
+        <div className="h-10 w-10 animate-pulse rounded-xl bg-gradient-to-br from-blue-200 to-blue-200" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+          <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
         </div>
       </div>
 
-      {/* Stats skeleton - 错开动画延迟 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="bg-gray-100 rounded-xl p-3 animate-pulse"
-            style={{ animationDelay: `${i * 100}ms`, animationDuration: '800ms' }}
+            className="animate-pulse rounded-xl bg-gray-100 p-3"
+            style={{ animationDelay: `${i * 100}ms`, animationDuration: "800ms" }}
           >
-            <div className="h-2 bg-gray-200 rounded w-12 mb-2" />
-            <div className="h-5 bg-gray-200 rounded w-16" />
+            <div className="mb-2 h-2 w-12 rounded bg-gray-200" />
+            <div className="h-5 w-16 rounded bg-gray-200" />
           </div>
         ))}
       </div>
 
-      {/* Chart skeleton */}
-      <div className="bg-gradient-to-r from-blue-50 to-blue-50 rounded-xl p-4">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-          <div className="h-3 bg-gray-300 rounded animate-pulse w-20" />
+      <div className="rounded-xl bg-gradient-to-r from-blue-50 to-blue-50 p-4">
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+          <div className="h-3 w-20 animate-pulse rounded bg-gray-300" />
         </div>
         <div className="space-y-2">
-          <div className="h-3 bg-gray-200 rounded animate-pulse w-full" />
-          <div className="h-3 bg-gray-200 rounded animate-pulse w-4/5" />
-          <div className="h-3 bg-gray-200 rounded animate-pulse w-3/5" />
+          <div className="h-3 w-full animate-pulse rounded bg-gray-200" />
+          <div className="h-3 w-4/5 animate-pulse rounded bg-gray-200" />
+          <div className="h-3 w-3/5 animate-pulse rounded bg-gray-200" />
         </div>
       </div>
 
-      {/* Insights skeleton */}
       <div className="space-y-2">
-        <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
+        <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
         {[1, 2].map((i) => (
           <div
             key={i}
-            className="flex items-start gap-2 p-3 bg-gray-100 rounded-lg animate-pulse"
-            style={{ animationDelay: `${i * 150}ms`, animationDuration: '700ms' }}
+            className="flex items-start gap-2 rounded-lg bg-gray-100 p-3 animate-pulse"
+            style={{ animationDelay: `${i * 150}ms`, animationDuration: "700ms" }}
           >
-            <div className="w-4 h-4 bg-gray-200 rounded-full animate-pulse" />
-            <div className="space-y-1 flex-1">
-              <div className="h-3 bg-gray-200 rounded w-24" />
-              <div className="h-2 bg-gray-100 rounded w-40" />
+            <div className="h-4 w-4 rounded-full bg-gray-200" />
+            <div className="flex-1 space-y-1">
+              <div className="h-3 w-24 rounded bg-gray-200" />
+              <div className="h-2 w-40 rounded bg-gray-100" />
             </div>
           </div>
         ))}
@@ -153,59 +168,55 @@ function SkeletonLoader() {
   );
 }
 
+function AnalysisShell({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={`overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm ${className}`}>{children}</div>;
+}
+
 export function AIAnalysisCard({ transactions, budgets, className = "", compact = false }: AIAnalysisCardProps) {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [typingPhase, setTypingPhase] = useState<"summary" | "insights" | "suggestions" | "done">("summary");
   const [visibleInsights, setVisibleInsights] = useState(0);
   const [visibleSuggestions, setVisibleSuggestions] = useState(0);
 
-  // Summary 打字机效果 - 优化速度
-  const { displayedText: summaryText, isTyping: isSummaryTyping } = useTypingEffect(
-    analysis?.summary || "",
-    15,  // 加速：25ms -> 15ms 每字
-    0
-  );
+  const { displayedText: summaryText, isTyping: isSummaryTyping } = useTypingEffect(analysis?.summary || "", 15, 0);
 
-  // Summary 完成后进入 insights 阶段
   useEffect(() => {
     if (!isSummaryTyping && analysis?.summary && typingPhase === "summary") {
       setTypingPhase("insights");
     }
-  }, [isSummaryTyping, analysis?.summary, typingPhase]);
+  }, [analysis?.summary, isSummaryTyping, typingPhase]);
 
-  // Insights 逐个显示 - 优化速度
   useEffect(() => {
     if (typingPhase === "insights" && analysis?.insights) {
       if (visibleInsights < analysis.insights.length) {
-        const timer = setTimeout(() => {
-          setVisibleInsights((prev) => prev + 1);
-        }, 150);  // 加速：300ms -> 150ms
+        const timer = setTimeout(() => setVisibleInsights((prev) => prev + 1), 150);
         return () => clearTimeout(timer);
-      } else {
-        setTypingPhase("suggestions");
       }
+      setTypingPhase("suggestions");
     }
-  }, [typingPhase, visibleInsights, analysis?.insights]);
+  }, [analysis?.insights, typingPhase, visibleInsights]);
 
-  // Suggestions 逐个显示 - 优化速度
   useEffect(() => {
     if (typingPhase === "suggestions" && analysis?.suggestions) {
       if (visibleSuggestions < analysis.suggestions.length) {
-        const timer = setTimeout(() => {
-          setVisibleSuggestions((prev) => prev + 1);
-        }, 150);  // 加速：300ms -> 150ms
+        const timer = setTimeout(() => setVisibleSuggestions((prev) => prev + 1), 150);
         return () => clearTimeout(timer);
-      } else {
-        setTypingPhase("done");
       }
+      setTypingPhase("done");
     }
-  }, [typingPhase, visibleSuggestions, analysis?.suggestions]);
+  }, [analysis?.suggestions, typingPhase, visibleSuggestions]);
 
-  // 开始分析时重置状态
   useEffect(() => {
     if (analysis) {
       setTypingPhase("summary");
@@ -214,7 +225,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
     }
   }, [analysis]);
 
-  async function handleAnalyze() {
+  async function runAnalysis() {
     setLoading(true);
     setError(null);
     setAnalysis(null);
@@ -224,7 +235,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
       const result = await apiFetch<AnalysisResult>("/api/ai/analyze-consumption", {
         method: "POST",
         body: JSON.stringify({
-          transactions: transactions.map(t => ({
+          transactions: transactions.map((t) => ({
             id: t.id,
             amount: t.amount,
             category: t.category,
@@ -233,7 +244,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
             merchant: t.merchant,
             description: t.description,
           })),
-          budgets: budgets.map(b => ({
+          budgets: budgets.map((b) => ({
             category: b.category,
             limit: b.limit,
             spent: b.spent,
@@ -251,50 +262,47 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
     }
   }
 
-  function getInsightIcon(type: string) {
+  function handleAnalyze() {
+    if (compact) setDialogOpen(true);
+    void runAnalysis();
+  }
+
+  function handleCompactOpen() {
+    setDialogOpen(true);
+    if (!analysis && !error && !loading) {
+      void runAnalysis();
+    }
+  }
+
+  function getInsightIcon(type: Insight["type"]) {
     switch (type) {
       case "warning":
-        return <AlertCircle className="w-4 h-4 text-amber-500" />;
+        return <AlertCircle className="h-4 w-4 text-amber-500" />;
       case "success":
-        return <TrendingUp className="w-4 h-4 text-green-500" />;
+        return <TrendingUp className="h-4 w-4 text-green-500" />;
       default:
-        return <Sparkles className="w-4 h-4 text-blue-500" />;
+        return <Sparkles className="h-4 w-4 text-blue-500" />;
     }
   }
 
-  function getPriorityColor(priority: string) {
+  function getPriorityColor(priority: Suggestion["priority"]) {
     switch (priority) {
       case "high":
-        return "bg-red-50 text-red-700 border-red-200";
+        return "border-red-200 bg-red-50 text-red-700";
       case "medium":
-        return "bg-amber-50 text-amber-700 border-amber-200";
+        return "border-amber-200 bg-amber-50 text-amber-700";
       default:
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "border-blue-200 bg-blue-50 text-blue-700";
     }
   }
 
-  if (!hasAnalyzed && !loading) {
-    if (compact) {
-      return (
-        <div className={`rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
-          <button
-            onClick={handleAnalyze}
-            disabled={transactions.length === 0 || loading}
-            className="w-full px-4 py-2 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>AI 智能分析</span>
-          </button>
-        </div>
-      );
-    }
-
+  function renderInitialCard(extraClassName = "") {
     return (
-      <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+      <AnalysisShell className={extraClassName}>
         <div className="p-4 md:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-500 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-500">
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">AI 智能分析</h3>
@@ -305,27 +313,25 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
           <button
             onClick={handleAnalyze}
             disabled={transactions.length === 0}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-500 text-white font-medium hover:from-blue-600 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-500 px-4 py-3 font-medium text-white transition-all hover:from-blue-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="h-4 w-4" />
             开始 AI 分析
           </button>
 
-          {transactions.length === 0 && (
-            <p className="text-sm text-gray-400 text-center mt-2">暂无交易数据</p>
-          )}
+          {transactions.length === 0 ? <p className="mt-2 text-center text-sm text-gray-400">暂无交易数据</p> : null}
         </div>
-      </div>
+      </AnalysisShell>
     );
   }
 
-  if (loading) {
+  function renderLoadingCard(extraClassName = "") {
     return (
-      <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+      <AnalysisShell className={extraClassName}>
         <div className="p-4 md:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-500 flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-white animate-spin" />
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-500">
+              <Loader2 className="h-5 w-5 animate-spin text-white" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">AI 智能分析</h3>
@@ -335,181 +341,208 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
 
           <SkeletonLoader />
         </div>
-      </div>
+      </AnalysisShell>
     );
   }
 
-  if (error) {
+  function renderErrorCard(extraClassName = "") {
     return (
-      <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+      <AnalysisShell className={extraClassName}>
         <div className="space-y-4 p-4 md:p-6">
-          <ThemeNotice tone="red" title="AI 智能分析" description={error} />
-
-          <Button
-            onClick={handleAnalyze}
-            variant="outline"
-            className="h-11 w-full rounded-xl"
-          >
-            <RefreshCw className="w-4 h-4" />
+          <ThemeNotice tone="red" title="AI 智能分析" description={error ?? ""} />
+          <Button onClick={handleAnalyze} variant="outline" className="h-11 w-full rounded-xl">
+            <RefreshCw className="h-4 w-4" />
             重试
           </Button>
         </div>
-      </div>
+      </AnalysisShell>
     );
   }
 
-  // Compact mode - 长条形状
-  if (!analysis) return null;
+  function renderAnalysisCard(extraClassName = "") {
+    if (!analysis) return null;
 
-  return (
-    <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
-      <div className="p-4 md:p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-500 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+    const showExpandedContent = compact || expanded;
+
+    return (
+      <AnalysisShell className={extraClassName}>
+        <div className="p-4 md:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-500">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">AI 智能分析</h3>
+                <p className="text-xs text-gray-500">基于 {transactions.length} 笔交易</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">AI 智能分析</h3>
-              <p className="text-xs text-gray-500">基于 {transactions.length} 笔交易</p>
+            <button
+              onClick={handleAnalyze}
+              className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+              title="重新分析"
+            >
+              <RefreshCw className="h-4 w-4 text-gray-400" />
+            </button>
+          </div>
+
+          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-xl bg-gray-50 p-3">
+              <p className="mb-1 text-xs text-gray-500">总支出</p>
+              <p className="text-lg font-bold text-gray-900">¥{analysis.stats.totalExpense.toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 p-3">
+              <p className="mb-1 text-xs text-gray-500">日均消费</p>
+              <p className="text-lg font-bold text-gray-900">¥{analysis.stats.avgDaily.toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 p-3">
+              <p className="mb-1 text-xs text-gray-500">主要类别</p>
+              <p className="truncate text-lg font-bold text-gray-900">{analysis.stats.topCategory}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 p-3">
+              <p className="mb-1 text-xs text-gray-500">占比</p>
+              <p className="text-lg font-bold text-gray-900">{analysis.stats.topCategoryPercent}%</p>
             </div>
           </div>
-          <button
-            onClick={handleAnalyze}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            title="重新分析"
-          >
-            <RefreshCw className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">总支出</p>
-            <p className="text-lg font-bold text-gray-900">¥{analysis.stats.totalExpense.toFixed(2)}</p>
+          <div className="mb-4 min-h-[60px] rounded-xl bg-gradient-to-r from-blue-50 to-blue-50 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-blue-500" />
+              <span className="text-xs font-medium text-blue-600">消费总结</span>
+              {isSummaryTyping ? <Loader2 className="h-3 w-3 animate-spin text-blue-400" /> : null}
+            </div>
+            <p className="text-sm text-gray-700">
+              {summaryText}
+              {isSummaryTyping ? <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-blue-400" /> : null}
+            </p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">日均消费</p>
-            <p className="text-lg font-bold text-gray-900">¥{analysis.stats.avgDaily.toFixed(2)}</p>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">主要类别</p>
-            <p className="text-lg font-bold text-gray-900 truncate">{analysis.stats.topCategory}</p>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">占比</p>
-            <p className="text-lg font-bold text-gray-900">{analysis.stats.topCategoryPercent}%</p>
-          </div>
-        </div>
 
-        {/* Summary with typing effect */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-50 rounded-xl p-4 mb-4 min-h-[60px]">
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-blue-500" />
-            <span className="text-xs text-blue-600 font-medium">消费总结</span>
-            {isSummaryTyping && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
-          </div>
-          <p className="text-sm text-gray-700">
-            {summaryText}
-            {isSummaryTyping && <span className="inline-block w-1.5 h-4 bg-blue-400 ml-0.5 animate-pulse" />}
-          </p>
-        </div>
+          {!compact ? (
+            <button
+              onClick={() => setExpanded((prev) => !prev)}
+              className="flex w-full items-center justify-center gap-1 py-2 text-sm text-gray-500 transition-colors hover:text-gray-700"
+            >
+              {expanded ? (
+                <>
+                  <span>收起详情</span>
+                  <ChevronUp className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  <span>查看更多</span>
+                  <ChevronDown className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          ) : null}
 
-        {/* Expand/Collapse Toggle */}
+          {showExpandedContent ? (
+            <div className="space-y-4 border-t border-gray-100 pt-4">
+              {analysis.insights.length > 0 ? (
+                <div>
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Sparkles className="h-4 w-4 text-blue-500" />
+                    关键洞察
+                    {typingPhase === "insights" && visibleInsights < analysis.insights.length ? (
+                      <Loader2 className="ml-auto h-3 w-3 animate-spin text-blue-400" />
+                    ) : null}
+                  </h4>
+                  <div className="space-y-2">
+                    {analysis.insights.slice(0, visibleInsights).map((insight, idx) => (
+                      <div
+                        key={idx}
+                        className="animate-in slide-in-from-left-2 flex items-start gap-2 rounded-lg bg-gray-50 p-3 duration-300"
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        {getInsightIcon(insight.type)}
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{insight.title}</p>
+                          <p className="mt-0.5 text-xs text-gray-500">{insight.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {typingPhase === "insights"
+                      ? analysis.insights.slice(visibleInsights).map((_, idx) => (
+                          <div key={`insight-skeleton-${idx}`} className="flex animate-pulse items-start gap-2 rounded-lg bg-gray-50 p-3">
+                            <div className="h-4 w-4 rounded-full bg-gray-200" />
+                            <div className="flex-1 space-y-1">
+                              <div className="h-3 w-24 rounded bg-gray-200" />
+                              <div className="h-2 w-40 rounded bg-gray-100" />
+                            </div>
+                          </div>
+                        ))
+                      : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {analysis.suggestions.length > 0 ? (
+                <div>
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <Lightbulb className="h-4 w-4 text-amber-500" />
+                    优化建议
+                    {typingPhase === "suggestions" && visibleSuggestions < analysis.suggestions.length ? (
+                      <Loader2 className="ml-auto h-3 w-3 animate-spin text-amber-400" />
+                    ) : null}
+                  </h4>
+                  <div className="space-y-2">
+                    {analysis.suggestions.slice(0, visibleSuggestions).map((suggestion, idx) => (
+                      <div
+                        key={idx}
+                        className={`animate-in slide-in-from-left-2 rounded-lg border p-3 duration-300 ${getPriorityColor(suggestion.priority)}`}
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        <p className="text-sm font-medium">{suggestion.title}</p>
+                        <p className="mt-0.5 text-xs opacity-80">{suggestion.description}</p>
+                      </div>
+                    ))}
+                    {typingPhase === "suggestions"
+                      ? analysis.suggestions.slice(visibleSuggestions).map((_, idx) => (
+                          <div key={`suggestion-skeleton-${idx}`} className="animate-pulse rounded-lg border border-gray-200 bg-gray-50 p-3">
+                            <div className="mb-1 h-3 w-32 rounded bg-gray-200" />
+                            <div className="h-2 w-48 rounded bg-gray-100" />
+                          </div>
+                        ))
+                      : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </AnalysisShell>
+    );
+  }
+
+  function renderPanel(extraClassName = "") {
+    if (loading) return renderLoadingCard(extraClassName);
+    if (error) return renderErrorCard(extraClassName);
+    if (!hasAnalyzed) return renderInitialCard(extraClassName);
+    return renderAnalysisCard(extraClassName);
+  }
+
+  if (compact) {
+    return (
+      <>
         <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-center gap-1 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          onClick={handleCompactOpen}
+          disabled={transactions.length === 0}
+          className={`flex h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[18px] bg-blue-600 px-3 text-[13px] font-medium leading-none text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:px-4 sm:text-sm ${className}`}
         >
-          {expanded ? (
-            <>
-              <span>收起详情</span>
-              <ChevronUp className="w-4 h-4" />
-            </>
-          ) : (
-            <>
-              <span>查看更多</span>
-              <ChevronDown className="w-4 h-4" />
-            </>
-          )}
+          {loading && dialogOpen ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Sparkles className="h-4 w-4 shrink-0" />}
+          <span className="whitespace-nowrap">AI 智能分析</span>
         </button>
 
-        {/* Expanded Content - Streaming effect */}
-        {expanded && (
-          <div className="space-y-4 pt-2 border-t border-gray-100">
-            {/* Insights - Streaming */}
-            {analysis.insights.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-blue-500" />
-                  关键洞察
-                  {typingPhase === "insights" && visibleInsights < analysis.insights.length && (
-                    <Loader2 className="w-3 h-3 animate-spin text-blue-400 ml-auto" />
-                  )}
-                </h4>
-                <div className="space-y-2">
-                  {analysis.insights.slice(0, visibleInsights).map((insight, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg animate-in slide-in-from-left-2 duration-300"
-                      style={{ animationDelay: `${idx * 50}ms` }}
-                    >
-                      {getInsightIcon(insight.type)}
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{insight.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{insight.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {/* Placeholder skeletons while typing */}
-                  {typingPhase === "insights" && analysis.insights.slice(visibleInsights).map((_, idx) => (
-                    <div key={`skeleton-${idx}`} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg animate-pulse">
-                      <div className="w-4 h-4 bg-gray-200 rounded-full" />
-                      <div className="space-y-1 flex-1">
-                        <div className="h-3 bg-gray-200 rounded w-24" />
-                        <div className="h-2 bg-gray-100 rounded w-40" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="gap-0 border-0 bg-transparent px-2 pb-2 pt-10 shadow-none sm:max-w-[960px] sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none">
+            <div className="max-h-[82vh] overflow-y-auto">
+              {renderPanel("w-full sm:shadow-[0_28px_70px_rgba(15,23,42,0.16)]")}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
-            {/* Suggestions - Streaming */}
-            {analysis.suggestions.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-amber-500" />
-                  优化建议
-                  {typingPhase === "suggestions" && visibleSuggestions < analysis.suggestions.length && (
-                    <Loader2 className="w-3 h-3 animate-spin text-amber-400 ml-auto" />
-                  )}
-                </h4>
-                <div className="space-y-2">
-                  {analysis.suggestions.slice(0, visibleSuggestions).map((suggestion, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-3 rounded-lg border animate-in slide-in-from-left-2 duration-300 ${getPriorityColor(suggestion.priority)}`}
-                      style={{ animationDelay: `${idx * 50}ms` }}
-                    >
-                      <p className="text-sm font-medium">{suggestion.title}</p>
-                      <p className="text-xs mt-0.5 opacity-80">{suggestion.description}</p>
-                    </div>
-                  ))}
-                  {/* Placeholder skeletons while typing */}
-                  {typingPhase === "suggestions" && analysis.suggestions.slice(visibleSuggestions).map((_, idx) => (
-                    <div key={`skeleton-${idx}`} className="p-3 rounded-lg border bg-gray-50 border-gray-200 animate-pulse">
-                      <div className="h-3 bg-gray-200 rounded w-32 mb-1" />
-                      <div className="h-2 bg-gray-100 rounded w-48" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return renderPanel(className);
 }

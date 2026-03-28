@@ -2,21 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Download,
   ExternalLink,
-  Github,
   Globe,
   RefreshCw,
   ShieldCheck,
   Smartphone,
-  Sparkles,
-  UploadCloud,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import {
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
 import { Skeleton } from "@/components/shared/Skeletons";
 import { THEME_LIST_ITEM_CLASS, ThemeHero, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 import { Button } from "@/components/ui/button";
@@ -166,57 +165,18 @@ const aboutStory = [
   },
 ];
 
-const websites = [
-  {
-    name: "GitHub 仓库",
-    url: "https://github.com/xingseven/openstar-StarAccounting",
-    icon: Github,
-    description: "查看源码、提交 Issue 或参与开发。",
-  },
-  {
-    name: "问题反馈",
-    url: "https://github.com/xingseven/openstar-StarAccounting/issues",
-    icon: ShieldCheck,
-    description: "集中提交 Bug、功能建议与体验反馈。",
-  },
-  {
-    name: "版本发布",
-    url: "https://github.com/xingseven/openstar-StarAccounting/releases",
-    icon: Download,
-    description: "查看 Release 记录和已发布安装包。",
-  },
-  {
-    name: "项目说明",
-    url: "https://github.com/xingseven/openstar-StarAccounting#readme",
-    icon: Sparkles,
-    description: "快速了解项目定位、功能与部署方式。",
-  },
-  {
-    name: "版本发布说明",
-    url: "/updates/README.txt",
-    icon: UploadCloud,
-    description: "查看如何把安装包放到网站镜像和 GitHub 备用源。",
-  },
-  {
-    name: "更新清单",
-    url: "/updates/latest.json",
-    icon: Globe,
-    description: "网站本地更新清单，部署后可直接被关于页面读取。",
-  },
-];
+const openSourceWebsite = {
+  label: "我们的开源网站",
+  description: "欢迎访问：openstars.org",
+  url: "https://openstars.org",
+};
 
 const contributors = [
   {
-    name: "75110",
-    initials: "75",
-    profileUrl: "https://github.com/75110",
-    avatarUrl: "https://github.com/75110.png?size=96",
-  },
-  {
-    name: "星七七",
-    initials: "星",
+    name: "xingseven",
+    initials: "x7",
     profileUrl: "https://github.com/xingseven",
-    avatarUrl: "https://avatars.githubusercontent.com/u/144807820?v=4",
+    avatarUrl: "https://github.com/xingseven.png?size=96",
   },
 ];
 
@@ -257,7 +217,7 @@ export default function AboutPage() {
   const [versionHistory, setVersionHistory] = useState<VersionItem[]>(fallbackVersionHistory);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo>(fallbackUpdateInfo);
   const [showAllVersions, setShowAllVersions] = useState(false);
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   const [isRefreshingWeb, setIsRefreshingWeb] = useState(false);
 
@@ -286,12 +246,15 @@ export default function AboutPage() {
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 500);
-    return () => window.clearTimeout(timer);
-  }, []);
+    async function loadPage() {
+      try {
+        await Promise.all([loadVersionHistory(), loadUpdateInfo()]);
+      } finally {
+        setPageLoading(false);
+      }
+    }
 
-  useEffect(() => {
-    void Promise.all([loadVersionHistory(), loadUpdateInfo()]);
+    void loadPage();
   }, []);
 
   const currentVersion = useMemo(
@@ -313,15 +276,103 @@ export default function AboutPage() {
 
   const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, DEFAULT_VISIBLE_VERSION_COUNT);
 
-  if (showInitialSkeleton) {
+  if (pageLoading) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
-        <Skeleton className="h-[220px] rounded-[28px]" />
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-[340px] rounded-[24px]" />
-          <Skeleton className="h-[340px] rounded-[24px]" />
+      <LoadingPageShell className="py-4 sm:py-6 lg:py-8">
+        <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-36 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-60 rounded-[14px]" />
+                <Skeleton className="h-4 w-full max-w-xl rounded-full" />
+                <Skeleton className="h-4 w-full max-w-lg rounded-full opacity-60" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-9 w-24 rounded-full" />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-white/40 p-5 sm:p-6">
+              <Skeleton className="h-4 w-24 rounded-full opacity-60" />
+              <div className="mt-4 grid grid-cols-5 gap-x-2 gap-y-4 sm:grid-cols-[repeat(6,64px)] sm:gap-x-3 lg:grid-cols-[repeat(8,64px)]">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div key={index} className="flex w-16 flex-col items-center">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="mt-2 h-3 w-12 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+          <div className="space-y-2">
+            <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+            <Skeleton className="h-7 w-44 rounded-[12px]" />
+            <Skeleton className="h-3 w-64 rounded-full opacity-60" />
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="rounded-[22px] p-4" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                <Skeleton className="h-4 w-24 rounded-full" />
+                <Skeleton className="mt-3 h-3 w-full rounded-full" />
+                <Skeleton className="mt-2 h-3 w-[88%] rounded-full opacity-60" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-[24px] p-5" style={{ background: "var(--theme-dialog-section-bg)" }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20 rounded-full opacity-60" />
+                <Skeleton className="h-7 w-64 rounded-[12px]" />
+                <Skeleton className="h-3 w-full max-w-2xl rounded-full opacity-60" />
+                <Skeleton className="h-3 w-full max-w-xl rounded-full opacity-60" />
+              </div>
+              <Skeleton className="h-9 w-28 rounded-full" />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-9 w-28 rounded-full" />
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div key={index} className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+                <Skeleton className="h-7 w-40 rounded-[12px]" />
+                <Skeleton className="h-3 w-56 rounded-full opacity-60" />
+              </div>
+              <div className="mt-5 rounded-[22px] p-4" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24 rounded-full" />
+                    <Skeleton className="h-3 w-48 rounded-full opacity-60" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-full" />
+                </div>
+                <div className="mt-4 space-y-3">
+                  {Array.from({ length: 3 }).map((__, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-4 rounded-full" />
+                      <Skeleton className="h-3 w-full rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </LoadingPageShell>
     );
   }
 
@@ -430,29 +481,31 @@ export default function AboutPage() {
         <div className="mt-5">
           <div className="mb-3 flex items-center gap-2">
             <Globe className="h-4 w-4 text-blue-600" />
-            <p className="text-sm font-semibold text-slate-950">其他网站连接</p>
+            <p className="text-sm font-semibold text-slate-950">开源网站</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {websites.map((site) => (
-              <a
-                key={site.name}
-                href={site.url}
-                target={site.url.startsWith("http") ? "_blank" : undefined}
-                rel={site.url.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="group rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
-              >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                  <site.icon className="h-5 w-5" />
+          <a
+            href={openSourceWebsite.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm transition hover:bg-slate-50"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                  <Globe className="h-5 w-5" />
                 </div>
-                <h3 className="text-sm font-semibold text-slate-950">{site.name}</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-500">{site.description}</p>
-                <div className="mt-3 flex items-center gap-1 text-sm font-medium text-blue-600">
-                  查看
-                  {site.url.startsWith("http") ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
+                <div>
+                  <p className="text-base font-semibold text-slate-950">{openSourceWebsite.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{openSourceWebsite.description}</p>
                 </div>
-              </a>
-            ))}
-          </div>
+              </div>
+
+              <div className="mt-0.5 flex items-center gap-1 text-sm font-medium text-blue-600">
+                访问
+                <ExternalLink className="h-3.5 w-3.5" />
+              </div>
+            </div>
+          </a>
         </div>
       </ThemeSurface>
 

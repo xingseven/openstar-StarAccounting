@@ -3,13 +3,14 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_CONSUMPTION } from "@/features/shared/mockData";
+import { ConsumptionLoadingShell } from "@/features/consumption/components/ConsumptionLoadingShell";
 import { fetchConsumptionData } from "@/features/consumption/api";
 
 const ConsumptionDefaultTheme = dynamic(
   () => import("@/features/consumption/components/ConsumptionDefaultTheme").then((mod) => mod.ConsumptionDefaultTheme),
   {
     ssr: false,
-    loading: () => null,
+    loading: () => <ConsumptionLoadingShell />,
   }
 );
 
@@ -160,6 +161,10 @@ export default function ConsumptionPage() {
     () => getPreviousRange(dateFilter, currentMonthRange, customPeriod),
     [currentMonthRange, customPeriod, dateFilter],
   );
+  const bucketMode = useMemo(
+    () => (dateFilter === "all" || (dateFilter === "custom" && customPeriod.mode === "year") ? "month" : "day"),
+    [customPeriod.mode, dateFilter],
+  );
 
   useEffect(() => {
     const mainContent = document.querySelector("main");
@@ -200,6 +205,7 @@ export default function ConsumptionPage() {
           pendingRange.endDate,
           pendingComparisonRange?.startDate,
           pendingComparisonRange?.endDate,
+          bucketMode,
         );
         const hasNoData =
           realData.transactions.length === 0 &&
@@ -234,7 +240,7 @@ export default function ConsumptionPage() {
     }
 
     void loadData();
-  }, [hasLoadedOnce, pendingComparisonRange, pendingRange]);
+  }, [bucketMode, hasLoadedOnce, pendingComparisonRange, pendingRange]);
 
   return (
     <div className="w-full">

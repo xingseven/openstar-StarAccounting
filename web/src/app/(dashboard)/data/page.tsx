@@ -5,7 +5,7 @@ import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Tag, T
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/shared/Skeletons";
+import { DelayedRender } from "@/components/shared/DelayedRender";
 import {
   THEME_DIALOG_INPUT_CLASS,
   THEME_DIALOG_SELECT_CLASS,
@@ -22,6 +22,7 @@ import {
   ThemeTable,
   ThemeToolbar,
 } from "@/components/shared/theme-primitives";
+import { DataLoadingShell } from "./DataLoadingShell";
 
 type Transaction = {
   id: string;
@@ -121,7 +122,6 @@ export default function DataPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [manualEntryMode, setManualEntryMode] = useState<ManualEntryMode>("income");
   const [manualTransactionLoading, setManualTransactionLoading] = useState(false);
@@ -131,11 +131,6 @@ export default function DataPage() {
   const startItem = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endItem = total === 0 ? 0 : startItem + Math.max(0, transactions.length - 1);
   const allSelectedOnPage = transactions.length > 0 && selectedIds.size === transactions.length;
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const loadTransactions = useCallback(
     async (options?: { showLoading?: boolean; page?: number }) => {
@@ -331,18 +326,13 @@ export default function DataPage() {
     }
   }
 
-  if (showInitialSkeleton || loading) {
-    return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-6 sm:py-6 lg:py-8">
-        <Skeleton className="h-20 rounded-2xl" />
-        <Skeleton className="h-12 rounded-xl" />
-        <Skeleton className="h-96 rounded-2xl" />
-      </div>
-    );
+  if (loading) {
+    return <DataLoadingShell />;
   }
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-6 sm:py-6 lg:py-8">
+      <DelayedRender delay={0}>
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
           <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
@@ -354,12 +344,15 @@ export default function DataPage() {
           </div>
         </div>
       </ThemeHero>
+      </DelayedRender>
 
+      <DelayedRender delay={60}>
       <div className="grid gap-3 md:grid-cols-3">
         <ThemeMetricCard label="当前页记录" value={`${transactions.length} 条`} detail="本页数据量" tone="blue" icon={Database} className="p-4" hideDetailOnMobile />
         <ThemeMetricCard label="已选择" value={`${selectedIds.size} 条`} detail="批量处理目标" tone="green" icon={Tag} className="p-4" hideDetailOnMobile />
         <ThemeMetricCard label="总记录数" value={`${total} 条`} detail="系统交易总量" tone="slate" icon={FileText} className="p-4" hideDetailOnMobile />
       </div>
+      </DelayedRender>
 
       {message ? (
         <ThemeNotice tone="green">
@@ -379,6 +372,7 @@ export default function DataPage() {
         </ThemeNotice>
       ) : null}
 
+      <DelayedRender delay={120}>
       <ThemeSurface className="p-4 sm:p-6">
         <ThemeSectionHeader eyebrow="账单导入" title="导入微信 / 支付宝账单" description="上传 CSV 或 XLSX 文件，系统会自动识别并入库。" />
 
@@ -412,7 +406,9 @@ export default function DataPage() {
           </div>
         ) : null}
       </ThemeSurface>
+      </DelayedRender>
 
+      <DelayedRender delay={180}>
       <ThemeSurface className="p-4 sm:p-6">
         <ThemeSectionHeader
           eyebrow="手动补录"
@@ -564,7 +560,9 @@ export default function DataPage() {
           </ThemeActionBar>
         </form>
       </ThemeSurface>
+      </DelayedRender>
 
+      <DelayedRender delay={240}>
       <ThemeToolbar>
         <span className="text-sm font-medium text-slate-700">
           已选择 <span className="text-blue-600">{selectedIds.size}</span> 条记录
@@ -599,7 +597,9 @@ export default function DataPage() {
           批量删除
         </button>
       </ThemeToolbar>
+      </DelayedRender>
 
+      <DelayedRender delay={300}>
       <ThemeTable>
         <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">{total === 0 ? "暂无记录" : `共 ${total} 条记录，当前显示 ${startItem}-${endItem} 条`}</p>
@@ -688,6 +688,7 @@ export default function DataPage() {
           </div>
         ) : null}
       </ThemeTable>
+      </DelayedRender>
     </div>
   );
 }

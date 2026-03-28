@@ -4,12 +4,13 @@ import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_DASHBOARD } from "@/features/shared/mockData";
+import { DashboardLoadingShell } from "@/features/dashboard/components/themes/DashboardLoadingShell";
 
 const DashboardDefaultTheme = dynamic(
   () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
   {
     ssr: false,
-    loading: () => null
+    loading: () => <DashboardLoadingShell />
   }
 );
 
@@ -134,7 +135,7 @@ async function fetchDashboardData(): Promise<DashboardData> {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData>(MOCK_DASHBOARD);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {

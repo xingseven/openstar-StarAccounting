@@ -22,6 +22,7 @@ export async function fetchConsumptionData(
   endDate?: string,
   compareStartDate?: string,
   compareEndDate?: string,
+  bucket: "day" | "month" = "day",
 ): Promise<ConsumptionData> {
   function calcChangeRate(current: number, previous: number) {
     if (!Number.isFinite(previous) || previous <= 0) return null;
@@ -31,10 +32,12 @@ export async function fetchConsumptionData(
   const dashboardPath = buildPath("/api/consumption/dashboard", {
     startDate,
     endDate,
+    bucket,
   });
   const compareDashboardPath = buildPath("/api/consumption/dashboard", {
     startDate: compareStartDate,
     endDate: compareEndDate,
+    bucket,
   });
   const [dashboardData, compareDashboardData] = await Promise.all([
     apiFetch<DashboardResponse>(dashboardPath),
