@@ -2,24 +2,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  CloudDownload,
   Download,
   ExternalLink,
-  Github,
   Globe,
   RefreshCw,
   ShieldCheck,
   Smartphone,
-  Sparkles,
-  UploadCloud,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import {
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
 import { Skeleton } from "@/components/shared/Skeletons";
-import { THEME_LIST_ITEM_CLASS, ThemeHero, ThemeMetricCard, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
+import { THEME_LIST_ITEM_CLASS, ThemeHero, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -167,42 +165,18 @@ const aboutStory = [
   },
 ];
 
-const websites = [
+const openSourceWebsite = {
+  label: "我们的开源网站",
+  description: "欢迎访问：openstars.org",
+  url: "https://openstars.org",
+};
+
+const contributors = [
   {
-    name: "GitHub 仓库",
-    url: "https://github.com/xingseven/openstar-StarAccounting",
-    icon: Github,
-    description: "查看源码、提交 Issue 或参与开发。",
-  },
-  {
-    name: "问题反馈",
-    url: "https://github.com/xingseven/openstar-StarAccounting/issues",
-    icon: ShieldCheck,
-    description: "集中提交 Bug、功能建议与体验反馈。",
-  },
-  {
-    name: "版本发布",
-    url: "https://github.com/xingseven/openstar-StarAccounting/releases",
-    icon: Download,
-    description: "查看 Release 记录和已发布安装包。",
-  },
-  {
-    name: "项目说明",
-    url: "https://github.com/xingseven/openstar-StarAccounting#readme",
-    icon: Sparkles,
-    description: "快速了解项目定位、功能与部署方式。",
-  },
-  {
-    name: "版本发布说明",
-    url: "/updates/README.txt",
-    icon: UploadCloud,
-    description: "查看如何把安装包放到网站镜像和 GitHub 备用源。",
-  },
-  {
-    name: "更新清单",
-    url: "/updates/latest.json",
-    icon: Globe,
-    description: "网站本地更新清单，部署后可直接被关于页面读取。",
+    name: "xingseven",
+    initials: "x7",
+    profileUrl: "https://github.com/xingseven",
+    avatarUrl: "https://github.com/xingseven.png?size=96",
   },
 ];
 
@@ -238,11 +212,12 @@ function formatDateTime(value: string) {
 }
 
 export default function AboutPage() {
+  const DEFAULT_VISIBLE_VERSION_COUNT = 3;
   const [expandedVersions, setExpandedVersions] = useState<string[]>([fallbackVersionHistory[0].version]);
   const [versionHistory, setVersionHistory] = useState<VersionItem[]>(fallbackVersionHistory);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo>(fallbackUpdateInfo);
   const [showAllVersions, setShowAllVersions] = useState(false);
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
   const [isRefreshingWeb, setIsRefreshingWeb] = useState(false);
 
@@ -271,19 +246,21 @@ export default function AboutPage() {
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 500);
-    return () => window.clearTimeout(timer);
-  }, []);
+    async function loadPage() {
+      try {
+        await Promise.all([loadVersionHistory(), loadUpdateInfo()]);
+      } finally {
+        setPageLoading(false);
+      }
+    }
 
-  useEffect(() => {
-    void Promise.all([loadVersionHistory(), loadUpdateInfo()]);
+    void loadPage();
   }, []);
 
   const currentVersion = useMemo(
     () => versionHistory[0]?.version ?? updateInfo.currentVersion ?? fallbackUpdateInfo.currentVersion,
     [updateInfo.currentVersion, versionHistory]
   );
-  const recentMilestones = useMemo(() => versionHistory.slice(0, 3), [versionHistory]);
 
   async function handleRefreshWeb() {
     setIsRefreshingWeb(true);
@@ -297,30 +274,112 @@ export default function AboutPage() {
     }
   }
 
-  const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, 1);
+  const visibleVersions = showAllVersions ? versionHistory : versionHistory.slice(0, DEFAULT_VISIBLE_VERSION_COUNT);
 
-  if (showInitialSkeleton) {
+  if (pageLoading) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
-        <Skeleton className="h-[220px] rounded-[28px]" />
-        <div className="grid gap-3 md:grid-cols-4">
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
+      <LoadingPageShell className="py-4 sm:py-6 lg:py-8">
+        <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-36 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-60 rounded-[14px]" />
+                <Skeleton className="h-4 w-full max-w-xl rounded-full" />
+                <Skeleton className="h-4 w-full max-w-lg rounded-full opacity-60" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-9 w-24 rounded-full" />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-white/40 p-5 sm:p-6">
+              <Skeleton className="h-4 w-24 rounded-full opacity-60" />
+              <div className="mt-4 grid grid-cols-5 gap-x-2 gap-y-4 sm:grid-cols-[repeat(6,64px)] sm:gap-x-3 lg:grid-cols-[repeat(8,64px)]">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div key={index} className="flex w-16 flex-col items-center">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="mt-2 h-3 w-12 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+          <div className="space-y-2">
+            <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+            <Skeleton className="h-7 w-44 rounded-[12px]" />
+            <Skeleton className="h-3 w-64 rounded-full opacity-60" />
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="rounded-[22px] p-4" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                <Skeleton className="h-4 w-24 rounded-full" />
+                <Skeleton className="mt-3 h-3 w-full rounded-full" />
+                <Skeleton className="mt-2 h-3 w-[88%] rounded-full opacity-60" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-[24px] p-5" style={{ background: "var(--theme-dialog-section-bg)" }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20 rounded-full opacity-60" />
+                <Skeleton className="h-7 w-64 rounded-[12px]" />
+                <Skeleton className="h-3 w-full max-w-2xl rounded-full opacity-60" />
+                <Skeleton className="h-3 w-full max-w-xl rounded-full opacity-60" />
+              </div>
+              <Skeleton className="h-9 w-28 rounded-full" />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-9 w-28 rounded-full" />
+              ))}
+            </div>
+          </div>
         </div>
+
         <div className="grid gap-4 lg:grid-cols-2">
-          <Skeleton className="h-[340px] rounded-[24px]" />
-          <Skeleton className="h-[340px] rounded-[24px]" />
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div key={index} className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+                <Skeleton className="h-7 w-40 rounded-[12px]" />
+                <Skeleton className="h-3 w-56 rounded-full opacity-60" />
+              </div>
+              <div className="mt-5 rounded-[22px] p-4" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24 rounded-full" />
+                    <Skeleton className="h-3 w-48 rounded-full opacity-60" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-full" />
+                </div>
+                <div className="mt-4 space-y-3">
+                  {Array.from({ length: 3 }).map((__, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-4 rounded-full" />
+                      <Skeleton className="h-3 w-full rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </LoadingPageShell>
     );
   }
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
       <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
@@ -328,7 +387,7 @@ export default function AboutPage() {
             </div>
 
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">关于 OpenStar Accounting</h1>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">关于 Star Accounting</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
                 现在关于页面已经接入统一更新检查、网站镜像优先下载和网页版刷新更新能力。用户不需要直接跳转 GitHub，就能检查和获取新版本。
               </p>
@@ -343,125 +402,111 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <ThemeMetricCard label="当前版本" value={`v${currentVersion}`} tone="blue" icon={Sparkles} detail="来自 CHANGELOG 最新版本记录" />
-            <ThemeMetricCard
-              label="更新源"
-              value={updateInfo.source.label}
-              tone={updateInfo.source.type === "remote" ? "amber" : "green"}
-              icon={CloudDownload}
-              detail={updateInfo.source.url ?? "当前使用本地网站更新清单"}
-            />
+          <div className="bg-white/40 p-5 sm:p-6">
+            <div>
+              <p className="text-sm font-medium text-slate-500">项目贡献者</p>
+            </div>
+
+            <div className="mt-4 grid grid-cols-5 justify-start gap-x-2 gap-y-4 sm:grid-cols-[repeat(6,64px)] sm:gap-x-3 lg:grid-cols-[repeat(8,64px)]">
+              {contributors.map((contributor) => (
+                <a
+                  key={contributor.name}
+                  href={contributor.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-16 flex-col items-center justify-start rounded-xl py-1 text-center transition hover:bg-slate-50"
+                >
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-sm font-semibold text-white"
+                    style={
+                      contributor.avatarUrl
+                        ? {
+                            backgroundImage: `url(${contributor.avatarUrl})`,
+                            backgroundPosition: "center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundSize: "cover",
+                          }
+                        : undefined
+                    }
+                  >
+                    {!contributor.avatarUrl ? contributor.initials : null}
+                  </div>
+                  <span className="mt-2 line-clamp-2 text-[11px] font-medium leading-4 text-slate-900">{contributor.name}</span>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </ThemeHero>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <ThemeMetricCard label="资产 / 预算" value="已接入" detail="核心账务模块" tone="blue" icon={Globe} className="p-4" hideDetailOnMobile />
-        <ThemeMetricCard label="版本检查" value={updateInfo.hasUpdate ? "有更新" : "最新"} detail="统一更新入口" tone={updateInfo.hasUpdate ? "amber" : "green"} icon={RefreshCw} className="p-4" hideDetailOnMobile />
-        <ThemeMetricCard label="网页版更新" value={updateInfo.web.action === "refresh" ? "刷新更新" : "下载安装"} detail="适配网页端发布" tone="slate" icon={Globe} className="p-4" hideDetailOnMobile />
-        <ThemeMetricCard label="App 更新" value={updateInfo.app.action === "reinstall" ? "重新安装" : "下载安装"} detail="适配移动端发布" tone="violet" icon={Smartphone} className="p-4" hideDetailOnMobile />
-      </div>
-
       <ThemeSurface className="p-4 sm:p-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <div>
-            <ThemeSectionHeader
-              eyebrow="关于我们"
-              title="项目初心与演进节奏"
-              description="OpenStar Accounting 不是一次性的展示页，而是一套持续迭代的个人财务工作台。"
-            />
+        <ThemeSectionHeader
+          eyebrow="关于我们"
+          title="项目初心与演进节奏"
+          description="Star Accounting 不是一次性的展示页，而是一套持续迭代的个人财务工作台。"
+        />
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {aboutStory.map((item) => (
-                <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
-                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                </div>
-              ))}
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {aboutStory.map((item) => (
+            <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
             </div>
+          ))}
+        </div>
 
-            <div className="mt-5 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">我们的定位</p>
-                  <h3 className="mt-1 text-lg font-semibold text-slate-950">把财务管理做成一个长期可维护的工作台</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    OpenStar Accounting 关注的不是单次展示，而是把资产、预算、储蓄、贷款、更新与 AI
-                    工具整合进一个可以持续演进的个人财务系统，让你能自己部署、自己扩展，也能长期积累自己的数据与流程。
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
-                  Open Source
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["个人财务工作台", "开源可部署", "持续迭代", "网站与 App 更新统一入口"].map((item) => (
-                  <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600">
-                    {item}
-                  </span>
-                ))}
-              </div>
+        <div className="mt-5 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-slate-500">我们的定位</p>
+              <h3 className="mt-1 text-lg font-semibold text-slate-950">把财务管理做成一个长期可维护的工作台</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Star Accounting 关注的不是单次展示，而是把资产、预算、储蓄、贷款、更新与 AI
+                工具整合进一个可以持续演进的个人财务系统，让你能自己部署、自己扩展，也能长期积累自己的数据与流程。
+              </p>
             </div>
-
-            <div className="mt-5">
-              <div className="mb-3 flex items-center gap-2">
-                <Globe className="h-4 w-4 text-blue-600" />
-                <p className="text-sm font-semibold text-slate-950">其他网站连接</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {websites.map((site) => (
-                  <a
-                    key={site.name}
-                    href={site.url}
-                    target={site.url.startsWith("http") ? "_blank" : undefined}
-                    rel={site.url.startsWith("http") ? "noopener noreferrer" : undefined}
-                    className="group rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50"
-                  >
-                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                      <site.icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-950">{site.name}</h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">{site.description}</p>
-                    <div className="mt-3 flex items-center gap-1 text-sm font-medium text-blue-600">
-                      查看
-                      {site.url.startsWith("http") ? <ExternalLink className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />}
-                    </div>
-                  </a>
-                ))}
-              </div>
+            <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+              Open Source
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-slate-500">版本脉络</p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-950">最近迭代节点</h3>
-              </div>
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">当前 v{currentVersion}</span>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              {recentMilestones.map((item, index) => (
-                <div key={item.version} className="relative pl-5">
-                  {index < recentMilestones.length - 1 ? <div className="absolute left-[7px] top-6 h-[calc(100%+12px)] w-px bg-slate-200" /> : null}
-                  <div className="absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full bg-blue-500 ring-4 ring-blue-50" />
-                  <div className="rounded-[20px] border border-slate-200 bg-slate-50/70 px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-950">v{item.version}</span>
-                      <VersionTypeBadge type={item.type} />
-                      <span className="text-xs text-slate-400">{item.date}</span>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.highlights[0] ?? "当前版本暂无额外说明。"}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {["个人财务工作台", "开源可部署", "持续迭代", "网站与 App 更新统一入口"].map((item) => (
+              <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600">
+                {item}
+              </span>
+            ))}
           </div>
         </div>
 
+        <div className="mt-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Globe className="h-4 w-4 text-blue-600" />
+            <p className="text-sm font-semibold text-slate-950">开源网站</p>
+          </div>
+          <a
+            href={openSourceWebsite.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm transition hover:bg-slate-50"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                  <Globe className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-slate-950">{openSourceWebsite.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{openSourceWebsite.description}</p>
+                </div>
+              </div>
+
+              <div className="mt-0.5 flex items-center gap-1 text-sm font-medium text-blue-600">
+                访问
+                <ExternalLink className="h-3.5 w-3.5" />
+              </div>
+            </div>
+          </a>
+        </div>
       </ThemeSurface>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -573,9 +618,9 @@ export default function AboutPage() {
 
       <ThemeSurface className="p-4 sm:p-6">
         <ThemeSectionHeader
-          eyebrow="版本更新记录"
-          title="项目演进历史"
-          description="查看近期版本迭代的核心变化。"
+          eyebrow="更新记录"
+          title="近期更新与历史版本"
+          description={`默认展示最近 ${DEFAULT_VISIBLE_VERSION_COUNT} 个版本，可按需展开全部历史记录。`}
           action={
             showAllVersions ? (
               <div className="flex gap-2">
@@ -624,7 +669,7 @@ export default function AboutPage() {
             </div>
           ))}
 
-          {!showAllVersions && versionHistory.length > 1 ? (
+          {!showAllVersions && versionHistory.length > DEFAULT_VISIBLE_VERSION_COUNT ? (
             <button
               onClick={() => setShowAllVersions(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 py-3 text-xs font-medium text-blue-600 transition hover:bg-blue-50 sm:text-sm"

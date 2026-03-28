@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Archive,
   ArrowDownLeft,
@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Skeleton } from "@/components/shared/Skeletons";
+import { SavingsLoadingShell } from "./SavingsLoadingShell";
 import {
   THEME_COMPACT_SELECT_CLASS,
   THEME_ICON_BUTTON_CLASS,
@@ -39,6 +39,7 @@ import {
   ThemeMetricCard,
   ThemeSectionHeader,
   ThemeSurface,
+  getThemeModuleStyle,
 } from "@/components/shared/theme-primitives";
 import { cn } from "@/lib/utils";
 import type { SavingsGoal } from "@/types";
@@ -77,11 +78,11 @@ interface SavingsViewProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  MONTHLY: "#93c5fd",
-  YEARLY: "#60a5fa",
-  LONG_TERM: "#2563eb",
-  BI_MONTHLY_ODD: "#1d4ed8",
-  BI_MONTHLY_EVEN: "#1d4ed8",
+  MONTHLY: "#6ee7b7",
+  YEARLY: "#34d399",
+  LONG_TERM: "#10b981",
+  BI_MONTHLY_ODD: "#059669",
+  BI_MONTHLY_EVEN: "#047857",
 };
 
 function getGoalModeLabel(type: SavingsGoal["type"]) {
@@ -156,22 +157,30 @@ function SavingsGoalCard({
   const daysLeft = getDaysUntilDeadline(item.deadline);
   const behind = isBehindSchedule(item);
   const mobileLightOutlineButtonClass =
-    "h-10 justify-center rounded-xl border-transparent bg-slate-100 px-4 text-xs font-medium text-slate-700 hover:bg-slate-200 sm:border-border sm:bg-background sm:text-sm sm:text-foreground sm:hover:bg-muted";
+    "h-10 justify-center rounded-xl border-transparent px-4 text-xs font-medium hover:bg-slate-200 sm:border-border sm:bg-background sm:text-sm sm:text-foreground sm:hover:bg-muted";
 
   return (
     <ThemeSurface className="p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <button type="button" onClick={onToggleSelect} className="-m-1 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            {selected ? <CheckSquare className="h-4.5 w-4.5 text-blue-600" /> : <Square className="h-4.5 w-4.5" />}
+          <button 
+            type="button" 
+            onClick={onToggleSelect} 
+            className="-m-1 rounded-lg p-1"
+            style={{ color: "var(--theme-muted-text)" }}
+          >
+            {selected ? <CheckSquare className="h-4.5 w-4.5" style={{ color: "var(--module-accent-strong)" }} /> : <Square className="h-4.5 w-4.5" />}
           </button>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent bg-slate-50 text-blue-600 sm:border-slate-200">
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-transparent sm:border-slate-200"
+            style={{ background: "var(--module-soft-panel)", color: "var(--module-accent-strong)" }}
+          >
             <Target className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-slate-950 sm:text-lg">{item.name}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 sm:text-sm">
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">{getGoalModeLabel(item.type)}</span>
+            <p className="truncate text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>{item.name}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+              <span className="rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>{getGoalModeLabel(item.type)}</span>
               <span>{getDepositTypeLabel(item.depositType)}</span>
               {behind && item.status === "ACTIVE" ? <span className="text-amber-600">进度偏慢</span> : null}
             </div>
@@ -192,27 +201,44 @@ function SavingsGoalCard({
       <div className="mt-4 space-y-3.5">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-slate-500 sm:text-sm">当前 / 目标</p>
-            <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
+            <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>当前 / 目标</p>
+            <p className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>
               ¥{item.currentAmount.toLocaleString()} / ¥{item.targetAmount.toLocaleString()}
             </p>
           </div>
-          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 sm:text-sm">{progress.toFixed(0)}%</span>
+          <span
+            className="rounded-full px-2.5 py-1 text-xs font-medium sm:text-sm"
+            style={{ background: "var(--module-accent-soft)", color: "var(--module-accent-text)" }}
+          >
+            {progress.toFixed(0)}%
+          </span>
         </div>
 
         <div>
-          <Progress value={progress} className="h-2" indicatorClassName="bg-blue-600" />
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500 sm:text-sm">
+          <Progress value={progress} className="h-2" indicatorClassName="[background:var(--module-progress-gradient)]" />
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
             <span>{item.status === "COMPLETED" ? "已完成" : item.status === "ARCHIVED" ? "已归档" : "进行中"}</span>
             <span>{item.deadline ? `${daysLeft} 天到期` : "无截止日期"}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <Button type="button" variant="outline" className={mobileLightOutlineButtonClass} onClick={onOpenPunch}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className={mobileLightOutlineButtonClass} 
+            onClick={onOpenPunch}
+            style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}
+          >
             打卡
           </Button>
-          <Button type="button" variant="outline" className={mobileLightOutlineButtonClass} onClick={onOpenWithdrawal}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className={mobileLightOutlineButtonClass} 
+            onClick={onOpenWithdrawal}
+            style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}
+          >
             取款
           </Button>
         </div>
@@ -221,7 +247,8 @@ function SavingsGoalCard({
           <button
             type="button"
             onClick={onOpenEdit}
-            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+            className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium sm:text-sm"
+            style={{ color: "var(--theme-label-text)" }}
           >
             编辑
           </button>
@@ -229,7 +256,8 @@ function SavingsGoalCard({
             <button
               type="button"
               onClick={onCopy}
-              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium sm:text-sm"
+              style={{ color: "var(--theme-label-text)" }}
             >
               复制
             </button>
@@ -238,7 +266,8 @@ function SavingsGoalCard({
             <button
               type="button"
               onClick={onArchive}
-              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium sm:text-sm"
+              style={{ color: "var(--theme-muted-text)" }}
             >
               <Archive className="h-3.5 w-3.5" />
               归档
@@ -276,7 +305,6 @@ export function SavingsDefaultTheme({
   onCopy,
   onImageChange,
 }: SavingsViewProps) {
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("progress");
   const [filterBy, setFilterBy] = useState<FilterOption>("active");
@@ -285,12 +313,7 @@ export function SavingsDefaultTheme({
   const [imageDialogGoal, setImageDialogGoal] = useState<SavingsGoal | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const isSkeletonVisible = loading || showInitialSkeleton;
+  const isSkeletonVisible = loading;
 
   const filteredGoals = useMemo(() => {
     let result = [...items];
@@ -334,38 +357,24 @@ export function SavingsDefaultTheme({
   }, [items]);
 
   if (isSkeletonVisible) {
-    return (
-      <div className="mx-auto max-w-[1680px] space-y-4 sm:space-y-5">
-        <Skeleton className="h-[220px] rounded-[28px]" />
-        <div className="grid gap-3 md:grid-cols-3">
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-        </div>
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
-          <Skeleton className="h-[320px] rounded-[24px]" />
-          <Skeleton className="h-[320px] rounded-[24px]" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-[290px] rounded-[24px]" />
-          ))}
-        </div>
-      </div>
-    );
+    return <SavingsLoadingShell />;
   }
 
   return (
     <>
-      <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5">
+      <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5" style={getThemeModuleStyle("savings")}>
         <DelayedRender delay={0}>
           <ThemeHero className="p-4 sm:p-6 lg:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">储蓄工作台</h1>
-                <p className="mt-1 text-sm text-slate-500">统一查看储蓄目标、完成进度和最近存取款动作。</p>
+                <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>储蓄工作台</h1>
+                <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>统一查看储蓄目标、完成进度和最近存取款动作。</p>
               </div>
-              <Button onClick={onOpenCreate} className="h-10 rounded-2xl bg-slate-900 px-4 text-sm font-medium hover:bg-slate-800">
+              <Button
+                onClick={onOpenCreate}
+                className="h-10 rounded-2xl px-4 text-sm font-medium text-white hover:brightness-105"
+                style={{ background: "var(--module-accent-strong)" }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 新建目标
               </Button>
@@ -424,7 +433,7 @@ export function SavingsDefaultTheme({
               <div className="mt-4 space-y-3">
                 <div className="flex flex-wrap gap-3">
                   <div className="relative min-w-[220px] flex-1">
-                    <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4" style={{ color: "var(--theme-muted-text)" }} />
                     <Input
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
@@ -447,8 +456,8 @@ export function SavingsDefaultTheme({
                 </div>
 
                 {selectedIds.size > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3 text-sm">
-                    <span className="text-xs font-medium text-slate-700 sm:text-sm">已选择 {selectedIds.size} 项</span>
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl px-3 py-3 text-sm" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <span className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>已选择 {selectedIds.size} 项</span>
                     {onBatchArchive ? (
                       <Button variant="outline" className="h-10 rounded-xl px-4 text-xs font-medium sm:text-sm" onClick={() => onBatchArchive(Array.from(selectedIds))}>
                         <Archive className="mr-2 h-4 w-4" />
@@ -486,13 +495,13 @@ export function SavingsDefaultTheme({
 
                 <div className="space-y-2.5">
                   {distributionData.map((item) => (
-                    <div key={item.name} className="rounded-[18px] bg-slate-50 px-3 py-2.5">
+                    <div key={item.name} className="rounded-[18px] px-3 py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">
                           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
-                          <span className="truncate text-sm font-medium text-slate-900 sm:text-base">{item.name}</span>
+                          <span className="truncate text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>{item.name}</span>
                         </div>
-                        <span className="text-sm font-semibold text-slate-950 sm:text-base">¥{item.value.toLocaleString()}</span>
+                        <span className="text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>¥{item.value.toLocaleString()}</span>
                       </div>
                     </div>
                   ))}
@@ -512,21 +521,27 @@ export function SavingsDefaultTheme({
                 transactions.slice(0, 8).map((transaction) => {
                   const isIncome = transaction.type === "INCOME";
                   return (
-                    <div key={transaction.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-transparent bg-slate-50/80 px-4 py-3 sm:border-slate-100">
+                    <div key={transaction.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-transparent px-4 py-3 sm:border-slate-100" style={{ background: "var(--theme-dialog-section-bg)" }}>
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600")}>
+                        <div
+                          className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", isIncome ? "" : "bg-red-50 text-red-600")}
+                          style={isIncome ? { background: "var(--module-accent-soft)", color: "var(--module-accent-strong)" } : undefined}
+                        >
                           {isIncome ? <ArrowUpRight className="h-4.5 w-4.5" /> : <ArrowDownLeft className="h-4.5 w-4.5" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-slate-950 sm:text-base">{transaction.category}</p>
-                          <p className="mt-1 text-xs text-slate-500 sm:text-sm">{transaction.date}</p>
+                          <p className="truncate text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>{transaction.category}</p>
+                          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{transaction.date}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={cn("text-sm font-semibold sm:text-base", isIncome ? "text-blue-600" : "text-red-600")}>
+                        <p
+                          className={cn("text-sm font-semibold sm:text-base", !isIncome && "text-red-600")}
+                          style={isIncome ? { color: "var(--module-accent-strong)" } : undefined}
+                        >
                           {isIncome ? "+" : "-"}¥{Number(transaction.amount).toLocaleString()}
                         </p>
-                        {transaction.description ? <p className="mt-1 text-xs text-slate-500 sm:text-sm">{transaction.description}</p> : null}
+                        {transaction.description ? <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{transaction.description}</p> : null}
                       </div>
                     </div>
                   );
@@ -544,7 +559,7 @@ export function SavingsDefaultTheme({
             <div className="mt-5 space-y-4">
               {previewImage ? (
                 <>
-                  <div className="overflow-hidden rounded-2xl border border-transparent bg-slate-50 sm:border-slate-200">
+                  <div className="overflow-hidden rounded-2xl border border-transparent sm:border-slate-200" style={{ background: "var(--theme-dialog-section-bg)" }}>
                     <Image src={previewImage} alt={imageDialogGoal.name} width={640} height={420} className="h-auto w-full object-contain" unoptimized />
                   </div>
                   <div className="flex gap-2">
@@ -586,7 +601,8 @@ export function SavingsDefaultTheme({
                 </>
               ) : (
                 <div
-                  className="flex h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50 text-center sm:border-slate-200"
+                  className="flex h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 text-center sm:border-slate-200"
+                  style={{ background: "var(--theme-dialog-section-bg)" }}
                   onClick={() => {
                     const input = document.createElement("input");
                     input.type = "file";
@@ -605,9 +621,9 @@ export function SavingsDefaultTheme({
                     input.click();
                   }}
                 >
-                  <ImageIcon className="h-10 w-10 text-slate-400" />
-                  <p className="mt-3 text-base font-medium text-slate-900">点击上传图片</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">支持 JPG、PNG、GIF</p>
+                  <ImageIcon className="h-10 w-10" style={{ color: "var(--theme-muted-text)" }} />
+                  <p className="mt-3 text-base font-medium" style={{ color: "var(--theme-body-text)" }}>点击上传图片</p>
+                  <p className="mt-1 text-sm leading-6" style={{ color: "var(--theme-muted-text)" }}>支持 JPG、PNG、GIF</p>
                 </div>
               )}
 

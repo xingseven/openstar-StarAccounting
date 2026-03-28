@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
   Banknote,
@@ -17,13 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Skeleton } from "@/components/shared/Skeletons";
+import { LoansLoadingShell } from "./LoansLoadingShell";
 import {
   THEME_ICON_BUTTON_CLASS,
   ThemeHero,
   ThemeMetricCard,
   ThemeSectionHeader,
   ThemeSurface,
+  getThemeModuleStyle,
 } from "@/components/shared/theme-primitives";
 import { formatCurrency } from "@/lib/utils";
 import type { Loan } from "@/types";
@@ -46,10 +47,10 @@ interface LoansViewProps {
 }
 
 function getIcon(platform: string) {
-  if (platform.includes("房")) return <Home className="h-5 w-5 text-blue-600" />;
-  if (platform.includes("车")) return <CreditCard className="h-5 w-5 text-violet-600" />;
-  if (platform.includes("银行")) return <Landmark className="h-5 w-5 text-red-600" />;
-  return <Building className="h-5 w-5 text-slate-500" />;
+  if (platform.includes("房")) return <Home className="h-5 w-5 text-amber-600" />;
+  if (platform.includes("车")) return <CreditCard className="h-5 w-5 text-orange-600" />;
+  if (platform.includes("银行")) return <Landmark className="h-5 w-5 text-rose-600" />;
+  return <Building className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />;
 }
 
 function LoanCard({
@@ -69,18 +70,21 @@ function LoanCard({
 }) {
   const progress = item.totalAmount > 0 ? Math.min(100, ((item.totalAmount - item.remainingAmount) / item.totalAmount) * 100) : 0;
   const mobileLightOutlineButtonClass =
-    "h-10 justify-center rounded-xl border-transparent bg-slate-100 px-4 text-xs font-medium text-slate-700 hover:bg-slate-200 sm:border-border sm:bg-background sm:text-sm sm:text-foreground sm:hover:bg-muted";
+    "h-10 justify-center rounded-xl border-transparent px-4 text-xs font-medium hover:bg-slate-200 sm:border-border sm:bg-background sm:text-sm sm:text-foreground sm:hover:bg-muted";
 
   return (
     <ThemeSurface className="group p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-transparent bg-slate-50 sm:border-slate-200">
+          <div 
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-transparent sm:border-slate-200"
+            style={{ background: "var(--theme-dialog-section-bg)" }}
+          >
             {getIcon(item.platform)}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-slate-950 sm:text-lg">{item.platform}</p>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 sm:text-sm">
+            <p className="truncate text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>{item.platform}</p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
               <Calendar className="h-3.5 w-3.5" />
               每月 {item.dueDate} 日还款
             </p>
@@ -97,40 +101,54 @@ function LoanCard({
       </div>
 
       <div className="mt-4 space-y-3.5">
-        <div className="grid grid-cols-2 gap-3 rounded-[18px] bg-slate-50/70 px-4 py-3 sm:bg-transparent sm:px-0 sm:py-0">
+        <div 
+          className="grid grid-cols-2 gap-3 rounded-[18px] px-4 py-3 sm:bg-transparent sm:px-0 sm:py-0"
+          style={{ background: "var(--theme-dialog-section-bg)" }}
+        >
           <div>
-            <div className="flex items-center gap-2 text-xs text-slate-500 sm:text-sm">
+            <div className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
               <Banknote className="h-4 w-4" />
               月供
             </div>
-            <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-base">{formatCurrency(item.monthlyPayment)}</p>
+            <p className="mt-1 text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.monthlyPayment)}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-slate-500 sm:text-sm">剩余本金</p>
-            <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-base">{formatCurrency(item.remainingAmount)}</p>
+            <p className="text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>剩余本金</p>
+            <p className="mt-1 text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.remainingAmount)}</p>
           </div>
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between text-xs text-slate-500 sm:text-sm">
+          <div className="mb-2 flex items-center justify-between text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
             <span>进度 {progress.toFixed(1)}%</span>
             <span>
               {item.paidPeriods} / {item.periods} 期
             </span>
           </div>
-          <Progress value={progress} className="h-2" indicatorClassName="bg-blue-600" />
+          <Progress value={progress} className="h-2" indicatorClassName="[background:var(--module-progress-gradient)]" />
           <div className="mt-2 flex items-center justify-between gap-3 text-xs sm:text-sm">
-            <span className="text-slate-500">已还 {formatCurrency(item.totalAmount - item.remainingAmount)}</span>
-            <span className="font-medium text-slate-900">总额 {formatCurrency(item.totalAmount)}</span>
+            <span style={{ color: "var(--theme-muted-text)" }}>已还 {formatCurrency(item.totalAmount - item.remainingAmount)}</span>
+            <span className="font-medium" style={{ color: "var(--theme-body-text)" }}>总额 {formatCurrency(item.totalAmount)}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <Button type="button" variant="outline" className={mobileLightOutlineButtonClass} onClick={() => onOpenSchedule(item)}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className={mobileLightOutlineButtonClass} 
+            onClick={() => onOpenSchedule(item)}
+            style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}
+          >
             <Calendar className="mr-2 h-4 w-4" />
             还款计划
           </Button>
-          <Button type="button" className="h-10 justify-center rounded-xl bg-slate-900 px-4 text-xs font-medium hover:bg-slate-800 sm:text-sm" onClick={() => onRepay(item)}>
+          <Button 
+            type="button" 
+            className="h-10 justify-center rounded-xl px-4 text-xs font-medium text-white hover:brightness-105 sm:text-sm"
+            style={{ background: "var(--module-accent-strong)" }}
+            onClick={() => onRepay(item)}
+          >
             <HandCoins className="mr-2 h-4 w-4" />
             登记还款
           </Button>
@@ -139,9 +157,10 @@ function LoanCard({
         <Button
           type="button"
           variant="ghost"
-          className="h-10 w-full justify-center rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:text-sm"
+          className="h-10 w-full justify-center rounded-xl text-xs font-medium sm:text-sm"
           onClick={() => onReconcile(item)}
           disabled={isReconciling}
+          style={{ color: "var(--theme-label-text)" }}
         >
           {isReconciling ? "扫描中..." : "扫描历史还款"}
         </Button>
@@ -162,39 +181,13 @@ export function LoansDefaultTheme({
   onRepay,
   onReconcile,
 }: LoansViewProps) {
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const isSkeletonVisible = loading || showInitialSkeleton;
+  const isSkeletonVisible = loading;
   const totalRemaining = useMemo(() => items.reduce((sum, item) => sum + item.remainingAmount, 0), [items]);
   const totalPaid = useMemo(() => items.reduce((sum, item) => sum + (item.totalAmount - item.remainingAmount), 0), [items]);
   const totalMonthlyPayment = useMemo(() => items.reduce((sum, item) => sum + item.monthlyPayment, 0), [items]);
 
   if (isSkeletonVisible) {
-    return (
-      <div className="mx-auto max-w-[1680px] space-y-4 sm:space-y-5">
-        <Skeleton className="h-[220px] rounded-[28px]" />
-        <div className="grid gap-3 md:grid-cols-4">
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-        </div>
-        <div className="grid gap-4 xl:grid-cols-2">
-          <Skeleton className="h-[320px] rounded-[24px]" />
-          <Skeleton className="h-[320px] rounded-[24px]" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-[250px] rounded-[24px]" />
-          ))}
-        </div>
-      </div>
-    );
+    return <LoansLoadingShell />;
   }
 
   const platformOption = {
@@ -244,29 +237,33 @@ export function LoansDefaultTheme({
         type: "bar",
         stack: "total",
         data: paidVsRemainingData.map((item) => item.paid),
-        itemStyle: { color: "#1d4ed8" },
+        itemStyle: { color: "#b45309" },
       },
       {
         name: "剩余",
         type: "bar",
         stack: "total",
         data: paidVsRemainingData.map((item) => item.remaining),
-        itemStyle: { color: "#93c5fd" },
+        itemStyle: { color: "#fdba74" },
       },
     ],
   };
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5">
+    <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5" style={getThemeModuleStyle("loans")}>
       <DelayedRender delay={0}>
         <ThemeHero className="p-4 sm:p-6 lg:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">贷款工作台</h1>
-              <p className="mt-1 text-sm text-slate-500">统一查看贷款余额、月供压力和平台分布。</p>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>贷款工作台</h1>
+              <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>统一查看贷款余额、月供压力和平台分布。</p>
             </div>
 
-            <Button onClick={onOpenCreate} className="h-10 rounded-2xl bg-slate-900 px-4 text-sm font-medium hover:bg-slate-800">
+            <Button
+              onClick={onOpenCreate}
+              className="h-10 rounded-2xl px-4 text-sm font-medium text-white hover:brightness-105"
+              style={{ background: "var(--module-accent-strong)" }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               新增贷款
             </Button>

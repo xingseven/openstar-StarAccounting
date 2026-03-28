@@ -4,12 +4,13 @@ import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_DASHBOARD } from "@/features/shared/mockData";
+import { DashboardLoadingShell } from "@/features/dashboard/components/themes/DashboardLoadingShell";
 
 const DashboardDefaultTheme = dynamic(
   () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
   {
     ssr: false,
-    loading: () => null
+    loading: () => <DashboardLoadingShell />
   }
 );
 
@@ -31,6 +32,8 @@ export type DashboardData = {
   totalDebt: number;
   monthExpense: number;
   monthIncome: number;
+  lastMonthExpense: number;
+  lastMonthIncome: number;
   monthSavingsIncome: number;
   monthSavingsExpense: number;
   recentTransactions: Array<{
@@ -81,16 +84,22 @@ async function fetchDashboardData(): Promise<DashboardData> {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString();
 
   const qsExpense = new URLSearchParams({ type: "EXPENSE", startDate: start, endDate: end });
   const qsIncome = new URLSearchParams({ type: "INCOME", startDate: start, endDate: end });
+  const qsLastMonthExpense = new URLSearchParams({ type: "EXPENSE", startDate: lastMonthStart, endDate: lastMonthEnd });
+  const qsLastMonthIncome = new URLSearchParams({ type: "INCOME", startDate: lastMonthStart, endDate: lastMonthEnd });
 
-  const [assetsData, loansData, savingsData, expenseData, incomeData, transactionsData, savingsTxData, budgetAlertsData] = await Promise.all([
+  const [assetsData, loansData, savingsData, expenseData, incomeData, lastMonthExpenseData, lastMonthIncomeData, transactionsData, savingsTxData, budgetAlertsData] = await Promise.all([
     apiFetch<{ items: Asset[] }>("/api/assets"),
     apiFetch<{ items: Loan[] }>("/api/loans"),
     apiFetch<{ items: SavingsMetricItem[] }>("/api/savings"),
     apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsExpense}`),
     apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsIncome}`),
+    apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsLastMonthExpense}`),
+    apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsLastMonthIncome}`),
     apiFetch<{ items: Transaction[] }>(`/api/transactions?page=1&pageSize=5`),
     apiFetch<{ items: Transaction[] }>(`/api/transactions?pageSize=100`),
     apiFetch<{ alerts: BudgetAlert[] }>("/api/budgets/alerts"),
@@ -115,6 +124,8 @@ async function fetchDashboardData(): Promise<DashboardData> {
     totalDebt: loansData.items.reduce((acc, cur) => acc + Number(cur.remainingAmount), 0),
     monthExpense: Number(expenseData.totalExpense),
     monthIncome: Number(incomeData.totalExpense),
+    lastMonthExpense: Number(lastMonthExpenseData.totalExpense),
+    lastMonthIncome: Number(lastMonthIncomeData.totalExpense),
     monthSavingsIncome,
     monthSavingsExpense,
     recentTransactions: transactionsData.items,
@@ -124,7 +135,7 @@ async function fetchDashboardData(): Promise<DashboardData> {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData>(MOCK_DASHBOARD);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -136,6 +147,8 @@ export default function DashboardPage() {
           realData.totalDebt === 0 &&
           realData.monthExpense === 0 &&
           realData.monthIncome === 0 &&
+          realData.lastMonthExpense === 0 &&
+          realData.lastMonthIncome === 0 &&
           realData.recentTransactions.length === 0;
         if (hasNoData) {
           setData(MOCK_DASHBOARD);

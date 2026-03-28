@@ -29,10 +29,14 @@ interface BottomSheetContentProps
   hideClose?: boolean;
 }
 
+function isNestedRadixSelectTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && Boolean(target.closest("[data-radix-popper-content-wrapper]"));
+}
+
 const BottomSheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   BottomSheetContentProps
->(({ className, children, hideClose = false, ...props }, ref) => (
+>(({ className, children, hideClose = false, onInteractOutside, onPointerDownOutside, ...props }, ref) => (
   <BottomSheetPortal>
     <BottomSheetOverlay />
     <DialogPrimitive.Content
@@ -43,6 +47,27 @@ const BottomSheetContent = React.forwardRef<
         "data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom",
         className
       )}
+      onInteractOutside={(event) => {
+        if (isNestedRadixSelectTarget(event.target)) {
+          event.preventDefault();
+          return;
+        }
+
+        onInteractOutside?.(event);
+      }}
+      onPointerDownOutside={(event) => {
+        if (isNestedRadixSelectTarget(event.target)) {
+          event.preventDefault();
+          return;
+        }
+
+        onPointerDownOutside?.(event);
+      }}
+      onFocusOutside={(event) => {
+        if (isNestedRadixSelectTarget(event.target)) {
+          event.preventDefault();
+        }
+      }}
       {...props}
     >
       <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-300/90" />

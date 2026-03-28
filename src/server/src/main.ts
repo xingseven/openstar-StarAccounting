@@ -1098,6 +1098,10 @@ type DailyMetricRow = {
   amount: unknown;
 };
 
+type DailyCashflowMetricRow = DailyMetricRow & {
+  type: string | null;
+};
+
 type DailyCategoryMetricRow = DailyMetricRow & {
   category: string | null;
 };
@@ -1131,11 +1135,34 @@ const DASHBOARD_PLATFORM_COLORS: Record<DashboardPlatformKey, string> = {
 
 const DASHBOARD_CATEGORY_COLORS = ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"];
 
-function formatMetricBucket(date: Date, groupBy: "day" | "month" = "day") {
-  return date.toISOString().slice(0, groupBy === "month" ? 7 : 10);
+const DASHBOARD_TIMEZONE = process.env.APP_TIMEZONE?.trim() || "Asia/Shanghai";
+
+function getDashboardDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DASHBOARD_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+  };
 }
 
-function aggregateDailyMetrics(rows: DailyMetricRow[], groupBy: "day" | "month" = "day") {
+function formatMetricBucket(date: Date, groupBy: "day" | "month" | "year" = "day") {
+  const { year, month, day } = getDashboardDateParts(date);
+  if (groupBy === "year") return year;
+  if (groupBy === "month") return `${year}-${month}`;
+  return `${year}-${month}-${day}`;
+}
+
+function aggregateDailyMetrics(rows: DailyMetricRow[], groupBy: "day" | "month" | "year" = "day") {
   const map = new Map<string, { total: number; count: number }>();
 
   for (const row of rows) {
@@ -1159,14 +1186,43 @@ function aggregateDailyMetrics(rows: DailyMetricRow[], groupBy: "day" | "month" 
     }));
 }
 
-function aggregateDailyCategoryMetrics(rows: DailyCategoryMetricRow[]) {
+function aggregateCashflowMetrics(rows: DailyCashflowMetricRow[], groupBy: "day" | "month" | "year" = "day") {
+  const map = new Map<string, { expense: number; income: number }>();
+
+  for (const row of rows) {
+    const date = row.date instanceof Date ? row.date : new Date(row.date);
+    if (Number.isNaN(date.getTime())) continue;
+
+    const key = formatMetricBucket(date, groupBy);
+    const current = map.get(key) ?? { expense: 0, income: 0 };
+    const amount = Number(row.amount ?? 0);
+    if (!Number.isFinite(amount)) continue;
+
+    if (row.type === "INCOME") current.income += amount;
+    else current.expense += amount;
+
+    map.set(key, current);
+  }
+
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([day, value]) => ({
+      day,
+      date: day,
+      expense: String(value.expense),
+      income: String(value.income),
+      total: String(value.expense + value.income),
+    }));
+}
+
+function aggregateDailyCategoryMetrics(rows: DailyCategoryMetricRow[], groupBy: "day" | "month" | "year" = "day") {
   const map = new Map<string, number>();
 
   for (const row of rows) {
     const date = row.date instanceof Date ? row.date : new Date(row.date);
     if (Number.isNaN(date.getTime())) continue;
 
-    const day = formatMetricBucket(date, "day");
+    const day = formatMetricBucket(date, groupBy);
     const category = row.category?.trim() || "未分类";
     const key = `${day}__${category}`;
     map.set(key, (map.get(key) ?? 0) + Number(row.amount ?? 0));
@@ -1204,12 +1260,12 @@ function normalizeDashboardPlatform(platform: string | null | undefined): Dashbo
   return "unknown";
 }
 
-function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
+function buildConsumptionDashboard(rows: ConsumptionDashboardRow[], bucket: "day" | "month" = "day") {
   const expensePlatformMap = new Map<DashboardPlatformKey, number>();
   const incomePlatformMap = new Map<DashboardPlatformKey, number>();
   const categoryMap = new Map<string, { value: number; count: number }>();
   const merchantMap = new Map<string, number>();
-  const dailyRows: DailyMetricRow[] = [];
+  const cashflowRows: DailyCashflowMetricRow[] = [];
   const dailyCategoryRows: DailyCategoryMetricRow[] = [];
   const platformCategoryMap = new Map<string, { platform: DashboardPlatformKey; category: string; total: number }>();
   const recentTransactions = [...rows]
@@ -1232,7 +1288,7 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
   const scatter = rows
     .filter((row) => row.type === "EXPENSE")
     .sort((a, b) => new Date(String(b.date)).getTime() - new Date(String(a.date)).getTime())
-    .slice(0, 300)
+    .slice(0, 160)
     .map((row, index) => {
       const date = new Date(String(row.date));
       return {
@@ -1250,6 +1306,8 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
     const platformKey = normalizeDashboardPlatform(row.platform);
     const category = row.category?.trim() || "未分类";
 
+    cashflowRows.push({ date: row.date, amount, type: row.type });
+
     if (row.type === "EXPENSE") {
       totalExpense += amount;
       expenseCount += 1;
@@ -1263,7 +1321,6 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
       const merchant = row.merchant?.trim() || "未知商户";
       merchantMap.set(merchant, (merchantMap.get(merchant) ?? 0) + amount);
 
-      dailyRows.push({ date: row.date, amount });
       dailyCategoryRows.push({ date: row.date, amount, category });
 
       const platformCategoryKey = `${platformKey}__${category}`;
@@ -1310,12 +1367,21 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
       fill: DASHBOARD_CATEGORY_COLORS[index % DASHBOARD_CATEGORY_COLORS.length],
     }));
 
-  const trend = aggregateDailyMetrics(dailyRows).map((item) => ({
+  const trend = aggregateCashflowMetrics(cashflowRows, bucket).map((item) => ({
     day: item.day,
+    expense: Number(item.expense),
+    income: Number(item.income),
+    total: Number(item.total),
+  })).slice(bucket === "month" ? -24 : -62);
+
+  const trendYearly = aggregateCashflowMetrics(cashflowRows, "year").map((item) => ({
+    day: item.day,
+    expense: Number(item.expense),
+    income: Number(item.income),
     total: Number(item.total),
   }));
 
-  const dailyCategoryItems = aggregateDailyCategoryMetrics(dailyCategoryRows).map((item) => ({
+  const dailyCategoryItems = aggregateDailyCategoryMetrics(dailyCategoryRows, bucket).map((item) => ({
     day: item.day,
     category: item.category,
     total: Number(item.total),
@@ -1383,7 +1449,7 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
 
   const calendar = trend.map((item) => ({
     date: item.day,
-    day: new Date(item.day).getDate(),
+    day: bucket === "month" ? new Date(`${item.day}-01`).getMonth() + 1 : new Date(item.day).getDate(),
     value: item.total,
   }));
 
@@ -1447,6 +1513,7 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[]) {
     incomeExpense,
     merchants,
     trend,
+    trendYearly,
     stackedBar,
     pareto,
     weekdayWeekend,
@@ -1515,6 +1582,7 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
 
 app.get("/api/consumption/dashboard", async (req, res) => {
   const { start, end } = parseQuery(req);
+  const bucket = req.query.bucket === "month" ? "month" : "day";
   const userId = await requireUserId(req, res);
   if (!userId) return;
 
@@ -1543,7 +1611,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
         },
       });
 
-      jsonOk(res, buildConsumptionDashboard(rows));
+      jsonOk(res, buildConsumptionDashboard(rows, bucket));
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -1570,7 +1638,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
     return true;
   });
 
-  jsonOk(res, buildConsumptionDashboard(filtered));
+  jsonOk(res, buildConsumptionDashboard(filtered, bucket));
 });
 
 app.get("/api/metrics/consumption/by-platform", async (req, res) => {

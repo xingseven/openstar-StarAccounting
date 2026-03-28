@@ -5,6 +5,10 @@ import { Plus, ShieldAlert } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/shared/PageContainer";
 import {
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
+import { Skeleton } from "@/components/shared/Skeletons";
+import {
   THEME_DIALOG_INPUT_CLASS,
   THEME_DIALOG_SELECT_CLASS,
   ThemeActionBar,
@@ -86,6 +90,7 @@ export default function BudgetsPage() {
   const [platform, setPlatform] = useState("");
   const [alertPercent, setAlertPercent] = useState("80");
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
@@ -112,6 +117,8 @@ export default function BudgetsPage() {
         title: "加载预算失败",
         description: loadError instanceof Error ? loadError.message : "请稍后重试。",
       });
+    } finally {
+      setPageLoading(false);
     }
   }, [notify]);
 
@@ -208,17 +215,94 @@ export default function BudgetsPage() {
   const totalUsed = items.reduce((sum, item) => sum + item.used, 0);
   const warningCount = items.filter((item) => item.status !== "normal").length;
 
+  const isSkeletonVisible = pageLoading;
+
+  if (isSkeletonVisible) {
+    return (
+      <LoadingPageShell maxWidth="5xl">
+        <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
+          <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-32 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full max-w-lg rounded-[14px]" />
+                <Skeleton className="h-4 w-full max-w-xl rounded-full" />
+                <Skeleton className="h-4 w-full max-w-lg rounded-full opacity-60" />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="rounded-[20px] p-4" style={{ background: "var(--theme-metric-bg)" }}>
+                  <div className="space-y-2">
+                    <Skeleton className="h-3.5 w-20 rounded-full bg-white/70" />
+                    <Skeleton className="h-7 w-24 rounded-[12px] bg-white/85" />
+                    <Skeleton className="h-3 w-24 rounded-full bg-white/60" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+              <Skeleton className="h-7 w-32 rounded-[12px]" />
+              <Skeleton className="h-3 w-56 rounded-full opacity-60" />
+            </div>
+            <Skeleton className="h-10 w-28 rounded-2xl" />
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <article key={index} className="rounded-[22px] border border-slate-200 p-4 shadow-sm" style={{ background: "var(--theme-surface-bg)" }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-20 rounded-full" />
+                      <Skeleton className="h-5 w-12 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3 w-32 rounded-full opacity-60" />
+                    <Skeleton className="h-3 w-24 rounded-full opacity-60" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-7 w-10 rounded-full" />
+                    <Skeleton className="h-7 w-10 rounded-full" />
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-20 rounded-full opacity-60" />
+                    <Skeleton className="h-4 w-12 rounded-full" />
+                  </div>
+                  <Skeleton className="h-2 w-full rounded-full" />
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-16 rounded-full opacity-60" />
+                    <Skeleton className="h-3 w-16 rounded-full opacity-60" />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </LoadingPageShell>
+    );
+  }
+
   return (
     <PageContainer>
-      <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.18),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
+      <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.18),transparent_35%)]">
         <div className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
           <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em]" style={{ color: "var(--theme-muted-text)" }}>
               Budget Control
             </span>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">移动端弹窗已统一到底部，预算面板也同步跟上</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              <h1 className="text-3xl font-semibold tracking-tight" style={{ color: "var(--theme-body-text)" }}>移动端弹窗已统一到底部，预算面板也同步跟上</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: "var(--theme-label-text)" }}>
                 预算创建、编辑和删除现在都使用底部滑出的交互，移动端不再出现遮挡内容的居中模态。
               </p>
             </div>
@@ -247,32 +331,32 @@ export default function BudgetsPage() {
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {items.length === 0 ? (
-            <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500 sm:col-span-2 xl:col-span-3">
+            <div className="rounded-[22px] border border-dashed border-slate-200 p-10 text-center text-sm sm:col-span-2 xl:col-span-3" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
               还没有预算记录，先创建第一条预算。
             </div>
           ) : (
             items.map((item) => (
-              <article key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+              <article key={item.id} className="rounded-[22px] border border-slate-200 p-4 shadow-sm" style={{ background: "var(--theme-surface-bg)" }}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-sm font-semibold text-slate-950">{item.category === "ALL" ? "总预算" : item.category}</h2>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                      <h2 className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{item.category === "ALL" ? "总预算" : item.category}</h2>
+                      <span className="rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
                         {getStatusLabel(item.status)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>
                       {item.period === "MONTHLY" ? "月度" : "年度"} · {getScopeTypeLabel(item.scopeType)}
                       {item.scopeType === "PLATFORM" && item.platform ? ` · ${item.platform}` : ""}
                     </p>
-                    <p className="mt-1 text-xs text-slate-400">预警阈值 {item.alertPercent}%</p>
+                    <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>预警阈值 {item.alertPercent}%</p>
                   </div>
 
                   <div className="flex gap-2 text-xs">
-                    <button onClick={() => openEdit(item)} className="rounded-full px-2 py-1 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950">
+                    <button onClick={() => openEdit(item)} className="rounded-full px-2 py-1 transition" style={{ color: "var(--theme-label-text)" }}>
                       编辑
                     </button>
-                    <button onClick={() => void handleDelete(item.id)} className="rounded-full px-2 py-1 text-red-600 transition hover:bg-red-50">
+                    <button onClick={() => void handleDelete(item.id)} className="rounded-full px-2 py-1 text-red-600 transition hover:bg-red-50/50">
                       删除
                     </button>
                   </div>
@@ -280,13 +364,13 @@ export default function BudgetsPage() {
 
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">已用 ¥{item.used.toFixed(2)}</span>
-                    <span className="font-semibold text-slate-950">{item.percent.toFixed(1)}%</span>
+                    <span style={{ color: "var(--theme-muted-text)" }}>已用 ¥{item.used.toFixed(2)}</span>
+                    <span className="font-semibold" style={{ color: "var(--theme-body-text)" }}>{item.percent.toFixed(1)}%</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--theme-empty-icon-bg)" }}>
                     <div className={getStatusAccent(item.status)} style={{ width: `${Math.min(item.percent, 100)}%`, height: "100%" }} />
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center justify-between text-xs" style={{ color: "var(--theme-muted-text)" }}>
                     <span>剩余 ¥{(item.amount - item.used).toFixed(2)}</span>
                     <span>限额 ¥{item.amount.toFixed(2)}</span>
                   </div>

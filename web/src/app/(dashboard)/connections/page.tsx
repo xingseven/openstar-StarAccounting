@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { DelayedRender } from "@/components/shared/DelayedRender";
 import { PageContainer } from "@/components/shared/PageContainer";
+import {
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
 import { Skeleton } from "@/components/shared/Skeletons";
 import { ThemeHero, ThemeMetricCard, ThemeNotice, ThemeSectionHeader, ThemeSurface } from "@/components/shared/theme-primitives";
 
@@ -66,11 +68,6 @@ export default function ConnectionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setIsPageLoading(false), 500);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const remainingSeconds = useMemo(() => {
     if (!generateData) return 0;
@@ -131,7 +128,15 @@ export default function ConnectionsPage() {
   );
 
   useEffect(() => {
-    void loadDevices();
+    async function loadPage() {
+      try {
+        await loadDevices();
+      } finally {
+        setIsPageLoading(false);
+      }
+    }
+
+    void loadPage();
   }, []);
 
   useEffect(() => {
@@ -216,19 +221,113 @@ export default function ConnectionsPage() {
 
   if (isPageLoading) {
     return (
-      <PageContainer maxWidth="5xl">
-        <div className="space-y-4">
-          <DelayedRender delay={0}>
-            <Skeleton className="h-[220px] rounded-[28px]" />
-          </DelayedRender>
-          <DelayedRender delay={60}>
-            <Skeleton className="h-[380px] rounded-[24px]" />
-          </DelayedRender>
-          <DelayedRender delay={120}>
-            <Skeleton className="h-[240px] rounded-[24px]" />
-          </DelayedRender>
+      <LoadingPageShell maxWidth="5xl">
+        <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-44 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full max-w-xl rounded-[14px]" />
+                <Skeleton className="h-4 w-full max-w-2xl rounded-full" />
+                <Skeleton className="h-4 w-full max-w-xl rounded-full opacity-60" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="h-9 w-32 rounded-full" />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className="rounded-[20px] p-4" style={{ background: "var(--theme-metric-bg)" }}>
+                  <div className="space-y-2">
+                    <Skeleton className="h-3.5 w-20 rounded-full bg-white/70" />
+                    <Skeleton className="h-7 w-24 rounded-[12px] bg-white/85" />
+                    <Skeleton className="h-3 w-28 rounded-full bg-white/60" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+              <Skeleton className="h-7 w-32 rounded-[12px]" />
+              <Skeleton className="h-3 w-72 rounded-full opacity-60" />
+            </div>
+            <Skeleton className="h-10 w-28 rounded-2xl" />
+          </div>
+
+          <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-[24px] p-5 shadow-sm md:col-span-2" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-3.5 w-16 rounded-full opacity-60" />
+                    <Skeleton className="h-10 w-48 rounded-[14px]" />
+                  </div>
+                  <Skeleton className="h-8 w-20 rounded-full" />
+                </div>
+                <Skeleton className="mt-4 h-3 w-full rounded-full opacity-60" />
+              </div>
+
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="rounded-[20px] border border-slate-200 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex gap-3">
+                      <Skeleton className="h-10 w-10 rounded-2xl" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-20 rounded-full opacity-60" />
+                        <Skeleton className="h-4 w-28 rounded-full" />
+                      </div>
+                    </div>
+                    {index < 2 ? <Skeleton className="h-7 w-16 rounded-full" /> : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-slate-950 p-5 shadow-sm">
+              <Skeleton className="h-4 w-28 rounded-full bg-white/20" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="rounded-[18px] border border-white/10 bg-white/5 p-3">
+                    <Skeleton className="h-3 w-20 rounded-full bg-white/15" />
+                    <Skeleton className="mt-2 h-4 w-full rounded-full bg-white/20" />
+                    <Skeleton className="mt-2 h-4 w-[72%] rounded-full bg-white/15" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </PageContainer>
+
+        <div className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+              <Skeleton className="h-7 w-32 rounded-[12px]" />
+              <Skeleton className="h-3 w-72 rounded-full opacity-60" />
+            </div>
+            <Skeleton className="h-10 w-28 rounded-2xl" />
+          </div>
+          <div className="mt-5 overflow-x-auto rounded-[22px] border border-slate-200">
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="grid grid-cols-[1.2fr_1fr_0.9fr_1fr_0.7fr_0.8fr] gap-3">
+                  {Array.from({ length: 6 }).map((__, cellIndex) => (
+                    <Skeleton key={cellIndex} className="h-10 rounded-lg" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </LoadingPageShell>
     );
   }
 

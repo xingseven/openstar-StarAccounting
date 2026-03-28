@@ -82,6 +82,8 @@ export type DashboardData = {
   totalDebt: number;
   monthExpense: number;
   monthIncome: number;
+  lastMonthExpense: number;
+  lastMonthIncome: number;
   monthSavingsIncome: number;
   monthSavingsExpense: number;
   recentTransactions: Transaction[];

@@ -26,6 +26,9 @@ import {
   BottomSheetTitle,
 } from "@/components/ui/bottomsheet";
 import { apiFetch } from "@/lib/api";
+import {
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
   THEME_DIALOG_INPUT_CLASS,
@@ -80,7 +83,7 @@ export default function AIPage() {
   const [editingModel, setEditingModel] = useState<AIModel | null>(null);
   const [configModel, setConfigModel] = useState<AIModel | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("configured");
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -108,15 +111,13 @@ export default function AIPage() {
   const [configNotice, setConfigNotice] = useState<NoticeState | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
+    void loadModels(true);
   }, []);
 
-  useEffect(() => {
-    void loadModels();
-  }, []);
-
-  async function loadModels() {
+  async function loadModels(showPageLoading = false) {
+    if (showPageLoading) {
+      setPageLoading(true);
+    }
     try {
       const data = await apiFetch<{ items: AIModel[] }>("/api/ai/models");
       setModels(data.items || []);
@@ -131,6 +132,10 @@ export default function AIPage() {
         description: loadError instanceof Error ? loadError.message : "请稍后重试。",
       });
       return false;
+    } finally {
+      if (showPageLoading) {
+        setPageLoading(false);
+      }
     }
   }
 
@@ -352,18 +357,73 @@ export default function AIPage() {
     setExpandedSection(expandedSection === section ? null : section);
   }
 
-  if (showInitialSkeleton) {
+  const isSkeletonVisible = pageLoading;
+
+  if (isSkeletonVisible) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
-        <Skeleton className="h-[180px] rounded-[28px]" />
+      <LoadingPageShell className="py-4 sm:py-6 lg:py-8">
+        <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-2xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-40 rounded-[14px] bg-white/85" />
+              <Skeleton className="h-4 w-64 rounded-full bg-white/60" />
+            </div>
+          </div>
+        </section>
+
         <div className="grid gap-3 md:grid-cols-3">
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-[20px] p-4" style={{ background: "var(--theme-metric-bg)" }}>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-20 rounded-full bg-white/70" />
+                <Skeleton className="h-7 w-24 rounded-[12px] bg-white/85" />
+                <Skeleton className="h-3 w-24 rounded-full bg-white/60" />
+              </div>
+            </div>
+          ))}
         </div>
-        <Skeleton className="h-[220px] rounded-[24px]" />
-        <Skeleton className="h-[260px] rounded-[24px]" />
-      </div>
+
+        <div className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+              <Skeleton className="h-7 w-36 rounded-[12px]" />
+              <Skeleton className="h-3 w-64 rounded-full opacity-60" />
+            </div>
+            <Skeleton className="h-10 w-28 rounded-2xl" />
+          </div>
+        </div>
+
+        {Array.from({ length: 2 }).map((_, sectionIndex) => (
+          <div key={sectionIndex} className="rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-6 w-32 rounded-[12px]" />
+              </div>
+              <Skeleton className="h-7 w-14 rounded-full" />
+            </div>
+            <div className="mt-5 space-y-3">
+              {Array.from({ length: 2 }).map((_, itemIndex) => (
+                <div key={itemIndex} className="flex items-center justify-between rounded-xl border p-4">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-9 w-9 rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-28 rounded-full" />
+                      <Skeleton className="h-3 w-20 rounded-full opacity-60" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-20 rounded-lg" />
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </LoadingPageShell>
     );
   }
 
@@ -371,12 +431,12 @@ export default function AIPage() {
     <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+          <div className="rounded-2xl p-3" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
             <Brain className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">AI 模型配置</h1>
-            <p className="mt-1 text-sm text-slate-500">管理视觉与文本模型接入，为 AI 记账和分析提供服务。</p>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>AI 模型配置</h1>
+            <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>管理视觉与文本模型接入，为 AI 记账和分析提供服务。</p>
           </div>
         </div>
       </ThemeHero>
@@ -415,8 +475,8 @@ export default function AIPage() {
         <ThemeSurface className="p-4 sm:p-6">
           <button className="flex w-full items-center justify-between" onClick={() => toggleSection("configured")}>
             <div className="flex items-center gap-2">
-              {expandedSection === "configured" ? <ChevronDown className="h-5 w-5 text-slate-400" /> : <ChevronRight className="h-5 w-5 text-slate-400" />}
-              <h2 className="text-base font-semibold text-slate-950 sm:text-lg">已配置模型</h2>
+              {expandedSection === "configured" ? <ChevronDown className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />}
+              <h2 className="text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>已配置模型</h2>
             </div>
             <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">{configuredModels.length} 个</span>
           </button>
@@ -434,8 +494,8 @@ export default function AIPage() {
         <ThemeSurface className="p-4 sm:p-6">
           <button className="flex w-full items-center justify-between" onClick={() => toggleSection("unconfigured")}>
             <div className="flex items-center gap-2">
-              {expandedSection === "unconfigured" ? <ChevronDown className="h-5 w-5 text-slate-400" /> : <ChevronRight className="h-5 w-5 text-slate-400" />}
-              <h2 className="text-base font-semibold text-slate-950 sm:text-lg">未配置模型</h2>
+              {expandedSection === "unconfigured" ? <ChevronDown className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />}
+              <h2 className="text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>未配置模型</h2>
             </div>
             <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700">{unconfiguredModels.length} 个</span>
           </button>
@@ -555,7 +615,7 @@ export default function AIPage() {
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-slate-600" style={{ color: "var(--theme-muted-text)" }}
                   >
                     {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -613,7 +673,7 @@ export default function AIPage() {
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-slate-600" style={{ color: "var(--theme-muted-text)" }}
                   >
                     {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -669,16 +729,16 @@ function ModelCard({
   return (
     <div className={cn("flex items-center justify-between rounded-xl border p-4 transition-all", model.status === "active" ? THEME_STATUS_SUCCESS_SURFACE_CLASS : THEME_STATUS_NEUTRAL_SURFACE_CLASS)}>
       <div className="flex items-center gap-4">
-        <div className={cn("rounded-lg p-2", model.status === "active" ? "bg-green-100" : "bg-slate-100")}>
-          <Brain className={cn("h-5 w-5", model.status === "active" ? "text-green-600" : "text-slate-500")} />
+        <div className={cn("rounded-lg p-2", model.status === "active" ? "bg-green-100" : "")} style={model.status !== "active" ? { background: "var(--theme-empty-icon-bg)" } : {}}>
+          <Brain className={cn("h-5 w-5", model.status === "active" ? "text-green-600" : "")} style={model.status !== "active" ? { color: "var(--theme-muted-text)" } : {}} />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-900 sm:text-base">{model.name}</span>
+            <span className="text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>{model.name}</span>
             {model.status === "active" ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-yellow-600" />}
             {model.isDefault ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">默认</span> : null}
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 sm:text-xs">
+          <div className="mt-1 flex items-center gap-2 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
             <span>{model.provider}</span>
             <span>·</span>
             <span className={cn("rounded px-1.5 py-0.5", model.type === "vision" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700")}>

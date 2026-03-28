@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DelayedRender } from "@/components/shared/DelayedRender";
+import {
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
 import { Skeleton } from "@/components/shared/Skeletons";
 import {
   THEME_DIALOG_INPUT_CLASS,
@@ -41,7 +44,7 @@ export default function SettingsPage() {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [accountLoading, setAccountLoading] = useState(false);
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,11 +52,6 @@ export default function SettingsPage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newAccountName, setNewAccountName] = useState("");
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -68,6 +66,8 @@ export default function SettingsPage() {
         setAccounts(accountResponse.items || []);
       } catch (loadError) {
         console.error(loadError);
+      } finally {
+        setPageLoading(false);
       }
     }
 
@@ -163,21 +163,72 @@ export default function SettingsPage() {
     window.location.href = "/auth/login";
   }
 
-  if (showInitialSkeleton || !user) {
+  const isSkeletonVisible = pageLoading || !user;
+
+  if (isSkeletonVisible) {
     return (
-      <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
-        <Skeleton className="h-[180px] rounded-[28px]" />
+      <LoadingPageShell className="py-4 sm:py-6 lg:py-8">
+        <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-2xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-24 rounded-[14px] bg-white/85" />
+              <Skeleton className="h-4 w-72 rounded-full bg-white/60" />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-start sm:justify-end">
+            <Skeleton className="h-10 w-32 rounded-2xl" />
+          </div>
+        </section>
+
         <div className="grid gap-3 md:grid-cols-3">
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
-          <Skeleton className="h-[110px] rounded-[20px]" />
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-[20px] p-4" style={{ background: "var(--theme-metric-bg)" }}>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-20 rounded-full bg-white/70" />
+                <Skeleton className="h-7 w-40 rounded-[12px] bg-white/85" />
+                <Skeleton className="h-3 w-24 rounded-full bg-white/60" />
+              </div>
+            </div>
+          ))}
         </div>
+
         <div className="grid gap-4 lg:grid-cols-3">
-          <Skeleton className="h-[320px] rounded-[24px]" />
-          <Skeleton className="h-[320px] rounded-[24px]" />
-          <Skeleton className="h-[320px] rounded-[24px]" />
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-[22px] p-4 sm:p-6 lg:p-8" style={{ background: "var(--theme-surface-bg)" }}>
+              <div className="space-y-2">
+                <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+                <Skeleton className="h-7 w-32 rounded-[12px]" />
+                <Skeleton className="h-3 w-56 rounded-full opacity-60" />
+              </div>
+              <div className="mt-5 space-y-4">
+                {Array.from({ length: index === 2 ? 3 : 2 }).map((__, fieldIndex) => (
+                  <div key={fieldIndex} className="space-y-2">
+                    <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
+                    <Skeleton className="h-11 w-full rounded-xl" />
+                  </div>
+                ))}
+                <div className="flex justify-end">
+                  <Skeleton className="h-10 w-28 rounded-xl" />
+                </div>
+                {index === 2 ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 2 }).map((__, rowIndex) => (
+                      <div key={rowIndex} className="flex items-center justify-between rounded-xl px-4 py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-28 rounded-full" />
+                          <Skeleton className="h-3 w-16 rounded-full opacity-60" />
+                        </div>
+                        <Skeleton className="h-8 w-20 rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </LoadingPageShell>
     );
   }
 
@@ -189,18 +240,18 @@ export default function SettingsPage() {
       <DelayedRender delay={0}>
         <ThemeHero className="p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-4">
-            <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+            <div className="rounded-2xl p-3" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
               <User className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">设置</h1>
-              <p className="mt-1 text-sm text-slate-500">管理你的账户资料、安全信息和默认工作账户。</p>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>设置</h1>
+              <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>管理你的账户资料、安全信息和默认工作账户。</p>
             </div>
           </div>
           <div className="mt-4 flex justify-start sm:justify-end">
-            <Button type="button" variant="outline" onClick={handleLogout} className="h-10 rounded-2xl px-4 text-slate-700">
+            <Button type="button" variant="outline" onClick={handleLogout} className="h-10 rounded-2xl px-4" style={{ color: "var(--theme-label-text)" }}>
               <LogOut className="mr-2 h-4 w-4" />
-              閫€鍑虹櫥褰?
+              退出登录
             </Button>
           </div>
         </ThemeHero>
@@ -239,7 +290,7 @@ export default function SettingsPage() {
 
             <form onSubmit={handleUpdateProfile} className="mt-5 space-y-4">
               <ThemeFormField label="邮箱">
-                <Input disabled value={user.email} className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl bg-slate-50 text-slate-500")} />
+                <Input disabled value={user.email} className={cn(THEME_DIALOG_INPUT_CLASS, "rounded-xl")} style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }} />
               </ThemeFormField>
 
               <ThemeFormField label="显示名称">
@@ -265,7 +316,7 @@ export default function SettingsPage() {
             <form onSubmit={handleUpdatePassword} className="mt-5 space-y-4">
               <ThemeFormField label="当前密码">
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4" style={{ color: "var(--theme-muted-text)" }} />
                   <Input
                     required
                     type="password"
@@ -278,7 +329,7 @@ export default function SettingsPage() {
 
               <ThemeFormField label="新密码" hint="至少 6 位">
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-4 w-4" style={{ color: "var(--theme-muted-text)" }} />
                   <Input
                     required
                     type="password"
@@ -335,8 +386,8 @@ export default function SettingsPage() {
                       )}
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-950">{account.name}</p>
-                        <p className="mt-1 text-xs text-slate-500">{account.role === "OWNER" ? "所有者" : account.role?.toLowerCase()}</p>
+                        <p className="truncate text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{account.name}</p>
+                        <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>{account.role === "OWNER" ? "所有者" : account.role?.toLowerCase()}</p>
                       </div>
 
                       {isDefault ? (
