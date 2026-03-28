@@ -1,9 +1,11 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ThemeTone = "blue" | "green" | "emerald" | "violet" | "red" | "amber" | "slate";
+export type ThemeModuleAccent = "dashboard" | "consumption" | "assets" | "loans" | "savings";
 
 const TONE_CLASS_MAP: Record<ThemeTone, string> = {
   blue: "bg-blue-50 text-blue-700 ring-blue-100",
@@ -26,34 +28,107 @@ const NOTICE_CLASS_MAP: Record<ThemeTone, string> = {
 };
 
 export const THEME_SURFACE_CLASS =
-  "relative overflow-hidden rounded-[20px] border [border-color:var(--theme-surface-border)] [background:var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] sm:rounded-[24px]";
+  "relative overflow-hidden rounded-[18px] border [border-color:var(--module-surface-border)] [background:linear-gradient(145deg,var(--module-surface-tint)_0%,transparent_58%),var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] sm:rounded-[22px]";
 
 export const THEME_HERO_CLASS =
-  "relative overflow-hidden rounded-[24px] border [border-color:var(--theme-hero-border)] [background:var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-4 sm:rounded-[28px] sm:p-6 lg:p-8";
+  "relative overflow-hidden rounded-[22px] border [border-color:var(--module-hero-border)] [background:linear-gradient(145deg,var(--module-hero-tint)_0%,transparent_46%),var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8";
 
 export const THEME_DARK_PANEL_CLASS =
-  "relative overflow-hidden rounded-[20px] border [border-color:var(--theme-dark-panel-border)] [background:var(--theme-dark-panel-bg)] [box-shadow:var(--theme-dark-panel-shadow)] text-white sm:rounded-[24px]";
+  "relative overflow-hidden rounded-[18px] [background:var(--theme-dark-panel-bg)] [box-shadow:var(--theme-dark-panel-shadow)] text-white sm:rounded-[22px]";
 
 export const THEME_DIALOG_INPUT_CLASS =
-  "h-11 rounded-2xl border border-slate-200/80 bg-white/90 text-slate-950 placeholder:text-slate-400 shadow-none";
+  "h-11 rounded-[18px] border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] [color:var(--theme-body-text)] placeholder:text-[color:var(--theme-muted-text)] shadow-none";
 
 export const THEME_DIALOG_SELECT_CLASS =
-  "h-11 w-full appearance-none rounded-2xl border border-slate-200/80 bg-white/90 px-3 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20";
+  "h-11 w-full appearance-none rounded-[18px] border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] px-3 text-sm [color:var(--theme-body-text)] transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20";
 
 export const THEME_TEXTAREA_CLASS =
-  "min-h-[96px] w-full rounded-[20px] border border-slate-200/80 bg-white/90 px-3 py-2.5 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "min-h-[96px] w-full rounded-[18px] border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] px-3 py-2.5 text-sm [color:var(--theme-body-text)] transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export const THEME_COMPACT_SELECT_CLASS =
-  "rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-2.5 text-sm text-slate-950 transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "rounded-[18px] border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] px-4 py-2.5 text-sm [color:var(--theme-body-text)] transition outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export const THEME_WHITE_ACTION_BUTTON_CLASS =
-  "h-11 rounded-2xl bg-white text-slate-950 shadow-none hover:bg-blue-50";
+  "h-11 rounded-[18px] [background:var(--theme-input-bg)] [color:var(--theme-body-text)] shadow-none hover:brightness-105";
 
 export const THEME_ICON_BUTTON_CLASS =
-  "inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-white text-slate-400 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700";
+  "inline-flex h-10 w-10 items-center justify-center rounded-[18px] [background:var(--theme-input-bg)] [color:var(--theme-muted-text)] transition hover:brightness-105 hover:[color:var(--theme-body-text)]";
 
 export const THEME_LIST_ITEM_CLASS =
-  "flex items-center justify-between rounded-2xl border [border-color:var(--theme-surface-border)] bg-white px-4 py-3 text-xs shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition hover:bg-slate-50 sm:text-sm";
+  "flex items-center justify-between rounded-[18px] border [border-color:var(--module-surface-border)] [background:linear-gradient(145deg,var(--module-surface-tint)_0%,transparent_58%),var(--theme-surface-bg)] px-4 py-3 text-xs transition hover:brightness-105 sm:text-sm";
+
+const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
+  dashboard: {
+    "--module-surface-tint": "rgba(59, 130, 246, 0.12)",
+    "--module-surface-border": "rgba(96, 165, 250, 0.18)",
+    "--module-hero-tint": "rgba(59, 130, 246, 0.18)",
+    "--module-hero-border": "rgba(96, 165, 250, 0.2)",
+    "--module-metric-tint": "rgba(59, 130, 246, 0.12)",
+    "--module-metric-border": "rgba(96, 165, 250, 0.16)",
+    "--module-accent-strong": "#2563eb",
+    "--module-accent-text": "#1d4ed8",
+    "--module-accent-soft": "rgba(59, 130, 246, 0.14)",
+    "--module-accent-ring": "rgba(59, 130, 246, 0.16)",
+    "--module-progress-gradient": "linear-gradient(90deg, #2563eb 0%, #60a5fa 100%)",
+    "--module-soft-panel": "rgba(239, 246, 255, 0.8)",
+  } as CSSProperties,
+  consumption: {
+    "--module-surface-tint": "rgba(13, 148, 136, 0.08)",
+    "--module-surface-border": "rgba(14, 165, 233, 0.14)",
+    "--module-hero-tint": "rgba(14, 165, 233, 0.14)",
+    "--module-hero-border": "rgba(13, 148, 136, 0.16)",
+    "--module-metric-tint": "rgba(16, 185, 129, 0.08)",
+    "--module-metric-border": "rgba(14, 165, 233, 0.12)",
+    "--module-accent-strong": "#0f766e",
+    "--module-accent-text": "#0f766e",
+    "--module-accent-soft": "rgba(16, 185, 129, 0.14)",
+    "--module-accent-ring": "rgba(14, 165, 233, 0.14)",
+    "--module-progress-gradient": "linear-gradient(90deg, #07c160 0%, #1677ff 100%)",
+    "--module-soft-panel": "rgba(236, 253, 245, 0.78)",
+  } as CSSProperties,
+  assets: {
+    "--module-surface-tint": "rgba(99, 102, 241, 0.12)",
+    "--module-surface-border": "rgba(129, 140, 248, 0.18)",
+    "--module-hero-tint": "rgba(129, 140, 248, 0.16)",
+    "--module-hero-border": "rgba(129, 140, 248, 0.2)",
+    "--module-metric-tint": "rgba(124, 58, 237, 0.12)",
+    "--module-metric-border": "rgba(129, 140, 248, 0.16)",
+    "--module-accent-strong": "#4f46e5",
+    "--module-accent-text": "#4338ca",
+    "--module-accent-soft": "rgba(99, 102, 241, 0.14)",
+    "--module-accent-ring": "rgba(129, 140, 248, 0.16)",
+    "--module-progress-gradient": "linear-gradient(90deg, #4f46e5 0%, #8b5cf6 100%)",
+    "--module-soft-panel": "rgba(238, 242, 255, 0.82)",
+  } as CSSProperties,
+  loans: {
+    "--module-surface-tint": "rgba(245, 158, 11, 0.12)",
+    "--module-surface-border": "rgba(251, 191, 36, 0.18)",
+    "--module-hero-tint": "rgba(251, 146, 60, 0.16)",
+    "--module-hero-border": "rgba(251, 191, 36, 0.2)",
+    "--module-metric-tint": "rgba(245, 158, 11, 0.12)",
+    "--module-metric-border": "rgba(251, 191, 36, 0.16)",
+    "--module-accent-strong": "#b45309",
+    "--module-accent-text": "#92400e",
+    "--module-accent-soft": "rgba(245, 158, 11, 0.14)",
+    "--module-accent-ring": "rgba(245, 158, 11, 0.16)",
+    "--module-progress-gradient": "linear-gradient(90deg, #b45309 0%, #f59e0b 100%)",
+    "--module-soft-panel": "rgba(255, 247, 237, 0.84)",
+  } as CSSProperties,
+  savings: {
+    "--module-surface-tint": "rgba(16, 185, 129, 0.12)",
+    "--module-surface-border": "rgba(52, 211, 153, 0.16)",
+    "--module-hero-tint": "rgba(16, 185, 129, 0.16)",
+    "--module-hero-border": "rgba(52, 211, 153, 0.18)",
+    "--module-metric-tint": "rgba(16, 185, 129, 0.1)",
+    "--module-metric-border": "rgba(52, 211, 153, 0.14)",
+    "--module-accent-strong": "#059669",
+    "--module-accent-text": "#047857",
+    "--module-accent-soft": "rgba(16, 185, 129, 0.14)",
+    "--module-accent-ring": "rgba(52, 211, 153, 0.16)",
+    "--module-progress-gradient": "linear-gradient(90deg, #059669 0%, #34d399 100%)",
+    "--module-soft-panel": "rgba(236, 253, 245, 0.82)",
+  } as CSSProperties,
+};
 
 export const THEME_STATUS_SUCCESS_SURFACE_CLASS = "border-emerald-200 bg-green-50";
 
@@ -65,6 +140,10 @@ export const THEME_STATUS_MUTED_SURFACE_CLASS = "border-slate-200/80 bg-slate-50
 
 export function getThemeToneClass(tone: ThemeTone) {
   return TONE_CLASS_MAP[tone];
+}
+
+export function getThemeModuleStyle(module: ThemeModuleAccent) {
+  return MODULE_ACCENT_STYLE_MAP[module];
 }
 
 export function ThemeSurface({
@@ -113,9 +192,25 @@ export function ThemeSectionHeader({
   return (
     <div className={cn("flex flex-wrap items-start justify-between gap-3", className)}>
       <div>
-        {eyebrow ? <p className="text-xs font-medium text-slate-500 sm:text-sm">{eyebrow}</p> : null}
-        <h2 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">{title}</h2>
-        {description ? <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">{description}</p> : null}
+        {eyebrow ? (
+          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+            {eyebrow}
+          </p>
+        ) : null}
+        <h2
+          className="mt-1 text-lg font-semibold sm:text-xl"
+          style={{ color: "var(--theme-body-text)" }}
+        >
+          {title}
+        </h2>
+        {description ? (
+          <p
+            className="mt-1 text-xs leading-5 sm:text-sm"
+            style={{ color: "var(--theme-muted-text)" }}
+          >
+            {description}
+          </p>
+        ) : null}
       </div>
       {action}
     </div>
@@ -153,7 +248,7 @@ export function ThemeMetricCard({
   return (
     <div
       className={cn(
-        "rounded-[18px] border [border-color:var(--theme-metric-border)] [background:var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-3 sm:rounded-[20px] sm:p-4",
+        "rounded-[16px] border [border-color:var(--module-metric-border)] [background:linear-gradient(160deg,var(--module-metric-tint)_0%,transparent_72%),var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-3 sm:rounded-[18px] sm:p-4",
         className
       )}
     >
@@ -165,16 +260,37 @@ export function ThemeMetricCard({
                 <Icon className="h-3 w-3" />
               </div>
             ) : null}
-            <p className="text-xs font-medium text-slate-500 sm:text-sm">{label}</p>
+            <p
+              className="text-xs font-medium sm:text-sm"
+              style={{ color: "var(--theme-muted-text)" }}
+            >
+              {label}
+            </p>
           </div>
 
-          <p className="mt-1.5 break-all text-sm font-semibold leading-5 tracking-tight text-slate-950 sm:hidden">
+          <p
+            className="mt-1.5 break-all text-sm font-semibold leading-5 tracking-tight sm:hidden"
+            style={{ color: "var(--theme-body-text)" }}
+          >
             {mobileValue ?? value}
           </p>
-          <p className="mt-2 hidden text-xl font-semibold tracking-tight text-slate-950 sm:block">{value}</p>
+          <p
+            className="mt-2 hidden text-xl font-semibold tracking-tight sm:block"
+            style={{ color: "var(--theme-body-text)" }}
+          >
+            {value}
+          </p>
 
           {detail && detailPosition === "body" ? (
-            <p className={cn("mt-2 text-[11px] leading-5 text-slate-500 sm:text-xs", hideDetailOnMobile && "hidden sm:block")}>{detail}</p>
+            <p
+              className={cn(
+                "mt-2 text-[11px] leading-5 sm:text-xs",
+                hideDetailOnMobile && "hidden sm:block"
+              )}
+              style={{ color: "var(--theme-muted-text)" }}
+            >
+              {detail}
+            </p>
           ) : null}
         </div>
 
@@ -185,7 +301,9 @@ export function ThemeMetricCard({
         ) : null}
 
         {detail && detailPosition === "badge" ? (
-          <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium ring-1", toneClass)}>{detail}</span>
+          <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium ring-1", toneClass)}>
+            {detail}
+          </span>
         ) : null}
       </div>
     </div>
@@ -202,7 +320,7 @@ export function ThemeToolbar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-3 rounded-[18px] border [border-color:var(--theme-surface-border)] [background:var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)] px-4 py-3 sm:rounded-[20px]",
+        "flex flex-wrap items-center gap-3 rounded-[16px] [background:var(--theme-surface-bg)] px-4 py-3 sm:rounded-[18px]",
         className
       )}
     >
@@ -254,12 +372,23 @@ export function ThemeFormField({
   return (
     <div className={cn("space-y-1.5", className)}>
       {label ? (
-        <label htmlFor={htmlFor} className={cn("text-sm font-medium text-slate-700", labelClassName)}>
+        <label
+          htmlFor={htmlFor}
+          className={cn("text-sm font-medium", labelClassName)}
+          style={{ color: "var(--theme-label-text)" }}
+        >
           {label}
         </label>
       ) : null}
       {children}
-      {hint ? <p className={cn("text-xs text-slate-500", hintClassName)}>{hint}</p> : null}
+      {hint ? (
+        <p
+          className={cn("text-xs", hintClassName)}
+          style={{ color: "var(--theme-hint-text)" }}
+        >
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -294,7 +423,11 @@ export function ThemeNotice({
   return (
     <div className={cn("rounded-[18px] border px-4 py-3", NOTICE_CLASS_MAP[tone], className)}>
       {title ? <div className="text-xs font-semibold sm:text-sm">{title}</div> : null}
-      {description ? <div className={cn("text-xs leading-5 sm:text-sm", title ? "mt-1 opacity-90" : "")}>{description}</div> : null}
+      {description ? (
+        <div className={cn("text-xs leading-5 sm:text-sm", title ? "mt-1 opacity-90" : "")}>
+          {description}
+        </div>
+      ) : null}
       {children ? <div className={cn(title || description ? "mt-2" : "")}>{children}</div> : null}
     </div>
   );
@@ -315,11 +448,26 @@ export function ThemeEmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center justify-center px-4 py-12 text-center", className)}>
-      <div className="mb-4 rounded-full bg-slate-100 p-4">
-        <Icon className="h-8 w-8 text-slate-300" />
+      <div
+        className="mb-4 rounded-full p-4"
+        style={{ background: "var(--theme-empty-icon-bg)" }}
+      >
+        <Icon className="h-8 w-8" style={{ color: "var(--theme-empty-icon-text)" }} />
       </div>
-      <h3 className="mb-1 text-base font-medium text-slate-900 sm:text-lg">{title}</h3>
-      {description ? <p className="mb-4 max-w-sm text-sm leading-6 text-slate-500">{description}</p> : null}
+      <h3
+        className="mb-1 text-base font-medium sm:text-lg"
+        style={{ color: "var(--theme-body-text)" }}
+      >
+        {title}
+      </h3>
+      {description ? (
+        <p
+          className="mb-4 max-w-sm text-sm leading-6"
+          style={{ color: "var(--theme-muted-text)" }}
+        >
+          {description}
+        </p>
+      ) : null}
       {action ? <div>{action}</div> : null}
     </div>
   );
@@ -333,7 +481,10 @@ export function ThemeDialogSection({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-[18px] border border-slate-200/80 bg-slate-50/70 p-4", className)}>
+    <div
+      className={cn("rounded-[16px] p-4", className)}
+      style={{ background: "var(--theme-dialog-section-bg)" }}
+    >
       {children}
     </div>
   );

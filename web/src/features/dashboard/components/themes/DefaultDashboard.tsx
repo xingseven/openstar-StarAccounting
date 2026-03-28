@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -33,11 +33,13 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { GridDecoration } from "@/components/shared/GridDecoration";
-import { Skeleton } from "@/components/shared/Skeletons";
+import { DashboardLoadingShell } from "./DashboardLoadingShell";
 import {
   THEME_SURFACE_CLASS,
+  ThemeHero,
   ThemeMetricCard,
   ThemeSurface,
+  getThemeModuleStyle,
 } from "@/components/shared/theme-primitives";
 import type { DashboardData } from "@/types";
 
@@ -101,14 +103,7 @@ type InsightItem = {
 
 export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   const [alertsDismissed, setAlertsDismissed] = useState(false);
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const isSkeletonVisible = loading || showInitialSkeleton;
+  const isSkeletonVisible = loading;
 
   const netWorth = data.totalAssets - data.totalDebt;
   const monthlyBalance = data.monthIncome - data.monthExpense;
@@ -192,33 +187,16 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   ];
 
   if (isSkeletonVisible) {
-    return (
-      <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5">
-        <Skeleton className="h-[220px] rounded-[24px] sm:h-[280px] sm:rounded-[32px]" />
-        <div className="grid gap-4 md:grid-cols-4">
-          <Skeleton className="h-[104px] rounded-[22px] sm:h-[128px] sm:rounded-[28px]" />
-          <Skeleton className="h-[104px] rounded-[22px] sm:h-[128px] sm:rounded-[28px]" />
-          <Skeleton className="h-[104px] rounded-[22px] sm:h-[128px] sm:rounded-[28px]" />
-          <Skeleton className="h-[104px] rounded-[22px] sm:h-[128px] sm:rounded-[28px]" />
-        </div>
-        <div className="grid gap-3 sm:gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
-          <div className="space-y-3 sm:space-y-5">
-            <Skeleton className="h-[280px] rounded-[22px] sm:h-[340px] sm:rounded-[28px]" />
-            <Skeleton className="h-[340px] rounded-[22px] sm:h-[420px] sm:rounded-[28px]" />
-          </div>
-          <div className="space-y-3 sm:space-y-5">
-            <Skeleton className="h-[190px] rounded-[22px] sm:h-[240px] sm:rounded-[28px]" />
-            <Skeleton className="h-[220px] rounded-[22px] sm:h-[260px] sm:rounded-[28px]" />
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardLoadingShell />;
   }
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-3 pb-1 sm:space-y-5 sm:pb-2">
+    <div
+      className="mx-auto max-w-[1680px] space-y-3 pb-1 sm:space-y-5 sm:pb-2"
+      style={getThemeModuleStyle("dashboard")}
+    >
       <DelayedRender delay={0}>
-        <section className="relative overflow-hidden rounded-[24px] border [border-color:var(--theme-hero-border)] [background:var(--theme-hero-bg)] [box-shadow:var(--theme-hero-shadow)] p-3.5 sm:rounded-[28px] sm:p-6 lg:p-8">
+        <ThemeHero className="p-3.5 sm:p-6 lg:p-8">
           <div className="absolute inset-y-0 right-0 hidden w-[36%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.14),transparent_70%)] lg:block" />
           <div className="absolute -right-20 top-8 h-40 w-40 rounded-full bg-blue-200/35 blur-3xl sm:-right-24 sm:top-10 sm:h-56 sm:w-56" />
           <div className="absolute left-6 top-0 h-28 w-28 rounded-full bg-white/80 blur-3xl sm:left-10 sm:h-40 sm:w-40" />
@@ -227,7 +205,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
           <div className="relative z-10">
             <div className="space-y-3 sm:space-y-5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-blue-700 ring-1 ring-blue-100 sm:gap-2 sm:px-3 sm:text-xs">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium sm:gap-2 sm:px-3 sm:text-xs"
+                  style={{
+                    background: "var(--module-accent-soft)",
+                    color: "var(--module-accent-text)",
+                    boxShadow: "inset 0 0 0 1px var(--module-accent-ring)",
+                  }}
+                >
                   <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   总览仪表盘
                 </span>
@@ -239,13 +224,13 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
               <div className="space-y-2.5 sm:space-y-4">
                 <div className="space-y-2 sm:space-y-3">
-                  <p className="hidden max-w-xl text-[13px] leading-5 text-slate-600 sm:block sm:text-sm sm:leading-6">
+                  <p className="hidden max-w-xl text-[13px] leading-5 sm:block sm:text-sm sm:leading-6" style={{ color: "var(--theme-label-text)" }}>
                     资产、负债、现金流和预算风险放在同一屏里，优先看见本月真正影响决策的数字。
                   </p>
                   <div className="flex flex-wrap items-end gap-x-3 gap-y-2 sm:gap-x-6 sm:gap-y-3">
                     <div>
-                      <p className="text-xs font-medium text-slate-500 sm:text-sm">当前净资产</p>
-                      <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-5xl">
+                      <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>当前净资产</p>
+                      <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:mt-2 sm:text-5xl" style={{ color: "var(--theme-body-text)" }}>
                         {formatCurrency(netWorth)}
                       </h1>
                     </div>
@@ -294,14 +279,14 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </div>
 
               {criticalAlerts.length > 0 && !alertsDismissed ? (
-                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[20px] bg-amber-50/80 px-3 py-2.5 shadow-[0_10px_24px_rgba(245,158,11,0.08)] backdrop-blur-sm sm:flex sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3">
+                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[18px] bg-amber-50/70 px-3 py-2.5 backdrop-blur-sm sm:flex sm:gap-3 sm:rounded-[20px] sm:px-4 sm:py-3">
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-amber-100 p-2 text-amber-700 sm:rounded-2xl">
                       <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-900 sm:text-sm">预算提醒正在升温</p>
-                      <p className="text-xs text-slate-600 sm:text-sm">
+                      <p className="text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>预算提醒正在升温</p>
+                      <p className="text-xs sm:text-sm" style={{ color: "var(--theme-label-text)" }}>
                         当前有 {criticalAlerts.length} 项预算需要关注，其中 {overdueAlerts} 项已经超支。
                       </p>
                     </div>
@@ -309,7 +294,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   <div className="flex items-center gap-2">
                     <Link
                       href="/budgets"
-                      className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800 sm:px-3 sm:py-2 sm:text-sm"
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
+                      style={{ background: "var(--module-accent-strong)" }}
                     >
                       查看预算
                       <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -317,7 +303,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     <button
                       type="button"
                       onClick={() => setAlertsDismissed(true)}
-                      className="rounded-full bg-white/80 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 sm:px-3 sm:py-2 sm:text-sm"
+                      className="rounded-full bg-white/80 px-2.5 py-1.5 text-xs font-medium transition hover:bg-white hover:text-slate-900 sm:px-3 sm:py-2 sm:text-sm"
+                      style={{ color: "var(--theme-label-text)" }}
                     >
                       暂时收起
                     </button>
@@ -326,7 +313,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               ) : null}
             </div>
           </div>
-        </section>
+        </ThemeHero>
       </DelayedRender>
 
       <DelayedRender delay={40}>
@@ -370,8 +357,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <div className={cn(SURFACE_CLASS, "self-start p-4 sm:p-5 lg:p-6")}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 sm:text-sm">本月现金流</p>
-                    <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">收入、支出与可留存空间</h3>
+                    <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月现金流</p>
+                    <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入、支出与可留存空间</h3>
                   </div>
                   <span
                     className={cn(
@@ -438,8 +425,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               <div className={cn(SURFACE_CLASS, "p-4 sm:min-h-[320px] sm:p-6")}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-medium text-slate-500 sm:text-sm">近期消费构成</p>
-                    <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">最近交易里的主要花费</h3>
+                    <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>近期消费构成</p>
+                    <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近交易里的主要花费</h3>
                   </div>
                 </div>
 
@@ -466,12 +453,12 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
                   <div className="space-y-1.5 sm:space-y-2">
                     {categoryDistribution.slice(0, 3).map((item) => (
-                      <div key={item.name} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2.5">
+                      <div key={item.name} className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5" style={{ backgroundColor: item.color }} />
-                          <span className="truncate text-[11px] font-medium text-slate-700 sm:text-sm">{item.name}</span>
+                          <span className="truncate text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>{item.name}</span>
                         </div>
-                        <span className="text-[11px] font-semibold text-slate-950 sm:text-sm">{formatCurrency(item.value, { compact: true })}</span>
+                        <span className="text-[11px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.value, { compact: true })}</span>
                       </div>
                     ))}
                   </div>
@@ -482,12 +469,13 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium text-slate-500 sm:text-sm">最近交易</p>
-                  <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">最近录入的流水</h3>
+                  <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>最近交易</p>
+                  <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近录入的流水</h3>
                 </div>
                 <Link
                   href="/consumption"
-                  className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800 sm:px-3 sm:py-2 sm:text-sm"
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
+                  style={{ background: "var(--module-accent-strong)" }}
                 >
                   查看全部
                   <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -496,12 +484,12 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
 
               <div className="mt-4 space-y-2 sm:mt-5 sm:space-y-3">
                 {data.recentTransactions.length === 0 ? (
-                  <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] bg-slate-50/80 px-3 text-center sm:min-h-[220px] sm:rounded-[24px]">
+                  <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] px-3 text-center sm:min-h-[220px] sm:rounded-[24px]" style={{ background: "var(--theme-dialog-section-bg)" }}>
                     <div className="rounded-full bg-white p-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)] sm:p-3">
-                      <CalendarDays className="h-4 w-4 text-slate-400 sm:h-5 sm:w-5" />
+                      <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: "var(--theme-muted-text)" }} />
                     </div>
-                    <p className="mt-3 text-sm font-medium text-slate-700 sm:mt-4 sm:text-base">还没有最近交易</p>
-                    <p className="mt-1 text-xs text-slate-500 sm:text-sm">录入一笔账单后，这里会自动出现最新动态。</p>
+                    <p className="mt-3 text-sm font-medium sm:mt-4 sm:text-base" style={{ color: "var(--theme-label-text)" }}>还没有最近交易</p>
+                    <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>录入一笔账单后，这里会自动出现最新动态。</p>
                   </div>
                 ) : (
                   recentTransactions.map((transaction, index) => (
@@ -553,19 +541,19 @@ function BudgetFocusPanel({ alerts }: { alerts: DashboardData["budgetAlerts"] })
     <ThemeSurface className="p-4 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-slate-500 sm:text-sm">预算关注</p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">需要优先处理的预算项</h3>
+          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>预算关注</p>
+          <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>需要优先处理的预算项</h3>
         </div>
-        <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600 sm:px-2.5 sm:text-xs">
+        <span className="rounded-full px-2 py-1 text-[11px] font-medium sm:px-2.5 sm:text-xs" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
           {alerts.length} 项
         </span>
       </div>
 
       <div className="mt-4 space-y-2 sm:mt-5 sm:space-y-3">
         {alerts.length === 0 ? (
-          <div className="rounded-[20px] bg-slate-50/80 px-4 py-5 text-center sm:rounded-[24px] sm:py-6">
-            <p className="text-sm font-medium text-slate-700 sm:text-base">预算执行稳定</p>
-            <p className="mt-1 text-xs text-slate-500 sm:text-sm">当前没有需要提醒的预算异常。</p>
+          <div className="rounded-[20px] px-4 py-5 text-center sm:rounded-[24px] sm:py-6" style={{ background: "var(--theme-dialog-section-bg)" }}>
+            <p className="text-sm font-medium sm:text-base" style={{ color: "var(--theme-label-text)" }}>预算执行稳定</p>
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>当前没有需要提醒的预算异常。</p>
           </div>
         ) : (
           visibleBudgetAlerts.map((alert, index) => (
@@ -657,8 +645,8 @@ function IncomeExpenseCard({
     <div className={cn(SURFACE_CLASS, "col-span-2 p-4 sm:p-5 xl:col-span-1")}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-slate-500 sm:text-sm">本月收支</p>
-          <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">收入与支出概览</h3>
+          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月收支</p>
+          <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入与支出概览</h3>
         </div>
         <span
           className={cn(
@@ -676,15 +664,15 @@ function IncomeExpenseCard({
             <ArrowDownLeft className="h-4 w-4" />
             本月支出
           </div>
-          <p className="mt-2 break-all text-base font-semibold tracking-tight text-slate-950 sm:hidden">{formatCurrency(expense, { compact: true })}</p>
-          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight text-slate-950 sm:block">{formatCurrency(expense)}</p>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">本月消费总额</p>
+          <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense, { compact: true })}</p>
+          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense)}</p>
+          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月消费总额</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:text-xs", expenseChange.badgeClass)}>
               <expenseChange.icon className="h-3.5 w-3.5" />
               {expenseChange.label}
             </span>
-            <span className="text-xs text-slate-500 sm:text-sm">{expenseChange.previousLabel}</span>
+            <span className="text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{expenseChange.previousLabel}</span>
           </div>
         </div>
 
@@ -693,15 +681,15 @@ function IncomeExpenseCard({
             <ArrowUpRight className="h-4 w-4" />
             本月收入
           </div>
-          <p className="mt-2 break-all text-base font-semibold tracking-tight text-slate-950 sm:hidden">{formatCurrency(income, { compact: true })}</p>
-          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight text-slate-950 sm:block">{formatCurrency(income)}</p>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">已记录入账</p>
+          <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income, { compact: true })}</p>
+          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income)}</p>
+          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>已记录入账</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:text-xs", incomeChange.badgeClass)}>
               <incomeChange.icon className="h-3.5 w-3.5" />
               {incomeChange.label}
             </span>
-            <span className="text-xs text-slate-500 sm:text-sm">{incomeChange.previousLabel}</span>
+            <span className="text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{incomeChange.previousLabel}</span>
           </div>
         </div>
       </div>
@@ -751,9 +739,9 @@ function CompactStat({
   tone: Tone;
 }) {
   return (
-    <div className="rounded-[16px] bg-slate-50 px-2.5 py-2 sm:rounded-[22px] sm:px-4 sm:py-3">
+    <div className="rounded-[16px] px-2.5 py-2 sm:rounded-[22px] sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <span className="text-[11px] font-medium text-slate-500 sm:text-sm">{label}</span>
+        <span className="text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{label}</span>
         <span className={cn("w-fit rounded-full px-2 py-1 text-[10px] font-medium ring-1 sm:px-2.5 sm:text-xs", STAT_TONE_CLASS[tone])}>{value}</span>
       </div>
     </div>
@@ -770,7 +758,7 @@ function TransactionRow({
   const isIncome = transaction.type === "INCOME";
 
   return (
-    <div className={cn("flex items-center justify-between gap-2.5 rounded-[18px] bg-slate-50/70 px-3 py-2.5 transition hover:bg-white sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3", className)}>
+    <div className={cn("flex items-center justify-between gap-2.5 rounded-[18px] px-3 py-2.5 transition hover:bg-white sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3", className)} style={{ background: "var(--theme-dialog-section-bg)" }}>
       <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <div
           className={cn(
@@ -781,8 +769,8 @@ function TransactionRow({
           {isIncome ? <ArrowDownLeft className="h-4 w-4 sm:h-4.5 sm:w-4.5" /> : <ArrowUpRight className="h-4 w-4 sm:h-4.5 sm:w-4.5" />}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-slate-900 sm:text-sm">{transaction.category || "未分类"}</p>
-          <p className="mt-1 truncate text-[11px] text-slate-500 sm:text-xs">
+          <p className="truncate text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>{transaction.category || "未分类"}</p>
+          <p className="mt-1 truncate text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
             {new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(new Date(transaction.date))}
             {" · "}
             {transaction.merchant || transaction.platform}
@@ -790,11 +778,11 @@ function TransactionRow({
         </div>
       </div>
       <div className="text-right">
-        <p className={cn("text-xs font-semibold sm:text-sm", isIncome ? "text-blue-700" : "text-slate-950")}>
+        <p className={cn("text-xs font-semibold sm:text-sm", isIncome ? "text-blue-700" : "")} style={!isIncome ? { color: "var(--theme-body-text)" } : undefined}>
           {isIncome ? "+" : "-"}
           {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
         </p>
-        <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">{isIncome ? "收入" : "支出"}</p>
+        <p className="mt-1 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>{isIncome ? "收入" : "支出"}</p>
       </div>
     </div>
   );
@@ -812,7 +800,7 @@ function BudgetAlertCard({
   const scopeLabel = alert.category === "ALL" ? "总预算" : alert.category;
 
   return (
-    <div className={cn("relative overflow-hidden rounded-[18px] bg-slate-50/80 p-3 sm:rounded-[24px] sm:p-4", className)}>
+    <div className={cn("relative overflow-hidden rounded-[18px] p-3 sm:rounded-[24px] sm:p-4", className)} style={{ background: "var(--theme-dialog-section-bg)" }}>
       <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", style.line)} />
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
@@ -820,11 +808,11 @@ function BudgetAlertCard({
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-slate-900 sm:text-sm">
+            <p className="truncate text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>
               {scopeLabel}
               {alert.scopeType === "PLATFORM" && alert.platform ? ` · ${alert.platform}` : ""}
             </p>
-            <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+            <p className="mt-1 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
               {alert.period === "MONTHLY" ? "月度预算" : "年度预算"} · 已用 {formatCurrency(Number(alert.used))} /{" "}
               {formatCurrency(Number(alert.amount))}
             </p>
@@ -833,11 +821,11 @@ function BudgetAlertCard({
         <span className={cn("shrink-0 rounded-full px-2 py-1 text-[10px] font-medium sm:px-2.5 sm:text-xs", style.badge)}>{style.label}</span>
       </div>
       <div className="mt-3 sm:mt-4">
-        <div className="flex items-center justify-between text-[11px] text-slate-500 sm:text-xs">
+        <div className="flex items-center justify-between text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
           <span>使用进度</span>
           <span className={cn("font-semibold", style.text)}>{alert.percent.toFixed(0)}%</span>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div className="mt-2 h-2 overflow-hidden rounded-full" style={{ background: "var(--theme-surface-border,rgba(148,163,184,0.2))" }}>
           <div
             className={cn(
               "h-full rounded-full",

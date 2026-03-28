@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -23,9 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Skeleton } from "@/components/shared/Skeletons";
+import { AssetsLoadingShell } from "./AssetsLoadingShell";
 import {
   THEME_SURFACE_CLASS,
   THEME_WHITE_ACTION_BUTTON_CLASS,
@@ -33,6 +32,7 @@ import {
   ThemeHero,
   ThemeMetricCard,
   ThemeSurface,
+  getThemeModuleStyle,
   getThemeToneClass,
 } from "@/components/shared/theme-primitives";
 import { cn } from "@/lib/utils";
@@ -131,7 +131,7 @@ function AssetAvatar({ item, className }: { item: Asset; className?: string }) {
       {logo ? (
         <Image src={logo} alt={item.name} width={28} height={28} className="h-7 w-7 object-contain" />
       ) : (
-        <Icon className="h-5 w-5 text-slate-500" />
+        <Icon className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />
       )}
     </div>
   );
@@ -144,7 +144,7 @@ function AssetWatermark({ item }: { item: Asset }) {
 
   if (logo) {
     return (
-      <div className="pointer-events-none absolute bottom-0 right-0 translate-x-3 translate-y-2 opacity-[0.1] select-none">
+      <div className="pointer-events-none absolute bottom-2 right-0 translate-x-3 opacity-[0.1] select-none">
         <Image
           src={logo}
           alt=""
@@ -166,7 +166,7 @@ function AssetWatermark({ item }: { item: Asset }) {
   };
 
   return (
-    <div className="pointer-events-none absolute bottom-0 right-0 translate-x-2 translate-y-2 select-none">
+    <div className="pointer-events-none absolute bottom-2 right-0 translate-x-2 select-none">
       <Icon className={cn("h-20 w-20 sm:h-28 sm:w-28", iconToneClass[meta.tone])} aria-hidden="true" />
     </div>
   );
@@ -202,16 +202,16 @@ function StructureRow({
   tone: Tone;
 }) {
   return (
-    <div className="rounded-[20px] bg-transparent px-0 py-2.5 sm:bg-slate-50/90 sm:px-4 sm:py-3">
+    <div className="rounded-[20px] bg-transparent px-0 py-2.5 sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-900">{label}</p>
-          <p className="mt-1 text-xs text-slate-500">{count} 个账户</p>
+          <p className="text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{label}</p>
+          <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>{count} 个账户</p>
         </div>
         <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium ring-1", getThemeToneClass(tone))}>{value}</span>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
-        <div className="h-full rounded-full bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-300" style={{ width: `${Math.max(6, Math.min(100, progress))}%` }} />
+      <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "var(--theme-surface-border,rgba(148,163,184,0.2))" }}>
+        <div className="h-full rounded-full" style={{ width: `${Math.max(6, Math.min(100, progress))}%`, background: "var(--module-progress-gradient)" }} />
       </div>
     </div>
   );
@@ -243,7 +243,7 @@ function AssetCard({
 
   return (
     <div className={cn(SURFACE_CLASS, "group p-4 sm:p-5")}>
-      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.12),transparent_70%)]" />
+      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.16),transparent_70%)]" />
       <AssetWatermark item={item} />
       <div className="relative z-10 flex h-full flex-col justify-between">
         <div>
@@ -251,10 +251,10 @@ function AssetCard({
             <div className="flex min-w-0 items-center gap-3">
               <AssetAvatar item={item} />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950 sm:text-base">{item.name}</p>
+                <p className="truncate text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{item.name}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium ring-1", getThemeToneClass(meta.tone))}>{meta.label}</span>
-                  <span className="text-[11px] text-slate-400">{item.currency}</span>
+                  <span className="text-[11px]" style={{ color: "var(--theme-muted-text)" }}>{item.currency}</span>
                 </div>
               </div>
             </div>
@@ -262,7 +262,8 @@ function AssetCard({
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white/80 text-slate-400 transition hover:bg-white hover:text-slate-700"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl transition hover:bg-white hover:text-slate-700"
+              style={{ background: "var(--theme-metric-bg)", color: "var(--theme-muted-text)" }}
               aria-label={`编辑${item.name}`}
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -270,20 +271,22 @@ function AssetCard({
           </div>
 
           <div className="mt-5">
-            <p className={cn("text-2xl font-semibold tracking-tight sm:text-[2rem]", isLiability ? "text-red-600" : "text-slate-950")}>
+            <p className={cn("text-2xl font-semibold tracking-tight sm:text-[2rem]", isLiability && "text-red-600")}
+               style={!isLiability ? { color: "var(--theme-body-text)" } : undefined}>
               {balanceText}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-              {estimatedText ? <span className="text-slate-500">折合 {estimatedText}</span> : <span className="text-slate-500">按当前显示货币直接统计</span>}
-              <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">占比 {share.toFixed(1)}%</span>
+              {estimatedText ? <span style={{ color: "var(--theme-muted-text)" }}>折合 {estimatedText}</span> : <span style={{ color: "var(--theme-muted-text)" }}>按当前显示货币直接统计</span>}
+              <span className="rounded-full px-2 py-1 font-medium" 
+                    style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>占比 {share.toFixed(1)}%</span>
             </div>
           </div>
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-3 pt-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Portfolio</p>
-            <p className="mt-1 text-sm font-medium text-slate-900">{isLiability ? "负债类账户" : "资产类账户"}</p>
+            <p className="text-[11px] uppercase tracking-[0.16em]" style={{ color: "var(--theme-muted-text)" }}>Portfolio</p>
+            <p className="mt-1 text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{isLiability ? "负债类账户" : "资产类账户"}</p>
           </div>
 
           <div
@@ -311,14 +314,7 @@ export function AssetsDefaultTheme({
   onOpenCreate,
   onOpenEdit,
 }: AssetsViewProps) {
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setShowInitialSkeleton(false), 600);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  const isSkeletonVisible = loading || showInitialSkeleton;
+  const isSkeletonVisible = loading;
 
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => Math.abs(b.estimatedValue) - Math.abs(a.estimatedValue)),
@@ -353,39 +349,22 @@ export function AssetsDefaultTheme({
   const structureBase = Math.max(positiveAssets + liabilities, 1);
 
   if (isSkeletonVisible) {
-    return (
-      <div className="mx-auto max-w-[1680px] space-y-4 sm:space-y-5">
-        <Skeleton className="h-[280px] rounded-[30px]" />
-        <div className="grid gap-3 md:grid-cols-4">
-          <Skeleton className="h-[120px] rounded-[24px]" />
-          <Skeleton className="h-[120px] rounded-[24px]" />
-          <Skeleton className="h-[120px] rounded-[24px]" />
-          <Skeleton className="h-[120px] rounded-[24px]" />
-        </div>
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.4fr)]">
-          <Skeleton className="h-[260px] rounded-[24px]" />
-          <Skeleton className="h-[260px] rounded-[24px]" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-[240px] rounded-[24px]" />
-          ))}
-        </div>
-      </div>
-    );
+    return <AssetsLoadingShell />;
   }
 
   return (
-    <div className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5">
-      <DelayedRender delay={0}>
-        <ThemeHero className="p-4 sm:p-6 lg:p-8">
-          <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.16),transparent_70%)] lg:block" />
-          <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-blue-200/35 blur-3xl sm:h-56 sm:w-56" />
+    <div className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5" style={getThemeModuleStyle("assets")}>
+      <ThemeHero className="p-4 sm:p-6 lg:p-8">
+          <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.18),transparent_70%)] lg:block" />
+          <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-indigo-200/35 blur-3xl sm:h-56 sm:w-56" />
 
           <div className="relative z-10 space-y-4 sm:space-y-5">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-blue-700">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+                  style={{ background: "var(--module-accent-soft)", color: "var(--module-accent-text)" }}
+                >
                   <Sparkles className="h-3.5 w-3.5" />
                   资产工作台
                 </span>
@@ -396,18 +375,18 @@ export function AssetsDefaultTheme({
               </div>
 
               <div className="space-y-3">
-                <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                <p className="max-w-2xl text-sm leading-6" style={{ color: "var(--theme-label-text)" }}>
                   用统一视图查看账户余额、投资仓位和负债暴露，把你的钱分布在哪里一眼看清。
                 </p>
                 <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
                   <div>
-                    <p className="text-sm font-medium text-slate-500">资产净值</p>
-                    <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+                    <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>资产净值</p>
+                    <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl" style={{ color: "var(--theme-body-text)" }}>
                       {formatMoney(totalAssets, displayCurrency, { maximumFractionDigits: Math.abs(totalAssets) < 1000 ? 2 : 0 })}
                     </h1>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/82 px-3 py-1.5 text-sm font-medium text-slate-700">
-                    <Wallet className="h-4 w-4 text-blue-600" />
+                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium" style={{ background: "var(--module-soft-panel)", color: "var(--theme-label-text)" }}>
+                    <Wallet className="h-4 w-4" style={{ color: "var(--module-accent-strong)" }} />
                     共 {accountCount} 个账户，覆盖 {currencyCount} 种货币
                   </div>
                 </div>
@@ -484,28 +463,25 @@ export function AssetsDefaultTheme({
               </div>
             </ThemeDarkPanel>
           </div>
-        </ThemeHero>
-      </DelayedRender>
+      </ThemeHero>
 
-      <DelayedRender delay={60}>
-        <section className="grid gap-3 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-4">
           <HeroStat label="账户数量" value={`${accountCount} 个`} tone="blue" icon={Layers3} />
           <HeroStat label="现金类账户" value={`${items.filter((item) => LIQUID_TYPES.has(item.type)).length} 个`} tone="emerald" icon={Coins} />
           <HeroStat label="投资仓位" value={`${items.filter((item) => item.type === "INVESTMENT").length} 个`} tone="violet" icon={PiggyBank} />
           <HeroStat label="需关注账户" value={`${items.filter((item) => item.estimatedValue < 0).length} 个`} tone="red" icon={CreditCard} />
-        </section>
-      </DelayedRender>
+      </section>
 
-      <DelayedRender delay={120}>
-        <ThemeSurface className="p-4 sm:p-6">
+      <ThemeSurface className="p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-500">账户列表</p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-950">所有资产账户</h2>
-              <p className="mt-1 text-sm text-slate-500">按资产占比排序，优先显示对整体净值影响最大的账户。</p>
+              <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>账户列表</p>
+              <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>所有资产账户</h2>
+              <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>按资产占比排序，优先显示对整体净值影响最大的账户。</p>
             </div>
 
-            <div className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+            <div className="rounded-full px-3 py-1.5 text-xs font-medium" 
+                 style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
               共 {accountCount} 项
             </div>
           </div>
@@ -518,7 +494,11 @@ export function AssetsDefaultTheme({
                 description="先创建一个账户，资产工作台就会开始汇总你的资金分布。"
                 className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50"
                 action={
-                  <Button onClick={onOpenCreate} className="rounded-2xl bg-slate-900 hover:bg-slate-800">
+                  <Button
+                    onClick={onOpenCreate}
+                    className="rounded-2xl text-white hover:brightness-105"
+                    style={{ background: "var(--module-accent-strong)" }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     新增资产
                   </Button>
@@ -538,8 +518,7 @@ export function AssetsDefaultTheme({
               </div>
             )}
           </div>
-        </ThemeSurface>
-      </DelayedRender>
+      </ThemeSurface>
     </div>
   );
 }
