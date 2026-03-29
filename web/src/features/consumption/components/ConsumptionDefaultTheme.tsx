@@ -2167,8 +2167,8 @@ export function ConsumptionDefaultTheme({
                   <h2 className="mt-0.5 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>支付渠道占比</h2>
                 </div>
 
-                <div className="mt-2.5 grid flex-1 items-center gap-2.5 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
-                  <div className="mx-auto h-[92px] w-[92px] sm:h-[104px] sm:w-[104px]">
+                <div className="mt-2.5 grid flex-1 grid-cols-[84px_minmax(0,1fr)] items-center gap-3 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
+                  <div className="mx-auto h-[84px] w-[84px] sm:h-[104px] sm:w-[104px]">
                     <ReactECharts option={platformOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
                   </div>
 
@@ -2202,8 +2202,8 @@ export function ConsumptionDefaultTheme({
                   </span>
                 </div>
 
-                <div className="mt-2.5 grid flex-1 items-center gap-2.5 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
-                  <div className="mx-auto h-[92px] w-[92px] sm:h-[104px] sm:w-[104px]">
+                <div className="mt-2.5 grid flex-1 grid-cols-[84px_minmax(0,1fr)] items-center gap-3 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
+                  <div className="mx-auto h-[84px] w-[84px] sm:h-[104px] sm:w-[104px]">
                     <ReactECharts option={incomeExpenseOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
                   </div>
 
