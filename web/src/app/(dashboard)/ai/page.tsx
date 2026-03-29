@@ -441,13 +441,11 @@ export default function AIPage() {
         </div>
       </ThemeHero>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <ThemeMetricCard label="模型总数" value={`${models.length} 个`} detail="全部模型" tone="blue" icon={Brain} className="p-4" hideDetailOnMobile />
         <ThemeMetricCard label="已配置" value={`${configuredModels.length} 个`} detail="可用模型" tone="green" icon={CheckCircle2} className="p-4" hideDetailOnMobile />
         <ThemeMetricCard label="未配置" value={`${unconfiguredModels.length} 个`} detail="待配置" tone="slate" icon={Key} className="p-4" hideDetailOnMobile />
-      </div>
-
-      <ThemeSurface className="p-4 sm:p-6">
+      <ThemeSurface className="flex h-full p-4 sm:p-6">
         <ThemeSectionHeader
           eyebrow="功能说明"
           title="AI 智能记账"
@@ -460,6 +458,7 @@ export default function AIPage() {
           }
         />
       </ThemeSurface>
+      </div>
 
       {pageNotice ? <ThemeNotice tone={pageNotice.tone} title={pageNotice.title} description={pageNotice.description} /> : null}
 

@@ -63,6 +63,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.16",
+    date: "2026-03-29",
+    type: "feature",
+    highlights: [
+      "数据页新增按交易对方建立自动归类规则，并支持回填历史交易。",
+      "AI 模型配置改为按当前账户读写，修复添加模型只提示创建失败的问题。",
+    ],
+  },
+  {
     version: "2.3.15",
     date: "2026-03-25",
     type: "feature",
@@ -119,8 +128,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.15",
-  latestVersion: "2.3.15",
+  currentVersion: "2.3.16",
+  latestVersion: "2.3.16",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -133,19 +142,19 @@ const fallbackUpdateInfo: UpdateInfo = {
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.15",
-    latestVersion: "2.3.15",
+    currentVersion: "2.3.16",
+    latestVersion: "2.3.16",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.15 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.16 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.15",
-    latestVersion: "2.3.15",
+    currentVersion: "2.3.16",
+    latestVersion: "2.3.16",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.15 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.16 后需要重新下载安装。",
     downloads: [],
   },
 };

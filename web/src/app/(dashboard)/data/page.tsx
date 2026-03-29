@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Tag, Trash2, Upload } from "lucide-react";
+import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,22 @@ type Transaction = {
   platform: string;
   merchant: string | null;
   description: string | null;
+};
+
+type MerchantCandidate = {
+  merchant: string;
+  count: number;
+  latestDate: string;
+};
+
+type MerchantRule = {
+  id: string;
+  name: string | null;
+  merchant: string;
+  category: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type ImportResult = {
@@ -126,11 +142,24 @@ export default function DataPage() {
   const [manualEntryMode, setManualEntryMode] = useState<ManualEntryMode>("income");
   const [manualTransactionLoading, setManualTransactionLoading] = useState(false);
   const [manualTransactionForm, setManualTransactionForm] = useState(getDefaultManualForm("income"));
+  const [merchantKeyword, setMerchantKeyword] = useState("");
+  const [merchantCandidates, setMerchantCandidates] = useState<MerchantCandidate[]>([]);
+  const [merchantCandidatesLoading, setMerchantCandidatesLoading] = useState(false);
+  const [merchantRules, setMerchantRules] = useState<MerchantRule[]>([]);
+  const [merchantRulesLoading, setMerchantRulesLoading] = useState(false);
+  const [selectedRuleMerchants, setSelectedRuleMerchants] = useState<string[]>([]);
+  const [ruleName, setRuleName] = useState("");
+  const [ruleCategory, setRuleCategory] = useState("房租");
+  const [ruleDescription, setRuleDescription] = useState("");
+  const [applyRuleToHistory, setApplyRuleToHistory] = useState(true);
+  const [ruleActionLoading, setRuleActionLoading] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const startItem = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endItem = total === 0 ? 0 : startItem + Math.max(0, transactions.length - 1);
   const allSelectedOnPage = transactions.length > 0 && selectedIds.size === transactions.length;
+  const selectedRuleMerchantSet = new Set(selectedRuleMerchants);
+  const existingMerchantRuleMap = new Map(merchantRules.map((rule) => [rule.merchant, rule]));
 
   const loadTransactions = useCallback(
     async (options?: { showLoading?: boolean; page?: number }) => {
@@ -172,9 +201,49 @@ export default function DataPage() {
     [currentPage]
   );
 
+  const loadMerchantRules = useCallback(async () => {
+    setMerchantRulesLoading(true);
+    try {
+      const response = await apiFetch<{ items: MerchantRule[] }>("/api/transactions/rules");
+      setMerchantRules(response.items || []);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "加载归类规则失败");
+    } finally {
+      setMerchantRulesLoading(false);
+    }
+  }, []);
+
+  const loadMerchantCandidates = useCallback(async (keyword: string) => {
+    setMerchantCandidatesLoading(true);
+    try {
+      const search = keyword.trim();
+      const query = new URLSearchParams();
+      query.set("limit", "48");
+      if (search) query.set("keyword", search);
+      const response = await apiFetch<{ items: MerchantCandidate[] }>(`/api/transactions/merchants?${query.toString()}`);
+      setMerchantCandidates(response.items || []);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "加载交易对方列表失败");
+    } finally {
+      setMerchantCandidatesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadTransactions({ showLoading: true, page: currentPage });
   }, [currentPage, loadTransactions]);
+
+  useEffect(() => {
+    void loadMerchantRules();
+  }, [loadMerchantRules]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadMerchantCandidates(merchantKeyword);
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [merchantKeyword, loadMerchantCandidates]);
 
   function toggleSelect(id: string) {
     const next = new Set(selectedIds);
@@ -186,6 +255,74 @@ export default function DataPage() {
   function toggleSelectAll() {
     if (allSelectedOnPage) setSelectedIds(new Set());
     else setSelectedIds(new Set(transactions.map((transaction) => transaction.id)));
+  }
+
+  function toggleRuleMerchant(merchant: string) {
+    setSelectedRuleMerchants((current) =>
+      current.includes(merchant) ? current.filter((item) => item !== merchant) : [...current, merchant],
+    );
+  }
+
+  async function handleCreateMerchantRule() {
+    if (selectedRuleMerchants.length === 0 || !ruleCategory.trim()) return;
+
+    setRuleActionLoading(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const response = await apiFetch<{
+        created: number;
+        updated: number;
+        historyUpdated: number;
+        items: MerchantRule[];
+      }>("/api/transactions/rules", {
+        method: "POST",
+        body: JSON.stringify({
+          name: ruleName.trim() || undefined,
+          merchants: selectedRuleMerchants,
+          category: ruleCategory.trim(),
+          description: ruleDescription.trim() || undefined,
+          applyToHistory: applyRuleToHistory,
+        }),
+      });
+
+      setMerchantRules(response.items || []);
+      setSelectedRuleMerchants([]);
+      setRuleName("");
+      setRuleDescription("");
+      setMessage(
+        `已保存 ${response.created + response.updated} 条归类规则${response.historyUpdated ? `，并回填 ${response.historyUpdated} 条历史交易` : ""}`,
+      );
+
+      await Promise.all([
+        loadMerchantCandidates(merchantKeyword),
+        loadTransactions({ page: currentPage }),
+      ]);
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "创建归类规则失败");
+    } finally {
+      setRuleActionLoading(false);
+    }
+  }
+
+  async function handleDeleteMerchantRule(rule: MerchantRule) {
+    if (!confirm(`确定删除 “${rule.merchant} -> ${rule.category}” 这条规则吗？`)) return;
+
+    setRuleActionLoading(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      await apiFetch(`/api/transactions/rules/${rule.id}`, { method: "DELETE" });
+      setMerchantRules((current) => current.filter((item) => item.id !== rule.id));
+      setMessage(`已删除规则：${rule.merchant} -> ${rule.category}`);
+      await loadMerchantCandidates(merchantKeyword);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "删除归类规则失败");
+    } finally {
+      setRuleActionLoading(false);
+    }
   }
 
   async function handleBatchDelete() {
@@ -559,6 +696,226 @@ export default function DataPage() {
             </Button>
           </ThemeActionBar>
         </form>
+      </ThemeSurface>
+      </DelayedRender>
+
+      <DelayedRender delay={220}>
+      <ThemeSurface className="p-4 sm:p-6">
+        <ThemeSectionHeader
+          eyebrow="自动归类"
+          title="按交易对方建立固定支出规则"
+          description="从已出现过的交易对方里搜索并勾选，绑定到一个分类后，后续导入和手动补录会自动套用。"
+        />
+
+        <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/70 p-4 shadow-sm">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ThemeFormField label="规则名称" hint="可选，方便你自己识别这组固定支出。">
+                <Input
+                  value={ruleName}
+                  onChange={(event) => setRuleName(event.target.value)}
+                  placeholder="例如：房租 / 物业费 / 固定订阅"
+                  className={THEME_DIALOG_INPUT_CLASS}
+                />
+              </ThemeFormField>
+
+              <ThemeFormField label="目标分类" hint="命中规则后，这些交易会自动归到这里。">
+                <Input
+                  value={ruleCategory}
+                  onChange={(event) => setRuleCategory(event.target.value)}
+                  placeholder="例如：房租"
+                  className={THEME_DIALOG_INPUT_CLASS}
+                />
+              </ThemeFormField>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <ThemeFormField label="统一备注" hint="可选，填写后会同步覆盖命中的交易备注。">
+                <Input
+                  value={ruleDescription}
+                  onChange={(event) => setRuleDescription(event.target.value)}
+                  placeholder="例如：每月房租"
+                  className={THEME_DIALOG_INPUT_CLASS}
+                />
+              </ThemeFormField>
+
+              <label className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={applyRuleToHistory}
+                  onChange={(event) => setApplyRuleToHistory(event.target.checked)}
+                  className="rounded border-slate-300"
+                />
+                回填历史交易
+              </label>
+            </div>
+
+            <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">选择交易对方</p>
+                  <p className="mt-1 text-xs text-slate-500">支持按关键词搜索，适合房东、物业、固定收款方这类长期重复对象。</p>
+                </div>
+                <div className="text-sm text-slate-500">
+                  已选 <span className="font-semibold text-slate-900">{selectedRuleMerchants.length}</span> 个
+                </div>
+              </div>
+
+              <div className="relative mt-4">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={merchantKeyword}
+                  onChange={(event) => setMerchantKeyword(event.target.value)}
+                  placeholder="搜索交易对方，例如：房东、链家、自如"
+                  className="pl-9"
+                />
+              </div>
+
+              {selectedRuleMerchants.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedRuleMerchants.map((merchant) => (
+                    <button
+                      key={merchant}
+                      type="button"
+                      onClick={() => toggleRuleMerchant(merchant)}
+                      className="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white transition hover:bg-slate-800"
+                    >
+                      {merchant}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="mt-4 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white">
+                {merchantCandidatesLoading ? (
+                  <div className="flex items-center justify-center gap-2 px-4 py-10 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    正在整理交易对方列表
+                  </div>
+                ) : merchantCandidates.length === 0 ? (
+                  <ThemeEmptyState
+                    icon={Search}
+                    title="没有找到匹配的交易对方"
+                    description="先导入或补录交易，或者换一个关键词再试。"
+                  />
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {merchantCandidates.map((candidate) => {
+                      const existingRule = existingMerchantRuleMap.get(candidate.merchant);
+                      const selected = selectedRuleMerchantSet.has(candidate.merchant);
+
+                      return (
+                        <label
+                          key={candidate.merchant}
+                          className={`flex cursor-pointer items-start gap-3 px-4 py-3 transition ${
+                            selected ? "bg-blue-50/70" : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleRuleMerchant(candidate.merchant)}
+                            className="mt-1 rounded border-slate-300"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="truncate text-sm font-medium text-slate-900">{candidate.merchant}</span>
+                              {existingRule ? (
+                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                                  已有规则 · {existingRule.category}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                              <span>出现 {candidate.count} 次</span>
+                              <span>最近交易 {formatDateTime(candidate.latestDate)}</span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <ThemeActionBar className="mt-5">
+              <Button
+                type="button"
+                onClick={() => void handleCreateMerchantRule()}
+                disabled={ruleActionLoading || selectedRuleMerchants.length === 0 || !ruleCategory.trim()}
+                className="h-11 rounded-2xl sm:min-w-40"
+              >
+                {ruleActionLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    保存中...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    保存自动归类规则
+                  </>
+                )}
+              </Button>
+            </ThemeActionBar>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200/80 bg-slate-50/70 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">当前规则</p>
+                <p className="mt-1 text-xs text-slate-500">一个交易对方只保留一条生效规则，重新保存会直接覆盖。</p>
+              </div>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
+                {merchantRules.length} 条
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {merchantRulesLoading ? (
+                <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-6 text-sm text-slate-500 shadow-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  正在加载规则
+                </div>
+              ) : merchantRules.length === 0 ? (
+                <ThemeEmptyState
+                  icon={Tag}
+                  title="还没有自动归类规则"
+                  description="选中交易对方并保存后，这里会展示已建立的规则。"
+                />
+              ) : (
+                merchantRules.map((rule) => (
+                  <div key={rule.id} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-slate-900">{rule.name || rule.category}</span>
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                            {rule.category}
+                          </span>
+                        </div>
+                        <p className="mt-2 truncate text-sm text-slate-600">{rule.merchant}</p>
+                        {rule.description ? <p className="mt-1 text-xs text-slate-500">备注：{rule.description}</p> : null}
+                        <p className="mt-2 text-xs text-slate-400">更新于 {formatDateTime(rule.updatedAt)}</p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteMerchantRule(rule)}
+                        disabled={ruleActionLoading}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-red-200 hover:text-red-600 disabled:opacity-50"
+                        aria-label={`删除规则 ${rule.merchant}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </ThemeSurface>
       </DelayedRender>
 

@@ -70,6 +70,36 @@ type TransactionRecord = {
   updatedAt: string;
 };
 
+type MerchantCategoryRule = {
+  id: string;
+  userId: string;
+  accountId: string;
+  name: string | null;
+  merchant: string;
+  merchantKey: string;
+  category: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type MerchantCategoryRuleRow = {
+  id: string;
+  userId: string;
+  accountId: string;
+  name: string | null;
+  merchant: string;
+  merchantKey: string;
+  category: string;
+  description: string | null;
+  isActive: boolean | number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+type PrismaClientLike = NonNullable<ReturnType<typeof getPrisma>>;
+
 type SyncCursor = {
   updatedAt: string;
   id: string;
@@ -113,6 +143,7 @@ const connectionsById = new Map<string, Connection>();
 const connectionIdByOtp = new Map<string, string>();
 const transactionsByUser = new Map<string, TransactionRecord[]>();
 const transactionsByAccount = new Map<string, TransactionRecord[]>();
+const merchantCategoryRulesByAccount = new Map<string, MerchantCategoryRule[]>();
 
 type SavingsGoal = {
   id: string;
@@ -1121,11 +1152,9 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/auth/me", async (req, res) => {
   const prisma = getPrisma();
   if (!prisma) {
-    const account = await requireAccountId(req, res);
-    if (!account) return;
+    const userId = await requireUserId(req, res);
+    if (!userId) return;
 
-    const { accountId } = account;
-    
     let email = "dev@local";
     if (userId.startsWith("mem-")) {
       email = userId.replace("mem-", "");
@@ -1186,6 +1215,102 @@ function normalizeOptionalText(value: unknown) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeMerchantRuleKey(value: unknown) {
+  const merchant = normalizeOptionalText(value);
+  return merchant ? merchant.replace(/\s+/g, " ").toLocaleLowerCase("zh-CN") : null;
+}
+
+function toIsoString(value: Date | string) {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+let ensureMerchantCategoryRuleTablePromise: Promise<void> | null = null;
+
+async function ensureMerchantCategoryRuleTable(prisma: PrismaClientLike) {
+  if (ensureMerchantCategoryRuleTablePromise) return ensureMerchantCategoryRuleTablePromise;
+
+  ensureMerchantCategoryRuleTablePromise = prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS \`transactioncategoryrule\` (
+      \`id\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+      \`userId\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+      \`accountId\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+      \`name\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+      \`merchant\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+      \`merchantKey\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+      \`category\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+      \`description\` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+      \`isActive\` tinyint(1) NOT NULL DEFAULT '1',
+      \`createdAt\` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+      \`updatedAt\` datetime(3) NOT NULL,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`TransactionCategoryRule_accountId_merchantKey_key\` (\`accountId\`, \`merchantKey\`),
+      KEY \`TransactionCategoryRule_userId_idx\` (\`userId\`),
+      KEY \`TransactionCategoryRule_accountId_idx\` (\`accountId\`),
+      CONSTRAINT \`TransactionCategoryRule_userId_fkey\` FOREIGN KEY (\`userId\`) REFERENCES \`user\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT \`TransactionCategoryRule_accountId_fkey\` FOREIGN KEY (\`accountId\`) REFERENCES \`account\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='交易对方自动归类规则'
+  `).then(() => undefined).catch((error) => {
+    ensureMerchantCategoryRuleTablePromise = null;
+    throw error;
+  });
+
+  return ensureMerchantCategoryRuleTablePromise;
+}
+
+function mapMerchantCategoryRule(row: MerchantCategoryRuleRow): MerchantCategoryRule {
+  return {
+    id: row.id,
+    userId: row.userId,
+    accountId: row.accountId,
+    name: row.name ?? null,
+    merchant: row.merchant,
+    merchantKey: row.merchantKey,
+    category: row.category,
+    description: row.description ?? null,
+    isActive: Boolean(row.isActive),
+    createdAt: toIsoString(row.createdAt),
+    updatedAt: toIsoString(row.updatedAt),
+  };
+}
+
+function getMerchantCategoryRulesFromMemory(accountId: string) {
+  return (merchantCategoryRulesByAccount.get(accountId) ?? []).filter((rule) => rule.isActive);
+}
+
+async function getMerchantCategoryRules(prisma: PrismaClientLike, userId: string, accountId: string) {
+  await ensureMerchantCategoryRuleTable(prisma);
+  const rows = await prisma.$queryRawUnsafe<MerchantCategoryRuleRow[]>(
+    `
+      SELECT id, userId, accountId, name, merchant, merchantKey, category, description, isActive, createdAt, updatedAt
+      FROM \`transactioncategoryrule\`
+      WHERE userId = ? AND accountId = ? AND isActive = 1
+      ORDER BY updatedAt DESC, createdAt DESC
+    `,
+    userId,
+    accountId,
+  );
+  return rows.map(mapMerchantCategoryRule);
+}
+
+function applyMerchantCategoryRules<T extends { type: string; merchant: string | null; category: string; description: string | null }>(
+  input: T,
+  rules: MerchantCategoryRule[],
+) {
+  if (input.type !== "EXPENSE") return input;
+
+  const merchantKey = normalizeMerchantRuleKey(input.merchant);
+  if (!merchantKey) return input;
+
+  const matchedRule = rules.find((rule) => rule.isActive && rule.merchantKey === merchantKey);
+  if (!matchedRule) return input;
+
+  return {
+    ...input,
+    category: matchedRule.category,
+    description: matchedRule.description ?? input.description,
+  };
 }
 
 function encodeSyncCursor(cursor: SyncCursor) {
@@ -2706,6 +2831,311 @@ app.get("/api/transactions", async (req, res) => {
   jsonOk(res, { page, pageSize, total, items });
 });
 
+app.get("/api/transactions/merchants", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
+  const keyword = normalizeOptionalText(req.query.keyword);
+  const limit = Math.min(100, Math.max(10, Number(req.query.limit ?? 40) || 40));
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const likeKeyword = keyword ? `%${keyword}%` : null;
+      const rows = await prisma.$queryRawUnsafe<Array<{ merchant: string; count: bigint | number; latestDate: Date | string }>>(
+        `
+          SELECT merchant, COUNT(*) AS count, MAX(date) AS latestDate
+          FROM \`transaction\`
+          WHERE userId = ?
+            AND accountId = ?
+            AND merchant IS NOT NULL
+            AND merchant <> ''
+            AND (? IS NULL OR merchant LIKE ?)
+          GROUP BY merchant
+          ORDER BY COUNT(*) DESC, MAX(date) DESC
+          LIMIT ${limit}
+        `,
+        userId,
+        accountId,
+        likeKeyword,
+        likeKeyword,
+      );
+
+      jsonOk(res, {
+        items: rows.map((row) => ({
+          merchant: row.merchant,
+          count: Number(row.count ?? 0),
+          latestDate: toIsoString(row.latestDate),
+        })),
+      });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const seen = new Map<string, { merchant: string; count: number; latestDate: string }>();
+  for (const item of transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? []) {
+    const merchant = normalizeOptionalText(item.merchant);
+    if (!merchant) continue;
+    if (keyword && !merchant.toLocaleLowerCase("zh-CN").includes(keyword.toLocaleLowerCase("zh-CN"))) continue;
+
+    const current = seen.get(merchant) ?? { merchant, count: 0, latestDate: item.date };
+    current.count += 1;
+    if (new Date(item.date).getTime() > new Date(current.latestDate).getTime()) {
+      current.latestDate = item.date;
+    }
+    seen.set(merchant, current);
+  }
+
+  jsonOk(res, {
+    items: Array.from(seen.values())
+      .sort((a, b) => (b.count - a.count) || (new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime()))
+      .slice(0, limit),
+  });
+});
+
+app.get("/api/transactions/rules", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const items = await getMerchantCategoryRules(prisma, userId, accountId);
+      jsonOk(res, { items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  jsonOk(res, { items: getMerchantCategoryRulesFromMemory(accountId) });
+});
+
+app.post("/api/transactions/rules", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
+  const merchants: unknown[] = Array.isArray(req.body?.merchants) ? req.body.merchants : [];
+  const category = normalizeOptionalText(req.body?.category);
+  const description = normalizeOptionalText(req.body?.description);
+  const name = normalizeOptionalText(req.body?.name);
+  const applyToHistory = req.body?.applyToHistory === true;
+
+  const normalizedMerchants: string[] = Array.from(
+    new Map<string, string>(
+      merchants
+        .map((merchant) => normalizeOptionalText(merchant))
+        .filter((merchant): merchant is string => Boolean(merchant))
+        .map((merchant) => [normalizeMerchantRuleKey(merchant) ?? merchant, merchant]),
+    ).values(),
+  );
+
+  if (normalizedMerchants.length === 0 || !category) {
+    jsonFail(res, 400, 50000, "INVALID_PARAM", "缺少规则商户或目标分类");
+    return;
+  }
+
+  const prisma = getPrisma();
+  if (prisma) {
+    try {
+      await ensureMerchantCategoryRuleTable(prisma);
+
+      let created = 0;
+      let updated = 0;
+      const now = new Date();
+
+      for (const merchant of normalizedMerchants) {
+        const merchantKey = normalizeMerchantRuleKey(merchant);
+        if (!merchantKey) continue;
+
+        const existing = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+          `
+            SELECT id
+            FROM \`transactioncategoryrule\`
+            WHERE userId = ? AND accountId = ? AND merchantKey = ?
+            LIMIT 1
+          `,
+          userId,
+          accountId,
+          merchantKey,
+        );
+
+        if (existing.length > 0) updated += 1;
+        else created += 1;
+
+        await prisma.$executeRawUnsafe(
+          `
+            INSERT INTO \`transactioncategoryrule\`
+              (id, userId, accountId, name, merchant, merchantKey, category, description, isActive, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+            ON DUPLICATE KEY UPDATE
+              userId = VALUES(userId),
+              name = VALUES(name),
+              merchant = VALUES(merchant),
+              category = VALUES(category),
+              description = VALUES(description),
+              isActive = 1,
+              updatedAt = VALUES(updatedAt)
+          `,
+          crypto.randomUUID(),
+          userId,
+          accountId,
+          name,
+          merchant,
+          merchantKey,
+          category,
+          description,
+          now,
+        );
+      }
+
+      let historyUpdated = 0;
+      if (applyToHistory) {
+        const result = await prisma.transaction.updateMany({
+          where: {
+            userId,
+            accountId,
+            type: "EXPENSE",
+            merchant: { in: normalizedMerchants },
+          },
+          data: {
+            category,
+            ...(description ? { description } : {}),
+          },
+        });
+        historyUpdated = result.count;
+      }
+
+      const items = await getMerchantCategoryRules(prisma, userId, accountId);
+      jsonOk(res, { created, updated, historyUpdated, items });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const nowIso = new Date().toISOString();
+  const existingRules = merchantCategoryRulesByAccount.get(accountId) ?? [];
+  let created = 0;
+  let updated = 0;
+
+  for (const merchant of normalizedMerchants) {
+    const merchantKey = normalizeMerchantRuleKey(merchant);
+    if (!merchantKey) continue;
+
+    const index = existingRules.findIndex((rule) => rule.merchantKey === merchantKey);
+    if (index >= 0) {
+      updated += 1;
+      existingRules[index] = {
+        ...existingRules[index],
+        userId,
+        accountId,
+        name,
+        merchant,
+        category,
+        description,
+        isActive: true,
+        updatedAt: nowIso,
+      };
+    } else {
+      created += 1;
+      existingRules.unshift({
+        id: crypto.randomUUID(),
+        userId,
+        accountId,
+        name,
+        merchant,
+        merchantKey,
+        category,
+        description,
+        isActive: true,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      });
+    }
+  }
+  merchantCategoryRulesByAccount.set(accountId, existingRules);
+
+  let historyUpdated = 0;
+  if (applyToHistory) {
+    const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
+    const merchantSet = new Set(normalizedMerchants.map((merchant) => normalizeMerchantRuleKey(merchant)));
+    const updatedList = list.map((transaction) => {
+      if (transaction.type !== "EXPENSE") return transaction;
+      if (!merchantSet.has(normalizeMerchantRuleKey(transaction.merchant))) return transaction;
+      historyUpdated += 1;
+      return {
+        ...transaction,
+        category,
+        description: description ?? transaction.description,
+        updatedAt: nowIso,
+      };
+    });
+    transactionsByAccount.set(accountId, updatedList);
+    transactionsByUser.set(userId, updatedList);
+  }
+
+  jsonOk(res, { created, updated, historyUpdated, items: getMerchantCategoryRulesFromMemory(accountId) });
+});
+
+app.delete("/api/transactions/rules/:id", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
+  const { id } = req.params;
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      await ensureMerchantCategoryRuleTable(prisma);
+      const deleted = await prisma.$executeRawUnsafe(
+        `
+          DELETE FROM \`transactioncategoryrule\`
+          WHERE id = ? AND userId = ? AND accountId = ?
+          LIMIT 1
+        `,
+        id,
+        userId,
+        accountId,
+      );
+
+      if (Number(deleted) === 0) {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "规则不存在");
+        return;
+      }
+
+      jsonOk(res, { deleted: true });
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const rules = merchantCategoryRulesByAccount.get(accountId) ?? [];
+  const nextRules = rules.filter((rule) => !(rule.id === id && rule.userId === userId && rule.accountId === accountId));
+  if (nextRules.length === rules.length) {
+    jsonFail(res, 404, 50000, "NOT_FOUND", "规则不存在");
+    return;
+  }
+  merchantCategoryRulesByAccount.set(accountId, nextRules);
+  jsonOk(res, { deleted: true });
+});
+
 app.put("/api/transactions/:id", async (req, res) => {
   const account = await requireAccountId(req, res);
   if (!account) return;
@@ -2951,6 +3381,17 @@ app.post("/api/transactions", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
+      const rules = await getMerchantCategoryRules(prisma, userId, accountId);
+      const normalizedInput = applyMerchantCategoryRules(
+        {
+          type: String(type),
+          merchant: typeof merchant === "string" ? merchant : null,
+          category: String(category),
+          description: typeof description === "string" ? description : null,
+        },
+        rules,
+      );
+
       // @ts-ignore - Prisma type mismatch
       const tx = await prisma.transaction.create({
         data: {
@@ -2959,11 +3400,11 @@ app.post("/api/transactions", async (req, res) => {
           accountId,
           amount: String(amount),
           type: type as any,
-          category,
+          category: normalizedInput.category,
           platform,
-          merchant: merchant ?? null,
+          merchant: normalizedInput.merchant,
           date: new Date(date),
-          description: description ?? null,
+          description: normalizedInput.description,
           updatedAt: new Date(),
         },
       });
@@ -2976,17 +3417,27 @@ app.post("/api/transactions", async (req, res) => {
     }
   }
 
+  const rules = getMerchantCategoryRulesFromMemory(accountId);
+  const normalizedInput = applyMerchantCategoryRules(
+    {
+      type: String(type),
+      merchant: typeof merchant === "string" ? merchant : null,
+      category: String(category),
+      description: typeof description === "string" ? description : null,
+    },
+    rules,
+  );
   const created: TransactionRecord = {
     id: crypto.randomUUID(),
     accountId,
     orderId: null,
     amount: String(amount),
     type: String(type),
-    category: String(category),
+    category: normalizedInput.category,
     platform: String(platform),
-    merchant: typeof merchant === "string" ? merchant : null,
+    merchant: normalizedInput.merchant,
     date: String(date),
-    description: typeof description === "string" ? description : null,
+    description: normalizedInput.description,
     paymentMethod: null,
     status: null,
     createdAt: new Date().toISOString(),
@@ -3058,7 +3509,9 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const orderIds = valid.map((v) => v.orderId).filter((v): v is string => !!v);
+      const rules = await getMerchantCategoryRules(prisma, userId, accountId);
+      const ruleAppliedValid = valid.map((transaction) => applyMerchantCategoryRules(transaction, rules));
+      const orderIds = ruleAppliedValid.map((v) => v.orderId).filter((v): v is string => !!v);
       const loans = await prisma.loan.findMany({
         where: { userId, accountId },
         select: {
@@ -3096,7 +3549,7 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
       const existingSet = new Set(existing.map((e) => e.orderId).filter((v): v is string => !!v));
       let localDuplicateCount = 0;
       const seenOrderIds = new Set(existingSet);
-      const toInsert = valid.filter((transaction) => {
+      const toInsert = ruleAppliedValid.filter((transaction) => {
         if (!transaction.orderId) return true;
         if (seenOrderIds.has(transaction.orderId)) {
           localDuplicateCount += 1;
@@ -3224,12 +3677,14 @@ app.post("/api/transactions/import", upload.single("file"), async (req, res) => 
     }
   }
 
+  const rules = getMerchantCategoryRulesFromMemory(accountId);
+  const ruleAppliedValid = valid.map((transaction) => applyMerchantCategoryRules(transaction, rules));
   const list = transactionsByUser.get(userId) ?? [];
   const existingSet = new Set(list.map((t) => t.orderId).filter((v): v is string => !!v));
   let duplicateCount = 0;
   let insertedCount = 0;
 
-  for (const t of valid) {
+  for (const t of ruleAppliedValid) {
     if (t.orderId && existingSet.has(t.orderId)) {
       duplicateCount++;
       continue;
@@ -3400,6 +3855,7 @@ app.post("/api/sync/transactions/push", async (req, res) => {
 
   if (prisma) {
     try {
+      const rules = await getMerchantCategoryRules(prisma, userId, accountId);
       for (const rawItem of rawItems) {
         const normalized = normalizeSyncTransactionPayload(rawItem);
         if (!normalized.ok) {
@@ -3407,7 +3863,8 @@ app.post("/api/sync/transactions/push", async (req, res) => {
           continue;
         }
 
-        const { clientId, value } = normalized;
+        const { clientId } = normalized;
+        const value = applyMerchantCategoryRules(normalized.value, rules);
         let existingById:
           | { id: string; orderId: string | null; userId: string; accountId: string }
           | null = null;
@@ -3519,6 +3976,7 @@ app.post("/api/sync/transactions/push", async (req, res) => {
   }
 
   const list = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
+  const rules = getMerchantCategoryRulesFromMemory(accountId);
 
   for (const rawItem of rawItems) {
     const normalized = normalizeSyncTransactionPayload(rawItem);
@@ -3527,7 +3985,8 @@ app.post("/api/sync/transactions/push", async (req, res) => {
       continue;
     }
 
-    const { clientId, value } = normalized;
+    const { clientId } = normalized;
+    const value = applyMerchantCategoryRules(normalized.value, rules);
     const targetIndex = list.findIndex((item) => {
       if (value.id && item.id === value.id) return true;
       return Boolean(value.orderId && item.orderId === value.orderId);
@@ -3933,8 +4392,9 @@ app.get("/api/savings", async (req, res) => {
 });
 
 app.post("/api/savings", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const { name, targetAmount, deadline, type, depositType, plans, planConfig } = req.body ?? {};
   if (typeof name !== "string" || !name.trim()) {
@@ -3957,7 +4417,7 @@ app.post("/api/savings", async (req, res) => {
           data: {
             id: crypto.randomUUID(),
             userId,
-            accountId: userId, // fallback to userId for single-account mode
+            accountId,
             name,
             targetAmount: targetVal,
             deadline: deadline ? new Date(deadline) : null,
@@ -4856,8 +5316,9 @@ app.get("/api/assets", async (req, res) => {
 });
 
 app.post("/api/assets", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const { name, type, balance, currency } = req.body ?? {};
   if (typeof name !== "string" || !name.trim()) {
@@ -4877,7 +5338,7 @@ app.post("/api/assets", async (req, res) => {
         data: {
           id: crypto.randomUUID(),
           userId,
-          accountId: userId, // fallback to userId for single-account mode
+          accountId,
           name,
           type: type as "CASH", // Simplified type casting for now
           balance: Number(balance ?? 0),
@@ -5072,8 +5533,9 @@ app.get("/api/budgets", async (req, res) => {
 });
 
 app.post("/api/budgets", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const { amount, category, period, scopeType, platform, alertPercent } = req.body ?? {};
   if (!amount || Number.isNaN(Number(amount))) {
@@ -5089,7 +5551,7 @@ app.post("/api/budgets", async (req, res) => {
         data: {
           id: crypto.randomUUID(),
           userId,
-          accountId: userId, // fallback to userId for single-account mode
+          accountId,
           amount: Number(amount),
           category: category || "ALL",
           period: period || "MONTHLY",
@@ -5986,8 +6448,10 @@ app.get("/api/changelog", async (_req, res) => {
 app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
   try {
     // 验证用户
-    const userId = await requireUserId(req, res);
-    if (!userId) return;
+    const account = await requireAccountId(req, res);
+    if (!account) return;
+
+    const { accountId } = account;
 
     if (!req.file) {
       jsonFail(res, 400, 40001, "MISSING_FILE", "请上传图片文件");
@@ -6206,8 +6670,10 @@ app.get("/api/ai/models", async (req, res) => {
 
 // 创建大模型配置
 app.post("/api/ai/models", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
 
   const { name, provider, type, apiKey, endpoint, modelId, description } = req.body;
 
@@ -6228,7 +6694,7 @@ app.post("/api/ai/models", async (req, res) => {
       data: {
         id: crypto.randomUUID(),
         userId,
-        accountId: userId, // fallback to userId for single-account mode
+        accountId,
         name,
         provider,
         type: type || "vision",
@@ -6260,8 +6726,10 @@ app.post("/api/ai/models", async (req, res) => {
 
 // 更新大模型配置
 app.put("/api/ai/models/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
 
   const { id } = req.params;
   const { name, provider, type, apiKey, endpoint, modelId, description, status, isDefault } = req.body;
@@ -6275,14 +6743,14 @@ app.put("/api/ai/models/:id", async (req, res) => {
   // 如果设置默认模型，先取消其他默认
   if (isDefault) {
     await prisma.aimodelconfig.updateMany({
-      where: { userId, isDefault: true },
+      where: { userId, accountId, isDefault: true },
       data: { isDefault: false }
     });
   }
 
   try {
-    const updated = await prisma.aimodelconfig.update({
-      where: { id, userId },
+    const updateResult = await prisma.aimodelconfig.updateMany({
+      where: { id, userId, accountId },
       data: {
         ...(name && { name }),
         ...(provider && { provider }),
@@ -6295,6 +6763,19 @@ app.put("/api/ai/models/:id", async (req, res) => {
         ...(apiKey !== undefined && { apiKey: apiKey || null })
       }
     });
+    if (updateResult.count === 0) {
+      jsonFail(res, 404, 50000, "NOT_FOUND", "模型不存在");
+      return;
+    }
+
+    const updated = await prisma.aimodelconfig.findFirst({
+      where: { id, userId, accountId }
+    });
+    if (!updated) {
+      jsonFail(res, 404, 50000, "NOT_FOUND", "模型不存在");
+      return;
+    }
+
     jsonOk(res, {
       id: updated.id,
       name: updated.name,
@@ -6315,8 +6796,10 @@ app.put("/api/ai/models/:id", async (req, res) => {
 
 // 删除大模型配置
 app.delete("/api/ai/models/:id", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
 
   const { id } = req.params;
 
@@ -6327,8 +6810,8 @@ app.delete("/api/ai/models/:id", async (req, res) => {
   }
 
   try {
-    await prisma.aimodelconfig.delete({
-      where: { id, userId }
+    await prisma.aimodelconfig.deleteMany({
+      where: { id, userId, accountId }
     });
     jsonOk(res, { message: "删除成功" });
   } catch (error) {
