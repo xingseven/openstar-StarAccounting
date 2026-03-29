@@ -228,7 +228,7 @@ function getPlatformLabel(platform: string) {
 function getPlatformBadge(platform: string) {
   if (platform === "wechat") {
     return (
-      <div className="rounded-2xl bg-[#07c160]/10 p-2.5">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
           <path d={siWechat.path} fill={`#${siWechat.hex}`} transform="translate(2 2) scale(0.83)" />
         </svg>
@@ -238,7 +238,7 @@ function getPlatformBadge(platform: string) {
 
   if (platform === "alipay") {
     return (
-      <div className="rounded-2xl bg-[#1677ff]/10 p-2.5">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
           <path d={siAlipay.path} fill={`#${siAlipay.hex}`} transform="translate(2 2) scale(0.83)" />
         </svg>
@@ -247,7 +247,7 @@ function getPlatformBadge(platform: string) {
   }
 
   return (
-    <div className="rounded-2xl bg-slate-100 p-2.5">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center">
       <CreditCard className="h-5 w-5 text-slate-600" />
     </div>
   );
@@ -964,19 +964,19 @@ function HeatmapGrid({ data }: { data: ConsumptionData["heatmap"] }) {
 
   return (
     <div>
-      <div className="grid grid-cols-[112px_repeat(2,minmax(0,1fr))] gap-2 sm:grid-cols-[128px_repeat(2,minmax(0,1fr))]">
+      <div className="grid grid-cols-[98px_repeat(2,minmax(0,1fr))] gap-1.5 sm:grid-cols-[116px_repeat(2,minmax(0,1fr))] sm:gap-2">
         <div />
         {visiblePlatforms.map((platform) => (
-          <div key={platform} className="px-2 py-1 text-center text-xs font-medium text-slate-500">
+          <div key={platform} className="px-2 py-0.5 text-center text-[11px] font-medium text-slate-500 sm:py-1 sm:text-xs">
             {platform}
           </div>
         ))}
       </div>
 
-      <div className="mt-2 space-y-2">
+      <div className="mt-1.5 space-y-1.5 sm:mt-2 sm:space-y-2">
         {data.categories.slice(0, 6).map((category) => (
-          <div key={category} className="grid grid-cols-[112px_repeat(2,minmax(0,1fr))] gap-2 sm:grid-cols-[128px_repeat(2,minmax(0,1fr))]">
-            <div className="flex items-center text-sm font-medium text-slate-700">{category}</div>
+          <div key={category} className="grid grid-cols-[98px_repeat(2,minmax(0,1fr))] gap-1.5 sm:grid-cols-[116px_repeat(2,minmax(0,1fr))] sm:gap-2">
+            <div className="flex items-center text-xs font-medium text-slate-700 sm:text-sm">{category}</div>
             {visiblePlatforms.map((platform) => {
               const value = valueMap.get(`${platform}::${category}`) ?? 0;
               const opacity = value > 0 ? 0.12 + (value / maxValue) * 0.55 : 0.04;
@@ -984,7 +984,7 @@ function HeatmapGrid({ data }: { data: ConsumptionData["heatmap"] }) {
               return (
                 <div
                   key={`${platform}-${category}`}
-                  className="rounded-2xl border border-slate-100 px-2 py-3 text-center text-xs font-medium text-slate-700"
+                  className="rounded-xl border border-slate-100 px-2 py-2 text-center text-[11px] font-medium text-slate-700 sm:rounded-2xl sm:py-2.5 sm:text-xs"
                   style={{ backgroundColor: `rgba(37, 99, 235, ${opacity})` }}
                 >
                   {value > 0 ? formatCurrency(value, { compact: true }) : "—"}
