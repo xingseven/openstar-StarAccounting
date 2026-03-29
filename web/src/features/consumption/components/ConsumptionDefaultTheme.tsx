@@ -228,7 +228,7 @@ function getPlatformLabel(platform: string) {
 function getPlatformBadge(platform: string) {
   if (platform === "wechat") {
     return (
-      <div className="rounded-2xl bg-[#07c160]/10 p-2.5 ring-1 ring-[#07c160]/10">
+      <div className="rounded-2xl bg-[#07c160]/10 p-2.5">
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
           <path d={siWechat.path} fill={`#${siWechat.hex}`} transform="translate(2 2) scale(0.83)" />
         </svg>
@@ -238,7 +238,7 @@ function getPlatformBadge(platform: string) {
 
   if (platform === "alipay") {
     return (
-      <div className="rounded-2xl bg-[#1677ff]/10 p-2.5 ring-1 ring-[#1677ff]/10">
+      <div className="rounded-2xl bg-[#1677ff]/10 p-2.5">
         <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
           <path d={siAlipay.path} fill={`#${siAlipay.hex}`} transform="translate(2 2) scale(0.83)" />
         </svg>
@@ -247,7 +247,7 @@ function getPlatformBadge(platform: string) {
   }
 
   return (
-    <div className="rounded-2xl bg-slate-100 p-2.5 ring-1 ring-slate-200">
+    <div className="rounded-2xl bg-slate-100 p-2.5">
       <CreditCard className="h-5 w-5 text-slate-600" />
     </div>
   );
