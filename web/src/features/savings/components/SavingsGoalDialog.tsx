@@ -395,7 +395,13 @@ export function SavingsGoalDialog({
 
   return (
     <BottomSheet open={open} onOpenChange={handleOpenChange}>
-      <BottomSheetContent className={cn("flex flex-col transition-all duration-300", step === 2 ? "h-[85vh]" : "")} hideClose>
+      <BottomSheetContent
+        className={cn(
+          "flex flex-col transition-all duration-300",
+          step === 2 ? "h-[85vh] max-w-[1040px] xl:max-w-[1120px]" : ""
+        )}
+        hideClose
+      >
         <BottomSheetHeader>
           <BottomSheetTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <div className="rounded-full bg-blue-50 p-2 text-blue-600">{step === 1 ? <Wallet className="h-5 w-5" /> : <PiggyBank className="h-5 w-5" />}</div>
