@@ -63,6 +63,24 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.18",
+    date: "2026-03-29",
+    type: "improvement",
+    highlights: [
+      "消费页新增多组分析维度，并将分析区重构为四组图表面板。",
+      "消费图表移动端布局、平台列表、热区矩阵和日历可读性继续统一优化。",
+    ],
+  },
+  {
+    version: "2.3.17",
+    date: "2026-03-28",
+    type: "improvement",
+    highlights: [
+      "主题系统新增模块级分色层次，让仪表盘、消费、资产、贷款、储蓄首屏视觉更易区分。",
+      "默认主题整体去掉毛玻璃和半透明壳层，收口为更扎实的实色容器与清晰边框。",
+    ],
+  },
+  {
     version: "2.3.16",
     date: "2026-03-29",
     type: "feature",
@@ -128,8 +146,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.16",
-  latestVersion: "2.3.16",
+  currentVersion: "2.3.18",
+  latestVersion: "2.3.18",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -138,23 +156,23 @@ const fallbackUpdateInfo: UpdateInfo = {
     url: null,
   },
   notes: [
-    "当前版本已支持手动收支录入与贷款历史还款回溯。",
+    "当前版本已包含消费分析面板增强、图表布局优化和主题层级收敛。",
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.16",
-    latestVersion: "2.3.16",
+    currentVersion: "2.3.18",
+    latestVersion: "2.3.18",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.16 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.18 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.16",
-    latestVersion: "2.3.16",
+    currentVersion: "2.3.18",
+    latestVersion: "2.3.18",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.16 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.18 后需要重新下载安装。",
     downloads: [],
   },
 };
