@@ -1863,7 +1863,7 @@ export function ConsumptionDefaultTheme({
 
   const budgetVarianceOption = useMemo(
     () => ({
-      grid: { left: 8, right: 12, top: 8, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },
       xAxis: {
         type: "value",
         axisLine: { show: false },
@@ -1896,6 +1896,7 @@ export function ConsumptionDefaultTheme({
           label: {
             show: true,
             position: "right",
+            distance: 10,
             color: "#0f172a",
             formatter: ({ value }: { value: number }) => `${value >= 0 ? "+" : ""}${formatCurrency(value, { compact: true })}`,
           },
@@ -1907,7 +1908,7 @@ export function ConsumptionDefaultTheme({
 
   const largeExpensesOption = useMemo(
     () => ({
-      grid: { left: 8, right: 12, top: 8, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 68, top: 8, bottom: 8, containLabel: true },
       xAxis: {
         type: "value",
         axisLine: { show: false },
@@ -1936,6 +1937,7 @@ export function ConsumptionDefaultTheme({
           label: {
             show: true,
             position: "right",
+            distance: 10,
             color: "#0f172a",
             formatter: ({ value }: { value: number }) => formatCurrency(value, { compact: true }),
           },
@@ -1947,7 +1949,7 @@ export function ConsumptionDefaultTheme({
 
   const hotspotsOption = useMemo(
     () => ({
-      grid: { left: 8, right: 12, top: 8, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 68, top: 8, bottom: 8, containLabel: true },
       xAxis: {
         type: "value",
         axisLine: { show: false },
@@ -1976,6 +1978,7 @@ export function ConsumptionDefaultTheme({
           label: {
             show: true,
             position: "right",
+            distance: 10,
             color: "#0f172a",
             formatter: ({ value }: { value: number }) => formatCurrency(value, { compact: true }),
           },
@@ -1997,9 +2000,10 @@ export function ConsumptionDefaultTheme({
         itemWidth: 10,
         itemHeight: 10,
       },
-      grid: { left: 8, right: 8, top: 34, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 44, top: 34, bottom: 8, containLabel: true },
       xAxis: {
         type: "value",
+        max: 110,
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
@@ -2027,6 +2031,7 @@ export function ConsumptionDefaultTheme({
           label: {
             show: true,
             position: "right",
+            distance: 8,
             color: "#0f172a",
             formatter: ({ value }: { value: number }) => `${Number(value).toFixed(0)}%`,
           },
