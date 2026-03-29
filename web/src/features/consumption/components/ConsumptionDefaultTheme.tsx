@@ -955,7 +955,7 @@ function TransactionRow({
           {isIncome ? "+" : "-"}
           {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
         </p>
-        <p className="mt-1 text-[11px]" style={{ color: "var(--theme-muted-text)" }}>{isIncome ? "鏀跺叆" : "鏀嚭"}</p>
+        <p className="mt-1 text-[11px]" style={{ color: "var(--theme-muted-text)" }}>{isIncome ? "收入" : "支出"}</p>
       </div>
     </div>
   );
