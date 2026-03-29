@@ -389,7 +389,7 @@ export function AssetsDefaultTheme({
                 </div>
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-7">
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-7">
                 <HeroStat label="正向资产" value={formatMoney(positiveAssets, displayCurrency, { compact: true })} tone="emerald" icon={ArrowUpRight} />
                 <HeroStat label="投资资产" value={formatMoney(investmentAssets, displayCurrency, { compact: true })} tone="violet" icon={PiggyBank} />
                 <HeroStat label="负债敞口" value={formatMoney(liabilities, displayCurrency, { compact: true })} tone="red" icon={CreditCard} />

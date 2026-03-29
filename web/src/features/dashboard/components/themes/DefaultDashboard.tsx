@@ -242,7 +242,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   </div>
                 </div>
 
-                <div className="grid gap-2 sm:gap-3 lg:grid-cols-6">
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
                   <HeroStatCard
                     label="总资产"
                     value={formatCurrency(data.totalAssets)}
@@ -511,7 +511,7 @@ function FundsHealthPanel({
   items: InsightItem[];
 }) {
   return (
-    <section className="grid gap-2 sm:gap-3 lg:grid-cols-6">
+    <section className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
       {items.map((item) => (
         <ThemeMetricCard
           key={item.label}
