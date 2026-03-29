@@ -981,7 +981,7 @@ function HeatmapGrid({ data }: { data: ConsumptionData["heatmap"] }) {
               return (
                 <div
                   key={`${platform}-${category}`}
-                  className="rounded-xl border border-slate-100 px-2 py-2 text-center text-[11px] font-medium text-slate-700 sm:rounded-2xl sm:py-2.5 sm:text-xs"
+                  className="rounded-lg border border-slate-100 px-2 py-2 text-center text-[11px] font-medium text-slate-700 sm:rounded-xl sm:py-2.5 sm:text-xs"
                   style={{ backgroundColor: `rgba(37, 99, 235, ${opacity})` }}
                 >
                   {value > 0 ? formatCurrency(value, { compact: true }) : "—"}
@@ -1033,7 +1033,7 @@ function CalendarHeatGrid({
           return (
             <div
               key={item.month}
-              className="flex min-h-[82px] flex-col justify-between rounded-2xl border border-white/70 px-3 py-3 shadow-sm"
+              className="flex min-h-[82px] flex-col justify-between rounded-lg border border-white/70 px-3 py-3 shadow-sm sm:rounded-xl"
               style={{ backgroundColor: background }}
               title={`${item.month}: ${formatCurrency(item.value)}`}
             >
@@ -1066,7 +1066,7 @@ function CalendarHeatGrid({
 
       <div className="mt-2 grid grid-cols-7 gap-2">
         {Array.from({ length: leadingBlanks }).map((_, index) => (
-          <div key={`blank-${index}`} className="h-12 rounded-2xl bg-transparent" />
+          <div key={`blank-${index}`} className="h-12 rounded-lg bg-transparent sm:rounded-xl" />
         ))}
 
         {calendar.map((item) => {
@@ -1085,7 +1085,7 @@ function CalendarHeatGrid({
           return (
             <div
               key={item.date}
-              className="flex h-12 flex-col items-center justify-center rounded-2xl border border-white/70 text-center shadow-sm"
+              className="flex h-12 flex-col items-center justify-center rounded-lg border border-white/70 text-center shadow-sm sm:rounded-xl"
               style={{ backgroundColor: background }}
               title={`${item.date}: ${formatCurrency(item.value)}`}
             >

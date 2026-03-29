@@ -1,29 +1,23 @@
-## Error Type
-Build Error
+这是微信的
+交易类型	交易对方	商品	收/支	金额(元)	支付方式	当前状态
+信用卡还款	招商银行信用卡还款	/	/	¥1,001.00	建设银行储蓄卡(5883)	支付成功
 
-## Error Message
-Parsing ecmascript source code failed
 
-## Build Output
-./src/app/(dashboard)/about/page.tsx:93:18
-Parsing ecmascript source code failed
-  91 |   {
-  92 |     title: "寮€婧愮敓鎬?",
-> 93 |     description: "鎰熻阿 Next.js銆丳risma銆乀ailwind CSS銆丩ucide 绛夊紑婧愬伐鍏峰拰椤圭洰鎻愪緵鐨勫簳灞傝兘鍔涖€? ,
-     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  94 |     note: "鍚庣画鍙互鍦ㄨ繖閲岀户缁ˉ鍏呭叿浣撲緷璧栵紝鎴栬€呭啓鏄庢劅璋㈠師鍥犮€?,
-  95 |     icon: HeartHandshake,
-  96 |   },
-
-Unterminated string constant
-
-Import traces:
-  Client Component Browser:
-    ./src/app/(dashboard)/about/page.tsx [Client Component Browser]
-    ./src/app/(dashboard)/about/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./src/app/(dashboard)/about/page.tsx [Client Component SSR]
-    ./src/app/(dashboard)/about/page.tsx [Server Component]
-
-Next.js version: 16.1.6 (Turbopack)
+这是支付宝的
+信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
+信用借还	借呗	/	借呗放款至余额	不计收支	457	余额	放款成功
+信用借还	借呗	/	借呗还款	不计收支	202.38	中信银行储蓄卡(8155)&余额	还款成功
+信用借还	借呗	/	借呗还款	不计收支	200	中国建设银行储蓄卡(2566)	还款成功
+信用借还	借呗	/	借呗还款	不计收支	10	中国建设银行储蓄卡(2566)	还款成功
+信用借还	借呗	/	借呗还款	不计收支	120	中国建设银行储蓄卡(2566)	还款成功
+信用借还	备用金	/	备用金归还	不计收支	496.12	中国建设银行储蓄卡(2566)	还款成功
+信用借还	备用金	/	备用金归还	不计收支	6.15	余额宝	还款成功
+信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
+信用借还	备用金	/	备用金归还	不计收支	490.05	余额宝	还款成功
+信用借还	备用金	/	备用金归还	不计收支	11.94	余额&余额宝	还款成功
+信用借还	花呗	/	主动还款-花呗2020年12月账单	不计收支	805.23	余额宝	还款成功
+信用借还	花呗	/	花呗自动还款	不计收支	805.23		还款失败
+信用借还	花呗	/	自动还款-花呗2020年12月账单	不计收支	8.05	余额宝	还款成功
+信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
+信用借还	备用金	/	备用金归还	不计收支	501.7	中国建设银行储蓄卡(2566)	还款成功
+信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功

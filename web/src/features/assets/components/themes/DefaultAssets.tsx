@@ -389,10 +389,14 @@ export function AssetsDefaultTheme({
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 lg:grid-cols-7">
                 <HeroStat label="正向资产" value={formatMoney(positiveAssets, displayCurrency, { compact: true })} tone="emerald" icon={ArrowUpRight} />
                 <HeroStat label="投资资产" value={formatMoney(investmentAssets, displayCurrency, { compact: true })} tone="violet" icon={PiggyBank} />
                 <HeroStat label="负债敞口" value={formatMoney(liabilities, displayCurrency, { compact: true })} tone="red" icon={CreditCard} />
+                <HeroStat label="账户数量" value={`${accountCount} 个`} tone="blue" icon={Layers3} />
+                <HeroStat label="现金类账户" value={`${items.filter((item) => LIQUID_TYPES.has(item.type)).length} 个`} tone="emerald" icon={Coins} />
+                <HeroStat label="投资仓位" value={`${items.filter((item) => item.type === "INVESTMENT").length} 个`} tone="violet" icon={PiggyBank} />
+                <HeroStat label="需关注账户" value={`${items.filter((item) => item.estimatedValue < 0).length} 个`} tone="red" icon={CreditCard} />
               </div>
             </div>
 
@@ -461,13 +465,6 @@ export function AssetsDefaultTheme({
             </ThemeDarkPanel>
           </div>
       </ThemeHero>
-
-      <section className="grid gap-3 md:grid-cols-4">
-          <HeroStat label="账户数量" value={`${accountCount} 个`} tone="blue" icon={Layers3} />
-          <HeroStat label="现金类账户" value={`${items.filter((item) => LIQUID_TYPES.has(item.type)).length} 个`} tone="emerald" icon={Coins} />
-          <HeroStat label="投资仓位" value={`${items.filter((item) => item.type === "INVESTMENT").length} 个`} tone="violet" icon={PiggyBank} />
-          <HeroStat label="需关注账户" value={`${items.filter((item) => item.estimatedValue < 0).length} 个`} tone="red" icon={CreditCard} />
-      </section>
 
       <ThemeSurface className="p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
