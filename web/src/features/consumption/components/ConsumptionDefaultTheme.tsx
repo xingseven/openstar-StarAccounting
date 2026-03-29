@@ -9,20 +9,17 @@ import {
   ArrowUpRight,
   BarChart3,
   Camera,
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   CreditCard,
   Filter,
   Grid3X3,
-  Network,
   Loader2,
   Plus,
   ReceiptText,
   Search,
   Sparkles,
   Store,
-  TimerReset,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AIAnalysisCard } from "./AIAnalysisCard";
@@ -2144,15 +2141,12 @@ export function ConsumptionDefaultTheme({
         <DelayedRender delay={60} lazy>
           <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]">
             <div className={cn(SURFACE_CLASS, "p-3.5 sm:p-6")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div>
                   <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>{trendChartMeta.eyebrow}</p>
                   <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>{trendChartMeta.title}</h2>
                   <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>{trendChartMeta.description}</p>
                 </div>
-                <span className="rounded-full px-3 py-1.5 text-xs font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                  {dateRangeLabel}
-                </span>
               </div>
 
               <div className="mt-4 h-[220px] w-full sm:mt-5 sm:h-[300px]">
@@ -2192,14 +2186,11 @@ export function ConsumptionDefaultTheme({
               </div>
 
               <div className={cn(SURFACE_CLASS, "flex h-full flex-col p-3 sm:p-4")}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex flex-wrap items-start gap-3">
                   <div>
                     <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>收支对比</p>
                     <h2 className="mt-0.5 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>本期收入与支出</h2>
                   </div>
-                  <span className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                    {incomeExpenseTotal > 0 ? `${((data.summary.totalExpense / incomeExpenseTotal) * 100).toFixed(0)}% 为支出` : "等待数据"}
-                  </span>
                 </div>
 
                 <div className="mt-2.5 grid flex-1 grid-cols-[84px_minmax(0,1fr)] items-center gap-3 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
@@ -2235,14 +2226,11 @@ export function ConsumptionDefaultTheme({
         <DelayedRender delay={120} lazy>
           <section className="grid gap-3 xl:grid-cols-[minmax(0,1.95fr)_minmax(320px,1fr)]">
             <div className={cn(SURFACE_CLASS, "p-3 sm:p-4")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div>
                   <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>商户榜单</p>
                   <h2 className="mt-0.5 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>本期消费最高的商户</h2>
                 </div>
-                <span className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                  Top {Math.min(6, data.merchants.length)}
-                </span>
               </div>
 
               <div className="mt-2.5 grid gap-2.5 sm:mt-3 lg:grid-cols-[minmax(0,1fr)_minmax(290px,0.95fr)] lg:items-start">
@@ -2259,14 +2247,11 @@ export function ConsumptionDefaultTheme({
             </div>
 
             <div className={cn(SURFACE_CLASS, "p-3 sm:p-4")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div>
                   <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>平台 × 分类</p>
                   <h2 className="mt-0.5 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>消费热区矩阵</h2>
                   <p className="mt-0.5 text-sm" style={{ color: "var(--theme-muted-text)" }}>快速看出不同支付平台上，哪类消费最集中。</p>
-                </div>
-                <div className="rounded-full p-2" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                  <Grid3X3 className="h-4 w-4" />
                 </div>
               </div>
 
@@ -2305,7 +2290,7 @@ export function ConsumptionDefaultTheme({
         <DelayedRender delay={220} lazy>
           <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.96fr)]">
             <div className={cn(SURFACE_CLASS, "p-3.5 sm:p-6")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div>
                   <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>消费日历</p>
                   <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>
@@ -2317,10 +2302,6 @@ export function ConsumptionDefaultTheme({
                       : "把本期的高低消费日放到日历上，看月内节奏更直观。"}
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  {calendarMode === "month" ? "12 个月" : `${data.calendar.length} 天`}
-                </div>
               </div>
 
               <div className="mt-4 sm:mt-5">
@@ -2329,13 +2310,10 @@ export function ConsumptionDefaultTheme({
             </div>
 
             <div className={cn(SURFACE_CLASS, "p-3.5 sm:p-6")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div>
                   <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>周内平均</p>
                   <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>按星期观察消费习惯</h2>
-                </div>
-                <div className="rounded-full p-2" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                  <TimerReset className="h-4 w-4" />
                 </div>
               </div>
 
@@ -2348,14 +2326,11 @@ export function ConsumptionDefaultTheme({
 
         <DelayedRender delay={260} lazy>
           <section className={cn(SURFACE_CLASS, "p-3.5 sm:p-6")}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start gap-3">
               <div>
                 <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>资金流向</p>
                 <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>消费路径桑基图</h2>
                 <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>从支付平台流向分类，快速看清消费主路径。</p>
-              </div>
-              <div className="rounded-full p-2" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                <Network className="h-4 w-4" />
               </div>
             </div>
 
