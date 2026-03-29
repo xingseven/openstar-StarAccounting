@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useDeferredValue, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { siAlipay, siWechat } from "simple-icons";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -222,30 +221,38 @@ function getPlatformLabel(platform: string) {
   return PLATFORM_LABELS[platform] ?? platform;
 }
 
-function getPlatformBadge(platform: string) {
-  if (platform === "wechat") {
-    return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-          <path d={siWechat.path} fill={`#${siWechat.hex}`} transform="translate(2 2) scale(0.83)" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (platform === "alipay") {
-    return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-          <path d={siAlipay.path} fill={`#${siAlipay.hex}`} transform="translate(2 2) scale(0.83)" />
-        </svg>
-      </div>
-    );
-  }
-
+function SummaryLegendRow({
+  label,
+  value,
+  color,
+  detail,
+}: {
+  label: string;
+  value: string;
+  color: string;
+  detail?: string;
+}) {
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-      <CreditCard className="h-5 w-5 text-slate-600" />
+    <div
+      className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2.5"
+      style={{ background: "var(--theme-dialog-section-bg)" }}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5" style={{ backgroundColor: color }} />
+        <div className="min-w-0">
+          <p className="truncate text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>
+            {label}
+          </p>
+          {detail ? (
+            <p className="mt-0.5 text-[10px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
+              {detail}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <span className="text-[11px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -2161,25 +2168,20 @@ export function ConsumptionDefaultTheme({
                   <h2 className="mt-0.5 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>支付渠道占比</h2>
                 </div>
 
-                <div className="mt-2.5 grid flex-1 grid-cols-[84px_minmax(0,1fr)] items-center gap-3 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
-                  <div className="mx-auto h-[84px] w-[84px] sm:h-[104px] sm:w-[104px]">
+                <div className="mt-3 grid flex-1 grid-cols-[118px_minmax(0,1fr)] items-center gap-3 sm:mt-5 sm:grid-cols-[156px_minmax(0,1fr)] sm:gap-5">
+                  <div className="mx-auto h-[118px] w-full max-w-[118px] sm:h-[156px] sm:max-w-[156px]">
                     <ReactECharts option={platformOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
                   </div>
 
-                  <div className="space-y-1">
-                    {data.platformDistribution.map((platform) => (
-                      <div key={platform.name} className="flex items-center justify-between gap-2 py-0.5">
-                        <div className="flex min-w-0 items-center gap-2">
-                          {getPlatformBadge(platform.name === "微信" ? "wechat" : platform.name === "支付宝" ? "alipay" : "cloudpay")}
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{platform.name}</p>
-                            <p className="mt-0.5 text-[11px]" style={{ color: "var(--theme-muted-text)" }}>
-                              {((platform.value / Math.max(data.summary.totalExpense, 1)) * 100).toFixed(1)}% 占比
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(platform.value, { compact: true })}</span>
-                      </div>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    {data.platformDistribution.slice(0, 3).map((platform) => (
+                      <SummaryLegendRow
+                        key={platform.name}
+                        label={platform.name}
+                        value={formatCurrency(platform.value, { compact: true })}
+                        color={platform.fill}
+                        detail={`${((platform.value / Math.max(data.summary.totalExpense, 1)) * 100).toFixed(1)}% 占比`}
+                      />
                     ))}
                   </div>
                 </div>
@@ -2193,28 +2195,20 @@ export function ConsumptionDefaultTheme({
                   </div>
                 </div>
 
-                <div className="mt-2.5 grid flex-1 grid-cols-[84px_minmax(0,1fr)] items-center gap-3 sm:mt-3 sm:grid-cols-[104px_minmax(0,1fr)]">
-                  <div className="mx-auto h-[84px] w-[84px] sm:h-[104px] sm:w-[104px]">
+                <div className="mt-3 grid flex-1 grid-cols-[118px_minmax(0,1fr)] items-center gap-3 sm:mt-5 sm:grid-cols-[156px_minmax(0,1fr)] sm:gap-5">
+                  <div className="mx-auto h-[118px] w-full max-w-[118px] sm:h-[156px] sm:max-w-[156px]">
                     <ReactECharts option={incomeExpenseOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 sm:space-y-2">
                     {data.incomeExpense.map((item) => (
-                      <div key={item.name} className="py-0.5">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{item.name}</span>
-                          <span className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.value)}</span>
-                        </div>
-                        <div className="mt-1.5 h-2 overflow-hidden rounded-full" style={{ background: "var(--theme-surface-border,rgba(148,163,184,0.2))" }}>
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${Math.max(8, (item.value / Math.max(incomeExpenseTotal, 1)) * 100)}%`,
-                              backgroundColor: item.fill,
-                            }}
-                          />
-                        </div>
-                      </div>
+                      <SummaryLegendRow
+                        key={item.name}
+                        label={item.name}
+                        value={formatCurrency(item.value)}
+                        color={item.fill}
+                        detail={`${((item.value / Math.max(incomeExpenseTotal, 1)) * 100).toFixed(0)}% 占比`}
+                      />
                     ))}
                   </div>
                 </div>
