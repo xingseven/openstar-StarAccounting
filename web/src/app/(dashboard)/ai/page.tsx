@@ -510,14 +510,14 @@ export default function AIPage() {
       ) : null}
 
       <BottomSheet open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <BottomSheetContent className="max-w-2xl">
-          <BottomSheetHeader>
+        <BottomSheetContent className="max-w-2xl sm:py-4">
+          <BottomSheetHeader className="sm:pb-2">
             <BottomSheetTitle>{editingModel ? "编辑模型" : "添加新模型"}</BottomSheetTitle>
             <BottomSheetDescription>
               {editingModel ? "更新模型的基础信息和启用参数。" : "先登记模型信息，后续可继续补充或调整配置。"}
             </BottomSheetDescription>
           </BottomSheetHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {formNotice ? <ThemeNotice tone={formNotice.tone} title={formNotice.title} description={formNotice.description} /> : null}
 
             <ThemeNotice
@@ -526,7 +526,7 @@ export default function AIPage() {
               description="这里维护模型名称、提供商、端点和模型 ID。填写 API Key 后可直接启用，不填则会保留为待配置状态。"
             />
 
-            <ThemeDialogSection className="space-y-4">
+            <ThemeDialogSection className="space-y-3">
               <ThemeFormField label="模型名称">
                 <Input
                   value={formData.name}
@@ -622,7 +622,7 @@ export default function AIPage() {
                 </div>
               </ThemeFormField>
             </ThemeDialogSection>
-            <ThemeActionBar>
+            <ThemeActionBar className="mt-3">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
                 取消
               </Button>

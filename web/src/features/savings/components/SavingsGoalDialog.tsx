@@ -101,9 +101,14 @@ export function SavingsGoalDialog({
   const [rows, setRows] = useState<PlanRow[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(getLocalMonthKey());
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [syncToAssets, setSyncToAssets] = useState(true);
+  const [sourceAssetId, setSourceAssetId] = useState<string | null>(null);
+  const [holdingAssetId, setHoldingAssetId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: string; message: string }>>([]);
   const [dragOverProofId, setDragOverProofId] = useState<string | null>(null);
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
+  const cnyAssets = useMemo(() => assets.filter((asset) => asset.currency === "CNY"), [assets]);
 
   const pushToast = useCallback((message: string) => {
     const id = Math.random().toString(36).slice(2, 9);
@@ -138,6 +143,37 @@ export function SavingsGoalDialog({
       duration: items.length,
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let active = true;
+
+    async function loadAssets() {
+      try {
+        const response = await apiFetch<{ items: Asset[] }>("/api/assets?currency=CNY");
+        if (!active) return;
+        setAssets(
+          (response.items ?? []).map((item) => ({
+            ...item,
+            balance: Number(item.balance),
+            estimatedValue: Number(item.estimatedValue ?? item.balance),
+          }))
+        );
+      } catch (error) {
+        if (active) {
+          console.error("Failed to load assets for savings goal dialog", error);
+          setAssets([]);
+        }
+      }
+    }
+
+    void loadAssets();
+
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

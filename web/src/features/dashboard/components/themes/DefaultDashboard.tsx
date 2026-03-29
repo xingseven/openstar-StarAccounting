@@ -242,7 +242,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 xl:grid-cols-6">
+                <section className="grid grid-cols-3 gap-2 sm:gap-3 xl:grid-cols-6">
                   <HeroStatCard
                     label="总资产"
                     value={formatCurrency(data.totalAssets)}
@@ -267,9 +267,19 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     tone={savingsDelta >= 0 ? "green" : "amber"}
                     icon={PiggyBank}
                   />
-                </div>
-
-                <FundsHealthPanel items={insightItems} />
+                  {insightItems.map((item) => (
+                    <ThemeMetricCard
+                      key={item.label}
+                      label={item.label}
+                      value={item.value}
+                      detail={item.description}
+                      tone={item.tone}
+                      icon={item.icon}
+                      className="sm:p-4"
+                      hideDetailOnMobile
+                    />
+                  ))}
+                </section>
               </div>
 
               {criticalAlerts.length > 0 && !alertsDismissed ? (
@@ -502,29 +512,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         </section>
       </DelayedRender>
     </div>
-  );
-}
-
-function FundsHealthPanel({
-  items,
-}: {
-  items: InsightItem[];
-}) {
-  return (
-    <section className="grid grid-cols-3 gap-2 sm:gap-3 xl:grid-cols-6">
-      {items.map((item) => (
-        <ThemeMetricCard
-          key={item.label}
-          label={item.label}
-          value={item.value}
-          detail={item.description}
-          tone={item.tone}
-          icon={item.icon}
-          className="sm:p-4"
-          hideDetailOnMobile
-        />
-      ))}
-    </section>
   );
 }
 

@@ -2,31 +2,6 @@ import { GridDecoration } from "@/components/shared/GridDecoration";
 import { Skeleton } from "@/components/shared/Skeletons";
 import { cn } from "@/lib/utils";
 
-function LoadingHeroStat() {
-  return (
-    <div className="rounded-[18px] bg-white/68 p-3 ring-1 ring-white/55 sm:rounded-[20px] sm:p-4">
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-16 rounded-full bg-white/80" />
-        <Skeleton className="h-6 w-24 rounded-[12px] bg-white/90 sm:h-7" />
-        <Skeleton className="h-2.5 w-20 rounded-full bg-white/60" />
-      </div>
-    </div>
-  );
-}
-
-function LoadingInsightItem() {
-  return (
-    <div className="flex items-center gap-3 rounded-[18px] bg-white/60 px-3 py-3 ring-1 ring-white/45 sm:px-4">
-      <Skeleton className="h-10 w-10 shrink-0 rounded-2xl" />
-      <div className="min-w-0 flex-1 space-y-2">
-        <Skeleton className="h-3.5 w-20 rounded-full" />
-        <Skeleton className="h-3 w-32 rounded-full opacity-60" />
-      </div>
-      <Skeleton className="h-6 w-16 rounded-full" />
-    </div>
-  );
-}
-
 function LoadingMetricShell({ className }: { className?: string }) {
   return (
     <div className={cn("rounded-[20px] p-3 sm:rounded-[22px] sm:p-4", className)} style={{ background: "var(--theme-metric-bg)" }}>
@@ -115,16 +90,10 @@ export function DashboardLoadingShell() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <LoadingHeroStat />
-              <LoadingHeroStat />
-              <LoadingHeroStat />
-            </div>
-
-            <div className="space-y-2 sm:space-y-2.5">
-              <LoadingInsightItem />
-              <LoadingInsightItem />
-              <LoadingInsightItem />
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 xl:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <LoadingMetricShell key={`dashboard-hero-metric-${index}`} />
+              ))}
             </div>
 
             <div className="hidden rounded-[18px] bg-white/60 px-4 py-3 ring-1 ring-white/45 sm:flex sm:items-center sm:justify-between">

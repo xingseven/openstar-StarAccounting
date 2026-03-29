@@ -1117,6 +1117,15 @@ type ConsumptionDashboardRow = {
   description: string | null;
 };
 
+type DashboardBudgetRow = {
+  amount: number;
+  category: string;
+  platform?: string | null;
+  period: "MONTHLY" | "YEARLY";
+  scopeType?: "GLOBAL" | "CATEGORY" | "PLATFORM";
+  alertPercent?: number | null;
+};
+
 type DashboardPlatformKey = "wechat" | "alipay" | "cloudpay" | "unknown";
 
 const DASHBOARD_PLATFORM_LABELS: Record<DashboardPlatformKey, string> = {
@@ -1134,6 +1143,15 @@ const DASHBOARD_PLATFORM_COLORS: Record<DashboardPlatformKey, string> = {
 };
 
 const DASHBOARD_CATEGORY_COLORS = ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"];
+const CONSUMPTION_INSIGHT_COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#7c3aed", "#ef4444", "#0ea5e9"];
+
+const ESSENTIAL_CATEGORY_KEYWORDS = ["餐饮", "交通", "医疗", "教育", "居住", "生活", "日用", "缴费", "话费", "水电"];
+const OPTIONAL_CATEGORY_KEYWORDS = ["购物", "娱乐", "理财", "礼物", "数码", "潮玩", "美容", "宠物", "文化", "休闲"];
+const FIXED_KEYWORDS = ["房租", "租房", "物业", "水电", "燃气", "宽带", "话费", "学费", "保险", "按揭", "月供", "会员", "订阅"];
+const IMPULSE_KEYWORDS = ["淘宝", "天猫", "京东", "拼多多", "抖音", "快手", "盲盒", "游戏", "外卖", "奶茶", "咖啡"];
+const TRANSFER_KEYWORDS = ["转账", "红包", "还款", "借款", "信用卡", "贷款还款", "信用借还", "提现"];
+const REFUND_KEYWORDS = ["退款", "退货", "退回", "返还", "售后"];
+const SUBSCRIPTION_KEYWORDS = ["会员", "订阅", "连续包月", "自动续费", "视频", "音乐", "网盘", "云盘", "plus", "premium"];
 
 const DASHBOARD_TIMEZONE = process.env.APP_TIMEZONE?.trim() || "Asia/Shanghai";
 
@@ -1153,6 +1171,73 @@ function getDashboardDateParts(date: Date) {
     month: get("month"),
     day: get("day"),
   };
+}
+
+function toDashboardLocalDate(date: Date) {
+  return new Date(date.toLocaleString("en-US", { timeZone: DASHBOARD_TIMEZONE }));
+}
+
+function includesAnyKeyword(text: string, keywords: string[]) {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+function normalizeInsightText(...values: Array<string | null | undefined>) {
+  return values
+    .map((value) => (value ?? "").trim().toLowerCase())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function classifyNeedType(category: string, merchantText: string) {
+  if (includesAnyKeyword(category, ESSENTIAL_CATEGORY_KEYWORDS) || includesAnyKeyword(merchantText, FIXED_KEYWORDS)) {
+    return "essential";
+  }
+  if (includesAnyKeyword(category, OPTIONAL_CATEGORY_KEYWORDS) || includesAnyKeyword(merchantText, IMPULSE_KEYWORDS)) {
+    return "optional";
+  }
+  return "essential";
+}
+
+function classifyTransactionNature(row: ConsumptionDashboardRow, category: string, merchantText: string) {
+  if (includesAnyKeyword(category, REFUND_KEYWORDS) || includesAnyKeyword(merchantText, REFUND_KEYWORDS)) {
+    return "refund";
+  }
+  if (includesAnyKeyword(category, TRANSFER_KEYWORDS) || includesAnyKeyword(merchantText, TRANSFER_KEYWORDS)) {
+    return "transfer";
+  }
+  return row.type === "EXPENSE" ? "consumption" : "income";
+}
+
+function resolveTimeBucket(date: Date) {
+  const localDate = toDashboardLocalDate(date);
+  const hour = localDate.getHours();
+  if (hour >= 5 && hour < 10) return "早晨";
+  if (hour >= 10 && hour < 14) return "午间";
+  if (hour >= 14 && hour < 18) return "下午";
+  if (hour >= 18 && hour < 22) return "晚间";
+  return "深夜";
+}
+
+function resolveBudgetInsightPeriod(start?: Date, end?: Date) {
+  if (!start || !end) return null;
+  if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+    return "MONTHLY" as const;
+  }
+  if (start.getFullYear() === end.getFullYear()) {
+    return "YEARLY" as const;
+  }
+  return null;
+}
+
+function getBudgetInsightName(budget: DashboardBudgetRow) {
+  const scopeType = budget.scopeType || "GLOBAL";
+  if (scopeType === "PLATFORM" && budget.platform) {
+    return `${DASHBOARD_PLATFORM_LABELS[normalizeDashboardPlatform(budget.platform)]} 平台`;
+  }
+  if (budget.category && budget.category !== "ALL") {
+    return budget.category;
+  }
+  return "总预算";
 }
 
 function formatMetricBucket(date: Date, groupBy: "day" | "month" | "year" = "day") {
