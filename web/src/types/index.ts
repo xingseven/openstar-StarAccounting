@@ -39,6 +39,20 @@ export type SavingsGoal = {
   status: "ACTIVE" | "COMPLETED" | "ARCHIVED";
   createdAt: string;
   image?: string | null;
+  planConfig?: SavingsPlanConfig | null;
+};
+
+export type SavingsAssetSyncConfig = {
+  syncToAssets?: boolean;
+  sourceAssetId?: string | null;
+  holdingAssetId?: string | null;
+};
+
+export type SavingsPlanConfig = {
+  expenseColumns?: Array<{ id: string; name: string }>;
+  startMonth?: string;
+  duration?: number;
+  assetSync?: SavingsAssetSyncConfig;
 };
 
 export type SavingsPlan = {

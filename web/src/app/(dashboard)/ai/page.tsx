@@ -510,7 +510,7 @@ export default function AIPage() {
       ) : null}
 
       <BottomSheet open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <BottomSheetContent className="max-w-md">
+        <BottomSheetContent className="max-w-2xl sm:max-h-[60vh] overflow-y-auto">
           <BottomSheetHeader>
             <BottomSheetTitle>{editingModel ? "编辑模型" : "添加新模型"}</BottomSheetTitle>
             <BottomSheetDescription>
