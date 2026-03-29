@@ -1044,9 +1044,9 @@ function CalendarHeatGrid({
               style={{ backgroundColor: background }}
               title={`${item.month}: ${formatCurrency(item.value)}`}
             >
-              <span className={cn("text-xs font-semibold", intensity > 0.45 ? "text-white" : "text-slate-800")}>
+              <span className={cn("text-xs font-semibold sm:text-sm", intensity > 0.45 ? "text-white" : "text-slate-800")}>
                 {item.month.slice(5)} 鏈?              </span>
-              <span className={cn("text-[11px] font-medium", intensity > 0.45 ? "text-blue-50" : "text-slate-600")}>
+              <span className={cn("text-[11px] font-medium sm:text-xs", intensity > 0.45 ? "text-blue-50" : "text-slate-600")}>
                 {formatCurrency(item.value, { compact: true })}
               </span>
             </div>
@@ -1096,9 +1096,9 @@ function CalendarHeatGrid({
               style={{ backgroundColor: background }}
               title={`${item.date}: ${formatCurrency(item.value)}`}
             >
-              <span className={cn("text-xs font-semibold", intensity > 0.4 ? "text-white" : "text-slate-800")}>{item.day}</span>
+              <span className={cn("text-xs font-semibold sm:text-sm", intensity > 0.4 ? "text-white" : "text-slate-800")}>{item.day}</span>
               {item.value > 0 ? (
-                <span className={cn("mt-0.5 text-[10px]", intensity > 0.4 ? "text-blue-50" : "text-slate-500")}>
+                <span className={cn("mt-0.5 text-[10px] sm:text-[11px]", intensity > 0.4 ? "text-blue-50" : "text-slate-500")}>
                   {formatCurrency(item.value, { compact: true })}
                 </span>
               ) : null}
