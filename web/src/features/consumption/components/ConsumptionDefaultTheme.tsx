@@ -1817,10 +1817,10 @@ export function ConsumptionDefaultTheme({
 
   const concentrationOption = useMemo(
     () => ({
-      grid: { left: 8, right: 8, top: 8, bottom: 8, containLabel: true },
+      grid: { left: 8, right: 44, top: 8, bottom: 8, containLabel: true },
       xAxis: {
         type: "value",
-        max: 100,
+        max: 110,
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
@@ -1852,6 +1852,7 @@ export function ConsumptionDefaultTheme({
           label: {
             show: true,
             position: "right",
+            distance: 8,
             color: "#0f172a",
             formatter: ({ value }: { value: number }) => `${Number(value).toFixed(0)}%`,
           },
