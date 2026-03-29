@@ -109,6 +109,59 @@ export type ConsumptionData = {
     type: string;
     amount: string;
   }>;
+  insights: {
+    spendingStyle: Array<{ name: string; value: number; share: number; fill: string; description: string }>;
+    necessitySplit: Array<{ name: string; value: number; share: number; fill: string }>;
+    transactionNature: Array<{ name: string; value: number; share: number; fill: string }>;
+    recurringMerchants: Array<{
+      merchant: string;
+      total: number;
+      count: number;
+      cadenceLabel: string;
+      tag: string;
+      category: string;
+    }>;
+    budgetVariance: Array<{
+      name: string;
+      budget: number;
+      spent: number;
+      variance: number;
+      percent: number;
+      status: "healthy" | "warning" | "over";
+    }>;
+    budgetContext: {
+      applicable: boolean;
+      label: string;
+    };
+    timeCategoryHotspots: Array<{
+      label: string;
+      bucket: string;
+      category: string;
+      total: number;
+      count: number;
+    }>;
+    weekendPreference: Array<{
+      name: string;
+      weekend: number;
+      weekday: number;
+      weekendShare: number;
+    }>;
+    largeExpenses: Array<{
+      merchant: string;
+      category: string;
+      amount: number;
+      date: string;
+      reason: string;
+    }>;
+    concentration: {
+      topMerchant: string;
+      topMerchantShare: number;
+      top3MerchantShare: number;
+      topCategory: string;
+      topCategoryShare: number;
+      repeatMerchantShare: number;
+    };
+  };
 };
 
 interface ConsumptionViewProps {
@@ -251,6 +304,81 @@ function SummaryLegendRow({
         </div>
       </div>
       <span className="text-[11px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function AnalysisCard({
+  eyebrow,
+  title,
+  description,
+  children,
+  className,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn(SURFACE_CLASS, "p-3.5 sm:p-4", className)}>
+      <div>
+        <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>
+          {eyebrow}
+        </p>
+        <h2 className="mt-0.5 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>
+            {description}
+          </p>
+        ) : null}
+      </div>
+      <div className="mt-3 sm:mt-4">{children}</div>
+    </div>
+  );
+}
+
+function AnalysisTextRow({
+  label,
+  value,
+  detail,
+  tone = "slate",
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  tone?: "slate" | "emerald" | "blue" | "amber" | "red" | "violet";
+}) {
+  const toneClassMap = {
+    slate: "bg-slate-100 text-slate-600",
+    emerald: "bg-emerald-50 text-emerald-700",
+    blue: "bg-blue-50 text-blue-700",
+    amber: "bg-amber-50 text-amber-700",
+    red: "bg-red-50 text-red-700",
+    violet: "bg-violet-50 text-violet-700",
+  } as const;
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2 sm:rounded-2xl sm:px-3.5"
+      style={{ background: "var(--theme-dialog-section-bg)" }}
+    >
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>
+          {label}
+        </p>
+        {detail ? (
+          <p className="mt-0.5 text-xs" style={{ color: "var(--theme-muted-text)" }}>
+            {detail}
+          </p>
+        ) : null}
+      </div>
+      <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-medium", toneClassMap[tone])}>
         {value}
       </span>
     </div>
@@ -2262,6 +2390,204 @@ export function ConsumptionDefaultTheme({
                 )}
               </div>
             </div>
+          </section>
+        </DelayedRender>
+
+        <DelayedRender delay={160} lazy>
+          <section className="space-y-4">
+            <div>
+              <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>更多分析维度</p>
+              <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>先把可推导的消费视角都铺开</h2>
+              <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                这一组先把结构、偏好、预算、时段、复购和风险一起放出来，后面我们再按你感觉删减。
+              </p>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-3">
+              <AnalysisCard eyebrow="消费属性" title="固定 / 弹性 / 冲动">
+                <div className="space-y-2">
+                  {data.insights.spendingStyle.map((item) => (
+                    <SummaryLegendRow
+                      key={item.name}
+                      label={item.name}
+                      value={formatCurrency(item.value, { compact: true })}
+                      color={item.fill}
+                      detail={`${item.share.toFixed(0)}% · ${item.description}`}
+                    />
+                  ))}
+                </div>
+              </AnalysisCard>
+
+              <AnalysisCard eyebrow="必要程度" title="必要 vs 可选">
+                <div className="space-y-2">
+                  {data.insights.necessitySplit.map((item) => (
+                    <SummaryLegendRow
+                      key={item.name}
+                      label={item.name}
+                      value={formatCurrency(item.value, { compact: true })}
+                      color={item.fill}
+                      detail={`${item.share.toFixed(0)}% 占比`}
+                    />
+                  ))}
+                </div>
+              </AnalysisCard>
+
+              <AnalysisCard eyebrow="资金性质" title="真实消费 vs 资金流转">
+                {data.insights.transactionNature.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.insights.transactionNature.map((item) => (
+                      <SummaryLegendRow
+                        key={item.name}
+                        label={item.name}
+                        value={formatCurrency(item.value, { compact: true })}
+                        color={item.fill}
+                        detail={`${item.share.toFixed(0)}% 占比`}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                    当前筛选里没有明显的转账、还款或退款流动，暂时都是直接消费。
+                  </p>
+                )}
+              </AnalysisCard>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-3">
+              <AnalysisCard eyebrow="复购 / 订阅" title="高频商户与自动续费候选">
+                {data.insights.recurringMerchants.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.insights.recurringMerchants.map((item) => (
+                      <AnalysisTextRow
+                        key={item.merchant}
+                        label={item.merchant}
+                        value={formatCurrency(item.total, { compact: true })}
+                        detail={`${item.count} 次 · ${item.cadenceLabel} · ${item.category}`}
+                        tone={item.tag === "订阅候选" ? "violet" : item.tag === "高频商户" ? "blue" : "slate"}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                    当前筛选里重复出现的商户还不够多，继续累积后会更准。
+                  </p>
+                )}
+              </AnalysisCard>
+
+              <AnalysisCard eyebrow="预算偏差" title="实际消费 vs 预算">
+                {data.insights.budgetVariance.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.insights.budgetVariance.map((item) => (
+                      <AnalysisTextRow
+                        key={item.name}
+                        label={item.name}
+                        value={`${item.variance >= 0 ? "+" : ""}${formatCurrency(item.variance, { compact: true })}`}
+                        detail={`已用 ${formatCurrency(item.spent, { compact: true })} / 预算 ${formatCurrency(item.budget, { compact: true })}`}
+                        tone={item.status === "over" ? "red" : item.status === "warning" ? "amber" : "emerald"}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                    {data.insights.budgetContext.label}
+                  </p>
+                )}
+              </AnalysisCard>
+
+              <AnalysisCard eyebrow="高峰场景" title="时段 × 分类热点">
+                {data.insights.timeCategoryHotspots.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.insights.timeCategoryHotspots.map((item) => (
+                      <AnalysisTextRow
+                        key={item.label}
+                        label={item.label}
+                        value={formatCurrency(item.total, { compact: true })}
+                        detail={`${item.count} 笔 · ${item.category}`}
+                        tone="amber"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                    暂时还没有明显的高峰时段组合。
+                  </p>
+                )}
+              </AnalysisCard>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <AnalysisCard eyebrow="周末偏好" title="哪些消费更偏向休息日">
+                {data.insights.weekendPreference.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.insights.weekendPreference.map((item) => (
+                      <AnalysisTextRow
+                        key={item.name}
+                        label={item.name}
+                        value={`${item.weekendShare.toFixed(0)}%`}
+                        detail={`周末 ${formatCurrency(item.weekend, { compact: true })} / 工作日 ${formatCurrency(item.weekday, { compact: true })}`}
+                        tone="blue"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                    当前筛选内还看不出明显的周末偏好。
+                  </p>
+                )}
+              </AnalysisCard>
+
+              <AnalysisCard eyebrow="大额预警" title="优先回看的单笔支出">
+                {data.insights.largeExpenses.length > 0 ? (
+                  <div className="space-y-2">
+                    {data.insights.largeExpenses.map((item) => (
+                      <AnalysisTextRow
+                        key={`${item.merchant}-${item.date}`}
+                        label={item.merchant}
+                        value={formatCurrency(item.amount)}
+                        detail={`${item.category} · ${item.reason}`}
+                        tone="red"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                    当前筛选范围内还没有达到预警阈值的大额支出。
+                  </p>
+                )}
+              </AnalysisCard>
+            </div>
+
+            <AnalysisCard eyebrow="集中度" title="消费是否过于集中在少数对象" description="用三个指标快速判断是不是被少数商户或类别绑住。">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl px-3 py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                  <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>头部商户</p>
+                  <p className="mt-1 text-base font-semibold" style={{ color: "var(--theme-body-text)" }}>
+                    {data.insights.concentration.topMerchantShare.toFixed(0)}%
+                  </p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>
+                    {data.insights.concentration.topMerchant}
+                  </p>
+                </div>
+                <div className="rounded-2xl px-3 py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                  <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>前三商户合计</p>
+                  <p className="mt-1 text-base font-semibold" style={{ color: "var(--theme-body-text)" }}>
+                    {data.insights.concentration.top3MerchantShare.toFixed(0)}%
+                  </p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>
+                    高占比说明支出集中
+                  </p>
+                </div>
+                <div className="rounded-2xl px-3 py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                  <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>头部类别 / 复购商户</p>
+                  <p className="mt-1 text-base font-semibold" style={{ color: "var(--theme-body-text)" }}>
+                    {data.insights.concentration.topCategoryShare.toFixed(0)}% / {data.insights.concentration.repeatMerchantShare.toFixed(0)}%
+                  </p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>
+                    {data.insights.concentration.topCategory}
+                  </p>
+                </div>
+              </div>
+            </AnalysisCard>
           </section>
         </DelayedRender>
 

@@ -194,4 +194,61 @@ export const MOCK_CONSUMPTION: ConsumptionData = {
   scatter: MOCK_SCATTER,
   histogram: MOCK_HISTOGRAM,
   transactions: MOCK_TRANSACTIONS,
+  insights: {
+    spendingStyle: [
+      { name: "固定支出", value: 3680, share: 29.3, fill: "#2563eb", description: "租房、缴费、订阅类" },
+      { name: "弹性支出", value: 5120, share: 40.7, fill: "#16a34a", description: "日常可调节开支" },
+      { name: "冲动消费", value: 3780, share: 30.0, fill: "#f59e0b", description: "夜间/购物娱乐型" },
+    ],
+    necessitySplit: [
+      { name: "必要消费", value: 7020, share: 55.8, fill: "#2563eb" },
+      { name: "可选消费", value: 5560, share: 44.2, fill: "#7c3aed" },
+    ],
+    transactionNature: [
+      { name: "真实消费", value: 11240, share: 89.3, fill: "#2563eb" },
+      { name: "转账/还款", value: 980, share: 7.8, fill: "#ef4444" },
+      { name: "退款回流", value: 360, share: 2.9, fill: "#16a34a" },
+    ],
+    recurringMerchants: [
+      { merchant: "腾讯视频", total: 68, count: 2, cadenceLabel: "约 30 天/次", tag: "订阅候选", category: "娱乐" },
+      { merchant: "中国移动", total: 98, count: 2, cadenceLabel: "约 30 天/次", tag: "订阅候选", category: "生活" },
+      { merchant: "瑞幸咖啡", total: 126, count: 4, cadenceLabel: "4 次出现", tag: "高频商户", category: "餐饮" },
+      { merchant: "滴滴出行", total: 188, count: 3, cadenceLabel: "8 天/次", tag: "稳定复购", category: "交通" },
+    ],
+    budgetVariance: [
+      { name: "餐饮", budget: 3000, spent: 2450, variance: -550, percent: 81.7, status: "warning" },
+      { name: "购物", budget: 2600, spent: 3200, variance: 600, percent: 123.1, status: "over" },
+      { name: "娱乐", budget: 1500, spent: 980, variance: -520, percent: 65.3, status: "healthy" },
+    ],
+    budgetContext: {
+      applicable: true,
+      label: "当前筛选对应月度预算",
+    },
+    timeCategoryHotspots: [
+      { label: "晚间 · 购物", bucket: "晚间", category: "购物", total: 2860, count: 5 },
+      { label: "午间 · 餐饮", bucket: "午间", category: "餐饮", total: 1680, count: 11 },
+      { label: "深夜 · 娱乐", bucket: "深夜", category: "娱乐", total: 920, count: 3 },
+      { label: "下午 · 交通", bucket: "下午", category: "交通", total: 760, count: 6 },
+    ],
+    weekendPreference: [
+      { name: "娱乐", weekend: 760, weekday: 220, weekendShare: 77.6 },
+      { name: "购物", weekend: 1980, weekday: 1220, weekendShare: 61.9 },
+      { name: "餐饮", weekend: 1360, weekday: 1090, weekendShare: 55.5 },
+      { name: "交通", weekend: 380, weekday: 540, weekendShare: 41.3 },
+    ],
+    largeExpenses: [
+      { merchant: "京东商城", category: "购物", amount: 2450, date: "2024-03-15T14:30:00.000Z", reason: "超高单笔" },
+      { merchant: "山姆会员店", category: "购物", amount: 1800, date: "2024-03-12T11:20:00.000Z", reason: "高于均值" },
+      { merchant: "中国石化", category: "交通", amount: 1200, date: "2024-03-10T18:10:00.000Z", reason: "高于均值" },
+      { merchant: "爱奇艺会员", category: "娱乐", amount: 680, date: "2024-03-08T23:15:00.000Z", reason: "夜间大额" },
+    ],
+    concentration: {
+      topMerchant: "京东商城",
+      topMerchantShare: 19.5,
+      top3MerchantShare: 43.3,
+      topCategory: "餐饮",
+      topCategoryShare: 35.8,
+      repeatMerchantShare: 48.2,
+    },
+  },
 };

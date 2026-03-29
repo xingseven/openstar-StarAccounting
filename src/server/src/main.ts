@@ -123,6 +123,7 @@ type SavingsGoal = {
   deadline: string | null;
   type: string;
   depositType?: string;
+  planConfig?: Record<string, unknown> | null;
   status: string;
   createdAt: string;
 };
@@ -174,6 +175,179 @@ type ExchangeRate = {
   updatedAt: string;
 };
 const exchangeRates = new Map<string, ExchangeRate>();
+
+type SavingsAssetSyncConfig = {
+  syncToAssets: boolean;
+  sourceAssetId: string | null;
+  holdingAssetId: string | null;
+};
+
+function toPlainObject(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? ({ ...(value as Record<string, unknown>) } as Record<string, unknown>)
+    : null;
+}
+
+function normalizeOptionalId(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeSavingsPlanConfig(value: unknown) {
+  const config = toPlainObject(value);
+  if (!config) return undefined;
+
+  const assetSyncRaw = toPlainObject(config.assetSync);
+  if (!assetSyncRaw) {
+    return config;
+  }
+
+  const sourceAssetId = normalizeOptionalId(assetSyncRaw.sourceAssetId);
+  const holdingAssetId = normalizeOptionalId(assetSyncRaw.holdingAssetId) ?? sourceAssetId;
+
+  config.assetSync = {
+    syncToAssets: Boolean(assetSyncRaw.syncToAssets && (sourceAssetId || holdingAssetId)),
+    sourceAssetId,
+    holdingAssetId,
+  };
+
+  return config;
+}
+
+function getSavingsAssetSyncConfig(value: unknown): SavingsAssetSyncConfig {
+  const config = normalizeSavingsPlanConfig(value);
+  const assetSync = toPlainObject(config?.assetSync);
+  const sourceAssetId = normalizeOptionalId(assetSync?.sourceAssetId);
+  const holdingAssetId = normalizeOptionalId(assetSync?.holdingAssetId) ?? sourceAssetId;
+
+  return {
+    syncToAssets: Boolean(assetSync?.syncToAssets && (sourceAssetId || holdingAssetId)),
+    sourceAssetId,
+    holdingAssetId,
+  };
+}
+
+function getSavingsPlanAssetIds(value: unknown) {
+  const { sourceAssetId, holdingAssetId } = getSavingsAssetSyncConfig(value);
+  return Array.from(new Set([sourceAssetId, holdingAssetId].filter((item): item is string => Boolean(item))));
+}
+
+async function ensureSavingsPlanAssetsOwnedInDb(prisma: any, userId: string, value: unknown) {
+  const assetIds = getSavingsPlanAssetIds(value);
+  if (assetIds.length === 0) return;
+
+  const assets = await prisma.asset.findMany({
+    where: {
+      userId,
+      id: { in: assetIds },
+    },
+    select: { id: true },
+  });
+
+  if (assets.length !== assetIds.length) {
+    throw new Error("绑定的资产账户不存在或无权访问");
+  }
+}
+
+function ensureSavingsPlanAssetsOwnedInMemory(userId: string, value: unknown) {
+  const assetIds = getSavingsPlanAssetIds(value);
+  if (assetIds.length === 0) return;
+
+  const owned = new Set((assetsByUser.get(userId) ?? []).map((asset) => asset.id));
+  if (!assetIds.every((assetId) => owned.has(assetId))) {
+    throw new Error("绑定的资产账户不存在或无权访问");
+  }
+}
+
+async function applySavingsAssetDeltaInDb(tx: any, userId: string, planConfig: unknown, deltaAmount: number) {
+  if (!Number.isFinite(deltaAmount) || deltaAmount === 0) return;
+
+  const assetSync = getSavingsAssetSyncConfig(planConfig);
+  if (!assetSync.syncToAssets) return;
+
+  const sourceAssetId = assetSync.sourceAssetId;
+  const holdingAssetId = assetSync.holdingAssetId;
+
+  if (!sourceAssetId && !holdingAssetId) return;
+  if (sourceAssetId && holdingAssetId && sourceAssetId === holdingAssetId) return;
+
+  const assetIds = Array.from(new Set([sourceAssetId, holdingAssetId].filter((item): item is string => Boolean(item))));
+  const assets: Array<{ id: string; balance: unknown }> = await tx.asset.findMany({
+    where: {
+      userId,
+      id: { in: assetIds },
+    },
+  });
+
+  if (assets.length !== assetIds.length) {
+    throw new Error("绑定的资产账户不存在或无权访问");
+  }
+
+  const assetMap = new Map<string, { id: string; balance: unknown }>(
+    assets.map((asset: { id: string; balance: unknown }) => [asset.id, asset]),
+  );
+
+  if (sourceAssetId) {
+    const sourceAsset = assetMap.get(sourceAssetId);
+    if (!sourceAsset) {
+      throw new Error("来源资产不存在");
+    }
+
+    await tx.asset.update({
+      where: { id: sourceAssetId },
+      data: {
+        balance: Number(sourceAsset.balance) - deltaAmount,
+      },
+    });
+  }
+
+  if (holdingAssetId) {
+    const holdingAsset = assetMap.get(holdingAssetId);
+    if (!holdingAsset) {
+      throw new Error("存放资产不存在");
+    }
+
+    await tx.asset.update({
+      where: { id: holdingAssetId },
+      data: {
+        balance: Number(holdingAsset.balance) + deltaAmount,
+      },
+    });
+  }
+}
+
+function applySavingsAssetDeltaInMemory(userId: string, planConfig: unknown, deltaAmount: number) {
+  if (!Number.isFinite(deltaAmount) || deltaAmount === 0) return;
+
+  const assetSync = getSavingsAssetSyncConfig(planConfig);
+  if (!assetSync.syncToAssets) return;
+
+  const sourceAssetId = assetSync.sourceAssetId;
+  const holdingAssetId = assetSync.holdingAssetId;
+
+  if (!sourceAssetId && !holdingAssetId) return;
+  if (sourceAssetId && holdingAssetId && sourceAssetId === holdingAssetId) return;
+
+  const list = assetsByUser.get(userId) ?? [];
+  const assetMap = new Map(list.map((asset) => [asset.id, asset]));
+
+  if (sourceAssetId) {
+    const sourceAsset = assetMap.get(sourceAssetId);
+    if (!sourceAsset) {
+      throw new Error("来源资产不存在");
+    }
+    sourceAsset.balance = String(Number(sourceAsset.balance) - deltaAmount);
+  }
+
+  if (holdingAssetId) {
+    const holdingAsset = assetMap.get(holdingAssetId);
+    if (!holdingAsset) {
+      throw new Error("存放资产不存在");
+    }
+    holdingAsset.balance = String(Number(holdingAsset.balance) + deltaAmount);
+  }
+}
 
 // Initialize some default rates
 const defaultRates = [
@@ -947,8 +1121,10 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/auth/me", async (req, res) => {
   const prisma = getPrisma();
   if (!prisma) {
-    const userId = await requireUserId(req, res);
-    if (!userId) return;
+    const account = await requireAccountId(req, res);
+    if (!account) return;
+
+    const { accountId } = account;
     
     let email = "dev@local";
     if (userId.startsWith("mem-")) {
@@ -1614,6 +1790,339 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[], bucket: "day
   };
 }
 
+function buildConsumptionDashboardExtended(
+  rows: ConsumptionDashboardRow[],
+  bucket: "day" | "month" = "day",
+  budgets: DashboardBudgetRow[] = [],
+  range?: { start?: Date; end?: Date }
+) {
+  const base = buildConsumptionDashboard(rows, bucket);
+  const expenseRows = rows
+    .filter((row) => row.type === "EXPENSE")
+    .map((row) => {
+      const amount = Number(row.amount ?? 0);
+      const date = row.date instanceof Date ? row.date : new Date(row.date);
+      const localDate = toDashboardLocalDate(date);
+      const category = row.category?.trim() || "未分类";
+      const merchant = row.merchant?.trim() || "未知商户";
+      const merchantText = normalizeInsightText(category, merchant, row.description);
+      return {
+        amount,
+        date,
+        localDate,
+        category,
+        merchant,
+        merchantText,
+        platformKey: normalizeDashboardPlatform(row.platform),
+      };
+    })
+    .filter((row) => Number.isFinite(row.amount) && !Number.isNaN(row.date.getTime()));
+
+  const merchantStats = new Map<
+    string,
+    { total: number; count: number; dates: number[]; categoryMap: Map<string, number>; merchantText: string }
+  >();
+  const weekendCategoryMap = new Map<string, { weekend: number; weekday: number }>();
+  const timeCategoryMap = new Map<string, { bucket: string; category: string; total: number; count: number }>();
+  const necessityTotals = { essential: 0, optional: 0 };
+  const natureTotals = { consumption: 0, transfer: 0, refund: 0 };
+
+  for (const row of rows) {
+    const amount = Number(row.amount ?? 0);
+    if (!Number.isFinite(amount)) continue;
+    const category = row.category?.trim() || "未分类";
+    const merchantText = normalizeInsightText(category, row.merchant, row.description);
+    const nature = classifyTransactionNature(row, category, merchantText);
+
+    if (nature === "transfer") {
+      natureTotals.transfer += amount;
+    } else if (nature === "refund") {
+      natureTotals.refund += amount;
+    } else if (row.type === "EXPENSE") {
+      natureTotals.consumption += amount;
+    }
+  }
+
+  for (const row of expenseRows) {
+    const merchantEntry = merchantStats.get(row.merchant) ?? {
+      total: 0,
+      count: 0,
+      dates: [],
+      categoryMap: new Map<string, number>(),
+      merchantText: row.merchantText,
+    };
+    merchantEntry.total += row.amount;
+    merchantEntry.count += 1;
+    merchantEntry.dates.push(row.date.getTime());
+    merchantEntry.categoryMap.set(row.category, (merchantEntry.categoryMap.get(row.category) ?? 0) + row.amount);
+    merchantStats.set(row.merchant, merchantEntry);
+
+    const needType = classifyNeedType(row.category, row.merchantText);
+    necessityTotals[needType] += row.amount;
+
+    const weekendEntry = weekendCategoryMap.get(row.category) ?? { weekend: 0, weekday: 0 };
+    if (row.localDate.getDay() === 0 || row.localDate.getDay() === 6) {
+      weekendEntry.weekend += row.amount;
+    } else {
+      weekendEntry.weekday += row.amount;
+    }
+    weekendCategoryMap.set(row.category, weekendEntry);
+
+    const bucketLabel = resolveTimeBucket(row.date);
+    const timeCategoryKey = `${bucketLabel}__${row.category}`;
+    const timeCategoryEntry = timeCategoryMap.get(timeCategoryKey) ?? {
+      bucket: bucketLabel,
+      category: row.category,
+      total: 0,
+      count: 0,
+    };
+    timeCategoryEntry.total += row.amount;
+    timeCategoryEntry.count += 1;
+    timeCategoryMap.set(timeCategoryKey, timeCategoryEntry);
+  }
+
+  const averageExpense = base.summary.expenseCount > 0 ? base.summary.totalExpense / base.summary.expenseCount : 0;
+  const impulseThreshold = Math.max(200, averageExpense * 1.6);
+  const largeExpenseThreshold = Math.max(500, averageExpense * 1.8);
+
+  const recurringMerchantCandidates = Array.from(merchantStats.entries())
+    .map(([merchant, stat]) => {
+      if (merchant === "未知商户") return null;
+      const sortedDates = [...stat.dates].sort((a, b) => a - b);
+      const intervals = sortedDates.slice(1).map((time, index) => (time - sortedDates[index]) / (1000 * 60 * 60 * 24));
+      const avgInterval = intervals.length > 0
+        ? intervals.reduce((sum, value) => sum + value, 0) / intervals.length
+        : null;
+      const topCategoryEntry = Array.from(stat.categoryMap.entries()).sort((a, b) => b[1] - a[1])[0];
+      const topCategory = topCategoryEntry?.[0] ?? "未分类";
+      const isSubscription =
+        includesAnyKeyword(stat.merchantText, SUBSCRIPTION_KEYWORDS)
+        || (avgInterval !== null && avgInterval >= 23 && avgInterval <= 40 && stat.count >= 2);
+      if (stat.count < 2 && !isSubscription) return null;
+      return {
+        merchant,
+        total: stat.total,
+        count: stat.count,
+        avgInterval,
+        topCategory,
+        isSubscription,
+      };
+    })
+    .filter(
+      (
+        item
+      ): item is {
+        merchant: string;
+        total: number;
+        count: number;
+        avgInterval: number | null;
+        topCategory: string;
+        isSubscription: boolean;
+      } => item !== null
+    )
+    .sort((a, b) => {
+      if (Number(b.isSubscription) !== Number(a.isSubscription)) return Number(b.isSubscription) - Number(a.isSubscription);
+      if (b.count !== a.count) return b.count - a.count;
+      return b.total - a.total;
+    });
+
+  const recurringMerchantSet = new Set(
+    recurringMerchantCandidates
+      .filter((item) => item.isSubscription || item.count >= 3)
+      .map((item) => item.merchant)
+  );
+
+  const spendingStyleTotals = { fixed: 0, flexible: 0, impulse: 0 };
+  for (const row of expenseRows) {
+    const fixedLike =
+      recurringMerchantSet.has(row.merchant)
+      || includesAnyKeyword(row.merchantText, FIXED_KEYWORDS)
+      || includesAnyKeyword(row.category, ["居住", "教育", "医疗", "生活"]);
+    const impulseLike =
+      includesAnyKeyword(row.merchantText, IMPULSE_KEYWORDS)
+      || (
+        includesAnyKeyword(row.category, ["购物", "娱乐", "其他", "理财"])
+        && (row.localDate.getHours() >= 20 || row.localDate.getHours() < 6 || row.amount >= impulseThreshold)
+      );
+
+    if (fixedLike) {
+      spendingStyleTotals.fixed += row.amount;
+    } else if (impulseLike) {
+      spendingStyleTotals.impulse += row.amount;
+    } else {
+      spendingStyleTotals.flexible += row.amount;
+    }
+  }
+
+  const spendingStyle = [
+    { name: "固定支出", value: spendingStyleTotals.fixed, fill: CONSUMPTION_INSIGHT_COLORS[0], description: "租房、缴费、订阅类" },
+    { name: "弹性支出", value: spendingStyleTotals.flexible, fill: CONSUMPTION_INSIGHT_COLORS[1], description: "日常可调节开支" },
+    { name: "冲动消费", value: spendingStyleTotals.impulse, fill: CONSUMPTION_INSIGHT_COLORS[2], description: "夜间/购物娱乐型" },
+  ].map((item) => ({
+    ...item,
+    share: base.summary.totalExpense > 0 ? (item.value / base.summary.totalExpense) * 100 : 0,
+  }));
+
+  const necessitySplit = [
+    { name: "必要消费", value: necessityTotals.essential, fill: CONSUMPTION_INSIGHT_COLORS[0] },
+    { name: "可选消费", value: necessityTotals.optional, fill: CONSUMPTION_INSIGHT_COLORS[3] },
+  ].map((item) => ({
+    ...item,
+    share: base.summary.totalExpense > 0 ? (item.value / base.summary.totalExpense) * 100 : 0,
+  }));
+
+  const transactionNatureBase = Math.max(
+    natureTotals.consumption + natureTotals.transfer + natureTotals.refund,
+    1
+  );
+  const transactionNature = [
+    { name: "真实消费", value: natureTotals.consumption, fill: CONSUMPTION_INSIGHT_COLORS[0] },
+    { name: "转账/还款", value: natureTotals.transfer, fill: CONSUMPTION_INSIGHT_COLORS[4] },
+    { name: "退款回流", value: natureTotals.refund, fill: CONSUMPTION_INSIGHT_COLORS[1] },
+  ]
+    .filter((item) => item.value > 0)
+    .map((item) => ({
+      ...item,
+      share: (item.value / transactionNatureBase) * 100,
+    }));
+
+  const budgetPeriod = resolveBudgetInsightPeriod(range?.start, range?.end);
+  const budgetVariance = budgetPeriod
+    ? budgets
+      .filter((budget) => budget.period === budgetPeriod)
+      .map((budget) => {
+        const spent = calculateBudgetUsage(
+          {
+            amount: budget.amount,
+            category: budget.category,
+            platform: budget.platform,
+            period: budget.period,
+            scopeType: budget.scopeType,
+            alertPercent: budget.alertPercent ?? undefined,
+          },
+          rows.map((row) => ({
+            amount: Number(row.amount ?? 0),
+            type: row.type,
+            category: row.category?.trim() || "未分类",
+            platform: row.platform ?? undefined,
+            date: row.date,
+          })),
+          range?.end ?? new Date()
+        );
+        const variance = spent - budget.amount;
+        const percent = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+        const status: "healthy" | "warning" | "over" =
+          percent >= 100 ? "over" : percent >= (budget.alertPercent ?? 80) ? "warning" : "healthy";
+        return {
+          name: getBudgetInsightName(budget),
+          budget: budget.amount,
+          spent,
+          variance,
+          percent,
+          status,
+        };
+      })
+      .sort((a, b) => {
+        const statusOrder: Record<"over" | "warning" | "healthy", number> = { over: 0, warning: 1, healthy: 2 };
+        if (statusOrder[a.status] !== statusOrder[b.status]) return statusOrder[a.status] - statusOrder[b.status];
+        return Math.abs(b.variance) - Math.abs(a.variance);
+      })
+      .slice(0, 4)
+    : [];
+
+  const timeCategoryHotspots = Array.from(timeCategoryMap.values())
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 4)
+    .map((item) => ({
+      label: `${item.bucket} · ${item.category}`,
+      bucket: item.bucket,
+      category: item.category,
+      total: item.total,
+      count: item.count,
+    }));
+
+  const weekendPreference = Array.from(weekendCategoryMap.entries())
+    .map(([name, value]) => ({
+      name,
+      weekend: value.weekend,
+      weekday: value.weekday,
+      weekendShare: value.weekend + value.weekday > 0 ? (value.weekend / (value.weekend + value.weekday)) * 100 : 0,
+    }))
+    .filter((item) => item.weekend + item.weekday > 0)
+    .sort((a, b) => {
+      if (b.weekendShare !== a.weekendShare) return b.weekendShare - a.weekendShare;
+      return b.weekend + b.weekday - (a.weekend + a.weekday);
+    })
+    .slice(0, 4);
+
+  const largeExpenses = expenseRows
+    .filter((row) => row.amount >= largeExpenseThreshold)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 4)
+    .map((row) => ({
+      merchant: row.merchant,
+      category: row.category,
+      amount: row.amount,
+      date: row.date.toISOString(),
+      reason:
+        row.localDate.getHours() >= 22 || row.localDate.getHours() < 6
+          ? "夜间大额"
+          : row.amount >= Math.max(2000, averageExpense * 3)
+            ? "超高单笔"
+            : "高于均值",
+    }));
+
+  const topMerchant = base.merchants[0];
+  const repeatMerchantTotal = Array.from(merchantStats.values())
+    .filter((item) => item.count >= 2)
+    .reduce((sum, item) => sum + item.total, 0);
+  const concentration = {
+    topMerchant: topMerchant?.merchant ?? "暂无",
+    topMerchantShare: base.summary.totalExpense > 0 && topMerchant ? (topMerchant.total / base.summary.totalExpense) * 100 : 0,
+    top3MerchantShare:
+      base.summary.totalExpense > 0
+        ? base.merchants.slice(0, 3).reduce((sum, item) => sum + item.total, 0) / base.summary.totalExpense * 100
+        : 0,
+    topCategory: base.pareto[0]?.name ?? "暂无",
+    topCategoryShare: base.summary.totalExpense > 0 && base.pareto[0] ? (base.pareto[0].value / base.summary.totalExpense) * 100 : 0,
+    repeatMerchantShare: base.summary.totalExpense > 0 ? (repeatMerchantTotal / base.summary.totalExpense) * 100 : 0,
+  };
+
+  return {
+    ...base,
+    insights: {
+      spendingStyle,
+      necessitySplit,
+      transactionNature,
+      recurringMerchants: recurringMerchantCandidates.slice(0, 4).map((item) => ({
+        merchant: item.merchant,
+        total: item.total,
+        count: item.count,
+        cadenceLabel:
+          item.avgInterval !== null
+            ? `约 ${item.avgInterval.toFixed(0)} 天/次`
+            : `${item.count} 次出现`,
+        tag: item.isSubscription ? "订阅候选" : item.count >= 4 ? "高频商户" : "稳定复购",
+        category: item.topCategory,
+      })),
+      budgetVariance,
+      budgetContext: {
+        applicable: budgetPeriod !== null,
+        label:
+          budgetPeriod === "MONTHLY"
+            ? "当前筛选对应月度预算"
+            : budgetPeriod === "YEARLY"
+              ? "当前筛选对应年度预算"
+              : "当前筛选范围不适合预算对比",
+      },
+      timeCategoryHotspots,
+      weekendPreference,
+      largeExpenses,
+      concentration,
+    },
+  };
+}
+
 app.get("/api/metrics/consumption/summary", async (req, res) => {
   const { start, end, type } = parseQuery(req);
   const userId = await requireUserId(req, res);
@@ -1682,21 +2191,49 @@ app.get("/api/consumption/dashboard", async (req, res) => {
         };
       }
 
-      const rows = await prisma.transaction.findMany({
-        where,
-        select: {
-          id: true,
-          date: true,
-          type: true,
-          amount: true,
-          category: true,
-          platform: true,
-          merchant: true,
-          description: true,
-        },
-      });
+      const [rows, budgets] = await Promise.all([
+        prisma.transaction.findMany({
+          where,
+          select: {
+            id: true,
+            date: true,
+            type: true,
+            amount: true,
+            category: true,
+            platform: true,
+            merchant: true,
+            description: true,
+          },
+        }),
+        prisma.budget.findMany({
+          where: { userId },
+          select: {
+            amount: true,
+            category: true,
+            platform: true,
+            period: true,
+            scopeType: true,
+            alertPercent: true,
+          },
+        }),
+      ]);
 
-      jsonOk(res, buildConsumptionDashboard(rows, bucket));
+      jsonOk(
+        res,
+        buildConsumptionDashboardExtended(
+          rows,
+          bucket,
+          budgets.map((item) => ({
+            amount: Number(item.amount),
+            category: item.category,
+            platform: item.platform,
+            period: item.period,
+            scopeType: item.scopeType,
+            alertPercent: item.alertPercent,
+          })),
+          { start: start ?? undefined, end: end ?? undefined }
+        )
+      );
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -1723,7 +2260,19 @@ app.get("/api/consumption/dashboard", async (req, res) => {
     return true;
   });
 
-  jsonOk(res, buildConsumptionDashboard(filtered, bucket));
+  jsonOk(
+    res,
+    buildConsumptionDashboardExtended(
+      filtered,
+      bucket,
+      (budgetsByUser.get(userId) ?? []).map((item) => ({
+        amount: Number(item.amount),
+        category: item.category,
+        period: item.period,
+      })),
+      { start: start ?? undefined, end: end ?? undefined }
+    )
+  );
 });
 
 app.get("/api/metrics/consumption/by-platform", async (req, res) => {
@@ -3394,14 +3943,17 @@ app.post("/api/savings", async (req, res) => {
   }
   // targetAmount can be 0 if calculated from plans
   const targetVal = targetAmount && !Number.isNaN(Number(targetAmount)) ? Number(targetAmount) : 0;
+  const normalizedPlanConfig = normalizeSavingsPlanConfig(planConfig);
 
   const prisma = getPrisma();
   if (prisma) {
     try {
+      await ensureSavingsPlanAssetsOwnedInDb(prisma, userId, normalizedPlanConfig);
+
       const result = await prisma.$transaction(async (tx) => {
         // 1. Create Goal
         // @ts-ignore - Prisma type mismatch
-        const goal = await tx.savingsgoal.create({
+        let goal = await tx.savingsgoal.create({
           data: {
             id: crypto.randomUUID(),
             userId,
@@ -3411,7 +3963,7 @@ app.post("/api/savings", async (req, res) => {
             deadline: deadline ? new Date(deadline) : null,
             type: type || "LONG_TERM",
             depositType: depositType || "CASH",
-            planConfig: planConfig ?? undefined,
+            planConfig: (normalizedPlanConfig ?? undefined) as any,
             updatedAt: new Date(),
           },
         });
@@ -3441,6 +3993,24 @@ app.post("/api/savings", async (req, res) => {
           });
         }
 
+        const completedAmount = createdPlans.reduce(
+          (sum, plan) => sum + (plan.status === "COMPLETED" ? Number(plan.amount ?? 0) : 0),
+          0,
+        );
+
+        if (completedAmount !== 0) {
+          await applySavingsAssetDeltaInDb(tx, userId, normalizedPlanConfig, completedAmount);
+        }
+
+        if (completedAmount !== 0) {
+          goal = await tx.savingsgoal.update({
+            where: { id: goal.id },
+            data: {
+              currentAmount: completedAmount,
+            },
+          });
+        }
+
         return { goal, plans: createdPlans };
       });
 
@@ -3454,6 +4024,7 @@ app.post("/api/savings", async (req, res) => {
   }
 
   // Memory fallback (simplified, no plans)
+  ensureSavingsPlanAssetsOwnedInMemory(userId, normalizedPlanConfig);
   const list = savingsGoalsByUser.get(userId) ?? [];
   const goal: SavingsGoal = {
     id: crypto.randomUUID(),
@@ -3464,6 +4035,7 @@ app.post("/api/savings", async (req, res) => {
     deadline: deadline || null,
     type: type || "LONG_TERM",
     depositType: depositType || "CASH",
+    planConfig: normalizedPlanConfig ?? null,
     status: "ACTIVE",
     createdAt: new Date().toISOString(),
   };
@@ -3476,26 +4048,54 @@ app.put("/api/savings/:id", async (req, res) => {
   const userId = await requireUserId(req, res);
   if (!userId) return;
   const id = req.params.id;
-  const { name, targetAmount, currentAmount, deadline, status, type, depositType } = req.body ?? {};
+  const { name, targetAmount, currentAmount, deadline, status, type, depositType, planConfig } = req.body ?? {};
+  const normalizedPlanConfig = planConfig !== undefined ? normalizeSavingsPlanConfig(planConfig) : undefined;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const goal = await prisma.savingsgoal.update({
-        where: { id, userId },
-        data: {
-          ...(name ? { name } : {}),
-          ...(targetAmount ? { targetAmount: Number(targetAmount) } : {}),
-          ...(currentAmount !== undefined ? { currentAmount: Number(currentAmount) } : {}),
-          ...(deadline ? { deadline: new Date(deadline) } : {}),
-          ...(status ? { status } : {}),
-          ...(type ? { type } : {}),
-          ...(depositType ? { depositType } : {}),
-        },
+      if (normalizedPlanConfig !== undefined) {
+        await ensureSavingsPlanAssetsOwnedInDb(prisma, userId, normalizedPlanConfig);
+      }
+
+      const goal = await prisma.$transaction(async (tx) => {
+        const existingGoal = await tx.savingsgoal.findFirst({
+          where: { id, userId },
+        });
+
+        if (!existingGoal) {
+          throw new Error("NOT_FOUND");
+        }
+
+        const nextCurrentAmount = currentAmount !== undefined ? Number(currentAmount) : Number(existingGoal.currentAmount);
+        const nextPlanConfig = normalizedPlanConfig !== undefined ? normalizedPlanConfig : existingGoal.planConfig;
+
+        if (currentAmount !== undefined || normalizedPlanConfig !== undefined) {
+          await applySavingsAssetDeltaInDb(tx, userId, existingGoal.planConfig, -Number(existingGoal.currentAmount));
+          await applySavingsAssetDeltaInDb(tx, userId, nextPlanConfig, nextCurrentAmount);
+        }
+
+        return tx.savingsgoal.update({
+          where: { id },
+          data: {
+            ...(name ? { name } : {}),
+            ...(targetAmount ? { targetAmount: Number(targetAmount) } : {}),
+            ...(currentAmount !== undefined ? { currentAmount: Number(currentAmount) } : {}),
+            ...(deadline ? { deadline: new Date(deadline) } : {}),
+            ...(status ? { status } : {}),
+            ...(type ? { type } : {}),
+            ...(depositType ? { depositType } : {}),
+            ...(normalizedPlanConfig !== undefined ? { planConfig: normalizedPlanConfig as any } : {}),
+          },
+        });
       });
       jsonOk(res, { item: goal });
       return;
     } catch (e) {
+      if (e instanceof Error && e.message === "NOT_FOUND") {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "目标不存在");
+        return;
+      }
       const message = e instanceof Error ? e.message : "unknown";
       jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
       return;
@@ -3509,6 +4109,17 @@ app.put("/api/savings/:id", async (req, res) => {
     return;
   }
   const old = list[idx];
+  if (normalizedPlanConfig !== undefined) {
+    ensureSavingsPlanAssetsOwnedInMemory(userId, normalizedPlanConfig);
+  }
+  const nextCurrentAmount = currentAmount !== undefined ? Number(currentAmount) : Number(old.currentAmount);
+  const nextPlanConfig = normalizedPlanConfig !== undefined ? normalizedPlanConfig : old.planConfig;
+
+  if (currentAmount !== undefined || normalizedPlanConfig !== undefined) {
+    applySavingsAssetDeltaInMemory(userId, old.planConfig, -Number(old.currentAmount));
+    applySavingsAssetDeltaInMemory(userId, nextPlanConfig, nextCurrentAmount);
+  }
+
   const updated: SavingsGoal = {
     ...old,
     ...(name ? { name } : {}),
@@ -3518,6 +4129,7 @@ app.put("/api/savings/:id", async (req, res) => {
     ...(status ? { status } : {}),
     ...(type ? { type } : {}),
     ...(depositType ? { depositType } : {}),
+    ...(normalizedPlanConfig !== undefined ? { planConfig: normalizedPlanConfig } : {}),
   };
   list[idx] = updated;
   jsonOk(res, { item: updated });
@@ -3576,6 +4188,7 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
   if (!userId) return;
   const goalId = req.params.id;
   const { plans, config } = req.body ?? {};
+  const normalizedConfig = config !== undefined ? normalizeSavingsPlanConfig(config) : undefined;
 
   if (!Array.isArray(plans) || plans.length === 0) {
     jsonFail(res, 400, 50000, "INVALID_PARAM", "plans 不能为空");
@@ -3585,19 +4198,15 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
   const prisma = getPrisma();
   if (prisma) {
     try {
+      if (normalizedConfig !== undefined) {
+        await ensureSavingsPlanAssetsOwnedInDb(prisma, userId, normalizedConfig);
+      }
+
       // Check if goal belongs to user
       const goal = await prisma.savingsgoal.findFirst({ where: { id: goalId, userId } });
       if (!goal) {
         jsonFail(res, 404, 50000, "NOT_FOUND", "目标不存在");
         return;
-      }
-
-      // Update goal config if provided
-      if (config) {
-        await prisma.savingsgoal.update({
-          where: { id: goalId },
-          data: { planConfig: config },
-        });
       }
 
       // Transaction: Delete existing plans and create new ones (or upsert?)
@@ -3611,6 +4220,15 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
       // Let's delete all for now as this is a "Re-generate" action usually.
       
       await prisma.$transaction(async (tx) => {
+        const existingGoal = await tx.savingsgoal.findFirst({
+          where: { id: goalId, userId },
+        });
+
+        if (!existingGoal) {
+          throw new Error("NOT_FOUND");
+        }
+
+        const previousCompletedAmount = Number(existingGoal.currentAmount ?? 0);
         await tx.savingsplan.deleteMany({ where: { goalId } });
         // @ts-ignore - Prisma type mismatch
         await tx.savingsplan.createMany({
@@ -3632,9 +4250,18 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
           where: { goalId, status: "COMPLETED" },
           _sum: { amount: true },
         });
+        const nextCompletedAmount = Number(completedAgg._sum.amount ?? 0);
+        const nextPlanConfig = normalizedConfig !== undefined ? normalizedConfig : existingGoal.planConfig;
+
+        await applySavingsAssetDeltaInDb(tx, userId, existingGoal.planConfig, -previousCompletedAmount);
+        await applySavingsAssetDeltaInDb(tx, userId, nextPlanConfig, nextCompletedAmount);
+
         await tx.savingsgoal.update({
           where: { id: goalId },
-          data: { currentAmount: Number(completedAgg._sum.amount ?? 0) },
+          data: {
+            currentAmount: nextCompletedAmount,
+            ...(normalizedConfig !== undefined ? { planConfig: normalizedConfig as any } : {}),
+          },
         });
       });
 
@@ -3646,6 +4273,10 @@ app.post("/api/savings/:id/plans/batch", async (req, res) => {
       jsonOk(res, { items: newPlans });
       return;
     } catch (e) {
+      if (e instanceof Error && e.message === "NOT_FOUND") {
+        jsonFail(res, 404, 50000, "NOT_FOUND", "目标不存在");
+        return;
+      }
       const message = e instanceof Error ? e.message : "unknown";
       jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
       return;
@@ -3685,6 +4316,12 @@ app.put("/api/savings/plans/:planId", async (req, res) => {
             ...(proofImage !== undefined ? { proofImage } : {}),
           },
         });
+        const previousCompletedAmount = plan.status === "COMPLETED" ? Number(plan.amount ?? 0) : 0;
+        const nextCompletedAmount = next.status === "COMPLETED" ? Number(next.amount ?? 0) : 0;
+        const completedDelta = nextCompletedAmount - previousCompletedAmount;
+
+        await applySavingsAssetDeltaInDb(tx, userId, plan.savingsgoal.planConfig, completedDelta);
+
         const completedAgg = await tx.savingsplan.aggregate({
           where: { goalId: plan.goalId, status: "COMPLETED" },
           _sum: { amount: true },
@@ -3725,7 +4362,9 @@ app.delete("/api/savings/plans/:planId", async (req, res) => {
       }
 
       await prisma.$transaction(async (tx) => {
+        const completedDelta = plan.status === "COMPLETED" ? -Number(plan.amount ?? 0) : 0;
         await tx.savingsplan.delete({ where: { id: planId } });
+        await applySavingsAssetDeltaInDb(tx, userId, plan.savingsgoal.planConfig, completedDelta);
         const completedAgg = await tx.savingsplan.aggregate({
           where: { goalId: plan.goalId, status: "COMPLETED" },
           _sum: { amount: true },
@@ -5380,12 +6019,12 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
     if (prisma) {
       // 优先使用默认模型，否则使用第一个可用的活跃模型
       let model = await prisma.aimodelconfig.findFirst({
-        where: { userId, status: "active", isDefault: true }
+        where: { accountId, status: "active", isDefault: true }
       });
 
       if (!model) {
         model = await prisma.aimodelconfig.findFirst({
-          where: { userId, status: "active" }
+          where: { accountId, status: "active" }
         });
       }
 
@@ -5434,8 +6073,10 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
 // AI 消费分析
 app.post("/api/ai/analyze-consumption", async (req, res) => {
   try {
-    const userId = await requireUserId(req, res);
-    if (!userId) return;
+    const account = await requireAccountId(req, res);
+    if (!account) return;
+
+    const { accountId } = account;
 
     const { transactions, budgets, startDate, endDate } = req.body as {
       transactions: TransactionInput[];
@@ -5455,12 +6096,12 @@ app.post("/api/ai/analyze-consumption", async (req, res) => {
 
     if (prisma) {
       let model = await prisma.aimodelconfig.findFirst({
-        where: { userId, status: "active", isDefault: true }
+        where: { accountId, status: "active", isDefault: true }
       });
 
       if (!model) {
         model = await prisma.aimodelconfig.findFirst({
-          where: { userId, status: "active" }
+          where: { accountId, status: "active" }
         });
       }
 
@@ -5526,8 +6167,10 @@ app.post("/api/ai/models/test", async (req, res) => {
 
 // 获取用户的大模型配置列表
 app.get("/api/ai/models", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
 
   const prisma = getPrisma();
   if (!prisma) {
@@ -5538,7 +6181,7 @@ app.get("/api/ai/models", async (req, res) => {
 
   try {
     const models = await prisma.aimodelconfig.findMany({
-      where: { userId },
+      where: { userId, accountId },
       orderBy: { createdAt: "desc" }
     });
     // 不返回 apiKey
