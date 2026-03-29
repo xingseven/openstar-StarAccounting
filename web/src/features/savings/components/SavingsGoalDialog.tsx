@@ -16,6 +16,8 @@ import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ThemeActionBar, ThemeDialogSection, ThemeFormField, ThemeFormGrid, ThemeTable, ThemeToolbar } from "@/components/shared/theme-primitives";
 import { addMonthsToMonthKey, getLocalMonthKey } from "./month-utils";
+import { getSavingsAssetSyncConfig } from "../plan-config";
+import type { Asset, SavingsPlanConfig } from "@/types";
 import type { SavingsGoal } from "./themes/DefaultSavings";
 
 type PlanStatus = "PENDING" | "COMPLETED" | "SKIPPED";
@@ -47,11 +49,13 @@ type PlanRow = StoredPlan & {
   finalBalance?: number;
 };
 
-type GoalPlanConfig = {
+type GoalPlanConfig = SavingsPlanConfig & {
   expenseColumns: ExpenseColumn[];
   startMonth: string;
   duration: number;
 };
+
+const NONE_ASSET_VALUE = "__none__";
 
 interface SavingsGoalDialogProps {
   open: boolean;
