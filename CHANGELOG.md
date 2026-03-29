@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.20 - 2026-03-29
+
+### Fixed
+
+- **前端构建恢复**:
+  - 清除 `web/package.json` 的 BOM 干扰并确认文件可正常解析。
+  - 修复 `SavingsGoalDialog` 与 `SavingsPlanDialog` 中因乱码与坏字符串导致的语法损坏，恢复 `web/` 构建链路。
+
 ## 2.3.19 - 2026-03-29
 
 ### Modified
