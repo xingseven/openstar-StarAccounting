@@ -534,8 +534,8 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
         </button>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="gap-0 border-0 bg-transparent px-2 pb-2 pt-10 shadow-none sm:max-w-[960px] sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none">
-            <div className="max-h-[82vh] overflow-y-auto">
+          <DialogContent className="gap-0 border-0 bg-transparent px-2 pb-2 pt-10 shadow-none sm:max-w-[1100px] sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none">
+            <div className="max-h-[70vh] overflow-y-auto">
               {renderPanel("w-full sm:shadow-[0_28px_70px_rgba(15,23,42,0.16)]")}
             </div>
           </DialogContent>

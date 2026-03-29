@@ -15,6 +15,7 @@ import { ArrowRight, Loader2, PiggyBank, Plus, Trash2, Wallet } from "lucide-rea
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ThemeActionBar, ThemeDialogSection, ThemeFormField, ThemeFormGrid, ThemeTable, ThemeToolbar } from "@/components/shared/theme-primitives";
+import { addMonthsToMonthKey, getLocalMonthKey } from "./month-utils";
 import type { SavingsGoal } from "./themes/DefaultSavings";
 
 type PlanStatus = "PENDING" | "COMPLETED" | "SKIPPED";
@@ -90,12 +91,12 @@ export function SavingsGoalDialog({
   const [name, setName] = useState("");
   const [type, setType] = useState<SavingsGoal["type"]>("MONTHLY");
   const [depositType, setDepositType] = useState<SavingsGoal["depositType"]>("CASH");
-  const [startMonth, setStartMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [startMonth, setStartMonth] = useState(getLocalMonthKey());
   const [duration, setDuration] = useState(12);
   const [expenseColumns, setExpenseColumns] = useState<ExpenseColumn[]>([{ id: "exp1", name: "固定支出1" }]);
   const [rows, setRows] = useState<PlanRow[]>([]);
   const [isDirty, setIsDirty] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [currentMonth, setCurrentMonth] = useState(getLocalMonthKey());
   const [toasts, setToasts] = useState<Array<{ id: string; message: string }>>([]);
   const [dragOverProofId, setDragOverProofId] = useState<string | null>(null);
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
@@ -109,11 +110,7 @@ export function SavingsGoalDialog({
   }, []);
 
   const buildRows = useCallback((month: string, count: number) => {
-    const [year, baseMonth] = month.split("-").map(Number);
-    return Array.from({ length: count }, (_, index) => {
-      const date = new Date(year, baseMonth - 1 + index, 1);
-      return createRow(date.toISOString().slice(0, 7));
-    });
+    return Array.from({ length: count }, (_, index) => createRow(addMonthsToMonthKey(month, index)));
   }, []);
 
   const loadExistingPlans = useCallback(async (goalId: string) => {
@@ -151,7 +148,7 @@ export function SavingsGoalDialog({
         setName(initialData.name);
         setType(initialData.type);
         setDepositType(initialData.depositType);
-        setStartMonth(new Date().toISOString().slice(0, 7));
+        setStartMonth(getLocalMonthKey());
         setDuration(12);
         setExpenseColumns([{ id: "exp1", name: "固定支出1" }]);
         setRows([]);
@@ -166,16 +163,16 @@ export function SavingsGoalDialog({
               setStartMonth(loaded.startMonth);
               setDuration(loaded.duration);
             } else {
-              setRows(buildRows(new Date().toISOString().slice(0, 7), 12));
+              setRows(buildRows(getLocalMonthKey(), 12));
             }
           } catch {
             if (active) {
-              setRows(buildRows(new Date().toISOString().slice(0, 7), 12));
+              setRows(buildRows(getLocalMonthKey(), 12));
             }
           }
         }
       } else {
-        const defaultMonth = new Date().toISOString().slice(0, 7);
+        const defaultMonth = getLocalMonthKey();
         setName("");
         setType("MONTHLY");
         setDepositType("CASH");
@@ -196,7 +193,7 @@ export function SavingsGoalDialog({
   useEffect(() => {
     if (!open) return;
     const timer = window.setInterval(() => {
-      setCurrentMonth(new Date().toISOString().slice(0, 7));
+      setCurrentMonth(getLocalMonthKey());
     }, 60000);
     return () => window.clearInterval(timer);
   }, [open]);
@@ -475,9 +472,9 @@ export function SavingsGoalDialog({
             </ThemeActionBar>
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <ThemeToolbar className="mb-3 justify-between">
-              <div className="text-base text-slate-500">提示：修改第一行数据可作为后续月份的参考模板。</div>
+              <div className="text-base text-slate-500">提示：修改第一行数据可作为后续月份的参考模板。当前共 {calculatedRows.length} 个月，可滚动查看完整计划。</div>
               {type !== "MONTHLY" ? (
                 <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 text-sm font-medium" onClick={() => {
                   const nextName = prompt("请输入列名(如：房租)");
@@ -491,8 +488,8 @@ export function SavingsGoalDialog({
               ) : null}
             </ThemeToolbar>
 
-            <ThemeTable className="flex-1 min-h-0">
-              <div ref={tableScrollRef} className="flex-1 min-h-0 overflow-auto">
+            <ThemeTable className="flex min-h-0 flex-1 flex-col">
+              <div ref={tableScrollRef} className="min-h-0 flex-1 overflow-auto">
                 <table className="relative table-auto text-left text-base" style={{ width: "max-content", minWidth: type === "MONTHLY" ? "100%" : "1400px" }}>
                   <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 shadow-sm">
                     <tr>
@@ -570,7 +567,7 @@ export function SavingsGoalDialog({
                         <td className="p-2 text-center">
                           <div
                             className={cn(
-                              "rounded-md border border-dashed p-2 transition-colors",
+                              "flex min-h-10 items-center justify-center gap-2 rounded-md border border-dashed px-2 py-1.5 transition-colors",
                               dragOverProofId === row.id ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-slate-50/60"
                             )}
                             onDragOver={(event) => {
@@ -584,19 +581,20 @@ export function SavingsGoalDialog({
                               handleProofUpload(index, event.dataTransfer.files?.[0]);
                             }}
                           >
-                            <label htmlFor={`proof-${row.id}`} className="inline-flex cursor-pointer items-center gap-2">
-                              <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200">上传</span>
+                            <label htmlFor={`proof-${row.id}`} className="inline-flex cursor-pointer items-center">
+                              <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200">上传</span>
                             </label>
                             <input id={`proof-${row.id}`} type="file" accept="image/*" className="hidden" onChange={(event) => handleProofUpload(index, event.target.files?.[0])} />
-                            <div className="mt-1 text-sm text-slate-400">支持拖入图片</div>
                             {row.proofImage ? (
-                              <div className="mt-2 space-y-1">
-                                <Image src={row.proofImage} alt="打卡凭证" width={56} height={56} unoptimized className="h-14 w-14 rounded border object-cover" />
-                                <button type="button" className="block text-sm text-blue-600 hover:underline" onClick={() => window.open(row.proofImage, "_blank")}>
-                                  查看大图
+                              <>
+                                <Image src={row.proofImage} alt="打卡凭证" width={32} height={32} unoptimized className="h-8 w-8 rounded border object-cover" />
+                                <button type="button" className="text-xs font-medium text-blue-600 hover:underline" onClick={() => window.open(row.proofImage, "_blank")}>
+                                  查看
                                 </button>
-                              </div>
-                            ) : null}
+                              </>
+                            ) : (
+                              <span className="text-xs text-slate-400">可拖入</span>
+                            )}
                           </div>
                         </td>
                         <td className="p-2 text-center">

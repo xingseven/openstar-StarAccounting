@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ThemeActionBar, ThemeDialogSection, ThemeEmptyState, ThemeToolbar } from "@/components/shared/theme-primitives";
+import { addMonthsToMonthKey, getLocalMonthKey } from "./month-utils";
 import type { SavingsGoal } from "./themes/DefaultSavings";
 
 export type SavingsPlan = {
@@ -105,7 +106,7 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
     return plansWithAmount.length > 0 ? plansWithAmount : calculatedPlans;
   }, [calculatedPlans]);
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonth = getLocalMonthKey();
 
   async function handleUpdatePlan(id: string, updates: Partial<SavingsPlan>) {
     const updatedPlans = plans.map((plan) => (plan.id === id ? { ...plan, ...updates } : plan));
@@ -267,13 +268,11 @@ export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: 
 
 async function initializeEmptyPlans(goal: SavingsGoal): Promise<SavingsPlan[]> {
   const initDuration = 12;
-  const initStartMonth = new Date().toISOString().slice(0, 7);
-  const [year, month] = initStartMonth.split("-").map(Number);
+  const initStartMonth = getLocalMonthKey();
   const draftPlans: Array<Omit<SavingsPlan, "id" | "goalId">> = [];
 
   for (let index = 0; index < initDuration; index += 1) {
-    const currentDate = new Date(year, month - 1 + index, 1);
-    const monthText = currentDate.toISOString().slice(0, 7);
+    const monthText = addMonthsToMonthKey(initStartMonth, index);
     draftPlans.push({
       month: monthText,
       amount: 0,
