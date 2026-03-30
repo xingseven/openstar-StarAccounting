@@ -377,7 +377,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </span>
             </div>
 
-            <div className="mt-3 grid gap-2.5 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_170px]">
+            <div className="mt-3 grid gap-2.5 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,200px)]">
               <div className="h-[152px] min-w-0 sm:h-[210px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={cashFlowData} margin={{ top: 12, right: 6, left: -20, bottom: 0 }}>
