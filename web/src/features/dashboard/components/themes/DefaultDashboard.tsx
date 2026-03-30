@@ -434,7 +434,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>近期消费构成</p>
-                <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近交易里的主要花费</h3>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>最近交易里的主要花费</h3>
               </div>
             </div>
 
@@ -477,7 +477,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>最近交易</p>
-                <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近录入的流水</h3>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>最近录入的流水</h3>
               </div>
               <Link
                 href="/consumption"
