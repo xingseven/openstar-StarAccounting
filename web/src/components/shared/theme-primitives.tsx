@@ -256,26 +256,21 @@ export function ThemeMetricCard({
     >
       <div className="flex items-start justify-between gap-2 sm:gap-2.5">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 sm:block">
-            {showMobileIcon ? (
-              <div className={cn("rounded-lg p-1.5 ring-1 sm:hidden", toneClass)}>
-                <Icon className="h-3 w-3" />
-              </div>
-            ) : null}
+          <div className="sm:block">
             <p
-              className={cn("text-xs font-medium sm:text-sm", labelClassName)}
+              className="break-all text-sm font-semibold leading-5 tracking-tight sm:hidden"
+              style={{ color: "var(--theme-body-text)" }}
+            >
+              {mobileValue ?? value}
+            </p>
+            <p
+              className={cn("mt-1 text-xs font-medium sm:text-sm", labelClassName)}
               style={{ color: "var(--theme-muted-text)" }}
             >
               {label}
             </p>
           </div>
 
-          <p
-            className="mt-1 break-all text-sm font-semibold leading-5 tracking-tight sm:hidden"
-            style={{ color: "var(--theme-body-text)" }}
-          >
-            {mobileValue ?? value}
-          </p>
           <p
             className="mt-1.5 hidden text-lg font-semibold tracking-tight sm:block"
             style={{ color: "var(--theme-body-text)" }}
@@ -295,6 +290,12 @@ export function ThemeMetricCard({
             </p>
           ) : null}
         </div>
+
+        {showMobileIcon && hasIcon ? (
+          <div className={cn("rounded-lg p-1.5 ring-1 sm:hidden", toneClass)}>
+            <Icon className="h-3 w-3" />
+          </div>
+        ) : null}
 
         {showDesktopIcon && hasIcon ? (
           <div className={cn("hidden rounded-xl p-1.5 ring-1 sm:block sm:rounded-2xl sm:p-2", toneClass)}>

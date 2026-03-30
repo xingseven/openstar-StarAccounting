@@ -63,6 +63,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.22",
+    date: "2026-03-30",
+    type: "improvement",
+    highlights: [
+      "消费页规则备注分析收敛为单张卡片，统一展示覆盖统计、金额分布与 Top 备注排行。",
+      "消费页、总览页等交易明细列表继续统一，时间显示改为更易读的本地短格式。",
+    ],
+  },
+  {
     version: "2.3.21",
     date: "2026-03-30",
     type: "feature",
@@ -155,8 +164,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.21",
-  latestVersion: "2.3.21",
+  currentVersion: "2.3.22",
+  latestVersion: "2.3.22",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -169,19 +178,19 @@ const fallbackUpdateInfo: UpdateInfo = {
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.21",
-    latestVersion: "2.3.21",
+    currentVersion: "2.3.22",
+    latestVersion: "2.3.22",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.21 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.22 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.21",
-    latestVersion: "2.3.21",
+    currentVersion: "2.3.22",
+    latestVersion: "2.3.22",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.21 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.22 后需要重新下载安装。",
     downloads: [],
   },
 };
