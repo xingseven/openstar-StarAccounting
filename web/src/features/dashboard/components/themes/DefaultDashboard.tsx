@@ -647,12 +647,12 @@ function IncomeExpenseCard({
           <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense, { compact: true })}</p>
           <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense)}</p>
           <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月消费总额</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:text-xs", expenseChange.badgeClass)}>
               <expenseChange.icon className="h-3.5 w-3.5" />
               {expenseChange.label}
             </span>
-            <span className="text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{expenseChange.previousLabel}</span>
+            <span className="text-xs" style={{ color: "var(--theme-muted-text)" }}>{expenseChange.previousLabel}</span>
           </div>
         </div>
 
@@ -664,12 +664,12 @@ function IncomeExpenseCard({
           <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income, { compact: true })}</p>
           <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income)}</p>
           <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>已记录入账</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:text-xs", incomeChange.badgeClass)}>
               <incomeChange.icon className="h-3.5 w-3.5" />
               {incomeChange.label}
             </span>
-            <span className="text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{incomeChange.previousLabel}</span>
+            <span className="text-xs" style={{ color: "var(--theme-muted-text)" }}>{incomeChange.previousLabel}</span>
           </div>
         </div>
       </div>
