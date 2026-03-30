@@ -254,7 +254,7 @@ export function ThemeMetricCard({
         className
       )}
     >
-      <div className="flex items-start justify-between gap-2 sm:gap-2.5">
+      <div className="flex items-start justify-between gap-1.5 sm:gap-2.5">
         <div className="flex-1">
           <div className="sm:block">
             <p
@@ -292,7 +292,7 @@ export function ThemeMetricCard({
         </div>
 
         {showMobileIcon && hasIcon ? (
-          <div className={cn("rounded-lg p-1.5 ring-1 sm:hidden", toneClass)}>
+          <div className={cn("rounded-lg p-1 ring-1 sm:hidden", toneClass)}>
             <Icon className="h-3 w-3" />
           </div>
         ) : null}
