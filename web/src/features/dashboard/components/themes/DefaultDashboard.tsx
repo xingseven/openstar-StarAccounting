@@ -358,152 +358,148 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
       </DelayedRender>
 
       <DelayedRender delay={120}>
-        <section className="grid gap-3 sm:gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.92fr)]">
-          <div className="space-y-3 sm:space-y-5">
-            <div className="grid gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.85fr)]">
-              <div className={cn(SURFACE_CLASS, "self-start p-4 sm:p-5 lg:p-6")}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月现金流</p>
-                    <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入、支出与可留存空间</h3>
-                  </div>
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:px-3 sm:text-xs",
-                      monthlyBalance >= 0
-                        ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-                        : "bg-red-50 text-red-700 ring-red-100"
-                    )}
-                  >
-                    结余 {formatCurrency(monthlyBalance)}
-                  </span>
-                </div>
+        <section className="grid gap-3 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.85fr)]">
+          <div className={cn(SURFACE_CLASS, "self-start p-4 sm:p-5 lg:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月现金流</p>
+                <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入、支出与可留存空间</h3>
+              </div>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:px-3 sm:text-xs",
+                  monthlyBalance >= 0
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                    : "bg-red-50 text-red-700 ring-red-100"
+                )}
+              >
+                结余 {formatCurrency(monthlyBalance)}
+              </span>
+            </div>
 
-                <div className="mt-3 grid gap-2.5 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_170px]">
-                  <div className="h-[152px] min-w-0 sm:h-[210px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={cashFlowData} margin={{ top: 12, right: 6, left: -20, bottom: 0 }}>
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fill: "#94a3b8", fontSize: 12 }}
-                          tickFormatter={(value) => formatCurrency(Number(value), { compact: true })}
-                        />
-                        <Tooltip
-                          cursor={{ fill: "rgba(148,163,184,0.08)" }}
-                          formatter={(value: number | string) => formatCurrency(Number(value))}
-                          labelStyle={{ color: "#0f172a", fontWeight: 600 }}
-                          contentStyle={{
-                            border: "1px solid rgba(226,232,240,0.9)",
-                            borderRadius: 16,
-                            boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
-                          }}
-                        />
-                        <Bar dataKey="value" radius={[10, 10, 5, 5]} barSize={24}>
-                          {cashFlowData.map((item) => (
-                            <Cell key={item.name} fill={item.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5 lg:grid-cols-1">
-                    <CompactStat
-                      label="收入覆盖支出"
-                      value={data.monthExpense > 0 ? `${((data.monthIncome / data.monthExpense) * 100).toFixed(0)}%` : "100%"}
-                      tone={data.monthIncome >= data.monthExpense ? "green" : "red"}
+            <div className="mt-3 grid gap-2.5 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_170px]">
+              <div className="h-[152px] min-w-0 sm:h-[210px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={cashFlowData} margin={{ top: 12, right: 6, left: -20, bottom: 0 }}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#94a3b8", fontSize: 12 }}
+                      tickFormatter={(value) => formatCurrency(Number(value), { compact: true })}
                     />
-                    <CompactStat
-                      label="资产缓冲"
-                      value={data.monthExpense > 0 ? `${(data.totalAssets / data.monthExpense).toFixed(1)} 月` : "充足"}
-                      tone="blue"
+                    <Tooltip
+                      cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                      formatter={(value: number | string) => formatCurrency(Number(value))}
+                      labelStyle={{ color: "#0f172a", fontWeight: 600 }}
+                      contentStyle={{
+                        border: "1px solid rgba(226,232,240,0.9)",
+                        borderRadius: 16,
+                        boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                      }}
                     />
-                    <CompactStat
-                      label="预算风险"
-                      value={criticalAlerts.length > 0 ? `${criticalAlerts.length} 项` : "低"}
-                      tone={criticalAlerts.length > 0 ? "amber" : "green"}
-                    />
-                  </div>
-                </div>
+                    <Bar dataKey="value" radius={[10, 10, 5, 5]} barSize={24}>
+                      {cashFlowData.map((item) => (
+                        <Cell key={item.name} fill={item.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
 
-              <div className={cn(SURFACE_CLASS, "p-4 sm:min-h-[320px] sm:p-6")}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>近期消费构成</p>
-                    <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近交易里的主要花费</h3>
-                  </div>
-                </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5 lg:grid-cols-1">
+                <CompactStat
+                  label="收入覆盖支出"
+                  value={data.monthExpense > 0 ? `${((data.monthIncome / data.monthExpense) * 100).toFixed(0)}%` : "100%"}
+                  tone={data.monthIncome >= data.monthExpense ? "green" : "red"}
+                />
+                <CompactStat
+                  label="资产缓冲"
+                  value={data.monthExpense > 0 ? `${(data.totalAssets / data.monthExpense).toFixed(1)} 月` : "充足"}
+                  tone="blue"
+                />
+                <CompactStat
+                  label="预算风险"
+                  value={criticalAlerts.length > 0 ? `${criticalAlerts.length} 项` : "低"}
+                  tone={criticalAlerts.length > 0 ? "amber" : "green"}
+                />
+              </div>
+            </div>
+          </div>
 
-                <div className="mt-3 grid grid-cols-[118px_minmax(0,1fr)] items-center gap-3 sm:mt-5 sm:grid-cols-[156px_minmax(0,1fr)] sm:gap-5">
-                  <div className="mx-auto h-[118px] w-full max-w-[118px] sm:h-[156px] sm:max-w-[156px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={categoryDistribution} dataKey="value" nameKey="name" innerRadius={38} outerRadius={56} paddingAngle={3}>
-                          {categoryDistribution.map((item) => (
-                            <Cell key={item.name} fill={item.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value: number | string) => formatCurrency(Number(value))}
-                          contentStyle={{
-                            border: "1px solid rgba(226,232,240,0.9)",
-                            borderRadius: 16,
-                            boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div className="space-y-1.5 sm:space-y-2">
-                    {categoryDistribution.slice(0, 3).map((item) => (
-                      <div key={item.name} className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5" style={{ backgroundColor: item.color }} />
-                          <span className="truncate text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>{item.name}</span>
-                        </div>
-                        <span className="text-[11px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.value, { compact: true })}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          <div className={cn(SURFACE_CLASS, "p-4 sm:min-h-[320px] sm:p-6")}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>近期消费构成</p>
+                <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近交易里的主要花费</h3>
               </div>
             </div>
 
-            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>最近交易</p>
-                  <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近录入的流水</h3>
-                </div>
-                <Link
-                  href="/consumption"
-                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
-                  style={{ background: "var(--module-accent-strong)" }}
-                >
-                  查看全部
-                  <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Link>
+            <div className="mt-3 grid grid-cols-[118px_minmax(0,1fr)] items-center gap-3 sm:mt-5 sm:grid-cols-[156px_minmax(0,1fr)] sm:gap-5">
+              <div className="mx-auto h-[118px] w-full max-w-[118px] sm:h-[156px] sm:max-w-[156px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={categoryDistribution} dataKey="value" nameKey="name" innerRadius={38} outerRadius={56} paddingAngle={3}>
+                      {categoryDistribution.map((item) => (
+                        <Cell key={item.name} fill={item.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number | string) => formatCurrency(Number(value))}
+                      contentStyle={{
+                        border: "1px solid rgba(226,232,240,0.9)",
+                        borderRadius: 16,
+                        boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
 
-              <div className="mt-4 space-y-2 sm:mt-5 sm:space-y-3">
-                {data.recentTransactions.length === 0 ? (
-                  <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] px-3 text-center sm:min-h-[220px] sm:rounded-[24px]" style={{ background: "var(--theme-dialog-section-bg)" }}>
-                    <div className="rounded-full bg-white p-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)] sm:p-3">
-                      <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: "var(--theme-muted-text)" }} />
+              <div className="space-y-1.5 sm:space-y-2">
+                {categoryDistribution.slice(0, 3).map((item) => (
+                  <div key={item.name} className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5" style={{ backgroundColor: item.color }} />
+                      <span className="truncate text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>{item.name}</span>
                     </div>
-                    <p className="mt-3 text-sm font-medium sm:mt-4 sm:text-base" style={{ color: "var(--theme-label-text)" }}>还没有最近交易</p>
-                    <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>录入一笔账单后，这里会自动出现最新动态。</p>
+                    <span className="text-[11px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.value, { compact: true })}</span>
                   </div>
-                ) : (
-                  recentTransactions.map((transaction, index) => (
-                    <TransactionRow key={transaction.id} transaction={transaction} className={index >= 3 ? "hidden sm:flex" : undefined} />
-                  ))
-                )}
+                ))}
               </div>
+            </div>
+          </div>
+
+          <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>最近交易</p>
+                <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近录入的流水</h3>
+              </div>
+              <Link
+                href="/consumption"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
+                style={{ background: "var(--module-accent-strong)" }}
+              >
+                查看全部
+                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-4 space-y-0 [&>*:last-child]:border-b-0 sm:mt-5">
+              {data.recentTransactions.length === 0 ? (
+                <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] px-3 text-center sm:min-h-[220px] sm:rounded-[24px]" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                  <div className="rounded-full bg-white p-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)] sm:p-3">
+                    <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: "var(--theme-muted-text)" }} />
+                  </div>
+                  <p className="mt-3 text-sm font-medium sm:mt-4 sm:text-base" style={{ color: "var(--theme-label-text)" }}>还没有最近交易</p>
+                  <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>录入一笔账单后，这里会自动出现最新动态。</p>
+                </div>
+              ) : (
+                recentTransactions.map((transaction, index) => (
+                  <TransactionRow key={transaction.id} transaction={transaction} className={index >= 3 ? "hidden sm:flex" : undefined} />
+                ))
+              )}
             </div>
           </div>
         </section>

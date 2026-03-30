@@ -525,7 +525,7 @@ export function SavingsDefaultTheme({
                     <CompactTransactionRow
                       key={transaction.id}
                       icon={isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
-                      iconClassName={isIncome ? "" : "bg-red-50 text-red-600"}
+                      iconClassName={isIncome ? "[background:var(--module-accent-soft)] [color:var(--module-accent-strong)]" : "bg-red-50 text-red-600"}
                       primary={transaction.category}
                       secondary={transaction.description || undefined}
                       meta={[formatCompactTransactionDateTime(transaction.date)]}
