@@ -361,9 +361,9 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         <section className="grid gap-3 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.85fr)]">
           <div className={cn(SURFACE_CLASS, "self-start p-4 sm:p-5 lg:p-6")}>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月现金流</p>
-                <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入、支出与可留存空间</h3>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>收入、支出与可留存空间</h3>
               </div>
               <span
                 className={cn(
@@ -412,16 +412,19 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   label="收入覆盖支出"
                   value={data.monthExpense > 0 ? `${((data.monthIncome / data.monthExpense) * 100).toFixed(0)}%` : "100%"}
                   tone={data.monthIncome >= data.monthExpense ? "green" : "red"}
+                  className="h-[52px] sm:h-[62px]"
                 />
                 <CompactStat
                   label="资产缓冲"
                   value={data.monthExpense > 0 ? `${(data.totalAssets / data.monthExpense).toFixed(1)} 月` : "充足"}
                   tone="blue"
+                  className="h-[52px] sm:h-[62px]"
                 />
                 <CompactStat
                   label="预算风险"
                   value={criticalAlerts.length > 0 ? `${criticalAlerts.length} 项` : "低"}
                   tone={criticalAlerts.length > 0 ? "amber" : "green"}
+                  className="h-[52px] sm:h-[62px]"
                 />
               </div>
             </div>
@@ -710,16 +713,18 @@ function CompactStat({
   label,
   value,
   tone,
+  className,
 }: {
   label: string;
   value: string;
   tone: Tone;
+  className?: string;
 }) {
   return (
-    <div className="rounded-[16px] px-2.5 py-2 sm:rounded-[22px] sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <span className="text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{label}</span>
-        <span className={cn("w-fit rounded-full px-2 py-1 text-[10px] font-medium ring-1 sm:px-2.5 sm:text-xs", STAT_TONE_CLASS[tone])}>{value}</span>
+    <div className={cn("rounded-[16px] px-2.5 py-2 sm:rounded-[22px] sm:px-4 sm:py-3", className)} style={{ background: "var(--theme-dialog-section-bg)" }}>
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <span className="text-[10px] font-medium sm:text-[11px]" style={{ color: "var(--theme-muted-text)" }}>{label}</span>
+        <span className={cn("w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 sm:px-2.5 sm:text-xs", STAT_TONE_CLASS[tone])}>{value}</span>
       </div>
     </div>
   );
