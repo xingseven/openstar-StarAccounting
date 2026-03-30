@@ -285,14 +285,14 @@ function AssetCard({
       : null;
 
   return (
-    <div className={cn(SURFACE_CLASS, "group p-4 sm:p-4.5 lg:p-4")}>
-      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.16),transparent_70%)] lg:h-20 lg:w-20" />
+    <div className={cn(SURFACE_CLASS, "group p-3.5 sm:p-4 lg:p-3.5")}>
+      <div className="absolute right-0 top-0 h-20 w-20 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.14),transparent_70%)] lg:h-16 lg:w-16" />
       <AssetWatermark item={item} />
       <div className="relative z-10 flex h-full flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <AssetAvatar item={item} className="h-10 w-10 rounded-[18px] lg:h-9 lg:w-9 lg:rounded-[16px]" />
+              <AssetAvatar item={item} className="h-9 w-9 rounded-[16px] lg:h-8 lg:w-8 lg:rounded-[14px]" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{item.name}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -305,7 +305,7 @@ function AssetCard({
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[16px] transition hover:bg-white hover:text-slate-700 lg:h-7 lg:w-7 lg:rounded-[14px]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-[14px] transition hover:bg-white hover:text-slate-700 lg:h-6.5 lg:w-6.5 lg:rounded-[12px]"
               style={{ background: "var(--theme-metric-bg)", color: "var(--theme-muted-text)" }}
               aria-label={`编辑${item.name}`}
             >
@@ -313,28 +313,28 @@ function AssetCard({
             </button>
           </div>
 
-          <div className="mt-4 lg:mt-3">
-            <p className={cn("text-2xl font-semibold tracking-tight sm:text-[2rem] lg:text-[1.85rem]", isLiability && "text-red-600")}
+          <div className="mt-3 lg:mt-2.5">
+            <p className={cn("text-[1.85rem] font-semibold tracking-tight sm:text-[1.95rem] lg:text-[1.7rem]", isLiability && "text-red-600")}
                style={!isLiability ? { color: "var(--theme-body-text)" } : undefined}>
               {balanceText}
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+            <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
               {estimatedText ? <span style={{ color: "var(--theme-muted-text)" }}>折合 {estimatedText}</span> : <span style={{ color: "var(--theme-muted-text)" }}>按当前显示货币直接统计</span>}
-              <span className="rounded-full px-2 py-1 font-medium" 
+              <span className="rounded-full px-2 py-0.5 font-medium" 
                      style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>占比 {share.toFixed(1)}%</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-3 pt-2.5 lg:mt-3 lg:pt-2">
+        <div className="mt-3 flex items-center justify-between gap-2.5 pt-2 lg:mt-2.5 lg:pt-1.5">
           <div>
             <p className="text-[11px] uppercase tracking-[0.16em]" style={{ color: "var(--theme-muted-text)" }}>Portfolio</p>
-            <p className="mt-1 text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{isLiability ? "负债类账户" : "资产类账户"}</p>
+            <p className="mt-0.5 text-[13px] font-medium" style={{ color: "var(--theme-body-text)" }}>{isLiability ? "负债类账户" : "资产类账户"}</p>
           </div>
 
           <div
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium lg:px-2 lg:py-0.5",
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
               isLiability ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
             )}
           >
@@ -542,7 +542,7 @@ export function AssetsDefaultTheme({
                 }
               />
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-4">
                 {sortedItems.map((item) => (
                   <AssetCard
                     key={item.id}

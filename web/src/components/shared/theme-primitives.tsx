@@ -255,7 +255,7 @@ export function ThemeMetricCard({
       )}
     >
       <div className="flex items-start justify-between gap-2 sm:gap-2.5">
-        <div className="min-w-0 flex-1">
+        <div className="flex-1">
           <div className="sm:block">
             <p
               className="break-all text-sm font-semibold leading-5 tracking-tight sm:hidden"
