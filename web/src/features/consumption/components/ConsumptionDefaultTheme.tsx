@@ -23,6 +23,11 @@ import {
 import { toast } from "sonner";
 import { AIAnalysisCard } from "./AIAnalysisCard";
 import { apiFetch } from "@/lib/api";
+import {
+  DEFAULT_EXPENSE_CATEGORIES,
+  mergeCategoryOptions,
+  useTransactionCategories,
+} from "@/lib/transaction-categories";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +113,7 @@ export type ConsumptionData = {
     platform: string;
     type: string;
     amount: string;
+    description?: string;
   }>;
   insights: {
     spendingStyle: Array<{ name: string; value: number; share: number; fill: string; description: string }>;
@@ -133,6 +139,21 @@ export type ConsumptionData = {
       applicable: boolean;
       label: string;
     };
+    remarkOverview: {
+      total: number;
+      count: number;
+      distinctCount: number;
+      share: number;
+    };
+    remarkBreakdown: Array<{
+      name: string;
+      total: number;
+      count: number;
+      share: number;
+      category: string;
+      merchant: string;
+      fill: string;
+    }>;
     timeCategoryHotspots: Array<{
       label: string;
       bucket: string;
@@ -234,8 +255,6 @@ const PLATFORM_LABELS: Record<string, string> = {
   cash: "现金",
   unknown: "其他",
 };
-
-const CATEGORY_OPTIONS = ["餐饮", "购物", "交通", "娱乐", "生活", "医疗", "教育", "其他"];
 
 const SANKEY_NODE_FALLBACK_COLORS = [
   "#2563eb",
@@ -1038,33 +1057,42 @@ function TransactionRow({
   const isIncome = transaction.type === "INCOME";
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[20px] border px-3 py-3 transition sm:px-4" style={{ background: "var(--theme-dialog-section-bg)", borderColor: "var(--theme-surface-border,rgba(148,163,184,0.1))" }}>
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="flex items-center gap-2.5 py-2.5 transition sm:gap-3 sm:py-3" style={{ borderBottom: "1px solid var(--theme-surface-border,rgba(148,163,184,0.12))" }}>
+      <div className="flex min-w-0 items-center gap-2.5">
         <div
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl",
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px]",
             isIncome ? "bg-emerald-50 text-emerald-600" : "bg-slate-900 text-white"
           )}
         >
-          {isIncome ? <ArrowDownRight className="h-4.5 w-4.5" /> : <ArrowUpRight className="h-4.5 w-4.5" />}
-        </div>
-
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{transaction.merchant}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]" style={{ color: "var(--theme-muted-text)" }}>
-            <span>{transaction.date}</span>
-            <span className="rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--theme-empty-icon-bg)" }}>{transaction.category}</span>
-            <span>{getPlatformLabel(transaction.platform)}</span>
-          </div>
+          {isIncome ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
         </div>
       </div>
 
-      <div className="text-right">
-        <p className={cn("text-sm font-semibold sm:text-base", isIncome ? "text-emerald-600" : "text-slate-950")}>
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-[11px] sm:gap-2.5 sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
+        <span className="shrink-0 truncate text-[13px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>
+          {transaction.merchant}
+        </span>
+        {transaction.description ? (
+          <span className="min-w-0 truncate">
+            备注：{transaction.description}
+          </span>
+        ) : null}
+        <span className="shrink-0">{transaction.date}</span>
+        <span className="shrink-0 rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--theme-empty-icon-bg)" }}>
+          {transaction.category}
+        </span>
+        <span className="shrink-0">{getPlatformLabel(transaction.platform)}</span>
+      </div>
+
+      <div className={cn("shrink-0 text-sm font-semibold", isIncome ? "text-emerald-600" : "text-slate-950")}>
+        <span className="mr-1 text-[10px] font-medium" style={{ color: "var(--theme-muted-text)" }}>
+          {isIncome ? "收入" : "支出"}
+        </span>
+        <span>
           {isIncome ? "+" : "-"}
           {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
-        </p>
-        <p className="mt-1 text-[11px]" style={{ color: "var(--theme-muted-text)" }}>{isIncome ? "收入" : "支出"}</p>
+        </span>
       </div>
     </div>
   );
@@ -1154,7 +1182,8 @@ function CalendarHeatGrid({
               title={`${item.month}: ${formatCurrency(item.value)}`}
             >
               <span className={cn("text-xs font-semibold sm:text-sm", intensity > 0.45 ? "text-white" : "text-slate-800")}>
-                {item.month.slice(5)} 鏈?              </span>
+                {item.month.slice(5)} 月
+              </span>
               <span className={cn("text-[11px] font-medium sm:text-xs", intensity > 0.45 ? "text-blue-50" : "text-slate-600")}>
                 {formatCurrency(item.value, { compact: true })}
               </span>
@@ -1240,6 +1269,7 @@ export function ConsumptionDefaultTheme({
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
+  const [notesOnly, setNotesOnly] = useState(false);
   const [formState, setFormState] = useState<TransactionFormState>({
     amount: "",
     merchant: "",
@@ -1248,6 +1278,7 @@ export function ConsumptionDefaultTheme({
     description: "",
     platform: "alipay",
   });
+  const { categories: categoryCatalog } = useTransactionCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isSkeletonVisible = loading;
@@ -1283,9 +1314,19 @@ export function ConsumptionDefaultTheme({
         platform: transaction.platform,
         date: transaction.date,
         merchant: transaction.merchant,
-        description: "",
+        description: transaction.description || "",
       })),
     [data.transactions]
+  );
+  const availableExpenseCategories = useMemo(
+    () =>
+      mergeCategoryOptions(
+        DEFAULT_EXPENSE_CATEGORIES,
+        categoryCatalog.expense,
+        data.transactions.map((transaction) => transaction.category),
+        formState.category,
+      ),
+    [categoryCatalog.expense, data.transactions, formState.category]
   );
 
   const filteredTransactions = useMemo(
@@ -1294,13 +1335,19 @@ export function ConsumptionDefaultTheme({
         const matchesSearch =
           lowerSearchTerm === "" ||
           transaction.merchant.toLowerCase().includes(lowerSearchTerm) ||
-          transaction.category.toLowerCase().includes(lowerSearchTerm);
+          transaction.category.toLowerCase().includes(lowerSearchTerm) ||
+          (transaction.description ?? "").toLowerCase().includes(lowerSearchTerm);
         const matchesPlatform = deferredPlatformFilter === "all" || transaction.platform === deferredPlatformFilter;
         return matchesSearch && matchesPlatform;
       }),
     [data.transactions, deferredPlatformFilter, lowerSearchTerm]
   );
-  const visibleTransactions = useMemo(() => filteredTransactions.slice(0, 10), [filteredTransactions]);
+  const notedTransactions = useMemo(
+    () => filteredTransactions.filter((transaction) => Boolean(transaction.description?.trim())),
+    [filteredTransactions]
+  );
+  const displayTransactions = notesOnly ? notedTransactions : filteredTransactions;
+  const visibleTransactions = useMemo(() => displayTransactions.slice(0, 10), [displayTransactions]);
 
   const trendDisplayData = useMemo(() => {
     const now = new Date();
@@ -1905,6 +1952,66 @@ export function ConsumptionDefaultTheme({
       ],
     }),
     [data.insights.budgetVariance]
+  );
+
+  const remarkBreakdownOption = useMemo(
+    () => ({
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "shadow" },
+        formatter: (params: Array<{ dataIndex: number; value: number }>) => {
+          const item = data.insights.remarkBreakdown[params[0]?.dataIndex ?? 0];
+          if (!item) return "";
+          return [
+            item.name,
+            `总金额 ${formatCurrency(item.total)}`,
+            `笔数 ${item.count}`,
+            `主分类 ${item.category}`,
+            `高频商户 ${item.merchant}`,
+          ].join("<br/>");
+        },
+      },
+      grid: { left: 8, right: 72, top: 8, bottom: 8, containLabel: true },
+      xAxis: {
+        type: "value",
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+        axisLabel: {
+          color: "#94a3b8",
+          fontSize: 11,
+          formatter: (value: number) => formatCurrency(value, { compact: true }),
+        },
+      },
+      yAxis: {
+        type: "category",
+        data: data.insights.remarkBreakdown.map((item) => item.name),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: "#64748b", fontSize: 12, width: 108, overflow: "truncate" },
+      },
+      series: [
+        {
+          type: "bar",
+          barWidth: 16,
+          data: data.insights.remarkBreakdown.map((item) => ({
+            value: item.total,
+            itemStyle: {
+              color: item.fill,
+              borderRadius: [0, 10, 10, 0],
+            },
+          })),
+          label: {
+            show: true,
+            position: "right",
+            distance: 8,
+            color: "#0f172a",
+            formatter: ({ value }: { value: number }) => formatCurrency(value, { compact: true }),
+          },
+        },
+      ],
+    }),
+    [data.insights.remarkBreakdown]
   );
 
   const largeExpensesOption = useMemo(
@@ -2756,6 +2863,101 @@ export function ConsumptionDefaultTheme({
           </section>
         </DelayedRender>
 
+        <DelayedRender delay={170} lazy>
+          <section className={cn(SURFACE_CLASS, "p-3.5 sm:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>规则备注</p>
+                <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>按自动归类备注看固定场景支出</h2>
+                <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>这里优先看自动归类规则里填的备注或规则名，不再混入原始订单描述。</p>
+              </div>
+
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
+                <ReceiptText className="h-3.5 w-3.5" />
+                已备注 {data.insights.remarkOverview.count} 笔
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                {
+                  label: "备注金额",
+                  value: formatCurrency(data.insights.remarkOverview.total),
+                  detail: `${data.insights.remarkOverview.share.toFixed(0)}% 支出已标注`,
+                },
+                {
+                  label: "备注笔数",
+                  value: `${data.insights.remarkOverview.count} 笔`,
+                  detail: "当前筛选范围内",
+                },
+                {
+                  label: "备注种类",
+                  value: `${data.insights.remarkOverview.distinctCount} 种`,
+                  detail: "按备注文本去重",
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[20px] border px-4 py-3"
+                  style={{ background: "var(--theme-dialog-section-bg)", borderColor: "var(--theme-surface-border,rgba(148,163,184,0.12))" }}
+                >
+                  <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>{item.label}</p>
+                  <p className="mt-2 text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>{item.value}</p>
+                  <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>{item.detail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] sm:mt-5">
+              <div>
+                <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>备注金额分布</p>
+                {data.insights.remarkBreakdown.length > 0 ? (
+                  <div className="mt-3 h-[280px] w-full sm:h-[340px]">
+                    <ReactECharts option={remarkBreakdownOption} style={{ height: "100%", width: "100%" }} opts={CHART_RENDERER_OPTS} />
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={ReceiptText}
+                    title="还没有形成规则备注图表"
+                    description="先去数据页给自动归类规则补备注或规则名，这里就会按规则维度自动聚合出来。"
+                    className="mt-3 rounded-[20px] border border-dashed border-slate-200 bg-slate-50 sm:rounded-[24px]"
+                  />
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs font-medium" style={{ color: "var(--theme-muted-text)" }}>备注 Top 4</p>
+                {data.insights.remarkBreakdown.length > 0 ? (
+                  <div className="mt-3 space-y-2.5">
+                    {data.insights.remarkBreakdown.slice(0, 4).map((item) => (
+                      <div
+                        key={item.name}
+                        className="rounded-[18px] border px-4 py-3"
+                        style={{ background: "var(--theme-dialog-section-bg)", borderColor: "var(--theme-surface-border,rgba(148,163,184,0.12))" }}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{item.name}</p>
+                            <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>
+                              {item.category} · {item.merchant}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.total)}</p>
+                            <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>{item.count} 笔 · {item.share.toFixed(0)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm" style={{ color: "var(--theme-muted-text)" }}>当前筛选范围内还没有可聚合的备注。</p>
+                )}
+              </div>
+            </div>
+          </section>
+        </DelayedRender>
+
         <DelayedRender delay={180} lazy>
           <section className={cn(SURFACE_CLASS, "p-3.5 sm:p-6")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -2860,18 +3062,38 @@ export function ConsumptionDefaultTheme({
                 <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>只展示最近 10 条，避免长列表拖慢页面交互。</p>
               </div>
 
-              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
-                <Filter className="h-3.5 w-3.5" />
-                最近 {Math.min(10, filteredTransactions.length)} / 共 {filteredTransactions.length} 笔
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNotesOnly((current) => !current)}
+                  className={cn(
+                    "rounded-full border-slate-200 bg-white/70 px-3 text-xs text-slate-600 shadow-none hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900",
+                    notesOnly ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 hover:text-white" : ""
+                  )}
+                >
+                  只看有备注
+                  <span className={cn("rounded-full px-1.5 py-0.5 text-[10px]", notesOnly ? "bg-white/15 text-white" : "bg-slate-100 text-slate-600")}>
+                    {notedTransactions.length}
+                  </span>
+                </Button>
+
+                <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
+                  <Filter className="h-3.5 w-3.5" />
+                  最近 {Math.min(10, displayTransactions.length)} / 共 {displayTransactions.length} 笔
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 space-y-2.5 sm:mt-5">
-              {filteredTransactions.length === 0 ? (
+            <div
+              className="mt-4 max-h-[380px] overflow-y-auto pr-1 sm:mt-5 sm:max-h-[420px] [&>*:last-child]:border-b-0"
+            >
+              {displayTransactions.length === 0 ? (
                 <EmptyState
                   icon={ReceiptText}
-                  title="没有匹配到交易"
-                  description="换一个关键词或平台筛选条件试试。"
+                  title={notesOnly ? "当前筛选下没有备注账单" : "没有匹配到交易"}
+                  description={notesOnly ? "先关闭“只看有备注”，或去数据页给这些流水补上备注。" : "换一个关键词或平台筛选条件试试。"}
                   className="rounded-[20px] border border-dashed border-slate-200 bg-slate-50 sm:rounded-[24px]"
                 />
               ) : (
@@ -2995,7 +3217,7 @@ export function ConsumptionDefaultTheme({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORY_OPTIONS.map((category) => (
+                      {availableExpenseCategories.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
                         </SelectItem>

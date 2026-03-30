@@ -90,7 +90,7 @@ export function DashboardLoadingShell() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 xl:grid-cols-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
               {Array.from({ length: 6 }).map((_, index) => (
                 <LoadingMetricShell key={`dashboard-hero-metric-${index}`} />
               ))}

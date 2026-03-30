@@ -275,8 +275,10 @@ export function mapRowToTransaction(row: Record<string, string>, source: Source)
       ? getValue(row, "交易单号", "交易订单号")
       : getValue(row, "交易订单号", "商家订单号");
 
+  if (!orderId) return { ok: false as const, reason: "MISSING_ORDER_ID" };
+
   const mapped: MappedTransaction = {
-    orderId: orderId || null,
+    orderId,
     date,
     type: loanLikeType ?? inferredType,
     amount: amountInfo.abs,

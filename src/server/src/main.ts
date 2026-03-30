@@ -98,6 +98,11 @@ type MerchantCategoryRuleRow = {
   updatedAt: Date | string;
 };
 
+type TransactionCategoryCatalog = {
+  income: string[];
+  expense: string[];
+};
+
 type PrismaClientLike = NonNullable<ReturnType<typeof getPrisma>>;
 
 type SyncCursor = {
@@ -206,6 +211,24 @@ type ExchangeRate = {
   updatedAt: string;
 };
 const exchangeRates = new Map<string, ExchangeRate>();
+
+type AIModelConfigRecord = {
+  id: string;
+  userId: string;
+  accountId: string;
+  name: string;
+  provider: string;
+  type: "vision" | "text";
+  apiKey: string | null;
+  endpoint: string | null;
+  modelId: string | null;
+  description: string | null;
+  status: "active" | "inactive";
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+const aiModelConfigsByAccount = new Map<string, AIModelConfigRecord[]>();
 
 type SavingsAssetSyncConfig = {
   syncToAssets: boolean;
@@ -1217,6 +1240,72 @@ function normalizeOptionalText(value: unknown) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function toAIModelResponse(
+  model: Pick<
+    AIModelConfigRecord,
+    "id" | "name" | "provider" | "type" | "endpoint" | "modelId" | "description" | "status" | "isDefault" | "apiKey"
+  >,
+) {
+  return {
+    id: model.id,
+    name: model.name,
+    provider: model.provider,
+    type: model.type,
+    endpoint: model.endpoint,
+    modelId: model.modelId,
+    description: model.description,
+    status: model.status,
+    isDefault: model.isDefault,
+    apiKeyConfigured: !!model.apiKey,
+  };
+}
+
+function getAIModelsFromMemory(accountId: string) {
+  return aiModelConfigsByAccount.get(accountId) ?? [];
+}
+
+function getActiveAIModelConfigFromMemory(accountId: string) {
+  const items = getAIModelsFromMemory(accountId);
+  return items.find((item) => item.status === "active" && item.isDefault)
+    ?? items.find((item) => item.status === "active")
+    ?? null;
+}
+
+async function getPreferredAIModelConfig(accountId: string, prisma: PrismaClientLike | null) {
+  if (prisma) {
+    let model = await prisma.aimodelconfig.findFirst({
+      where: { accountId, status: "active", isDefault: true }
+    });
+
+    if (!model) {
+      model = await prisma.aimodelconfig.findFirst({
+        where: { accountId, status: "active" }
+      });
+    }
+
+    if (!model) {
+      return null;
+    }
+
+    return {
+      apiKey: model.apiKey || undefined,
+      endpoint: model.endpoint || undefined,
+      modelId: model.modelId || undefined,
+    };
+  }
+
+  const model = getActiveAIModelConfigFromMemory(accountId);
+  if (!model) {
+    return null;
+  }
+
+  return {
+    apiKey: model.apiKey || undefined,
+    endpoint: model.endpoint || undefined,
+    modelId: model.modelId || undefined,
+  };
+}
+
 function normalizeMerchantRuleKey(value: unknown) {
   const merchant = normalizeOptionalText(value);
   return merchant ? merchant.replace(/\s+/g, " ").toLocaleLowerCase("zh-CN") : null;
@@ -1311,6 +1400,55 @@ function applyMerchantCategoryRules<T extends { type: string; merchant: string |
     category: matchedRule.category,
     description: matchedRule.description ?? input.description,
   };
+}
+
+function createTransactionCategoryCatalogSets() {
+  return {
+    income: new Set<string>(),
+    expense: new Set<string>(),
+  };
+}
+
+function addTransactionCategory(
+  catalog: ReturnType<typeof createTransactionCategoryCatalogSets>,
+  category: unknown,
+  type: string,
+) {
+  const normalizedCategory = normalizeOptionalText(category);
+  if (!normalizedCategory) return;
+
+  if (type === "INCOME") {
+    catalog.income.add(normalizedCategory);
+    return;
+  }
+
+  catalog.expense.add(normalizedCategory);
+}
+
+function finalizeTransactionCategoryCatalog(
+  catalog: ReturnType<typeof createTransactionCategoryCatalogSets>,
+): TransactionCategoryCatalog {
+  const sortByLocale = (left: string, right: string) => left.localeCompare(right, "zh-CN");
+
+  return {
+    income: Array.from(catalog.income).sort(sortByLocale),
+    expense: Array.from(catalog.expense).sort(sortByLocale),
+  };
+}
+
+function resolveRuleRemarkLabel(
+  merchant: string | null | undefined,
+  rulesByMerchantKey: Map<string, MerchantCategoryRule>,
+) {
+  const merchantKey = normalizeMerchantRuleKey(merchant);
+  if (!merchantKey) return null;
+
+  const matchedRule = rulesByMerchantKey.get(merchantKey);
+  if (!matchedRule) return null;
+
+  return normalizeOptionalText(matchedRule.description)
+    ?? normalizeOptionalText(matchedRule.name)
+    ?? normalizeOptionalText(matchedRule.category);
 }
 
 function encodeSyncCursor(cursor: SyncCursor) {
@@ -1879,6 +2017,7 @@ function buildConsumptionDashboard(rows: ConsumptionDashboardRow[], bucket: "day
     platform: normalizeDashboardPlatform(row.platform),
     type: row.type,
     amount: String(row.amount ?? 0),
+    description: row.description?.trim() || "",
   }));
 
   return {
@@ -1919,9 +2058,15 @@ function buildConsumptionDashboardExtended(
   rows: ConsumptionDashboardRow[],
   bucket: "day" | "month" = "day",
   budgets: DashboardBudgetRow[] = [],
-  range?: { start?: Date; end?: Date }
+  range?: { start?: Date; end?: Date },
+  merchantRules: MerchantCategoryRule[] = [],
 ) {
   const base = buildConsumptionDashboard(rows, bucket);
+  const ruleRemarkMap = new Map(
+    merchantRules
+      .filter((rule) => rule.isActive)
+      .map((rule) => [rule.merchantKey, rule] as const)
+  );
   const expenseRows = rows
     .filter((row) => row.type === "EXPENSE")
     .map((row) => {
@@ -1930,6 +2075,7 @@ function buildConsumptionDashboardExtended(
       const localDate = toDashboardLocalDate(date);
       const category = row.category?.trim() || "未分类";
       const merchant = row.merchant?.trim() || "未知商户";
+      const description = resolveRuleRemarkLabel(row.merchant, ruleRemarkMap) ?? "";
       const merchantText = normalizeInsightText(category, merchant, row.description);
       return {
         amount,
@@ -1937,6 +2083,7 @@ function buildConsumptionDashboardExtended(
         localDate,
         category,
         merchant,
+        description,
         merchantText,
         platformKey: normalizeDashboardPlatform(row.platform),
       };
@@ -1947,10 +2094,15 @@ function buildConsumptionDashboardExtended(
     string,
     { total: number; count: number; dates: number[]; categoryMap: Map<string, number>; merchantText: string }
   >();
+  const remarkStats = new Map<
+    string,
+    { total: number; count: number; categoryMap: Map<string, number>; merchantMap: Map<string, number> }
+  >();
   const weekendCategoryMap = new Map<string, { weekend: number; weekday: number }>();
   const timeCategoryMap = new Map<string, { bucket: string; category: string; total: number; count: number }>();
   const necessityTotals = { essential: 0, optional: 0 };
   const natureTotals = { consumption: 0, transfer: 0, refund: 0 };
+  const remarkCoverage = { total: 0, count: 0 };
 
   for (const row of rows) {
     const amount = Number(row.amount ?? 0);
@@ -1981,6 +2133,23 @@ function buildConsumptionDashboardExtended(
     merchantEntry.dates.push(row.date.getTime());
     merchantEntry.categoryMap.set(row.category, (merchantEntry.categoryMap.get(row.category) ?? 0) + row.amount);
     merchantStats.set(row.merchant, merchantEntry);
+
+    if (row.description) {
+      remarkCoverage.total += row.amount;
+      remarkCoverage.count += 1;
+
+      const remarkEntry = remarkStats.get(row.description) ?? {
+        total: 0,
+        count: 0,
+        categoryMap: new Map<string, number>(),
+        merchantMap: new Map<string, number>(),
+      };
+      remarkEntry.total += row.amount;
+      remarkEntry.count += 1;
+      remarkEntry.categoryMap.set(row.category, (remarkEntry.categoryMap.get(row.category) ?? 0) + row.amount);
+      remarkEntry.merchantMap.set(row.merchant, (remarkEntry.merchantMap.get(row.merchant) ?? 0) + row.amount);
+      remarkStats.set(row.description, remarkEntry);
+    }
 
     const needType = classifyNeedType(row.category, row.merchantText);
     necessityTotals[needType] += row.amount;
@@ -2197,6 +2366,33 @@ function buildConsumptionDashboardExtended(
             : "高于均值",
     }));
 
+  const remarkBreakdown = Array.from(remarkStats.entries())
+    .map(([name, value], index) => {
+      const topCategory = Array.from(value.categoryMap.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "未分类";
+      const topMerchantName = Array.from(value.merchantMap.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "未知商户";
+      return {
+        name,
+        total: value.total,
+        count: value.count,
+        share: base.summary.totalExpense > 0 ? (value.total / base.summary.totalExpense) * 100 : 0,
+        category: topCategory,
+        merchant: topMerchantName,
+        fill: DASHBOARD_CATEGORY_COLORS[index % DASHBOARD_CATEGORY_COLORS.length],
+      };
+    })
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      return b.count - a.count;
+    })
+    .slice(0, 6);
+
+  const remarkOverview = {
+    total: remarkCoverage.total,
+    count: remarkCoverage.count,
+    distinctCount: remarkStats.size,
+    share: base.summary.totalExpense > 0 ? (remarkCoverage.total / base.summary.totalExpense) * 100 : 0,
+  };
+
   const topMerchant = base.merchants[0];
   const repeatMerchantTotal = Array.from(merchantStats.values())
     .filter((item) => item.count >= 2)
@@ -2240,6 +2436,8 @@ function buildConsumptionDashboardExtended(
               ? "当前筛选对应年度预算"
               : "当前筛选范围不适合预算对比",
       },
+      remarkOverview,
+      remarkBreakdown,
       timeCategoryHotspots,
       weekendPreference,
       largeExpenses,
@@ -2316,7 +2514,10 @@ app.get("/api/consumption/dashboard", async (req, res) => {
         };
       }
 
-      const [rows, budgets] = await Promise.all([
+      const account = await requireAccountId(req, res);
+      if (!account) return;
+
+      const [rows, budgets, rules] = await Promise.all([
         prisma.transaction.findMany({
           where,
           select: {
@@ -2341,6 +2542,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
             alertPercent: true,
           },
         }),
+        getMerchantCategoryRules(prisma, account.userId, account.accountId),
       ]);
 
       jsonOk(
@@ -2356,7 +2558,8 @@ app.get("/api/consumption/dashboard", async (req, res) => {
             scopeType: item.scopeType,
             alertPercent: item.alertPercent,
           })),
-          { start: start ?? undefined, end: end ?? undefined }
+          { start: start ?? undefined, end: end ?? undefined },
+          rules,
         )
       );
       return;
@@ -2384,6 +2587,8 @@ app.get("/api/consumption/dashboard", async (req, res) => {
     if (end && ts > end.getTime()) return false;
     return true;
   });
+  const account = await requireAccountId(req, res);
+  if (!account) return;
 
   jsonOk(
     res,
@@ -2395,7 +2600,8 @@ app.get("/api/consumption/dashboard", async (req, res) => {
         category: item.category,
         period: item.period,
       })),
-      { start: start ?? undefined, end: end ?? undefined }
+      { start: start ?? undefined, end: end ?? undefined },
+      getMerchantCategoryRulesFromMemory(account.accountId),
     )
   );
 });
@@ -2896,6 +3102,59 @@ app.get("/api/transactions/merchants", async (req, res) => {
       .sort((a, b) => (b.count - a.count) || (new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime()))
       .slice(0, limit),
   });
+});
+
+app.get("/api/transactions/categories", async (req, res) => {
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const [transactionRows, ruleRows] = await Promise.all([
+        prisma.$queryRawUnsafe<Array<{ type: string; category: string }>>(
+          `
+            SELECT DISTINCT type, category
+            FROM \`transaction\`
+            WHERE userId = ?
+              AND accountId = ?
+              AND category IS NOT NULL
+              AND category <> ''
+          `,
+          userId,
+          accountId,
+        ),
+        getMerchantCategoryRules(prisma, userId, accountId),
+      ]);
+
+      const catalog = createTransactionCategoryCatalogSets();
+      for (const row of transactionRows) {
+        addTransactionCategory(catalog, row.category, String(row.type));
+      }
+      for (const rule of ruleRows) {
+        addTransactionCategory(catalog, rule.category, "EXPENSE");
+      }
+
+      jsonOk(res, finalizeTransactionCategoryCatalog(catalog));
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const catalog = createTransactionCategoryCatalogSets();
+  for (const transaction of transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? []) {
+    addTransactionCategory(catalog, transaction.category, transaction.type);
+  }
+  for (const rule of getMerchantCategoryRulesFromMemory(accountId)) {
+    addTransactionCategory(catalog, rule.category, "EXPENSE");
+  }
+
+  jsonOk(res, finalizeTransactionCategoryCatalog(catalog));
 });
 
 app.get("/api/transactions/rules", async (req, res) => {
@@ -6478,28 +6737,7 @@ app.post("/api/ai/scan-receipt", upload.single("image"), async (req, res) => {
 
     // 从数据库获取用户配置的大模型
     const prisma = getPrisma();
-    let modelConfig: { apiKey?: string; endpoint?: string; modelId?: string } | null = null;
-
-    if (prisma) {
-      // 优先使用默认模型，否则使用第一个可用的活跃模型
-      let model = await prisma.aimodelconfig.findFirst({
-        where: { accountId, status: "active", isDefault: true }
-      });
-
-      if (!model) {
-        model = await prisma.aimodelconfig.findFirst({
-          where: { accountId, status: "active" }
-        });
-      }
-
-      if (model) {
-        modelConfig = {
-          apiKey: model.apiKey || undefined,
-          endpoint: model.endpoint || undefined,
-          modelId: model.modelId || undefined
-        };
-      }
-    }
+    const modelConfig = await getPreferredAIModelConfig(accountId, prisma);
 
     // 调用 AI 进行识别（传入配置和平台）
     const result = await scanReceipt(imageBase64, modelConfig || undefined, platform as "alipay" | "wechat" | "unionpay");
@@ -6556,27 +6794,7 @@ app.post("/api/ai/analyze-consumption", async (req, res) => {
 
     // 获取用户配置的大模型
     const prisma = getPrisma();
-    let modelConfig: { apiKey?: string; endpoint?: string; modelId?: string } | null = null;
-
-    if (prisma) {
-      let model = await prisma.aimodelconfig.findFirst({
-        where: { accountId, status: "active", isDefault: true }
-      });
-
-      if (!model) {
-        model = await prisma.aimodelconfig.findFirst({
-          where: { accountId, status: "active" }
-        });
-      }
-
-      if (model) {
-        modelConfig = {
-          apiKey: model.apiKey || undefined,
-          endpoint: model.endpoint || undefined,
-          modelId: model.modelId || undefined
-        };
-      }
-    }
+    const modelConfig = await getPreferredAIModelConfig(accountId, prisma);
 
     const result = await analyzeConsumption(
       transactions,
@@ -6638,8 +6856,11 @@ app.get("/api/ai/models", async (req, res) => {
 
   const prisma = getPrisma();
   if (!prisma) {
-    // 内存模式返回空数组
-    jsonOk(res, { items: [] });
+    const items = getAIModelsFromMemory(accountId)
+      .filter((model) => model.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(toAIModelResponse);
+    jsonOk(res, { items });
     return;
   }
 
@@ -6648,19 +6869,20 @@ app.get("/api/ai/models", async (req, res) => {
       where: { userId, accountId },
       orderBy: { createdAt: "desc" }
     });
-    // 不返回 apiKey
-    const safeModels = models.map(m => ({
-      id: m.id,
-      name: m.name,
-      provider: m.provider,
-      type: m.type,
-      endpoint: m.endpoint,
-      modelId: m.modelId,
-      description: m.description,
-      status: m.status,
-      isDefault: m.isDefault,
-      apiKeyConfigured: !!m.apiKey
-    }));
+    const safeModels = models.map((model) =>
+      toAIModelResponse({
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        type: model.type === "text" ? "text" : "vision",
+        endpoint: model.endpoint,
+        modelId: model.modelId,
+        description: model.description,
+        status: model.status === "active" ? "active" : "inactive",
+        isDefault: model.isDefault,
+        apiKey: model.apiKey,
+      }),
+    );
     jsonOk(res, { items: safeModels });
   } catch (error) {
     console.error("Get AI models error:", error);
@@ -6676,15 +6898,42 @@ app.post("/api/ai/models", async (req, res) => {
   const { userId, accountId } = account;
 
   const { name, provider, type, apiKey, endpoint, modelId, description } = req.body;
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+  const normalizedProvider = typeof provider === "string" ? provider.trim() : "";
+  const normalizedType: AIModelConfigRecord["type"] = type === "text" ? "text" : "vision";
+  const normalizedApiKey = normalizeOptionalText(apiKey);
+  const normalizedEndpoint = normalizeOptionalText(endpoint);
+  const normalizedModelId = normalizeOptionalText(modelId);
+  const normalizedDescription = normalizeOptionalText(description);
+  const normalizedStatus: AIModelConfigRecord["status"] = normalizedApiKey ? "active" : "inactive";
 
-  if (!name || !provider) {
+  if (!normalizedName || !normalizedProvider) {
     jsonFail(res, 400, 40003, "VALIDATION_ERROR", "名称和提供商不能为空");
     return;
   }
 
   const prisma = getPrisma();
   if (!prisma) {
-    jsonFail(res, 500, 50003, "DATABASE_ERROR", "数据库未连接");
+    const list = [...getAIModelsFromMemory(accountId)];
+    const newModel: AIModelConfigRecord = {
+      id: crypto.randomUUID(),
+      userId,
+      accountId,
+      name: normalizedName,
+      provider: normalizedProvider,
+      type: normalizedType,
+      apiKey: normalizedApiKey,
+      endpoint: normalizedEndpoint,
+      modelId: normalizedModelId,
+      description: normalizedDescription,
+      status: normalizedStatus,
+      isDefault: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    list.unshift(newModel);
+    aiModelConfigsByAccount.set(accountId, list);
+    jsonOk(res, toAIModelResponse(newModel));
     return;
   }
 
@@ -6695,29 +6944,29 @@ app.post("/api/ai/models", async (req, res) => {
         id: crypto.randomUUID(),
         userId,
         accountId,
-        name,
-        provider,
-        type: type || "vision",
-        apiKey: apiKey || null,
-        endpoint: endpoint || null,
-        modelId: modelId || null,
-        description: description || null,
-        status: apiKey ? "active" : "inactive",
+        name: normalizedName,
+        provider: normalizedProvider,
+        type: normalizedType,
+        apiKey: normalizedApiKey,
+        endpoint: normalizedEndpoint,
+        modelId: normalizedModelId,
+        description: normalizedDescription,
+        status: normalizedStatus,
         updatedAt: new Date()
       }
     });
-    jsonOk(res, {
+    jsonOk(res, toAIModelResponse({
       id: newModel.id,
       name: newModel.name,
       provider: newModel.provider,
-      type: newModel.type,
+      type: newModel.type === "text" ? "text" : "vision",
       endpoint: newModel.endpoint,
       modelId: newModel.modelId,
       description: newModel.description,
-      status: newModel.status,
+      status: newModel.status === "active" ? "active" : "inactive",
       isDefault: newModel.isDefault,
-      apiKeyConfigured: !!newModel.apiKey
-    });
+      apiKey: newModel.apiKey,
+    }));
   } catch (error) {
     console.error("Create AI model error:", error);
     jsonFail(res, 500, 50004, "CREATE_MODEL_ERROR", "创建模型失败");
@@ -6733,10 +6982,46 @@ app.put("/api/ai/models/:id", async (req, res) => {
 
   const { id } = req.params;
   const { name, provider, type, apiKey, endpoint, modelId, description, status, isDefault } = req.body;
+  const normalizedName = typeof name === "string" ? name.trim() : null;
+  const normalizedProvider = typeof provider === "string" ? provider.trim() : null;
+  const normalizedType = type === "text" ? "text" : type === "vision" ? "vision" : undefined;
+  const normalizedStatus = status === "active" || status === "inactive" ? status : undefined;
+  const normalizedEndpoint = endpoint !== undefined ? normalizeOptionalText(endpoint) : undefined;
+  const normalizedModelId = modelId !== undefined ? normalizeOptionalText(modelId) : undefined;
+  const normalizedDescription = description !== undefined ? normalizeOptionalText(description) : undefined;
+  const normalizedApiKey = apiKey !== undefined ? normalizeOptionalText(apiKey) : undefined;
 
   const prisma = getPrisma();
   if (!prisma) {
-    jsonFail(res, 500, 50003, "DATABASE_ERROR", "数据库未连接");
+    const list = [...getAIModelsFromMemory(accountId)];
+    const index = list.findIndex((model) => model.id === id && model.userId === userId);
+    if (index < 0) {
+      jsonFail(res, 404, 50000, "NOT_FOUND", "模型不存在");
+      return;
+    }
+
+    if (isDefault) {
+      for (const item of list) {
+        item.isDefault = false;
+      }
+    }
+
+    const updated: AIModelConfigRecord = {
+      ...list[index],
+      ...(normalizedName ? { name: normalizedName } : {}),
+      ...(normalizedProvider ? { provider: normalizedProvider } : {}),
+      ...(normalizedType ? { type: normalizedType } : {}),
+      ...(normalizedEndpoint !== undefined ? { endpoint: normalizedEndpoint } : {}),
+      ...(normalizedModelId !== undefined ? { modelId: normalizedModelId } : {}),
+      ...(normalizedDescription !== undefined ? { description: normalizedDescription } : {}),
+      ...(normalizedStatus ? { status: normalizedStatus } : {}),
+      ...(isDefault !== undefined ? { isDefault: Boolean(isDefault) } : {}),
+      ...(normalizedApiKey !== undefined ? { apiKey: normalizedApiKey } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+    list[index] = updated;
+    aiModelConfigsByAccount.set(accountId, list);
+    jsonOk(res, toAIModelResponse(updated));
     return;
   }
 
@@ -6752,15 +7037,15 @@ app.put("/api/ai/models/:id", async (req, res) => {
     const updateResult = await prisma.aimodelconfig.updateMany({
       where: { id, userId, accountId },
       data: {
-        ...(name && { name }),
-        ...(provider && { provider }),
-        ...(type && { type }),
-        ...(endpoint !== undefined && { endpoint }),
-        ...(modelId !== undefined && { modelId }),
-        ...(description !== undefined && { description }),
-        ...(status && { status }),
+        ...(normalizedName ? { name: normalizedName } : {}),
+        ...(normalizedProvider ? { provider: normalizedProvider } : {}),
+        ...(normalizedType ? { type: normalizedType } : {}),
+        ...(normalizedEndpoint !== undefined ? { endpoint: normalizedEndpoint } : {}),
+        ...(normalizedModelId !== undefined ? { modelId: normalizedModelId } : {}),
+        ...(normalizedDescription !== undefined ? { description: normalizedDescription } : {}),
+        ...(normalizedStatus ? { status: normalizedStatus } : {}),
         ...(isDefault !== undefined && { isDefault }),
-        ...(apiKey !== undefined && { apiKey: apiKey || null })
+        ...(normalizedApiKey !== undefined ? { apiKey: normalizedApiKey } : {})
       }
     });
     if (updateResult.count === 0) {
@@ -6776,18 +7061,18 @@ app.put("/api/ai/models/:id", async (req, res) => {
       return;
     }
 
-    jsonOk(res, {
+    jsonOk(res, toAIModelResponse({
       id: updated.id,
       name: updated.name,
       provider: updated.provider,
-      type: updated.type,
+      type: updated.type === "text" ? "text" : "vision",
       endpoint: updated.endpoint,
       modelId: updated.modelId,
       description: updated.description,
-      status: updated.status,
+      status: updated.status === "active" ? "active" : "inactive",
       isDefault: updated.isDefault,
-      apiKeyConfigured: !!updated.apiKey
-    });
+      apiKey: updated.apiKey,
+    }));
   } catch (error) {
     console.error("Update AI model error:", error);
     jsonFail(res, 500, 50005, "UPDATE_MODEL_ERROR", "更新模型失败");
@@ -6805,7 +7090,13 @@ app.delete("/api/ai/models/:id", async (req, res) => {
 
   const prisma = getPrisma();
   if (!prisma) {
-    jsonFail(res, 500, 50003, "DATABASE_ERROR", "数据库未连接");
+    const nextItems = getAIModelsFromMemory(accountId).filter((model) => !(model.id === id && model.userId === userId));
+    if (nextItems.length > 0) {
+      aiModelConfigsByAccount.set(accountId, nextItems);
+    } else {
+      aiModelConfigsByAccount.delete(accountId);
+    }
+    jsonOk(res, { message: "删除成功" });
     return;
   }
 

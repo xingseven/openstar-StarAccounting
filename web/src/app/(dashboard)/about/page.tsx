@@ -63,6 +63,15 @@ type UpdateInfo = {
 
 const fallbackVersionHistory: VersionItem[] = [
   {
+    version: "2.3.21",
+    date: "2026-03-30",
+    type: "feature",
+    highlights: [
+      "账单导入改为强制识别订单号，微信按“交易单号”、支付宝按“交易订单号”去重，缺少订单号直接记为无效行。",
+      "数据页补齐统一分类目录与输入建议，消费页新增规则备注分析和“只看有备注”筛选，便于复盘固定场景支出。",
+    ],
+  },
+  {
     version: "2.3.18",
     date: "2026-03-29",
     type: "improvement",
@@ -146,8 +155,8 @@ const fallbackVersionHistory: VersionItem[] = [
 ];
 
 const fallbackUpdateInfo: UpdateInfo = {
-  currentVersion: "2.3.18",
-  latestVersion: "2.3.18",
+  currentVersion: "2.3.21",
+  latestVersion: "2.3.21",
   hasUpdate: false,
   checkedAt: new Date().toISOString(),
   source: {
@@ -160,19 +169,19 @@ const fallbackUpdateInfo: UpdateInfo = {
     "网站镜像优先，GitHub 可作为备用更新源。",
   ],
   web: {
-    currentVersion: "2.3.18",
-    latestVersion: "2.3.18",
+    currentVersion: "2.3.21",
+    latestVersion: "2.3.21",
     hasUpdate: false,
     action: "refresh",
-    description: "网页版更新到 2.3.18 后，刷新页面即可获取新资源。",
+    description: "网页版更新到 2.3.21 后，刷新页面即可获取新资源。",
     downloads: [],
   },
   app: {
-    currentVersion: "2.3.18",
-    latestVersion: "2.3.18",
+    currentVersion: "2.3.21",
+    latestVersion: "2.3.21",
     hasUpdate: false,
     action: "reinstall",
-    description: "移动端 App 更新到 2.3.18 后需要重新下载安装。",
+    description: "移动端 App 更新到 2.3.21 后需要重新下载安装。",
     downloads: [],
   },
 };

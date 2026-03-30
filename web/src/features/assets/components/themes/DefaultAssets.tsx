@@ -58,6 +58,29 @@ const SURFACE_CLASS = THEME_SURFACE_CLASS;
 
 const LIQUID_TYPES = new Set(["CASH", "BANK_CARD", "ALIPAY", "WECHAT"]);
 
+const STRUCTURE_TONE_STYLE: Record<Tone, { dot: string; bar: string }> = {
+  blue: {
+    dot: "#60a5fa",
+    bar: "linear-gradient(90deg, rgba(96,165,250,0.96), rgba(37,99,235,0.8))",
+  },
+  emerald: {
+    dot: "#34d399",
+    bar: "linear-gradient(90deg, rgba(52,211,153,0.96), rgba(5,150,105,0.8))",
+  },
+  violet: {
+    dot: "#a78bfa",
+    bar: "linear-gradient(90deg, rgba(167,139,250,0.96), rgba(124,58,237,0.8))",
+  },
+  red: {
+    dot: "#f87171",
+    bar: "linear-gradient(90deg, rgba(248,113,113,0.96), rgba(220,38,38,0.8))",
+  },
+  slate: {
+    dot: "#94a3b8",
+    bar: "linear-gradient(90deg, rgba(148,163,184,0.96), rgba(71,85,105,0.8))",
+  },
+};
+
 function formatMoney(
   value: number,
   currency: string,
@@ -201,17 +224,37 @@ function StructureRow({
   progress: number;
   tone: Tone;
 }) {
+  const toneStyle = STRUCTURE_TONE_STYLE[tone];
+
   return (
-    <div className="rounded-[20px] bg-transparent px-0 py-2.5 sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
-      <div className="flex items-center justify-between gap-3">
+    <div className="rounded-[20px] border border-white/10 bg-white/[0.05] p-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{label}</p>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: toneStyle.dot }} />
+            <p className="text-sm font-medium text-white">{label}</p>
+          </div>
+          <p className="mt-2 text-xl font-semibold tracking-tight text-white">{value}</p>
           <p className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>{count} 个账户</p>
         </div>
-        <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium ring-1", getThemeToneClass(tone))}>{value}</span>
+        <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-slate-200">
+          {count} accounts
+        </span>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "var(--theme-surface-border,rgba(148,163,184,0.2))" }}>
-        <div className="h-full rounded-full" style={{ width: `${Math.max(6, Math.min(100, progress))}%`, background: "var(--module-progress-gradient)" }} />
+      <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-[0.16em] text-slate-400">
+          <span>Exposure</span>
+          <span>{Math.max(0, progress).toFixed(0)}%</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${Math.max(6, Math.min(100, progress))}%`,
+              background: toneStyle.bar,
+            }}
+          />
+        </div>
       </div>
     </div>
   );

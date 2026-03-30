@@ -1,0 +1,103 @@
+name: Deploy Non-Docker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deploy target
+        required: true
+        default: both
+        type: choice
+        options:
+          - linux
+          - windows
+          - both
+      branch:
+        description: Branch to deploy
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-non-docker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            src/server/package-lock.json
+            web/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./src/server
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./src/server
+        run: npx prisma generate
+
+      - name: Build backend
+        working-directory: ./src/server
+        run: npm run build
+
+      - name: Install frontend dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./web
+        run: npm run build
+
+  deploy-linux:
+    runs-on: ubuntu-latest
+    needs: verify-build
+    if: ${{ (github.event_name == 'push' || inputs.target == 'linux' || inputs.target == 'both') && secrets.DEPLOY_LINUX_HOST != '' && secrets.DEPLOY_LINUX_USERNAME != '' && secrets.DEPLOY_LINUX_SSH_KEY != '' && secrets.DEPLOY_LINUX_APP_DIR != '' }}
+
+    steps:
+      - name: Deploy to Linux server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_LINUX_HOST }}
+          username: ${{ secrets.DEPLOY_LINUX_USERNAME }}
+          key: ${{ secrets.DEPLOY_LINUX_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_LINUX_PORT != '' && secrets.DEPLOY_LINUX_PORT || '22' }}
+          script_stop: true
+          command_timeout: 45m
+          script: |
+            bash "${{ secrets.DEPLOY_LINUX_APP_DIR }}/src/server/scripts/deploy-linux.sh" \
+              --app-dir "${{ secrets.DEPLOY_LINUX_APP_DIR }}" \
+              --branch "${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"
+
+  deploy-windows:
+    runs-on: ubuntu-latest
+    needs: verify-build
+    if: ${{ (github.event_name == 'push' || inputs.target == 'windows' || inputs.target == 'both') && secrets.DEPLOY_WINDOWS_HOST != '' && secrets.DEPLOY_WINDOWS_USERNAME != '' && secrets.DEPLOY_WINDOWS_SSH_KEY != '' && secrets.DEPLOY_WINDOWS_APP_DIR != '' }}
+
+    steps:
+      - name: Deploy to Windows server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_WINDOWS_HOST }}
+          username: ${{ secrets.DEPLOY_WINDOWS_USERNAME }}
+          key: ${{ secrets.DEPLOY_WINDOWS_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_WINDOWS_PORT != '' && secrets.DEPLOY_WINDOWS_PORT || '22' }}
+          script_stop: true
+          command_timeout: 45m
+          script: |
+            powershell -NoProfile -ExecutionPolicy Bypass -File "${{ secrets.DEPLOY_WINDOWS_APP_DIR }}\src\server\scripts\deploy-windows.ps1" -AppDir "${{ secrets.DEPLOY_WINDOWS_APP_DIR }}" -Branch "${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { MOCK_DASHBOARD } from "@/features/shared/mockData";
 import { DashboardLoadingShell } from "@/features/dashboard/components/themes/DashboardLoadingShell";
+import { isSavingsGoalSyncedToAssets } from "@/features/savings/plan-config";
+import type { SavingsGoal } from "@/types";
 
 const DashboardDefaultTheme = dynamic(
   () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
@@ -76,7 +78,7 @@ type Transaction = {
   merchant?: string;
 };
 
-type SavingsMetricItem = {
+type SavingsMetricItem = Pick<SavingsGoal, "planConfig"> & {
   currentAmount: number | string;
 };
 
@@ -117,10 +119,13 @@ async function fetchDashboardData(): Promise<DashboardData> {
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const assetsTotal = assetsData.items.reduce((acc, cur) => acc + Number(cur.estimatedValue ?? cur.balance), 0);
-  const savingsTotal = savingsData.items.reduce((acc, cur) => acc + Number(cur.currentAmount), 0);
+  const unsyncedSavingsTotal = savingsData.items.reduce(
+    (acc, cur) => acc + (isSavingsGoalSyncedToAssets(cur) ? 0 : Number(cur.currentAmount)),
+    0,
+  );
 
   return {
-    totalAssets: assetsTotal + savingsTotal,
+    totalAssets: assetsTotal + unsyncedSavingsTotal,
     totalDebt: loansData.items.reduce((acc, cur) => acc + Number(cur.remainingAmount), 0),
     monthExpense: Number(expenseData.totalExpense),
     monthIncome: Number(incomeData.totalExpense),

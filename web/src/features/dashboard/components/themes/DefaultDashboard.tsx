@@ -100,6 +100,8 @@ type InsightItem = {
   icon: LucideIcon;
 };
 
+const HERO_METRIC_LABEL_CLASS = "min-w-0 truncate whitespace-nowrap sm:overflow-visible sm:text-clip sm:whitespace-normal";
+
 export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
   const [alertsDismissed, setAlertsDismissed] = useState(false);
   const isSkeletonVisible = loading;
@@ -242,7 +244,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                   </div>
                 </div>
 
-                <section className="grid grid-cols-3 gap-2 sm:gap-3 xl:grid-cols-6">
+                <section className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
                   <HeroStatCard
                     label="总资产"
                     value={formatCurrency(data.totalAssets)}
@@ -250,6 +252,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     detail="含资产和储蓄计划"
                     tone="blue"
                     icon={Wallet}
+                    labelClassName={HERO_METRIC_LABEL_CLASS}
                   />
                   <HeroStatCard
                     label="总负债"
@@ -258,6 +261,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     detail={data.totalDebt > 0 ? "持续关注偿付节奏" : "当前状态健康"}
                     tone="red"
                     icon={CreditCard}
+                    labelClassName={HERO_METRIC_LABEL_CLASS}
                   />
                   <HeroStatCard
                     label="储蓄净流入"
@@ -266,6 +270,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                     detail={`${formatCurrency(data.monthSavingsIncome)} 流入 / ${formatCurrency(data.monthSavingsExpense)} 流出`}
                     tone={savingsDelta >= 0 ? "green" : "amber"}
                     icon={PiggyBank}
+                    labelClassName={HERO_METRIC_LABEL_CLASS}
                   />
                   {insightItems.map((item) => (
                     <ThemeMetricCard
@@ -276,6 +281,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                       tone={item.tone}
                       icon={item.icon}
                       className="sm:p-4"
+                      labelClassName={HERO_METRIC_LABEL_CLASS}
                       hideDetailOnMobile
                     />
                   ))}
@@ -553,6 +559,7 @@ function HeroStatCard({
   detail,
   tone,
   icon: Icon,
+  labelClassName,
 }: {
   label: string;
   value: string;
@@ -560,6 +567,7 @@ function HeroStatCard({
   detail: string;
   tone: Tone;
   icon: LucideIcon;
+  labelClassName?: string;
 }) {
   return (
     <ThemeMetricCard
@@ -570,6 +578,7 @@ function HeroStatCard({
       tone={tone}
       icon={Icon}
       className="sm:p-4"
+      labelClassName={labelClassName}
       hideDetailOnMobile
     />
   );

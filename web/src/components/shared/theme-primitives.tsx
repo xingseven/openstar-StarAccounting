@@ -228,6 +228,7 @@ export function ThemeMetricCard({
   hideDetailOnMobile = false,
   iconVisibility = "always",
   className,
+  labelClassName,
 }: {
   label: string;
   value: string;
@@ -239,6 +240,7 @@ export function ThemeMetricCard({
   hideDetailOnMobile?: boolean;
   iconVisibility?: "always" | "desktop" | "none";
   className?: string;
+  labelClassName?: string;
 }) {
   const toneClass = getThemeToneClass(tone);
   const hasIcon = Icon && iconVisibility !== "none";
@@ -261,7 +263,7 @@ export function ThemeMetricCard({
               </div>
             ) : null}
             <p
-              className="text-xs font-medium sm:text-sm"
+              className={cn("text-xs font-medium sm:text-sm", labelClassName)}
               style={{ color: "var(--theme-muted-text)" }}
             >
               {label}

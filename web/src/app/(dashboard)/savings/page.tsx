@@ -4,7 +4,6 @@ import { apiFetch } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
-import { MOCK_SAVINGS, MOCK_SAVINGS_TRANSACTIONS } from "@/features/shared/mockData";
 import { useNoticeDialog } from "@/components/ui/confirm-dialog";
 import { SavingsLoadingShell } from "@/features/savings/components/themes/SavingsLoadingShell";
 
@@ -41,8 +40,8 @@ async function fetchSavingsData() {
 
 export default function SavingsPage() {
   const { notify, NoticeDialog } = useNoticeDialog();
-  const [items, setItems] = useState<SavingsGoal[]>(MOCK_SAVINGS);
-  const [transactions, setTransactions] = useState<TransactionItem[]>(MOCK_SAVINGS_TRANSACTIONS);
+  const [items, setItems] = useState<SavingsGoal[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal & Form states
@@ -58,17 +57,12 @@ export default function SavingsPage() {
     try {
       const data = await fetchSavingsData();
       // 如果 API 返回空数据，使用 mock 数据用于展示
-      if (data.items.length === 0) {
-        setItems(MOCK_SAVINGS);
-        setTransactions(MOCK_SAVINGS_TRANSACTIONS);
-      } else {
-        setItems(data.items);
-        setTransactions(data.transactions);
-      }
+      setItems(data.items);
+      setTransactions(data.transactions);
     } catch (loadError) {
-      console.warn("Failed to fetch savings data, using mock data:", loadError);
-      setItems(MOCK_SAVINGS);
-      setTransactions(MOCK_SAVINGS_TRANSACTIONS);
+      console.warn("Failed to fetch savings data:", loadError);
+      setItems([]);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }

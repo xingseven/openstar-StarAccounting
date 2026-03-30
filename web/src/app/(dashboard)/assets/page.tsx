@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import type { Asset } from "@/types";
-import { MOCK_ASSETS } from "@/features/shared/mockData";
 import { AssetsLoadingShell } from "@/features/assets/components/themes/AssetsLoadingShell";
 import {
   BottomSheet,
@@ -141,7 +140,7 @@ async function fetchAssetsData(currency: string): Promise<Asset[]> {
 
 export default function AssetsPage() {
   const { notify, NoticeDialog } = useNoticeDialog();
-  const [items, setItems] = useState<Asset[]>(MOCK_ASSETS);
+  const [items, setItems] = useState<Asset[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Asset | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -164,14 +163,10 @@ export default function AssetsPage() {
     try {
       const data = await fetchAssetsData(displayCurrency);
       // 如果 API 返回空数据，使用 mock 数据用于展示
-      if (data.length === 0) {
-        setItems(MOCK_ASSETS);
-      } else {
-        setItems(data);
-      }
+      setItems(data);
     } catch (loadError) {
-      console.warn("Failed to fetch assets data, using mock data:", loadError);
-      setItems(MOCK_ASSETS);
+      console.warn("Failed to fetch assets data:", loadError);
+      setItems([]);
     } finally {
       setLoading(false);
     }

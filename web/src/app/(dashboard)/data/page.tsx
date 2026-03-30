@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import {
+  mergeCategoryOptions,
+  useTransactionCategories,
+} from "@/lib/transaction-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DelayedRender } from "@/components/shared/DelayedRender";
@@ -153,6 +157,7 @@ export default function DataPage() {
   const [ruleDescription, setRuleDescription] = useState("");
   const [applyRuleToHistory, setApplyRuleToHistory] = useState(true);
   const [ruleActionLoading, setRuleActionLoading] = useState(false);
+  const { categories: categoryCatalog, refresh: refreshCategoryCatalog } = useTransactionCategories();
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const startItem = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
@@ -160,6 +165,23 @@ export default function DataPage() {
   const allSelectedOnPage = transactions.length > 0 && selectedIds.size === transactions.length;
   const selectedRuleMerchantSet = new Set(selectedRuleMerchants);
   const existingMerchantRuleMap = new Map(merchantRules.map((rule) => [rule.merchant, rule]));
+  const incomeCategoryOptions = mergeCategoryOptions(
+    MANUAL_INCOME_CATEGORIES,
+    categoryCatalog.income,
+    transactions.filter((transaction) => transaction.type === "INCOME").map((transaction) => transaction.category),
+    manualTransactionForm.category,
+  );
+  const expenseCategoryOptions = mergeCategoryOptions(
+    MANUAL_EXPENSE_CATEGORIES,
+    categoryCatalog.expense,
+    merchantRules.map((rule) => rule.category),
+    transactions.filter((transaction) => transaction.type !== "INCOME").map((transaction) => transaction.category),
+    manualTransactionForm.category,
+    ruleCategory,
+    newCategory,
+  );
+  const manualCategoryOptions = manualEntryMode === "income" ? incomeCategoryOptions : expenseCategoryOptions;
+  const allCategorySuggestions = mergeCategoryOptions(incomeCategoryOptions, expenseCategoryOptions, newCategory);
 
   const loadTransactions = useCallback(
     async (options?: { showLoading?: boolean; page?: number }) => {
@@ -298,6 +320,7 @@ export default function DataPage() {
       await Promise.all([
         loadMerchantCandidates(merchantKeyword),
         loadTransactions({ page: currentPage }),
+        refreshCategoryCatalog(),
       ]);
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "创建归类规则失败");
@@ -317,7 +340,10 @@ export default function DataPage() {
       await apiFetch(`/api/transactions/rules/${rule.id}`, { method: "DELETE" });
       setMerchantRules((current) => current.filter((item) => item.id !== rule.id));
       setMessage(`已删除规则：${rule.merchant} -> ${rule.category}`);
-      await loadMerchantCandidates(merchantKeyword);
+      await Promise.all([
+        loadMerchantCandidates(merchantKeyword),
+        refreshCategoryCatalog(),
+      ]);
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "删除归类规则失败");
     } finally {
@@ -340,7 +366,10 @@ export default function DataPage() {
       });
       setMessage(`已删除 ${response.deleted} 条记录`);
       setSelectedIds(new Set());
-      await loadTransactions();
+      await Promise.all([
+        loadTransactions(),
+        refreshCategoryCatalog(),
+      ]);
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "删除失败");
     } finally {
@@ -367,7 +396,10 @@ export default function DataPage() {
       setMessage(`已更新 ${response.updated} 条记录的分类为 “${newCategory}”`);
       setSelectedIds(new Set());
       setNewCategory("");
-      await loadTransactions();
+      await Promise.all([
+        loadTransactions(),
+        refreshCategoryCatalog(),
+      ]);
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "更新失败");
     } finally {
@@ -407,8 +439,15 @@ export default function DataPage() {
           : "";
       setMessage(`导入完成：成功 ${response.insertedCount} 条，重复 ${response.duplicateCount} 条，无效 ${response.invalidCount} 条${loanSummary}`);
 
-      if (currentPage !== 1) setCurrentPage(1);
-      else await loadTransactions({ page: 1 });
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        await refreshCategoryCatalog();
+      } else {
+        await Promise.all([
+          loadTransactions({ page: 1 }),
+          refreshCategoryCatalog(),
+        ]);
+      }
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : "导入失败");
     } finally {
@@ -454,8 +493,15 @@ export default function DataPage() {
       setMessage(`已新增一笔${manualEntryMode === "income" ? "收入" : "支出"}：¥${amount.toFixed(2)}`);
       setManualTransactionForm(getDefaultManualForm(manualEntryMode));
 
-      if (currentPage !== 1) setCurrentPage(1);
-      await loadTransactions({ page: 1 });
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        await refreshCategoryCatalog();
+      } else {
+        await Promise.all([
+          loadTransactions({ page: 1 }),
+          refreshCategoryCatalog(),
+        ]);
+      }
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : `新增${manualEntryMode === "income" ? "收入" : "支出"}失败`);
     } finally {
@@ -469,6 +515,16 @@ export default function DataPage() {
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-6 sm:py-6 lg:py-8">
+      <datalist id="data-expense-category-suggestions">
+        {expenseCategoryOptions.map((category) => (
+          <option key={category} value={category} />
+        ))}
+      </datalist>
+      <datalist id="data-all-category-suggestions">
+        {allCategorySuggestions.map((category) => (
+          <option key={category} value={category} />
+        ))}
+      </datalist>
       <DelayedRender delay={0}>
       <ThemeHero className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-4">
@@ -629,7 +685,7 @@ export default function DataPage() {
                   onChange={(event) => setManualTransactionForm((current) => ({ ...current, category: event.target.value }))}
                   className={THEME_DIALOG_SELECT_CLASS}
                 >
-                  {(manualEntryMode === "income" ? MANUAL_INCOME_CATEGORIES : MANUAL_EXPENSE_CATEGORIES).map((item) => (
+                  {manualCategoryOptions.map((item) => (
                     <option key={item} value={item}>
                       {item}
                     </option>
@@ -721,6 +777,7 @@ export default function DataPage() {
 
               <ThemeFormField label="目标分类" hint="命中规则后，这些交易会自动归到这里。">
                 <Input
+                  list="data-expense-category-suggestions"
                   value={ruleCategory}
                   onChange={(event) => setRuleCategory(event.target.value)}
                   placeholder="例如：房租"
@@ -930,6 +987,7 @@ export default function DataPage() {
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
+            list="data-all-category-suggestions"
             placeholder="新分类名称"
             value={newCategory}
             onChange={(event) => setNewCategory(event.target.value)}

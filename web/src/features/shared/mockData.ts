@@ -193,7 +193,10 @@ export const MOCK_CONSUMPTION: ConsumptionData = {
   sankey: MOCK_SANKEY,
   scatter: MOCK_SCATTER,
   histogram: MOCK_HISTOGRAM,
-  transactions: MOCK_TRANSACTIONS,
+  transactions: MOCK_TRANSACTIONS.map((transaction, index) => ({
+    ...transaction,
+    description: ["每月房租", "工作日早餐", "3 月工资", "下班打车", "换季置办"][index] ?? "",
+  })),
   insights: {
     spendingStyle: [
       { name: "固定支出", value: 3680, share: 29.3, fill: "#2563eb", description: "租房、缴费、订阅类" },
@@ -224,6 +227,19 @@ export const MOCK_CONSUMPTION: ConsumptionData = {
       applicable: true,
       label: "当前筛选对应月度预算",
     },
+    remarkOverview: {
+      total: 4636,
+      count: 12,
+      distinctCount: 5,
+      share: 36.9,
+    },
+    remarkBreakdown: [
+      { name: "每月房租", total: 2500, count: 1, share: 19.9, category: "住房", merchant: "房东", fill: "#2563eb" },
+      { name: "给家里", total: 960, count: 2, share: 7.6, category: "转账支出", merchant: "家人", fill: "#16a34a" },
+      { name: "水电费", total: 468, count: 3, share: 3.7, category: "生活", merchant: "物业", fill: "#f59e0b" },
+      { name: "固定订阅", total: 388, count: 4, share: 3.1, category: "娱乐", merchant: "腾讯视频", fill: "#7c3aed" },
+      { name: "孩子兴趣班", total: 320, count: 2, share: 2.5, category: "教育", merchant: "培训机构", fill: "#0ea5e9" },
+    ],
     timeCategoryHotspots: [
       { label: "晚间 · 购物", bucket: "晚间", category: "购物", total: 2860, count: 5 },
       { label: "午间 · 餐饮", bucket: "午间", category: "餐饮", total: 1680, count: 11 },
