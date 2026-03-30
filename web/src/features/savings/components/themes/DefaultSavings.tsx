@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/bottomsheet";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SavingsLoadingShell } from "./SavingsLoadingShell";
@@ -514,36 +515,32 @@ export function SavingsDefaultTheme({
         <DelayedRender delay={240}>
           <ThemeSurface className="p-4 sm:p-5 lg:p-6">
             <ThemeSectionHeader eyebrow="最近动态" title="最近存取款记录" description="最近发生的储蓄相关交易。" />
-            <div className="mt-4 space-y-2.5">
+            <div className="mt-4 space-y-0 [&>*:last-child]:border-b-0">
               {transactions.length === 0 ? (
                 <EmptyState icon={PiggyBank} title="暂无储蓄交易" description="打卡或取款后，这里会显示最近记录。" />
               ) : (
                 transactions.slice(0, 8).map((transaction) => {
                   const isIncome = transaction.type === "INCOME";
                   return (
-                    <div key={transaction.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-transparent px-4 py-3 sm:border-slate-100" style={{ background: "var(--theme-dialog-section-bg)" }}>
-                      <div className="flex min-w-0 items-center gap-3">
+                    <CompactTransactionRow
+                      key={transaction.id}
+                      icon={isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
+                      iconClassName={isIncome ? "" : "bg-red-50 text-red-600"}
+                      primary={transaction.category}
+                      secondary={transaction.description || undefined}
+                      meta={[formatCompactTransactionDateTime(transaction.date)]}
+                      trailing={
                         <div
-                          className={cn("flex h-10 w-10 items-center justify-center rounded-2xl", isIncome ? "" : "bg-red-50 text-red-600")}
-                          style={isIncome ? { background: "var(--module-accent-soft)", color: "var(--module-accent-strong)" } : undefined}
-                        >
-                          {isIncome ? <ArrowUpRight className="h-4.5 w-4.5" /> : <ArrowDownLeft className="h-4.5 w-4.5" />}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>{transaction.category}</p>
-                          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{transaction.date}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p
-                          className={cn("text-sm font-semibold sm:text-base", !isIncome && "text-red-600")}
+                          className={cn("text-sm font-semibold", !isIncome && "text-red-600")}
                           style={isIncome ? { color: "var(--module-accent-strong)" } : undefined}
                         >
+                          <span className="mr-1 text-[10px] font-medium" style={{ color: "var(--theme-muted-text)" }}>
+                            {isIncome ? "收入" : "支出"}
+                          </span>
                           {isIncome ? "+" : "-"}¥{Number(transaction.amount).toLocaleString()}
-                        </p>
-                        {transaction.description ? <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{transaction.description}</p> : null}
-                      </div>
-                    </div>
+                        </div>
+                      }
+                    />
                   );
                 })
               )}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
+import { AlertCircle, ArrowDownRight, ArrowUpRight, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
 import {
   mergeCategoryOptions,
   useTransactionCategories,

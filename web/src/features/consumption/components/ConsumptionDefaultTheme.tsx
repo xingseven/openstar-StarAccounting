@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/bottomsheet";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
 import {
   THEME_SURFACE_CLASS,
   THEME_TEXTAREA_CLASS,
@@ -58,6 +59,7 @@ import { ConsumptionLoadingShell } from "./ConsumptionLoadingShell";
 
 const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 const CHART_RENDERER_OPTS = { renderer: "canvas" as const };
+const RECENT_TRANSACTION_LIMIT = 5;
 const FILTER_BAR_TEXT = {
   searchPlaceholder: "\u641c\u7d22\u5546\u6237\u6216\u5206\u7c7b",
   allPlatform: "\u5168\u90e8\u5e73\u53f0",
@@ -1057,44 +1059,30 @@ function TransactionRow({
   const isIncome = transaction.type === "INCOME";
 
   return (
-    <div className="flex items-center gap-2.5 py-2.5 transition sm:gap-3 sm:py-3" style={{ borderBottom: "1px solid var(--theme-surface-border,rgba(148,163,184,0.12))" }}>
-      <div className="flex min-w-0 items-center gap-2.5">
-        <div
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-[14px]",
-            isIncome ? "bg-emerald-50 text-emerald-600" : "bg-slate-900 text-white"
-          )}
-        >
-          {isIncome ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-        </div>
-      </div>
-
-      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-[11px] sm:gap-2.5 sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
-        <span className="shrink-0 truncate text-[13px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>
-          {transaction.merchant}
-        </span>
-        {transaction.description ? (
-          <span className="min-w-0 truncate">
-            备注：{transaction.description}
-          </span>
-        ) : null}
-        <span className="shrink-0">{transaction.date}</span>
-        <span className="shrink-0 rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--theme-empty-icon-bg)" }}>
+    <CompactTransactionRow
+      icon={isIncome ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+      iconClassName={isIncome ? "bg-emerald-50 text-emerald-600" : "bg-slate-900 text-white"}
+      primary={transaction.merchant}
+      secondary={transaction.description ? `备注：${transaction.description}` : undefined}
+      meta={[
+        formatCompactTransactionDateTime(transaction.date),
+        <span key="category" className="rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--theme-empty-icon-bg)" }}>
           {transaction.category}
-        </span>
-        <span className="shrink-0">{getPlatformLabel(transaction.platform)}</span>
-      </div>
-
-      <div className={cn("shrink-0 text-sm font-semibold", isIncome ? "text-emerald-600" : "text-slate-950")}>
-        <span className="mr-1 text-[10px] font-medium" style={{ color: "var(--theme-muted-text)" }}>
-          {isIncome ? "收入" : "支出"}
-        </span>
-        <span>
-          {isIncome ? "+" : "-"}
-          {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
-        </span>
-      </div>
-    </div>
+        </span>,
+        getPlatformLabel(transaction.platform),
+      ]}
+      trailing={
+        <div className={cn("text-sm font-semibold", isIncome ? "text-emerald-600" : "text-slate-950")}>
+          <span className="mr-1 text-[10px] font-medium" style={{ color: "var(--theme-muted-text)" }}>
+            {isIncome ? "收入" : "支出"}
+          </span>
+          <span>
+            {isIncome ? "+" : "-"}
+            {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
+          </span>
+        </div>
+      }
+    />
   );
 }
 
@@ -1347,7 +1335,7 @@ export function ConsumptionDefaultTheme({
     [filteredTransactions]
   );
   const displayTransactions = notesOnly ? notedTransactions : filteredTransactions;
-  const visibleTransactions = useMemo(() => displayTransactions.slice(0, 10), [displayTransactions]);
+  const visibleTransactions = useMemo(() => displayTransactions.slice(0, RECENT_TRANSACTION_LIMIT), [displayTransactions]);
 
   const trendDisplayData = useMemo(() => {
     const now = new Date();
@@ -3059,7 +3047,7 @@ export function ConsumptionDefaultTheme({
               <div>
                 <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>交易明细</p>
                 <h2 className="mt-1 text-xl font-semibold" style={{ color: "var(--theme-body-text)" }}>筛选后的消费流水</h2>
-                <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>只展示最近 10 条，避免长列表拖慢页面交互。</p>
+                <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>只展示最近 5 条，避免长列表拖慢页面交互。</p>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -3081,7 +3069,7 @@ export function ConsumptionDefaultTheme({
 
                 <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium" style={{ background: "var(--theme-dialog-section-bg)", color: "var(--theme-muted-text)" }}>
                   <Filter className="h-3.5 w-3.5" />
-                  最近 {Math.min(10, displayTransactions.length)} / 共 {displayTransactions.length} 笔
+                  最近 {Math.min(RECENT_TRANSACTION_LIMIT, displayTransactions.length)} / 共 {displayTransactions.length} 笔
                 </div>
               </div>
             </div>

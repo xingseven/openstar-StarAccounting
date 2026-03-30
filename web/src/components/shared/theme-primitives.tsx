@@ -250,11 +250,11 @@ export function ThemeMetricCard({
   return (
     <div
         className={cn(
-        "rounded-[16px] border [border-color:var(--module-metric-border)] [background:var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-3 sm:rounded-[18px] sm:p-4",
+        "rounded-[16px] border [border-color:var(--module-metric-border)] [background:var(--theme-metric-bg)] [box-shadow:var(--theme-metric-shadow)] p-2.5 sm:rounded-[18px] sm:p-3",
         className
       )}
     >
-      <div className="flex items-start justify-between gap-2.5 sm:gap-3">
+      <div className="flex items-start justify-between gap-2 sm:gap-2.5">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 sm:block">
             {showMobileIcon ? (
@@ -271,13 +271,13 @@ export function ThemeMetricCard({
           </div>
 
           <p
-            className="mt-1.5 break-all text-sm font-semibold leading-5 tracking-tight sm:hidden"
+            className="mt-1 break-all text-sm font-semibold leading-5 tracking-tight sm:hidden"
             style={{ color: "var(--theme-body-text)" }}
           >
             {mobileValue ?? value}
           </p>
           <p
-            className="mt-2 hidden text-xl font-semibold tracking-tight sm:block"
+            className="mt-1.5 hidden text-lg font-semibold tracking-tight sm:block"
             style={{ color: "var(--theme-body-text)" }}
           >
             {value}
@@ -286,7 +286,7 @@ export function ThemeMetricCard({
           {detail && detailPosition === "body" ? (
             <p
               className={cn(
-                "mt-2 text-[11px] leading-5 sm:text-xs",
+                "mt-1.5 text-[11px] leading-5 sm:text-xs",
                 hideDetailOnMobile && "hidden sm:block"
               )}
               style={{ color: "var(--theme-muted-text)" }}
@@ -297,13 +297,13 @@ export function ThemeMetricCard({
         </div>
 
         {showDesktopIcon && hasIcon ? (
-          <div className={cn("hidden rounded-xl p-2 ring-1 sm:block sm:rounded-2xl sm:p-2.5", toneClass)}>
+          <div className={cn("hidden rounded-xl p-1.5 ring-1 sm:block sm:rounded-2xl sm:p-2", toneClass)}>
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
         ) : null}
 
         {detail && detailPosition === "badge" ? (
-          <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium ring-1", toneClass)}>
+          <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium ring-1", toneClass)}>
             {detail}
           </span>
         ) : null}

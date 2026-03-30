@@ -31,6 +31,7 @@ import {
   YAxis,
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
+import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { DashboardLoadingShell } from "./DashboardLoadingShell";
 import {
@@ -280,7 +281,7 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
                       detail={item.description}
                       tone={item.tone}
                       icon={item.icon}
-                      className="sm:p-4"
+                      className="sm:p-2.5"
                       labelClassName={HERO_METRIC_LABEL_CLASS}
                       hideDetailOnMobile
                     />
@@ -326,14 +327,8 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
         </ThemeHero>
       </DelayedRender>
 
-      <DelayedRender delay={40}>
-        <div className="xl:hidden">
-          <BudgetFocusPanel alerts={data.budgetAlerts} />
-        </div>
-      </DelayedRender>
-
       <DelayedRender delay={60}>
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1.45fr)_repeat(2,minmax(0,1fr))]">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.55fr)]">
           <IncomeExpenseCard
             income={data.monthIncome}
             expense={data.monthExpense}
@@ -342,21 +337,23 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
             balance={formatCurrency(monthlyBalance)}
             positiveBalance={monthlyBalance >= 0}
           />
-          <MetricRailCard
-            label="本月结余率"
-            value={`${savingsRate.toFixed(0)}%`}
-            detail={monthlyBalance >= 0 ? "现金流处于正向区间" : "本月支出高于收入"}
-            icon={monthlyBalance >= 0 ? TrendingUp : TrendingDown}
-            tone={monthlyBalance >= 0 ? "green" : "amber"}
-          />
-          <MetricRailCard
-            label="预算关注"
-            value={`${criticalAlerts.length} 项`}
-            mobileValue={`${criticalAlerts.length} 项`}
-            detail={criticalAlerts.length > 0 ? "建议优先处理高风险预算" : "预算执行稳定"}
-            icon={ShieldAlert}
-            tone={criticalAlerts.length > 0 ? "amber" : "blue"}
-          />
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <MetricRailCard
+              label="本月结余率"
+              value={`${savingsRate.toFixed(0)}%`}
+              detail={monthlyBalance >= 0 ? "现金流处于正向区间" : "本月支出高于收入"}
+              icon={monthlyBalance >= 0 ? TrendingUp : TrendingDown}
+              tone={monthlyBalance >= 0 ? "green" : "amber"}
+            />
+            <MetricRailCard
+              label="预算关注"
+              value={`${criticalAlerts.length} 项`}
+              mobileValue={`${criticalAlerts.length} 项`}
+              detail={criticalAlerts.length > 0 ? "建议优先处理高风险预算" : "预算执行稳定"}
+              icon={ShieldAlert}
+              tone={criticalAlerts.length > 0 ? "amber" : "blue"}
+            />
+          </div>
         </section>
       </DelayedRender>
 
@@ -509,12 +506,6 @@ export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
               </div>
             </div>
           </div>
-
-          <div className="space-y-3 sm:space-y-5">
-            <div className="hidden xl:block">
-              <BudgetFocusPanel alerts={data.budgetAlerts} />
-            </div>
-          </div>
         </section>
       </DelayedRender>
     </div>
@@ -577,7 +568,7 @@ function HeroStatCard({
       detail={detail}
       tone={tone}
       icon={Icon}
-      className="sm:p-4"
+      className="sm:p-2.5"
       labelClassName={labelClassName}
       hideDetailOnMobile
     />
@@ -607,7 +598,7 @@ function MetricRailCard({
       detail={detail}
       tone={tone}
       icon={Icon}
-      className="p-3 sm:p-5"
+      className="p-2.5 sm:p-3.5"
       hideDetailOnMobile
     />
   );
@@ -748,33 +739,25 @@ function TransactionRow({
   const isIncome = transaction.type === "INCOME";
 
   return (
-    <div className={cn("flex items-center justify-between gap-2.5 rounded-[18px] px-3 py-2.5 transition hover:bg-white sm:gap-3 sm:rounded-[24px] sm:px-4 sm:py-3", className)} style={{ background: "var(--theme-dialog-section-bg)" }}>
-      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-        <div
-          className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 sm:rounded-2xl",
-            isIncome ? "bg-blue-100 text-blue-700" : "bg-slate-900 text-white"
-          )}
-        >
-          {isIncome ? <ArrowDownLeft className="h-4 w-4 sm:h-4.5 sm:w-4.5" /> : <ArrowUpRight className="h-4 w-4 sm:h-4.5 sm:w-4.5" />}
+    <CompactTransactionRow
+      className={className}
+      icon={isIncome ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+      iconClassName={isIncome ? "bg-blue-100 text-blue-700" : "bg-slate-900 text-white"}
+      primary={transaction.category || "未分类"}
+      secondary={transaction.merchant || transaction.platform}
+      meta={[formatCompactTransactionDateTime(transaction.date)]}
+      trailing={
+        <div className="text-sm font-semibold" style={{ color: isIncome ? "#1d4ed8" : "var(--theme-body-text)" }}>
+          <span className="mr-1 text-[10px] font-medium" style={{ color: "var(--theme-muted-text)" }}>
+            {isIncome ? "收入" : "支出"}
+          </span>
+          <span>
+            {isIncome ? "+" : "-"}
+            {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
+          </span>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>{transaction.category || "未分类"}</p>
-          <p className="mt-1 truncate text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
-            {new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" }).format(new Date(transaction.date))}
-            {" · "}
-            {transaction.merchant || transaction.platform}
-          </p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className={cn("text-xs font-semibold sm:text-sm", isIncome ? "text-blue-700" : "")} style={!isIncome ? { color: "var(--theme-body-text)" } : undefined}>
-          {isIncome ? "+" : "-"}
-          {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
-        </p>
-        <p className="mt-1 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>{isIncome ? "收入" : "支出"}</p>
-      </div>
-    </div>
+      }
+    />
   );
 }
 

@@ -1,23 +1,12 @@
-这是微信的
-交易类型	交易对方	商品	收/支	金额(元)	支付方式	当前状态
-信用卡还款	招商银行信用卡还款	/	/	¥1,001.00	建设银行储蓄卡(5883)	支付成功
-
-
-这是支付宝的
-信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
-信用借还	借呗	/	借呗放款至余额	不计收支	457	余额	放款成功
-信用借还	借呗	/	借呗还款	不计收支	202.38	中信银行储蓄卡(8155)&余额	还款成功
-信用借还	借呗	/	借呗还款	不计收支	200	中国建设银行储蓄卡(2566)	还款成功
-信用借还	借呗	/	借呗还款	不计收支	10	中国建设银行储蓄卡(2566)	还款成功
-信用借还	借呗	/	借呗还款	不计收支	120	中国建设银行储蓄卡(2566)	还款成功
-信用借还	备用金	/	备用金归还	不计收支	496.12	中国建设银行储蓄卡(2566)	还款成功
-信用借还	备用金	/	备用金归还	不计收支	6.15	余额宝	还款成功
-信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
-信用借还	备用金	/	备用金归还	不计收支	490.05	余额宝	还款成功
-信用借还	备用金	/	备用金归还	不计收支	11.94	余额&余额宝	还款成功
-信用借还	花呗	/	主动还款-花呗2020年12月账单	不计收支	805.23	余额宝	还款成功
-信用借还	花呗	/	花呗自动还款	不计收支	805.23		还款失败
-信用借还	花呗	/	自动还款-花呗2020年12月账单	不计收支	8.05	余额宝	还款成功
-信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
-信用借还	备用金	/	备用金归还	不计收支	501.7	中国建设银行储蓄卡(2566)	还款成功
-信用借还	备用金	/	备用金取出至余额	不计收支	500		放款成功
+inspector.js:7  POST http://localhost:3006/api/ai/models 500 (Internal Server Error)
+window.fetch @ inspector.js:7
+apiFetch @ api.ts:21
+handleSubmit @ page.tsx:215
+executeDispatch @ react-dom-client.development.js:20543
+runWithFiberInDEV @ react-dom-client.development.js:986
+processDispatchQueue @ react-dom-client.development.js:20593
+(匿名) @ react-dom-client.development.js:21164
+batchedUpdates$1 @ react-dom-client.development.js:3377
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
+dispatchEvent @ react-dom-client.development.js:25693
+dispatchDiscreteEvent @ react-dom-client.development.js:25661
