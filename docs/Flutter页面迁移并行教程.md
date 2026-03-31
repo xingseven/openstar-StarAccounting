@@ -89,7 +89,7 @@ flutter/lib/
 
 1. `flutter/lib/features/<feature>/`
 2. `flutter/lib/routing/app_router.dart`
-3. `web/src/app/flutter-<feature>-preview/`
+3. `web/src/app/flutter/[[...slug]]/`
 4. `web/src/components/shared/navigation.ts`
 5. 文档和版本记录
 
@@ -327,22 +327,10 @@ GoRoute(
 
 新页面不要直接替换旧路由。
 
-先在 `web/src/app/` 顶层建一个独立预览目录。
-
-推荐规则：
+先统一复用一个顶层短地址预览路由：
 
 ```text
-web/src/app/flutter-<feature>-preview/
-├── layout.tsx
-└── page.tsx
-```
-
-例如资产页：
-
-```text
-web/src/app/flutter-assets-preview/
-├── layout.tsx
-└── page.tsx
+web/src/app/flutter/[[...slug]]/page.tsx
 ```
 
 ### 6.1 为什么放顶层
@@ -353,26 +341,22 @@ web/src/app/flutter-assets-preview/
 - 不和旧 `(dashboard)` 混在一起
 - 后面想删也容易
 
-### 6.2 `layout.tsx` 做什么
-
-它只负责复用旧站壳层：
-
-- `AuthGate`
-- `Sidebar`
-- `Header`
-- `MobileBottomNav`
-
-### 6.3 `page.tsx` 做什么
+### 6.2 `page.tsx` 做什么
 
 它只负责：
 
 - 放一个说明卡片
 - 用 `iframe` 加载：
   ```text
-  /flutter-dashboard/index.html#/embed/<feature>
+  /flutter-dashboard/index.html#/<feature>
   ```
 
 不要把页面真实业务逻辑写在这里。
+预览时统一使用短地址：
+
+- `/flutter/dashboard`
+- `/flutter/assets`
+- `/flutter/data`
 
 ---
 
@@ -387,7 +371,7 @@ web/src/components/shared/navigation.ts
 至少补 `PAGE_META`：
 
 ```ts
-"/flutter-assets-preview": {
+"/flutter/assets": {
   title: "新资产页预览",
   subtitle: "查看 Flutter 版资产页，对照旧版继续迭代。",
 }
@@ -532,14 +516,13 @@ flutter/lib/routing/app_router.dart
 ### 7.4 Web 预览入口
 
 ```text
-web/src/app/flutter-assets-preview/layout.tsx
-web/src/app/flutter-assets-preview/page.tsx
+web/src/app/flutter/[[...slug]]/page.tsx
 ```
 
 ### 7.5 预览访问路径
 
 ```text
-/flutter-assets-preview
+/flutter/assets
 ```
 
 ### 7.6 旧页面处理原则
@@ -569,13 +552,13 @@ flutter/lib/features/data_management/
 ### 8.3 预览入口
 
 ```text
-web/src/app/flutter-data-preview/
+web/src/app/flutter/[[...slug]]/page.tsx
 ```
 
 ### 8.4 预览访问路径
 
 ```text
-/flutter-data-preview
+/flutter/data
 ```
 
 ---
@@ -600,7 +583,7 @@ flutter/lib/features/consumption/
 ### 9.3 预览入口
 
 ```text
-web/src/app/flutter-consumption-preview/
+web/src/app/flutter/[[...slug]]/page.tsx
 ```
 
 ### 9.4 特别注意

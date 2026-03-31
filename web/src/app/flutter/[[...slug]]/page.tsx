@@ -1,13 +1,35 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
-export default function FlutterDashboardPreviewPage() {
+function normalizeSlugParam(value: string | string[] | undefined) {
+  if (!value) return ["dashboard"];
+  return Array.isArray(value) ? value.filter(Boolean) : [value];
+}
+
+function getRouteTitle(routePath: string) {
+  switch (routePath) {
+    case "dashboard":
+      return "新总览页独立主页面";
+    case "assets":
+      return "新资产页独立主页面";
+    case "data":
+      return "新数据页独立主页面";
+    default:
+      return `Flutter 页面预览 · ${routePath}`;
+  }
+}
+
+export default function FlutterPreviewPage() {
+  const params = useParams<{ slug?: string[] }>();
   const [loaded, setLoaded] = useState(false);
+  const slugParts = normalizeSlugParam(params?.slug);
+  const routePath = slugParts.join("/");
   const iframeSrc = useMemo(
-    () => `/flutter-dashboard/index.html#/dashboard?v=20260331-2`,
-    [],
+    () => `/flutter-dashboard/index.html?v=20260331-3#/${routePath}`,
+    [routePath],
   );
 
   return (
@@ -20,12 +42,13 @@ export default function FlutterDashboardPreviewPage() {
                 Flutter Main Preview
               </p>
               <h1 className="mt-1 text-lg font-semibold tracking-tight text-slate-900 sm:text-xl">
-                新总览页独立主页面
+                {getRouteTitle(routePath)}
               </h1>
               <p className="mt-1 max-w-3xl text-sm text-slate-600">
-                这里不再复用旧站的总览壳层，直接查看 Flutter 自己的主页面结构。旧总览页仍保留在
-                <span className="font-medium text-slate-800"> / </span>
-                方便继续对照开发。
+                这里不再复用旧站的页面壳层，直接查看 Flutter 自己的主页面结构。旧的 TypeScript 页面仍保留在原路由，方便继续对照开发。
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                当前短地址预览路由：<span className="font-medium text-slate-700">/flutter/{routePath}</span>
               </p>
             </div>
 
@@ -34,7 +57,7 @@ export default function FlutterDashboardPreviewPage() {
                 href="/"
                 className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                返回旧总览
+                返回旧站首页
               </Link>
               <a
                 href={iframeSrc}
@@ -42,7 +65,7 @@ export default function FlutterDashboardPreviewPage() {
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                单独打开 Flutter 主页
+                单独打开 Flutter 页面
               </a>
             </div>
           </div>
@@ -55,14 +78,14 @@ export default function FlutterDashboardPreviewPage() {
                 <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
                 <div>
                   <p className="text-sm font-semibold text-slate-800">正在加载 Flutter 主页面</p>
-                  <p className="mt-1 text-xs text-slate-500">当前入口不再套用旧站壳层，看到的就是新的独立主页面。</p>
+                  <p className="mt-1 text-xs text-slate-500">当前入口使用短地址预览形式，内部仍然加载 Flutter 静态包。</p>
                 </div>
               </div>
             </div>
           ) : null}
 
           <iframe
-            title="Flutter Dashboard Main Preview"
+            title={`Flutter Preview ${routePath}`}
             src={iframeSrc}
             className="block h-full min-h-0 w-full border-0 bg-slate-50"
             onLoad={() => setLoaded(true)}
