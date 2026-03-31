@@ -16,7 +16,7 @@ export function FlutterPreviewFrame({
 }: FlutterPreviewFrameProps) {
   const [loaded, setLoaded] = useState(false);
   const iframeSrc = useMemo(
-    () => `/flutter-runtime/index.html#/${routePath}?v=20260331-4`,
+    () => `/flutter-runtime/index.html?v=20260331-fontfix#/${routePath}`,
     [routePath],
   );
 

@@ -27,6 +27,12 @@ class _OpenstarAppState extends ConsumerState<OpenstarApp> {
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       theme: ThemeData(
+        fontFamily: 'NotoSansSC',
+        fontFamilyFallback: const [
+          'Noto Sans CJK SC',
+          'Noto Sans SC',
+          'sans-serif',
+        ],
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1C6DD0),
           brightness: Brightness.light,
