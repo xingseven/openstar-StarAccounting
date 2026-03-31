@@ -1,12 +1,13 @@
 # Changelog
 
-## 2.3.34 - 2026-03-31
+## 2.3.35 - 2026-03-31
 
-### Added
+### Modified
 
-- **Flutter 页面迁移并行教程**:
-  - 新增 `docs/Flutter页面迁移并行教程.md`，按当前仓库真实结构整理“如何在别的窗口并行迁页面”的统一操作流程。
-  - 文档补充了旧页定位、新页目录、Flutter 路由、Web 预览入口、构建验证、并行协作避冲突规则，以及资产页、数据页、消费页三套迁移模板。
+- **Flutter 总览预览改为独立主页面**:
+  - 删除 `web/src/app/flutter-dashboard-preview/layout.tsx`，不再让新总览页复用旧站的 Sidebar、Header 和底部导航壳层。
+  - `web/src/app/flutter-dashboard-preview/page.tsx` 改为直接加载 Flutter 自己的 `/dashboard` 主路由，看到的就是新的独立主页面形态。
+  - `web` 的 `npm run build` 已通过，说明独立预览入口没有破坏现有路由构建链路。
 
 ## 2.3.33 - 2026-03-31
 

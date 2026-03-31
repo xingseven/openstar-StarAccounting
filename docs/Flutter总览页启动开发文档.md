@@ -272,13 +272,13 @@ flutter/
    ```text
    web/src/app/flutter-dashboard-preview/page.tsx
    ```
-   加载新的 Flutter 总览页
+   作为新的独立主页面预览入口
 
 这样处理后的结果是：
 
 - 旧 TS 文件保留，不删除
 - 旧总览页仍然保留在原路由 `/`
-- 新 Flutter 总览页可以通过 `/flutter-dashboard-preview` 单独查看
+- 新 Flutter 总览页可以通过 `/flutter-dashboard-preview` 作为独立主页面查看
 - 其余页面仍继续使用原有 TS 页面
 
 这样更适合当前阶段，因为它同时满足：
@@ -309,7 +309,7 @@ flutter/
 
 所以当前不是“总览页已经正式替换”，而是：
 
-**先让新旧总览并行存在，先对照开发，再做正式替换。**
+**先让新旧总览并行存在，新页面以独立主页面方式对照开发，再做正式替换。**
 
 ---
 
