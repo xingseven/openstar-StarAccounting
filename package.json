@@ -11,7 +11,7 @@
     "dev:legacy": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "cd src/server && npm run dev",
     "dev:web": "cd web && npm run dev",
-    "dev:flutter": "cd flutter && flutter run -d edge --web-hostname 0.0.0.0 --web-port 3001 --dart-define=API_BASE_URL=http://127.0.0.1:3006",
+    "dev:flutter": "cd flutter && flutter run -d web-server --web-hostname 127.0.0.1 --web-port 3001 --dart-define=API_BASE_URL=http://127.0.0.1:3006",
     "build": "npm run build:server && npm run build:web",
     "build:server": "cd src/server && npm run build",
     "build:web": "cd web && npm run build"

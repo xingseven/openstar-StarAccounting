@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.41 - 2026-03-31
+
+### Modified
+
+- **Flutter 3001 开发服务切换为 web-server**:
+  - 将根目录 `dev:flutter` 从 `flutter run -d edge` 调整为 `flutter run -d web-server`，避免浏览器调试 websocket 握手失败导致 3001 进程直接退出。
+  - `3001` 现在作为独立 Flutter Web 开发服务启动，不再依赖 Edge 调试连接是否成功。
+
 ## 2.3.40 - 2026-03-31
 
 ### Modified
