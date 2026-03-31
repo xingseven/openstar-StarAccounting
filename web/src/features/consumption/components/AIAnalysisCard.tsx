@@ -16,6 +16,7 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ThemeNotice } from "@/components/shared/theme-primitives";
+import { cn } from "@/lib/utils";
 
 type Insight = {
   type: "info" | "warning" | "success";
@@ -61,12 +62,16 @@ type BudgetItem = {
   period?: string;
 };
 
+type PanelKind = "initial" | "loading" | "error" | "analysis";
+
 interface AIAnalysisCardProps {
   transactions: TransactionItem[];
   budgets: BudgetItem[];
   className?: string;
   compact?: boolean;
 }
+
+const PANEL_TRANSITION_MS = 220;
 
 function useTypingEffect(text: string, speed = 30, startDelay = 0) {
   const [displayedText, setDisplayedText] = useState("");
@@ -188,8 +193,42 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
   const [typingPhase, setTypingPhase] = useState<"summary" | "insights" | "suggestions" | "done">("summary");
   const [visibleInsights, setVisibleInsights] = useState(0);
   const [visibleSuggestions, setVisibleSuggestions] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [renderedPanelKind, setRenderedPanelKind] = useState<PanelKind>("initial");
+  const [panelVisible, setPanelVisible] = useState(true);
 
   const { displayedText: summaryText, isTyping: isSummaryTyping } = useTypingEffect(analysis?.summary || "", 15, 0);
+  const panelKind: PanelKind = loading ? "loading" : error ? "error" : !hasAnalyzed ? "initial" : "analysis";
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncMotionPreference = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    syncMotionPreference();
+    mediaQuery.addEventListener("change", syncMotionPreference);
+    return () => mediaQuery.removeEventListener("change", syncMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    if (panelKind === renderedPanelKind) {
+      setPanelVisible(true);
+      return;
+    }
+
+    if (prefersReducedMotion) {
+      setRenderedPanelKind(panelKind);
+      setPanelVisible(true);
+      return;
+    }
+
+    setPanelVisible(false);
+    const switchTimer = window.setTimeout(() => {
+      setRenderedPanelKind(panelKind);
+      setPanelVisible(true);
+    }, PANEL_TRANSITION_MS);
+
+    return () => window.clearTimeout(switchTimer);
+  }, [panelKind, prefersReducedMotion, renderedPanelKind]);
 
   useEffect(() => {
     if (!isSummaryTyping && analysis?.summary && typingPhase === "summary") {
@@ -514,11 +553,26 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
     );
   }
 
-  function renderPanel(extraClassName = "") {
-    if (loading) return renderLoadingCard(extraClassName);
-    if (error) return renderErrorCard(extraClassName);
-    if (!hasAnalyzed) return renderInitialCard(extraClassName);
+  function renderPanelByKind(kind: PanelKind, extraClassName = "") {
+    if (kind === "loading") return renderLoadingCard(extraClassName);
+    if (kind === "error") return renderErrorCard(extraClassName);
+    if (kind === "initial") return renderInitialCard(extraClassName);
     return renderAnalysisCard(extraClassName);
+  }
+
+  function renderAnimatedPanel(extraClassName = "") {
+    return (
+      <div
+        className={cn(
+          "transition-[opacity,transform,filter] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          panelVisible
+            ? "translate-y-0 opacity-100 blur-0"
+            : "pointer-events-none translate-y-2 opacity-0 blur-[2px]"
+        )}
+      >
+        {renderPanelByKind(renderedPanelKind, extraClassName)}
+      </div>
+    );
   }
 
   if (compact) {
@@ -536,7 +590,7 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="gap-0 border-0 bg-transparent px-2 pb-2 pt-10 shadow-none sm:max-w-[1100px] sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none">
             <div className="max-h-[70vh] overflow-y-auto">
-              {renderPanel("w-full sm:shadow-[0_28px_70px_rgba(15,23,42,0.16)]")}
+              {renderAnimatedPanel("w-full sm:shadow-[0_28px_70px_rgba(15,23,42,0.16)]")}
             </div>
           </DialogContent>
         </Dialog>
@@ -544,5 +598,5 @@ export function AIAnalysisCard({ transactions, budgets, className = "", compact 
     );
   }
 
-  return renderPanel(className);
+  return renderAnimatedPanel(className);
 }

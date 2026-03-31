@@ -39,7 +39,6 @@ import {
   ThemeDialogSection,
   ThemeFormField,
   ThemeFormGrid,
-  ThemeHero,
   ThemeMetricCard,
   ThemeNotice,
   ThemeSectionHeader,
@@ -429,18 +428,6 @@ export default function AIPage() {
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
-      <ThemeHero className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center gap-4">
-          <div className="rounded-2xl p-3" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
-            <Brain className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>AI 模型配置</h1>
-            <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>管理视觉与文本模型接入，为 AI 记账和分析提供服务。</p>
-          </div>
-        </div>
-      </ThemeHero>
-
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <ThemeMetricCard label="模型总数" value={`${models.length} 个`} detail="全部模型" tone="blue" icon={Brain} className="p-4" hideDetailOnMobile />
         <ThemeMetricCard label="已配置" value={`${configuredModels.length} 个`} detail="可用模型" tone="green" icon={CheckCircle2} className="p-4" hideDetailOnMobile />
@@ -471,7 +458,7 @@ export default function AIPage() {
       ) : null}
 
       {configuredModels.length > 0 ? (
-        <ThemeSurface className="p-4 sm:p-6">
+        <ThemeSurface className="overflow-visible p-4 sm:p-6">
           <button className="flex w-full items-center justify-between" onClick={() => toggleSection("configured")}>
             <div className="flex items-center gap-2">
               {expandedSection === "configured" ? <ChevronDown className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />}
@@ -490,7 +477,7 @@ export default function AIPage() {
       ) : null}
 
       {unconfiguredModels.length > 0 ? (
-        <ThemeSurface className="p-4 sm:p-6">
+        <ThemeSurface className="overflow-visible p-4 sm:p-6">
           <button className="flex w-full items-center justify-between" onClick={() => toggleSection("unconfigured")}>
             <div className="flex items-center gap-2">
               {expandedSection === "unconfigured" ? <ChevronDown className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />}
@@ -634,12 +621,12 @@ export default function AIPage() {
       </BottomSheet>
 
       <BottomSheet open={isConfigModalOpen} onOpenChange={setIsConfigModalOpen}>
-        <BottomSheetContent className="max-w-md">
+        <BottomSheetContent className="max-h-[calc(100vh-1rem)] max-w-md overflow-hidden">
           <BottomSheetHeader>
             <BottomSheetTitle>配置模型</BottomSheetTitle>
             <BottomSheetDescription>补全可直接调用模型服务的运行参数，并在保存前完成连通性测试。</BottomSheetDescription>
           </BottomSheetHeader>
-          <div className="space-y-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             {configNotice ? <ThemeNotice tone={configNotice.tone} title={configNotice.title} description={configNotice.description} /> : null}
 
             <ThemeNotice tone="blue" title="连接测试" description="建议先测试接口可用性，再保存到当前模型配置。" />
@@ -696,7 +683,7 @@ export default function AIPage() {
               )}
             </Button>
           </div>
-          <ThemeActionBar>
+          <ThemeActionBar className="shrink-0">
             <Button type="button" variant="outline" onClick={() => setIsConfigModalOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
               取消
             </Button>
@@ -757,14 +744,14 @@ function ModelCard({
             <Settings className="h-4 w-4" />
           </Button>
           {showActions ? (
-            <div className="absolute right-0 top-full z-10 mt-1 min-w-[100px] rounded-lg border bg-white py-1 shadow-lg">
+            <div className="absolute right-0 top-full z-10 mt-1 min-w-[132px] rounded-lg border bg-white py-1 shadow-lg">
               {!model.isDefault ? (
                 <button
                   onClick={() => {
                     onSetDefault();
                     setShowActions(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                  className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-slate-50"
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   设为默认
@@ -775,7 +762,7 @@ function ModelCard({
                   onEdit();
                   setShowActions(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50"
+                className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-slate-50"
               >
                 <Edit className="h-3 w-3" />
                 编辑
@@ -785,7 +772,7 @@ function ModelCard({
                   onDelete();
                   setShowActions(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
               >
                 <Trash2 className="h-3 w-3" />
                 删除

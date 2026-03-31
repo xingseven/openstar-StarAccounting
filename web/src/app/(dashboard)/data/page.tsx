@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, ArrowDownRight, ArrowUpRight, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
+import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
 import { cn } from "@/lib/utils";
 import {
   mergeCategoryOptions,
@@ -20,7 +19,6 @@ import {
   ThemeEmptyState,
   ThemeFormField,
   ThemeFormGrid,
-  ThemeHero,
   ThemeMetricCard,
   ThemeNotice,
   ThemeSectionHeader,
@@ -527,25 +525,50 @@ export default function DataPage() {
           <option key={category} value={category} />
         ))}
       </datalist>
-      <DelayedRender delay={0}>
-      <ThemeHero className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center gap-4">
-          <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
-            <Database className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">数据管理</h1>
-            <p className="mt-1 text-sm text-slate-500">分页查看全部交易记录，并支持导入与批量处理。</p>
-          </div>
-        </div>
-      </ThemeHero>
-      </DelayedRender>
-
       <DelayedRender delay={60}>
-      <div className="grid gap-3 md:grid-cols-3">
-        <ThemeMetricCard label="当前页记录" value={`${transactions.length} 条`} detail="本页数据量" tone="blue" icon={Database} className="p-4" hideDetailOnMobile />
-        <ThemeMetricCard label="已选择" value={`${selectedIds.size} 条`} detail="批量处理目标" tone="green" icon={Tag} className="p-4" hideDetailOnMobile />
-        <ThemeMetricCard label="总记录数" value={`${total} 条`} detail="系统交易总量" tone="slate" icon={FileText} className="p-4" hideDetailOnMobile />
+      <div className="grid gap-3 xl:grid-cols-12">
+        <ThemeMetricCard
+          label="总记录数"
+          value={`${total} 条`}
+          detail="系统交易总量"
+          tone="slate"
+          icon={FileText}
+          className="p-4 xl:col-span-3"
+          hideDetailOnMobile
+        />
+        <ThemeSurface className="p-4 sm:p-6 xl:col-span-9">
+          <ThemeSectionHeader eyebrow="账单导入" title="导入微信 / 支付宝账单" description="上传 CSV 或 XLSX 文件，系统会自动识别并入库。" />
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              onClick={() => handleImport("wechat")}
+              disabled={importLoading}
+              className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+            >
+              {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              导入微信账单
+            </button>
+            <button
+              onClick={() => handleImport("alipay")}
+              disabled={importLoading}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            >
+              {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              导入支付宝账单
+            </button>
+          </div>
+
+          <input ref={fileInputRef} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFileChange} />
+
+          {importResult ? (
+            <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+              总行数：{importResult.totalRows} | 成功：{importResult.insertedCount} | 重复：{importResult.duplicateCount} | 无效：{importResult.invalidCount}
+              {importResult.linkedLoanCount || importResult.syncedLoanCount
+                ? ` | 关联贷款：${importResult.linkedLoanCount ?? 0} | 同步余额：${importResult.syncedLoanCount ?? 0}`
+                : ""}
+            </div>
+          ) : null}
+        </ThemeSurface>
       </div>
       </DelayedRender>
 
@@ -567,44 +590,9 @@ export default function DataPage() {
         </ThemeNotice>
       ) : null}
 
-      <DelayedRender delay={120}>
-      <ThemeSurface className="p-4 sm:p-6">
-        <ThemeSectionHeader eyebrow="账单导入" title="导入微信 / 支付宝账单" description="上传 CSV 或 XLSX 文件，系统会自动识别并入库。" />
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            onClick={() => handleImport("wechat")}
-            disabled={importLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
-          >
-            {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            导入微信账单
-          </button>
-          <button
-            onClick={() => handleImport("alipay")}
-            disabled={importLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-          >
-            {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            导入支付宝账单
-          </button>
-        </div>
-
-        <input ref={fileInputRef} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFileChange} />
-
-        {importResult ? (
-          <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
-            总行数：{importResult.totalRows} | 成功：{importResult.insertedCount} | 重复：{importResult.duplicateCount} | 无效：{importResult.invalidCount}
-            {importResult.linkedLoanCount || importResult.syncedLoanCount
-              ? ` | 关联贷款：${importResult.linkedLoanCount ?? 0} | 同步余额：${importResult.syncedLoanCount ?? 0}`
-              : ""}
-          </div>
-        ) : null}
-      </ThemeSurface>
-      </DelayedRender>
-
       <DelayedRender delay={180}>
-      <ThemeSurface className="p-4 sm:p-6">
+      <div className="grid gap-4 xl:grid-cols-3 xl:items-start">
+      <ThemeSurface className="p-4 sm:p-6 xl:col-span-1">
         <ThemeSectionHeader
           eyebrow="手动补录"
           title="手动录入收支"
@@ -755,10 +743,7 @@ export default function DataPage() {
           </ThemeActionBar>
         </form>
       </ThemeSurface>
-      </DelayedRender>
-
-      <DelayedRender delay={220}>
-      <ThemeSurface className="p-4 sm:p-6">
+      <ThemeSurface className="p-4 sm:p-6 xl:col-span-2">
         <ThemeSectionHeader
           eyebrow="自动归类"
           title="按交易对方建立固定支出规则"
@@ -976,6 +961,7 @@ export default function DataPage() {
           </div>
         </div>
       </ThemeSurface>
+      </div>
       </DelayedRender>
 
       <DelayedRender delay={240}>
@@ -1029,11 +1015,15 @@ export default function DataPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[1100px]">
-            <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-2.5 text-xs font-medium text-slate-500">
+          <div className="min-w-[1060px]">
+            <div className="grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-2.5 text-xs font-medium text-slate-500">
               <input type="checkbox" checked={allSelectedOnPage} onChange={toggleSelectAll} className="rounded border-slate-300" />
-              <span>商户 / 备注 / 时间 / 类型 / 分类 / 平台</span>
-              <span className="ml-auto">金额</span>
+              <span>商户 / 备注</span>
+              <span>时间</span>
+              <span>类型</span>
+              <span>分类</span>
+              <span>平台</span>
+              <span className="text-right">金额</span>
             </div>
 
             {transactions.length === 0 ? (
@@ -1041,62 +1031,65 @@ export default function DataPage() {
                 <ThemeEmptyState icon={Database} title="暂无数据" description="导入账单后，这里会显示交易记录。" />
               </div>
             ) : (
-              <div className="[&>*:last-child]:border-b-0">
+              <div>
                 {transactions.map((transaction) => {
                   const isExpense = transaction.type === "EXPENSE";
                   const isIncome = transaction.type === "INCOME";
 
                   return (
-                    <CompactTransactionRow
+                    <div
                       key={transaction.id}
-                      className={selectedIds.has(transaction.id) ? "bg-blue-50/20" : undefined}
-                      leading={
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(transaction.id)}
-                          onChange={() => toggleSelect(transaction.id)}
-                          className="rounded border-slate-300"
-                        />
-                      }
-                      icon={isIncome ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
-                      iconClassName={
-                        isExpense
-                          ? "bg-red-50 text-red-600"
-                          : isIncome
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-slate-100 text-slate-700"
-                      }
-                      primary={transaction.merchant || "-"}
-                      secondary={transaction.description ? `备注：${transaction.description}` : undefined}
-                      meta={[
-                        formatCompactTransactionDateTime(transaction.date, { year: true }),
-                        <span
-                          key="type"
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                            isExpense
-                              ? "bg-red-100 text-red-700"
-                              : isIncome
-                                ? "bg-green-100 text-green-700"
-                                : "bg-slate-100 text-slate-700"
-                          )}
-                        >
-                          {isExpense ? "支出" : isIncome ? "收入" : transaction.type}
-                        </span>,
-                        <span key="category" className="rounded-full px-2 py-0.5 font-medium" style={{ background: "var(--theme-empty-icon-bg)" }}>
-                          {transaction.category}
-                        </span>,
-                        transaction.platform,
-                      ]}
-                      trailing={
-                        <div className={cn("text-sm font-semibold", isExpense ? "text-red-600" : "text-slate-950")}>
-                          <span>
-                            {isExpense ? "-" : "+"}
-                            {transaction.amount}
-                          </span>
-                        </div>
-                      }
-                    />
+                      className={cn(
+                        "grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b px-4 py-3 transition",
+                        selectedIds.has(transaction.id) ? "bg-blue-50/20" : "hover:bg-slate-50/60"
+                      )}
+                      style={{ borderColor: "var(--theme-surface-border,rgba(148,163,184,0.12))" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(transaction.id)}
+                        onChange={() => toggleSelect(transaction.id)}
+                        className="rounded border-slate-300"
+                      />
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {transaction.merchant || "-"}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500">
+                          {transaction.description || "无备注"}
+                        </p>
+                      </div>
+
+                      <span className="text-sm text-slate-600">{formatDateTime(transaction.date)}</span>
+
+                      <span
+                        className={cn(
+                          "inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium",
+                          isExpense
+                            ? "bg-red-100 text-red-700"
+                            : isIncome
+                              ? "bg-green-100 text-green-700"
+                              : "bg-slate-100 text-slate-700"
+                        )}
+                      >
+                        {isExpense ? "支出" : isIncome ? "收入" : transaction.type}
+                      </span>
+
+                      <span
+                        className="inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}
+                      >
+                        {transaction.category}
+                      </span>
+
+                      <span className="text-sm text-slate-600">{transaction.platform}</span>
+
+                      <div className={cn("text-right text-sm font-semibold", isExpense ? "text-red-600" : "text-slate-950")}>
+                        {isExpense ? "-" : "+"}
+                        {transaction.amount}
+                      </div>
+                    </div>
                   );
                 })}
               </div>

@@ -16,7 +16,7 @@ const BottomSheetOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+      "bottom-sheet-overlay fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm",
       className
     )}
     {...props}
@@ -42,9 +42,8 @@ const BottomSheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-t-[28px] border px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_48px_rgba(15,23,42,0.18)] outline-none",
+        "bottom-sheet-content fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-t-[28px] border px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_48px_rgba(15,23,42,0.18)] outline-none",
         "[background:var(--theme-surface-bg)] [border-color:var(--theme-surface-border)]",
-        "data-[state=open]:animate-slide-in-from-bottom data-[state=closed]:animate-slide-out-to-bottom",
         className
       )}
       onInteractOutside={(event) => {

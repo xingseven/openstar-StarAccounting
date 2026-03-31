@@ -46,7 +46,7 @@ export const PAGE_META: Record<string, PageMeta> = {
   "/savings": { title: "储蓄目标", subtitle: "管理储蓄计划、目标进度和月度节奏。" },
   "/loans": { title: "贷款管理", subtitle: "查看还款压力、进度和负债风险。" },
   "/connections": { title: "设备连接", subtitle: "维护数据同步与外部接入状态。" },
-  "/ai": { title: "AI 工作台", subtitle: "使用智能分析来辅助记账和决策。" },
+  "/ai": { title: "AI 模型配置", subtitle: "管理视觉与文本模型接入，为 AI 记账和分析提供服务。" },
   "/data": { title: "数据管理", subtitle: "导入、清洗和维护核心财务数据。" },
   "/themes": { title: "主题设置", subtitle: "统一界面主题与视觉风格偏好。" },
   "/settings": { title: "系统设置", subtitle: "管理账户、通知和基础配置。" },
