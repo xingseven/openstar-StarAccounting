@@ -1,13 +1,14 @@
 # Changelog
 
-## 2.3.36 - 2026-03-31
+## 2.3.37 - 2026-03-31
 
 ### Modified
 
-- **Flutter 预览入口切换为 /flutter/* 短地址**:
-  - 删除旧的 `web/src/app/flutter-dashboard-preview/page.tsx` 预览入口，改为统一使用 `web/src/app/flutter/[[...slug]]/page.tsx` 动态路由承接 Flutter 预览。
-  - 现在可直接通过 `/flutter/dashboard`、`/flutter/assets`、`/flutter/data` 等短地址访问新的 Flutter 页面，避免再暴露 `index.html#...` 形式的长地址。
-  - `web` 的 `npm run build` 已通过，说明新的短地址预览方案可正常构建。
+- **Flutter 预览入口改为真正的 /flutter/* 短地址**:
+  - Flutter Web 启用 path url strategy，并改为使用 `flutter build web --base-href /flutter/` 生成静态产物。
+  - Next 新增 `/flutter` 与 `/flutter/:path*` 重写规则，把短地址直接指向 `web/public/flutter/index.html`，不再依赖 `index.html#...` 外壳页。
+  - 旧的 `web/public/flutter-dashboard/` 静态目录已移除，避免继续误用长地址入口。
+  - `flutter analyze` 与 `web` 的 `npm run build` 均已通过，说明真正的短地址访问方案可正常构建。
 
 ## 2.3.35 - 2026-03-31
 

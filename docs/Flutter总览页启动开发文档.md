@@ -258,21 +258,17 @@ flutter/
 具体做法是：
 
 1. 保留原有 `web/` 的登录体系、主布局、侧边栏、Header 和旧总览页
-2. 给 Flutter 新增一个无壳层的嵌入路由：`/embed/dashboard`
-3. 在 Next.js 中新增独立预览路由：
+2. Flutter Web 开启 path url strategy，直接使用 Flutter 自己的页面路由
+3. 在 Next.js 中新增短地址重写：
    ```text
    /flutter/dashboard
    ```
-4. 使用 `flutter build web --base-href /flutter-dashboard/` 生成 Flutter Web 静态包
+4. 使用 `flutter build web --base-href /flutter/` 生成 Flutter Web 静态包
 5. 将构建产物同步到：
    ```text
-   web/public/flutter-dashboard/
+   web/public/flutter/
    ```
-6. 让更直观的本地路径：
-   ```text
-   web/src/app/flutter/[[...slug]]/page.tsx
-   ```
-   作为新的独立主页面预览入口
+6. 通过 `web/next.config.ts` 把 `/flutter` 与 `/flutter/:path*` 重写到 `web/public/flutter/index.html`
 
 这样处理后的结果是：
 
@@ -318,14 +314,14 @@ flutter/
 本次切换完成后，已验证：
 
 - `flutter analyze` 通过
-- `flutter build web --base-href /flutter-dashboard/` 通过
+- `flutter build web --base-href /flutter/` 通过
 - `web/` 的 `npm run build` 通过
 
 这说明：
 
 - Flutter 总览页构建链路正常
-- Flutter 静态资源可以被当前站点挂载
-- Next.js 新增预览路由后，没有破坏旧总览页的构建链路
+- Flutter 静态资源可以被当前站点挂载到 `/flutter/`
+- Next.js 重写后，浏览器地址栏可以直接保持 `/flutter/dashboard`
 
 ---
 

@@ -296,30 +296,21 @@ GoRoute(
 ),
 ```
 
-### 5.2 Flutter 内部嵌入预览路由
+### 5.2 Flutter 内部页面路由
 
 例如：
 
 ```dart
 GoRoute(
-  path: '/embed/assets',
-  builder: (context, state) => const Scaffold(
-    backgroundColor: Color(0xFFF4F7FB),
-    body: SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 20),
-        child: AssetsPage(),
-      ),
-    ),
-  ),
+  path: '/assets',
+  builder: (context, state) => const AssetsPage(),
 ),
 ```
 
 注意：
 
-- 预览路由要尽量无壳层
-- 不要把侧边栏、Header 再包一层进 Flutter
-- 旧站壳层已经有了
+- 现在短地址预览直接走 Flutter 自己的业务路由
+- 不需要再额外维护 `embed/<feature>` 这一层
 
 ---
 
@@ -341,17 +332,24 @@ web/src/app/flutter/[[...slug]]/page.tsx
 - 不和旧 `(dashboard)` 混在一起
 - 后面想删也容易
 
-### 6.2 `page.tsx` 做什么
+### 6.2 入口怎么工作
 
-它只负责：
+它现在的工作方式是：
 
-- 放一个说明卡片
-- 用 `iframe` 加载：
-  ```text
-  /flutter-dashboard/index.html#/<feature>
-  ```
+1. Flutter Web 构建到：
+   ```text
+   web/public/flutter/
+   ```
+2. Next 用 rewrite 把：
+   ```text
+   /flutter
+   /flutter/:path*
+   ```
+   重写到：
+   ```text
+   /flutter/index.html
+   ```
 
-不要把页面真实业务逻辑写在这里。
 预览时统一使用短地址：
 
 - `/flutter/dashboard`
@@ -393,7 +391,7 @@ web/src/components/shared/navigation.ts
 当前项目的预览静态资源挂载目录是：
 
 ```text
-web/public/flutter-dashboard/
+web/public/flutter/
 ```
 
 所以每次迁完新页面后，都要重新构建 Flutter Web：
@@ -401,13 +399,13 @@ web/public/flutter-dashboard/
 ```powershell
 cd F:\1python\xiangmu\openstar-StarAccounting\flutter
 flutter analyze
-flutter build web --base-href /flutter-dashboard/
+flutter build web --base-href /flutter/
 ```
 
 然后把构建结果同步到：
 
 ```text
-F:\1python\xiangmu\openstar-StarAccounting\web\public\flutter-dashboard\
+F:\1python\xiangmu\openstar-StarAccounting\web\public\flutter\
 ```
 
 这样新的预览路由才能看到最新页面。
@@ -435,7 +433,7 @@ npm run build
 
 如果页面改动比较大，再补：
 
-- `flutter build web --base-href /flutter-dashboard/`
+- `flutter build web --base-href /flutter/`
 
 ---
 
@@ -511,7 +509,6 @@ flutter/lib/routing/app_router.dart
 新增：
 
 - `/assets`
-- `/embed/assets`
 
 ### 7.4 Web 预览入口
 
