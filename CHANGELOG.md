@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.38 - 2026-03-31
+
+### Modified
+
+- **Flutter 侧边栏复刻旧 Web 样式**:
+  - `flutter/lib/shared/layout/app_shell.dart` 的桌面侧边栏改为浅色毛玻璃壳层，补齐品牌区、双行导航项、图标底板、激活态和底部账户区，整体视觉对齐旧版左侧边栏。
+  - 移动端新增同风格 Drawer，并让底部导航同步收口到同一套配色和圆角容器，避免 Flutter 新页面桌面端与移动端导航语言割裂。
+  - 直接调用 Dart SDK 执行 `dart analyze lib/shared/layout/app_shell.dart` 已通过，确认本轮侧边栏样式改造没有引入语法或类型问题。
+
 ## 2.3.37 - 2026-03-31
 
 ### Modified
