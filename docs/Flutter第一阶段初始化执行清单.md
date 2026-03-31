@@ -13,7 +13,7 @@
 - 仓库根目录：`f:\1python\xiangmu\openstar-StarAccounting`
 - 旧前端：`web/`
 - 后端：`src/server/`
-- 新前端目标目录：`app_flutter/`
+- 新前端目标目录：`flutter/`
 
 ---
 
@@ -24,7 +24,7 @@
 第一阶段只做 5 件事：
 
 1. 本机 Flutter 开发环境可用
-2. 仓库里成功创建 `app_flutter/`
+2. 仓库里成功创建 `flutter/`
 3. Flutter Web 和 Android 调试环境能跑起来
 4. 登录态、路由守卫、应用壳层跑通
 5. 至少接通一组真实后端接口并显示到页面
@@ -41,7 +41,7 @@
 
 - 可以在 `Chrome` 中启动 Flutter Web
 - 可以在 Android 模拟器或真机中启动 Flutter App
-- 项目中已有 `app_flutter/` 目录和基础模块结构
+- 项目中已有 `flutter/` 目录和基础模块结构
 - 登录页能请求真实后端接口
 - 登录后能进入主壳层页面
 - 有路由守卫，未登录不能直接进入业务页
@@ -154,7 +154,7 @@ flutter devices
 
 ```powershell
 cd f:\1python\xiangmu\openstar-StarAccounting
-flutter create app_flutter
+flutter create --project-name app_flutter flutter
 ```
 
 创建完成后先不要急着加页面，先确保空工程能跑。
@@ -162,7 +162,7 @@ flutter create app_flutter
 ## 6.3 第三步：先跑通 Web
 
 ```powershell
-cd app_flutter
+cd flutter
 flutter run -d chrome
 ```
 
@@ -189,7 +189,7 @@ flutter run -d android
 
 如果你准备正式开工，建议这一步单独提交一次：
 
-- 创建 `app_flutter/`
+- 创建 `flutter/`
 - 空工程可运行
 
 这样后面即使结构搭坏了，也有一个很干净的初始点。
@@ -242,14 +242,14 @@ flutter pub add --dev flutter_lints
 
 ## 8. 推荐目录结构
 
-创建完 `app_flutter/` 后，不要把所有代码都塞进 `lib/main.dart`。
+创建完 `flutter/` 后，不要把所有代码都塞进 `lib/main.dart`。
 
 第一阶段就把结构拉开。
 
 推荐结构：
 
 ```text
-app_flutter/
+flutter/
 ├── lib/
 │   ├── bootstrap/
 │   │   ├── app.dart
@@ -453,7 +453,7 @@ app_flutter/
 ## Day 1：环境和工程
 
 - [ ] 跑通 `flutter doctor`
-- [ ] 创建 `app_flutter/`
+- [ ] 创建 `flutter/`
 - [ ] 跑通 Flutter Web
 - [ ] 跑通 Android 调试
 - [ ] 建立基础目录
@@ -809,7 +809,7 @@ flutter pub run build_runner watch --delete-conflicting-outputs
 
 推荐按小步提交：
 
-1. `init: 创建app_flutter空工程`
+1. `init: 创建flutter空工程`
 2. `build: 接入Flutter基础依赖`
 3. `feat: 建立路由与应用壳层`
 4. `feat: 接入登录与用户态`
@@ -831,8 +831,8 @@ flutter pub run build_runner watch --delete-conflicting-outputs
 cd f:\1python\xiangmu\openstar-StarAccounting
 flutter doctor -v
 flutter config --enable-web
-flutter create app_flutter
-cd app_flutter
+flutter create --project-name app_flutter flutter
+cd flutter
 flutter run -d chrome
 flutter pub add go_router
 flutter pub add flutter_riverpod
@@ -872,6 +872,6 @@ flutter pub add --dev flutter_lints
 
 先完成这件事：
 
-**把 `app_flutter/` 建起来，把登录、路由、壳层、网络层和一个真实业务页跑通。**
+**把 `flutter/` 建起来，把登录、路由、壳层、网络层和一个真实业务页跑通。**
 
 这一步做稳了，后面的 Flutter Web + App 迁移才不会乱。

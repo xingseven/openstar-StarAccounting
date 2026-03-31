@@ -7,7 +7,7 @@
 它对应当前仓库中的新目录：
 
 ```text
-app_flutter/
+flutter/
 ```
 
 ---
@@ -36,7 +36,7 @@ app_flutter/
 
 这次目标拆成 5 件事：
 
-1. 在仓库内创建 `app_flutter/`
+1. 在仓库内创建 `flutter/`
 2. 接入 Flutter 基础依赖
 3. 建立登录与认证状态
 4. 建立可扩展的 Web / App 壳层
@@ -50,7 +50,7 @@ app_flutter/
 
 已完成：
 
-- 使用 `flutter create app_flutter` 生成 Flutter 工程
+- 使用 `flutter create --project-name app_flutter flutter` 生成 Flutter 工程
 - 保留 `android/ ios/ web/ windows/ macos/ linux/` 多端目录
 - 调整 `pubspec.yaml`，接入当前阶段需要的最小依赖
 
@@ -240,7 +240,7 @@ app_flutter/
 
 当前可以明确确认：
 
-- `app_flutter/` 已创建
+- `flutter/` 已创建
 - 登录与路由守卫已存在
 - 总览页已接入真实数据
 - Flutter Web 已可构建
