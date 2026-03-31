@@ -24,6 +24,9 @@ export default function FlutterDashboardPreviewPage() {
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               这里专门用于查看新的 Flutter 总览页。旧的 TypeScript 总览页已经恢复到原路由，后续可以一边参照旧样式，一边继续打磨新页面。
             </p>
+            <p className="mt-2 text-xs text-slate-500">
+              本地文件路径已迁到更直观的 `web/src/app/flutter-dashboard-preview/`。
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-2">

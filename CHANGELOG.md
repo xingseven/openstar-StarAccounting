@@ -1,13 +1,13 @@
 # Changelog
 
-## 2.3.31 - 2026-03-31
+## 2.3.32 - 2026-03-31
 
 ### Modified
 
-- **总览页改为新旧并行预览**:
-  - 恢复旧的 TypeScript 总览页到原路由 `/`，继续作为后续 Flutter 版本对照的参照页面。
-  - 新增独立预览路由 `/dashboard-flutter`，用于单独查看新的 Flutter 总览页，避免在尚未完全对齐前直接覆盖旧页面。
-  - 继续保留 `web/public/flutter-dashboard/` 静态资源挂载方式，同时 `flutter analyze`、`flutter build web` 与 `web` 的 `npm run build` 均通过。
+- **Flutter 总览预览页迁到更直观的 Web 路径**:
+  - 将新的 Flutter 总览预览页从 `web/src/app/(dashboard)/dashboard-flutter/` 迁移到更直观的 `web/src/app/flutter-dashboard-preview/`。
+  - 预览路由同步调整为 `/flutter-dashboard-preview`，方便本地直接定位新页面文件，同时保留旧总览页 `/` 不变。
+  - 保持 `web/public/flutter-dashboard/` 静态资源挂载方式不变，`flutter analyze` 与 `web` 的 `npm run build` 均通过。
 
 ## 2.3.29 - 2026-03-31
 

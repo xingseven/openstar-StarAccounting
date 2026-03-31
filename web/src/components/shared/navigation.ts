@@ -41,7 +41,7 @@ export const NAV_ITEMS: NavigationItem[] = [
 
 export const PAGE_META: Record<string, PageMeta> = {
   "/": { title: "总览", subtitle: "集中查看资产、预算、现金流和风险信号。" },
-  "/dashboard-flutter": { title: "新总览预览", subtitle: "查看 Flutter 版总览页，对照旧版继续迭代。" },
+  "/flutter-dashboard-preview": { title: "新总览预览", subtitle: "查看 Flutter 版总览页，对照旧版继续迭代。" },
   "/assets": { title: "资产管理", subtitle: "梳理账户余额、资产分布和净值结构。" },
   "/consumption": { title: "消费流水", subtitle: "追踪最近交易、分类结构和消费趋势。" },
   "/savings": { title: "储蓄目标", subtitle: "管理储蓄计划、目标进度和月度节奏。" },

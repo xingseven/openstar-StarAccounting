@@ -261,20 +261,24 @@ app_flutter/
 2. 给 Flutter 新增一个无壳层的嵌入路由：`/embed/dashboard`
 3. 在 Next.js 中新增独立预览路由：
    ```text
-   /dashboard-flutter
+   /flutter-dashboard-preview
    ```
 4. 使用 `flutter build web --base-href /flutter-dashboard/` 生成 Flutter Web 静态包
 5. 将构建产物同步到：
    ```text
    web/public/flutter-dashboard/
    ```
-6. 让 `web/src/app/(dashboard)/dashboard-flutter/page.tsx` 加载新的 Flutter 总览页
+6. 让更直观的本地路径：
+   ```text
+   web/src/app/flutter-dashboard-preview/page.tsx
+   ```
+   加载新的 Flutter 总览页
 
 这样处理后的结果是：
 
 - 旧 TS 文件保留，不删除
 - 旧总览页仍然保留在原路由 `/`
-- 新 Flutter 总览页可以通过 `/dashboard-flutter` 单独查看
+- 新 Flutter 总览页可以通过 `/flutter-dashboard-preview` 单独查看
 - 其余页面仍继续使用原有 TS 页面
 
 这样更适合当前阶段，因为它同时满足：
@@ -289,7 +293,7 @@ app_flutter/
 
 当前真正新增到 Flutter 的只有：
 
-- Flutter 总览页预览入口 `/dashboard-flutter`
+- Flutter 总览页预览入口 `/flutter-dashboard-preview`
 
 仍保留 TS 的部分包括：
 
