@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.40 - 2026-03-31
+
+### Modified
+
+- **开发启动脚本补齐 Flutter 3001 端口**:
+  - 根目录新增 `dev:flutter`，使用 Flutter Web 独立启动新站，默认运行在 `http://localhost:3001`。
+  - 根目录 `npm run dev` 现已同时启动后端 `3006`、旧 Web `3000` 和新 Flutter `3001`，不需要再手动分别记三套命令。
+  - 额外保留 `dev:legacy`，用于只启动旧站和后端的双进程模式。
+
 ## 2.3.39 - 2026-03-31
 
 ### Modified

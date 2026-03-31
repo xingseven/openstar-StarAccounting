@@ -1,15 +1,17 @@
 {
   "name": "openstar-StarAccounting",
-  "version": "2.3.22",
+  "version": "2.3.29",
   "description": "## 目录",
   "main": "index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\" \"npm run dev:flutter\"",
+    "dev:legacy": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "cd src/server && npm run dev",
     "dev:web": "cd web && npm run dev",
+    "dev:flutter": "cd flutter && flutter run -d edge --web-hostname 0.0.0.0 --web-port 3001 --dart-define=API_BASE_URL=http://127.0.0.1:3006",
     "build": "npm run build:server && npm run build:web",
     "build:server": "cd src/server && npm run build",
     "build:web": "cd web && npm run build"
