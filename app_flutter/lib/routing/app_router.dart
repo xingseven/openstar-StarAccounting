@@ -49,6 +49,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/login',
         builder: (context, state) => const LoginPage(),
       ),
+      GoRoute(
+        path: '/embed/dashboard',
+        builder: (context, state) => const Scaffold(
+          backgroundColor: Color(0xFFF4F7FB),
+          body: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 20),
+              child: DashboardPage(),
+            ),
+          ),
+        ),
+      ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => AppShell(

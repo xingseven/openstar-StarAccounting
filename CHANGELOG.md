@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.30 - 2026-03-31
+
+### Modified
+
+- **总览页入口切换到 Flutter 首版**:
+  - 保留现有 `web/` 外壳与 TypeScript 文件不删除，仅将当前总览页入口改为加载新的 Flutter 总览页。
+  - Flutter 新增无壳层嵌入路由，并将 `flutter build web --base-href /flutter-dashboard/` 的产物同步到 `web/public/flutter-dashboard/`，供当前站点直接加载。
+  - `web/src/app/(dashboard)/page.tsx` 已切换为新的 Flutter 总览页入口，同时 `flutter analyze`、`flutter build web` 与 `web` 的 `npm run build` 均通过。
+
+## 2.3.29 - 2026-03-31
+
+### Modified
+
+- **页面切换预热与路由提速**:
+  - 新增 `DashboardRouteWarmup`，登录后按优先级空闲预取总览、消费、资产、储蓄、贷款和数据页路由，减少点击后的等待时间。
+  - 预热会根据网络状况自动收敛，弱网环境只保留高优先级队列，避免无差别抢占带宽。
+- **主页面整页加载链路收窄**:
+  - 总览、资产、储蓄、贷款页面取消整页主题级 `dynamic(..., { ssr: false })`，把主页面 UI 代码提前纳入路由资源。
+  - 消费与贷款页面继续保留图表库按需块，避免为了切页优化把所有重图表依赖一次性塞回主包。
+- **页面数据热缓存接入**:
+  - 新增通用 `warm-cache` 和页面级 data loader，为总览、消费、资产、储蓄、贷款提供短时热缓存与空闲预取，减少重复 loading 壳和接口往返。
+  - `npm run typecheck` 与 `npm run build` 已通过，确认本轮优化可正常构建。
+
 ## 2.3.28 - 2026-03-31
 
 ### Added

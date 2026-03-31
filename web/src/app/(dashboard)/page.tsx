@@ -1,179 +1,61 @@
 "use client";
 
-import { apiFetch } from "@/lib/api";
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import { MOCK_DASHBOARD } from "@/features/shared/mockData";
-import { DashboardLoadingShell } from "@/features/dashboard/components/themes/DashboardLoadingShell";
-import { isSavingsGoalSyncedToAssets } from "@/features/savings/plan-config";
-import type { SavingsGoal } from "@/types";
-
-const DashboardDefaultTheme = dynamic(
-  () => import("@/features/dashboard/components/themes/DefaultDashboard").then(mod => mod.DashboardDefaultTheme),
-  {
-    ssr: false,
-    loading: () => <DashboardLoadingShell />
-  }
-);
-
-export type BudgetAlert = {
-  id: string;
-  category: string;
-  platform?: string | null;
-  period: string;
-  scopeType: string;
-  amount: string;
-  used: string;
-  percent: number;
-  status: "normal" | "warning" | "overdue";
-  alertPercent: number;
-};
-
-export type DashboardData = {
-  totalAssets: number;
-  totalDebt: number;
-  monthExpense: number;
-  monthIncome: number;
-  lastMonthExpense: number;
-  lastMonthIncome: number;
-  monthSavingsIncome: number;
-  monthSavingsExpense: number;
-  recentTransactions: Array<{
-    id: string;
-    date: string;
-    type: "EXPENSE" | "INCOME";
-    amount: string;
-    category: string;
-    platform: string;
-    merchant?: string;
-  }>;
-  budgetAlerts: BudgetAlert[];
-};
-
-type Asset = {
-  id: string;
-  name: string;
-  balance: number;
-  estimatedValue?: string;
-};
-
-type Loan = {
-  id: string;
-  remainingAmount: number;
-};
-
-type ConsumptionSummary = {
-  totalExpense: string;
-  expenseCount: number;
-  avgExpense: string;
-};
-
-type Transaction = {
-  id: string;
-  date: string;
-  type: "EXPENSE" | "INCOME";
-  amount: string;
-  category: string;
-  platform: string;
-  merchant?: string;
-};
-
-type SavingsMetricItem = Pick<SavingsGoal, "planConfig"> & {
-  currentAmount: number | string;
-};
-
-async function fetchDashboardData(): Promise<DashboardData> {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).toISOString();
-
-  const qsExpense = new URLSearchParams({ type: "EXPENSE", startDate: start, endDate: end });
-  const qsIncome = new URLSearchParams({ type: "INCOME", startDate: start, endDate: end });
-  const qsLastMonthExpense = new URLSearchParams({ type: "EXPENSE", startDate: lastMonthStart, endDate: lastMonthEnd });
-  const qsLastMonthIncome = new URLSearchParams({ type: "INCOME", startDate: lastMonthStart, endDate: lastMonthEnd });
-
-  const [assetsData, loansData, savingsData, expenseData, incomeData, lastMonthExpenseData, lastMonthIncomeData, transactionsData, savingsTxData, budgetAlertsData] = await Promise.all([
-    apiFetch<{ items: Asset[] }>("/api/assets"),
-    apiFetch<{ items: Loan[] }>("/api/loans"),
-    apiFetch<{ items: SavingsMetricItem[] }>("/api/savings"),
-    apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsExpense}`),
-    apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsIncome}`),
-    apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsLastMonthExpense}`),
-    apiFetch<ConsumptionSummary>(`/api/metrics/consumption/summary?${qsLastMonthIncome}`),
-    apiFetch<{ items: Transaction[] }>(`/api/transactions?page=1&pageSize=5`),
-    apiFetch<{ items: Transaction[] }>(`/api/transactions?pageSize=100`),
-    apiFetch<{ alerts: BudgetAlert[] }>("/api/budgets/alerts"),
-  ]);
-
-  const savingsKeywords = ["储蓄", "存款"];
-  const savingsTxs = savingsTxData.items.filter(t =>
-    savingsKeywords.some(k => t.category?.includes(k) || t.merchant?.includes(k))
-  );
-  const monthSavingsIncome = savingsTxs
-    .filter(t => t.type === "INCOME" && new Date(t.date) >= new Date(start))
-    .reduce((acc, t) => acc + Number(t.amount), 0);
-  const monthSavingsExpense = savingsTxs
-    .filter(t => t.type === "EXPENSE" && new Date(t.date) >= new Date(start))
-    .reduce((acc, t) => acc + Number(t.amount), 0);
-
-  const assetsTotal = assetsData.items.reduce((acc, cur) => acc + Number(cur.estimatedValue ?? cur.balance), 0);
-  const unsyncedSavingsTotal = savingsData.items.reduce(
-    (acc, cur) => acc + (isSavingsGoalSyncedToAssets(cur) ? 0 : Number(cur.currentAmount)),
-    0,
-  );
-
-  return {
-    totalAssets: assetsTotal + unsyncedSavingsTotal,
-    totalDebt: loansData.items.reduce((acc, cur) => acc + Number(cur.remainingAmount), 0),
-    monthExpense: Number(expenseData.totalExpense),
-    monthIncome: Number(incomeData.totalExpense),
-    lastMonthExpense: Number(lastMonthExpenseData.totalExpense),
-    lastMonthIncome: Number(lastMonthIncomeData.totalExpense),
-    monthSavingsIncome,
-    monthSavingsExpense,
-    recentTransactions: transactionsData.items,
-    budgetAlerts: budgetAlertsData.alerts || [],
-  };
-}
+import { useMemo, useState } from "react";
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData>(MOCK_DASHBOARD);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const realData = await fetchDashboardData();
-        // 如果所有数据都是 0 或空，使用 mock 数据用于展示
-        const hasNoData =
-          realData.totalAssets === 0 &&
-          realData.totalDebt === 0 &&
-          realData.monthExpense === 0 &&
-          realData.monthIncome === 0 &&
-          realData.lastMonthExpense === 0 &&
-          realData.lastMonthIncome === 0 &&
-          realData.recentTransactions.length === 0;
-        if (hasNoData) {
-          setData(MOCK_DASHBOARD);
-        } else {
-          setData(realData);
-        }
-      } catch (error) {
-        console.warn("Failed to fetch dashboard data, using mock data:", error);
-        setData(MOCK_DASHBOARD);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, []);
+  const [loaded, setLoaded] = useState(false);
+  const iframeSrc = useMemo(
+    () => `/flutter-dashboard/index.html#/embed/dashboard?v=20260331-1`,
+    [],
+  );
 
   return (
-    <div>
-      <DashboardDefaultTheme data={data} loading={loading} />
+    <div className="space-y-4">
+      <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold tracking-[0.16em] text-slate-400 uppercase">
+              Flutter Dashboard
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+              总览页已切换到新的 Flutter 首版
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              当前入口已经使用新的 Flutter 总览页，旧的 TypeScript 文件仍然保留在仓库里，方便后续对照和回滚。
+            </p>
+          </div>
+
+          <a
+            href={iframeSrc}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            单独打开新页面
+          </a>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_30px_70px_rgba(15,23,42,0.08)]">
+        {!loaded ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-[linear-gradient(180deg,rgba(248,250,252,0.96),rgba(241,245,249,0.92))]">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-blue-500" />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">正在加载新的 Flutter 总览页</p>
+                <p className="mt-1 text-xs text-slate-500">首次打开会比普通页面慢一点，后续会走静态资源缓存。</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <iframe
+          title="Flutter Dashboard"
+          src={iframeSrc}
+          className="block h-[calc(100dvh-13rem)] min-h-[780px] w-full border-0 bg-slate-50 md:h-[calc(100dvh-10rem)] md:min-h-[860px]"
+          onLoad={() => setLoaded(true)}
+        />
+      </div>
     </div>
   );
 }
