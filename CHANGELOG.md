@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.39 - 2026-03-31
+
+### Modified
+
+- **Flutter 预览路由改为“短地址 + 明确本地文件”方案**:
+  - 新增 `web/src/app/flutter/dashboard/page.tsx`、`web/src/app/flutter/assets/page.tsx`、`web/src/app/flutter/data/page.tsx` 和 `web/src/app/flutter/page.tsx`，让 `/flutter/*` 路由能够直接对应到本地真实页面文件。
+  - Flutter Web 静态产物从 `web/public/flutter/` 调整到 `web/public/flutter-runtime/`，预览页内部通过 iframe 加载静态运行时，浏览器地址栏则保持简洁的 `/flutter/...`。
+  - 删除旧的 `web/src/app/flutter/[[...slug]]/page.tsx` 与旧静态目录，避免再出现“路由很短但找不到本地入口文件”的问题。
+
 ## 2.3.38 - 2026-03-31
 
 ### Modified

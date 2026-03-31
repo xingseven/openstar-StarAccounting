@@ -318,10 +318,13 @@ GoRoute(
 
 新页面不要直接替换旧路由。
 
-先统一复用一个顶层短地址预览路由：
+先统一采用“短地址 + 明确本地入口文件”的方案：
 
 ```text
-web/src/app/flutter/[[...slug]]/page.tsx
+web/src/app/flutter/dashboard/page.tsx
+web/src/app/flutter/assets/page.tsx
+web/src/app/flutter/data/page.tsx
+web/public/flutter-runtime/
 ```
 
 ### 6.1 为什么放顶层
@@ -338,16 +341,12 @@ web/src/app/flutter/[[...slug]]/page.tsx
 
 1. Flutter Web 构建到：
    ```text
-   web/public/flutter/
+   web/public/flutter-runtime/
    ```
-2. Next 用 rewrite 把：
+2. Next 在 `web/src/app/flutter/<feature>/page.tsx` 下提供明确的短地址入口文件
+3. 每个入口文件内部用 iframe 加载：
    ```text
-   /flutter
-   /flutter/:path*
-   ```
-   重写到：
-   ```text
-   /flutter/index.html
+   /flutter-runtime/index.html#/<feature>
    ```
 
 预览时统一使用短地址：
@@ -391,7 +390,7 @@ web/src/components/shared/navigation.ts
 当前项目的预览静态资源挂载目录是：
 
 ```text
-web/public/flutter/
+web/public/flutter-runtime/
 ```
 
 所以每次迁完新页面后，都要重新构建 Flutter Web：
@@ -399,13 +398,13 @@ web/public/flutter/
 ```powershell
 cd F:\1python\xiangmu\openstar-StarAccounting\flutter
 flutter analyze
-flutter build web --base-href /flutter/
+flutter build web --base-href /flutter-runtime/
 ```
 
 然后把构建结果同步到：
 
 ```text
-F:\1python\xiangmu\openstar-StarAccounting\web\public\flutter\
+F:\1python\xiangmu\openstar-StarAccounting\web\public\flutter-runtime\
 ```
 
 这样新的预览路由才能看到最新页面。
@@ -433,7 +432,7 @@ npm run build
 
 如果页面改动比较大，再补：
 
-- `flutter build web --base-href /flutter/`
+- `flutter build web --base-href /flutter-runtime/`
 
 ---
 

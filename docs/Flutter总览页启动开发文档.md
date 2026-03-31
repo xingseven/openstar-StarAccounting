@@ -258,17 +258,20 @@ flutter/
 具体做法是：
 
 1. 保留原有 `web/` 的登录体系、主布局、侧边栏、Header 和旧总览页
-2. Flutter Web 开启 path url strategy，直接使用 Flutter 自己的页面路由
-3. 在 Next.js 中新增短地址重写：
+2. 保留原有 `web/` 的登录体系、主布局、侧边栏、Header 和旧总览页
+3. 在 Next.js 中新增明确的本地短地址入口文件：
    ```text
-   /flutter/dashboard
+   web/src/app/flutter/dashboard/page.tsx
    ```
-4. 使用 `flutter build web --base-href /flutter/` 生成 Flutter Web 静态包
+4. 使用 `flutter build web --base-href /flutter-runtime/` 生成 Flutter Web 静态包
 5. 将构建产物同步到：
    ```text
-   web/public/flutter/
+   web/public/flutter-runtime/
    ```
-6. 通过 `web/next.config.ts` 把 `/flutter` 与 `/flutter/:path*` 重写到 `web/public/flutter/index.html`
+6. `web/src/app/flutter/dashboard/page.tsx` 通过 iframe 加载：
+   ```text
+   /flutter-runtime/index.html#/dashboard
+   ```
 
 这样处理后的结果是：
 
@@ -320,8 +323,8 @@ flutter/
 这说明：
 
 - Flutter 总览页构建链路正常
-- Flutter 静态资源可以被当前站点挂载到 `/flutter/`
-- Next.js 重写后，浏览器地址栏可以直接保持 `/flutter/dashboard`
+- Flutter 静态资源可以被当前站点挂载到 `/flutter-runtime/`
+- 浏览器地址栏保持 `/flutter/dashboard`，同时本地也有明确的 `web/src/app/flutter/dashboard/page.tsx` 入口文件
 
 ---
 
