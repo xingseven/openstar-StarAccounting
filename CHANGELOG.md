@@ -1,13 +1,13 @@
 # Changelog
 
-## 2.3.30 - 2026-03-31
+## 2.3.31 - 2026-03-31
 
 ### Modified
 
-- **总览页入口切换到 Flutter 首版**:
-  - 保留现有 `web/` 外壳与 TypeScript 文件不删除，仅将当前总览页入口改为加载新的 Flutter 总览页。
-  - Flutter 新增无壳层嵌入路由，并将 `flutter build web --base-href /flutter-dashboard/` 的产物同步到 `web/public/flutter-dashboard/`，供当前站点直接加载。
-  - `web/src/app/(dashboard)/page.tsx` 已切换为新的 Flutter 总览页入口，同时 `flutter analyze`、`flutter build web` 与 `web` 的 `npm run build` 均通过。
+- **总览页改为新旧并行预览**:
+  - 恢复旧的 TypeScript 总览页到原路由 `/`，继续作为后续 Flutter 版本对照的参照页面。
+  - 新增独立预览路由 `/dashboard-flutter`，用于单独查看新的 Flutter 总览页，避免在尚未完全对齐前直接覆盖旧页面。
+  - 继续保留 `web/public/flutter-dashboard/` 静态资源挂载方式，同时 `flutter analyze`、`flutter build web` 与 `web` 的 `npm run build` 均通过。
 
 ## 2.3.29 - 2026-03-31
 
