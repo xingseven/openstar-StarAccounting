@@ -1,147 +1,13 @@
-# Changelog
+﻿# Changelog
 
-## 2.3.46 - 2026-04-01
-
-### Fixed
-
-- **继续降低 Flutter 总览页对桌面侧边栏的干扰**:
-  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 在桌面端移除了总览页外层 `RefreshIndicator`，避免桌面环境继续保留移动端下拉刷新容器带来的额外交互与重绘负担。
-  - 桌面端总览滚动改为 `ClampingScrollPhysics`，减少切页后首屏滚动区域的回弹和额外计算。
-  - `flutter/lib/features/dashboard/presentation/widgets/cashflow_chart_card.dart` 与 `category_pie_card.dart` 已彻底关闭图表 hover/touch 命中处理，避免桌面鼠标进入总览图表区后持续触发额外事件。
-  - `flutter/lib/features/dashboard/presentation/dashboard_utils.dart` 同步收轻总览卡片阴影，继续压低总览首屏绘制成本。
-
-### Verified
-
-- `flutter analyze` 通过。
-
-## 2.3.45 - 2026-04-01
-
-### Fixed
-
-- **修复 Flutter 切到总览页时侧边栏发僵问题**:
-  - `flutter/lib/main.dart` 为桌面侧边栏和右侧主内容区补上 `RepaintBoundary`，避免总览页重绘时把侧边栏也拖进同一批重绘。
-  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 为总览主内容区补上独立重绘边界，减少切页时的整屏重绘压力。
-  - `flutter/lib/features/dashboard/presentation/widgets/cashflow_chart_card.dart` 与 `category_pie_card.dart` 关闭图表切入时的默认动画，降低切到总览页瞬间的主线程负担。
-
-### Verified
-
-- `flutter analyze` 通过。
-
-## 2.3.44 - 2026-04-01
+## 2.3.47 - 2026-04-01
 
 ### Modified
 
-- **Flutter 总览页桌面宽度与左右边距对齐旧版**:
-  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 新增桌面端内容最大宽度收束逻辑，大屏不再把总览页内容铺满整个工作区。
-  - 同步提高 `1280+` 与 `1500+` 宽屏下的左右 padding，让总览页回到旧版那种居中展示、两侧留白更明显的桌面节奏。
-  - 加载骨架页也同步使用相同宽度和边距规则，避免加载态与真实页面左右空间不一致。
-
-### Verified
-
-- `flutter analyze` 通过。
-
-## 2.3.43 - 2026-04-01
-
-### Modified
-
-- **Flutter 总览页完整复刻旧版 Dashboard 结构**:
-  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 重组为旧版总览页对应的 Hero 仪表区 + 收支卡 + 现金流卡 + 近期消费构成 + 最近交易异形布局，桌面端与中宽屏布局顺序同步向旧 Web 靠拢。
-  - `flutter/lib/features/dashboard/presentation/widgets/hero_section.dart` 完整补齐旧版总览 Hero 的深色渐变外观、净资产大字区、6 宫格指标、预算提醒横幅和收起交互。
-  - `flutter/lib/features/dashboard/presentation/widgets/cashflow_chart_card.dart`、`category_pie_card.dart`、`recent_transactions_card.dart` 按旧版卡片文案、层级和信息组织重做，最近交易按钮与金额行样式同步对齐旧页面。
-  - `flutter/lib/main.dart` 新增 `/budgets` 占位路由，避免 Hero 中“查看预算”跳转断路。
-
-### Added
-
-- **补充 Flutter 总览页专项开发文档与版本记录**:
-  - 新增 `docs/Flutter总览页复刻开发文档.md`，记录旧版总览页拆解、Flutter 对应实现策略、验收步骤和本轮迁移边界。
-  - 新增 `历史版本/2026-04-01-Flutter总览页完整复刻.md`，沉淀本次总览页复刻的目标、结果与验证记录。
-
-### Verified
-
-- `flutter analyze` 通过。
-- `flutter build web` 通过。
-- `flutter test` 未通过，当前本机仍被 `flutter_tester` 的 WebSocket 启动异常阻塞，需后续单独处理测试环境。
-
-## 2.3.42 - 2026-04-01
-
-### Added
-
-- **补充 Flutter 旧版页面迁移开发计划**:
-  - 新增 `docs/Flutter旧版页面迁移开发计划.md`，盘点当前 `web/src` 旧版页面范围、复杂度和 `flutter/lib` 的现有覆盖情况。
-  - 文档明确了 Flutter 迁移的推荐顺序：先补鉴权与公共底座，再迁 `dashboard / assets / savings / loans`，随后推进 `budgets / connections / data`，最后收尾 `settings / themes / ai / about / admin`。
-  - 同步补充每阶段验收标准、目录落位、风险点与单页迁移模板，便于后续直接按计划推进 Dart 版页面开发。
-
-## 2.3.41 - 2026-03-31
-
-### Modified
-
-- **Flutter 3001 开发服务切换为 web-server**:
-  - 将根目录 `dev:flutter` 从 `flutter run -d edge` 调整为 `flutter run -d web-server`，避免浏览器调试 websocket 握手失败导致 3001 进程直接退出。
-  - `3001` 现在作为独立 Flutter Web 开发服务启动，不再依赖 Edge 调试连接是否成功。
-
-## 2.3.40 - 2026-03-31
-
-### Modified
-
-- **开发启动脚本补齐 Flutter 3001 端口**:
-  - 根目录新增 `dev:flutter`，使用 Flutter Web 独立启动新站，默认运行在 `http://localhost:3001`。
-  - 根目录 `npm run dev` 现已同时启动后端 `3006`、旧 Web `3000` 和新 Flutter `3001`，不需要再手动分别记三套命令。
-  - 额外保留 `dev:legacy`，用于只启动旧站和后端的双进程模式。
-
-## 2.3.39 - 2026-03-31
-
-### Modified
-
-- **Flutter 预览路由改为“短地址 + 明确本地文件”方案**:
-  - 新增 `web/src/app/flutter/dashboard/page.tsx`、`web/src/app/flutter/assets/page.tsx`、`web/src/app/flutter/data/page.tsx` 和 `web/src/app/flutter/page.tsx`，让 `/flutter/*` 路由能够直接对应到本地真实页面文件。
-  - Flutter Web 静态产物从 `web/public/flutter/` 调整到 `web/public/flutter-runtime/`，预览页内部通过 iframe 加载静态运行时，浏览器地址栏则保持简洁的 `/flutter/...`。
-  - 删除旧的 `web/src/app/flutter/[[...slug]]/page.tsx` 与旧静态目录，避免再出现“路由很短但找不到本地入口文件”的问题。
-
-## 2.3.38 - 2026-03-31
-
-### Modified
-
-- **Flutter 侧边栏复刻旧 Web 样式**:
-  - `flutter/lib/shared/layout/app_shell.dart` 的桌面侧边栏改为浅色毛玻璃壳层，补齐品牌区、双行导航项、图标底板、激活态和底部账户区，整体视觉对齐旧版左侧边栏。
-  - 移动端新增同风格 Drawer，并让底部导航同步收口到同一套配色和圆角容器，避免 Flutter 新页面桌面端与移动端导航语言割裂。
-  - 直接调用 Dart SDK 执行 `dart analyze lib/shared/layout/app_shell.dart` 已通过，确认本轮侧边栏样式改造没有引入语法或类型问题。
-
-## 2.3.37 - 2026-03-31
-
-### Modified
-
-- **Flutter 预览入口改为真正的 /flutter/* 短地址**:
-  - Flutter Web 启用 path url strategy，并改为使用 `flutter build web --base-href /flutter/` 生成静态产物。
-  - Next 新增 `/flutter` 与 `/flutter/:path*` 重写规则，把短地址直接指向 `web/public/flutter/index.html`，不再依赖 `index.html#...` 外壳页。
-  - 旧的 `web/public/flutter-dashboard/` 静态目录已移除，避免继续误用长地址入口。
-  - `flutter analyze` 与 `web` 的 `npm run build` 均已通过，说明真正的短地址访问方案可正常构建。
-
-## 2.3.35 - 2026-03-31
-
-### Modified
-
-- **Flutter 总览预览改为独立主页面**:
-  - 删除 `web/src/app/flutter-dashboard-preview/layout.tsx`，不再让新总览页复用旧站的 Sidebar、Header 和底部导航壳层。
-  - `web/src/app/flutter-dashboard-preview/page.tsx` 改为直接加载 Flutter 自己的 `/dashboard` 主路由，看到的就是新的独立主页面形态。
-  - `web` 的 `npm run build` 已通过，说明独立预览入口没有破坏现有路由构建链路。
-
-## 2.3.33 - 2026-03-31
-
-### Modified
-
-- **Flutter 主工程目录更名为 flutter**:
-  - 将根目录下的 `app_flutter/` 正式更名为 `flutter/`，让新的统一前端主工程与旧 `web/` 目录边界更清晰。
-  - 同步更新迁移文档、初始化清单、总览页启动文档和开发进度中的路径说明，后续默认统一使用 `flutter/` 作为新前端目录名。
-  - `flutter analyze` 已通过，说明目录更名后 Flutter 工程本身仍可正常分析。
-
-## 2.3.32 - 2026-03-31
-
-### Modified
-
-- **Flutter 总览预览页迁到更直观的 Web 路径**:
-  - 将新的 Flutter 总览预览页从 `web/src/app/(dashboard)/dashboard-flutter/` 迁移到更直观的 `web/src/app/flutter-dashboard-preview/`。
-  - 预览路由同步调整为 `/flutter-dashboard-preview`，方便本地直接定位新页面文件，同时保留旧总览页 `/` 不变。
-  - 保持 `web/public/flutter-dashboard/` 静态资源挂载方式不变，`flutter analyze` 与 `web` 的 `npm run build` 均通过。
+- **清理已废弃前端迁移记录与临时远端分支**:
+  - 删除仓库内已废弃的专项开发文档与对应历史版本记录，避免后续继续参考无效迁移方案。
+  - 从主版本记录与开发进度中移除对应阶段条目，保留当前仍有效的版本演进信息。
+  - 清理对应的远端临时分支，避免 GitHub 上继续保留已废弃的试验性提交入口。
 
 ## 2.3.29 - 2026-03-31
 
@@ -156,39 +22,6 @@
 - **页面数据热缓存接入**:
   - 新增通用 `warm-cache` 和页面级 data loader，为总览、消费、资产、储蓄、贷款提供短时热缓存与空闲预取，减少重复 loading 壳和接口往返。
   - `npm run typecheck` 与 `npm run build` 已通过，确认本轮优化可正常构建。
-
-## 2.3.28 - 2026-03-31
-
-### Added
-
-- **Flutter 统一前端起步工程与总览页首版**:
-  - 新增 `flutter/` Flutter 工程，接入 `go_router`、`flutter_riverpod`、`dio` 与 `intl`，建立启动入口、环境配置、认证状态、路由守卫和响应式壳层。
-  - 首批完成 Flutter 登录页、总览页和基础占位页面，其中总览页已接入真实后端接口，展示总资产、总负债、本月收支、预算提醒与近期流水。
-  - 新增 `docs/Flutter总览页启动开发文档.md`，记录为何先做总览页、当前完成边界、环境阻塞和下一步推进顺序。
-
-## 2.3.26 - 2026-03-31
-
-### Added
-
-- **Flutter 第一阶段初始化执行清单**:
-  - 新增 `docs/Flutter第一阶段初始化执行清单.md`，将 Flutter 统一前端迁移的第一阶段拆成可直接执行的落地清单。
-  - 文档补充了环境准备、首日命令、依赖安装顺序、推荐目录结构、首个接口接入顺序、第一周计划、验收标准和常见错误，便于按步骤真正启动 `flutter/`。
-
-## 2.3.25 - 2026-03-31
-
-### Modified
-
-- **Flutter 统一前端迁移文档补充注意事项**:
-  - 在 `docs/Flutter统一前端迁移开发文档.md` 中新增“开始迁移前的注意事项”章节，补充启动顺序、接口冻结、图表分级、认证方案、文件上传下载、灰度切换和需求控制等实战提醒。
-  - 进一步明确迁移期间应坚持“先跑通，再做好看”的执行原则，降低前端重构过程中的返工风险。
-
-## 2.3.24 - 2026-03-31
-
-### Added
-
-- **Flutter 统一前端迁移开发文档**:
-  - 新增 `docs/Flutter统一前端迁移开发文档.md`，面向当前仓库整理“保留 Node.js 后端、重构 Flutter Web + App 统一前端”的完整迁移方案。
-  - 文档明确了迁移目标、技术选型、目录结构、模块映射、后端复用边界、分阶段计划、风险与验收标准，便于后续按阶段落地。
 
 ## 2.3.23 - 2026-03-31
 
@@ -1893,3 +1726,5 @@
 - 初始化前端 Next.js 工程（web/），建立 Dashboard 路由组与基础布局
 - 增加 TanStack Query Provider 作为前端数据请求基础设施
 - 初始化后端 Express 工程（src/server），提供健康检查与连接码 API 骨架
+
+
