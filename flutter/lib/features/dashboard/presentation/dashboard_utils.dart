@@ -17,7 +17,7 @@ BoxDecoration dashboardSurfaceDecoration({
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(color: dashboardSurfaceBorder),
     boxShadow: const [
-      BoxShadow(color: Color(0x0A0F172A), blurRadius: 24, offset: Offset(0, 8)),
+      BoxShadow(color: Color(0x080F172A), blurRadius: 12, offset: Offset(0, 4)),
     ],
   );
 }

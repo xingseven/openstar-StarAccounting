@@ -84,6 +84,7 @@ class CategoryPieCard extends StatelessWidget {
                         sections: sections,
                         centerSpaceRadius: chartSize * 0.24,
                         sectionsSpace: 3,
+                        pieTouchData: PieTouchData(enabled: false),
                       ),
                       duration: Duration.zero,
                     ),

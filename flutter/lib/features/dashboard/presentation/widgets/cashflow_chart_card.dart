@@ -276,15 +276,7 @@ class _CashflowBarChart extends StatelessWidget {
           ),
         ),
         barGroups: barGroups,
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipItem: (group, groupIndex, rod, rodIndex) =>
-                BarTooltipItem(
-                  formatCurrency(rod.toY),
-                  const TextStyle(fontSize: 11, color: Colors.white),
-                ),
-          ),
-        ),
+        barTouchData: BarTouchData(enabled: false),
       ),
       duration: Duration.zero,
     );

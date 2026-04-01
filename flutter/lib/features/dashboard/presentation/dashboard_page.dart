@@ -74,6 +74,7 @@ class _DashboardBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
+        final isDesktopShell = width >= 720;
         final horizontalPadding = width >= 1500
             ? 40.0
             : width >= 1280
@@ -90,51 +91,59 @@ class _DashboardBody extends StatelessWidget {
             .where((alert) => alert.status != 'normal')
             .length;
 
-        return RefreshIndicator(
-          onRefresh: onRefresh,
-          color: const Color(0xFF2563EB),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  horizontalPadding,
-                  width >= 720 ? 20 : 16,
-                  horizontalPadding,
-                  32,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: contentMaxWidth),
-                      child: RepaintBoundary(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DashboardHeroSection(
-                              data: data,
-                              alertsDismissed: alertsDismissed,
-                              onDismissAlerts: onDismissAlerts,
-                              onViewBudgets: onViewBudgets,
-                            ),
-                            const SizedBox(height: 16),
-                            _DashboardPanels(
-                              width: availableContentWidth,
-                              data: data,
-                              criticalAlertsCount: criticalAlertsCount,
-                              onViewAll: onViewAll,
-                            ),
-                          ],
-                        ),
+        final scrollView = CustomScrollView(
+          physics: AlwaysScrollableScrollPhysics(
+            parent: isDesktopShell
+                ? const ClampingScrollPhysics()
+                : const BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                width >= 720 ? 20 : 16,
+                horizontalPadding,
+                32,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                    child: RepaintBoundary(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DashboardHeroSection(
+                            data: data,
+                            alertsDismissed: alertsDismissed,
+                            onDismissAlerts: onDismissAlerts,
+                            onViewBudgets: onViewBudgets,
+                          ),
+                          const SizedBox(height: 16),
+                          _DashboardPanels(
+                            width: availableContentWidth,
+                            data: data,
+                            criticalAlertsCount: criticalAlertsCount,
+                            onViewAll: onViewAll,
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        );
+
+        if (isDesktopShell) {
+          return scrollView;
+        }
+
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          color: const Color(0xFF2563EB),
+          child: scrollView,
         );
       },
     );

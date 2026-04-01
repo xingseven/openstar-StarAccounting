@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.3.46 - 2026-04-01
+
+### Fixed
+
+- **继续降低 Flutter 总览页对桌面侧边栏的干扰**:
+  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 在桌面端移除了总览页外层 `RefreshIndicator`，避免桌面环境继续保留移动端下拉刷新容器带来的额外交互与重绘负担。
+  - 桌面端总览滚动改为 `ClampingScrollPhysics`，减少切页后首屏滚动区域的回弹和额外计算。
+  - `flutter/lib/features/dashboard/presentation/widgets/cashflow_chart_card.dart` 与 `category_pie_card.dart` 已彻底关闭图表 hover/touch 命中处理，避免桌面鼠标进入总览图表区后持续触发额外事件。
+  - `flutter/lib/features/dashboard/presentation/dashboard_utils.dart` 同步收轻总览卡片阴影，继续压低总览首屏绘制成本。
+
+### Verified
+
+- `flutter analyze` 通过。
+
 ## 2.3.45 - 2026-04-01
 
 ### Fixed
