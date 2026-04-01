@@ -109,23 +109,25 @@ class _DashboardBody extends StatelessWidget {
                   child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: contentMaxWidth),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          DashboardHeroSection(
-                            data: data,
-                            alertsDismissed: alertsDismissed,
-                            onDismissAlerts: onDismissAlerts,
-                            onViewBudgets: onViewBudgets,
-                          ),
-                          const SizedBox(height: 16),
-                          _DashboardPanels(
-                            width: availableContentWidth,
-                            data: data,
-                            criticalAlertsCount: criticalAlertsCount,
-                            onViewAll: onViewAll,
-                          ),
-                        ],
+                      child: RepaintBoundary(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            DashboardHeroSection(
+                              data: data,
+                              alertsDismissed: alertsDismissed,
+                              onDismissAlerts: onDismissAlerts,
+                              onViewBudgets: onViewBudgets,
+                            ),
+                            const SizedBox(height: 16),
+                            _DashboardPanels(
+                              width: availableContentWidth,
+                              data: data,
+                              criticalAlertsCount: criticalAlertsCount,
+                              onViewAll: onViewAll,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

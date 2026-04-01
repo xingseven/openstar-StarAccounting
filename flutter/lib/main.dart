@@ -132,12 +132,17 @@ class _DesktopLayout extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            const AppSidebar(),
+            const RepaintBoundary(child: AppSidebar()),
             const SizedBox(width: 12),
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: ColoredBox(color: const Color(0xFFF8FAFC), child: child),
+              child: RepaintBoundary(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: ColoredBox(
+                    color: const Color(0xFFF8FAFC),
+                    child: child,
+                  ),
+                ),
               ),
             ),
           ],

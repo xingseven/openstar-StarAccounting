@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.3.45 - 2026-04-01
+
+### Fixed
+
+- **修复 Flutter 切到总览页时侧边栏发僵问题**:
+  - `flutter/lib/main.dart` 为桌面侧边栏和右侧主内容区补上 `RepaintBoundary`，避免总览页重绘时把侧边栏也拖进同一批重绘。
+  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 为总览主内容区补上独立重绘边界，减少切页时的整屏重绘压力。
+  - `flutter/lib/features/dashboard/presentation/widgets/cashflow_chart_card.dart` 与 `category_pie_card.dart` 关闭图表切入时的默认动画，降低切到总览页瞬间的主线程负担。
+
+### Verified
+
+- `flutter analyze` 通过。
+
 ## 2.3.44 - 2026-04-01
 
 ### Modified
