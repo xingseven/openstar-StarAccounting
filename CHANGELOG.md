@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.43 - 2026-04-01
+
+### Modified
+
+- **Flutter 总览页完整复刻旧版 Dashboard 结构**:
+  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 重组为旧版总览页对应的 Hero 仪表区 + 收支卡 + 现金流卡 + 近期消费构成 + 最近交易异形布局，桌面端与中宽屏布局顺序同步向旧 Web 靠拢。
+  - `flutter/lib/features/dashboard/presentation/widgets/hero_section.dart` 完整补齐旧版总览 Hero 的深色渐变外观、净资产大字区、6 宫格指标、预算提醒横幅和收起交互。
+  - `flutter/lib/features/dashboard/presentation/widgets/cashflow_chart_card.dart`、`category_pie_card.dart`、`recent_transactions_card.dart` 按旧版卡片文案、层级和信息组织重做，最近交易按钮与金额行样式同步对齐旧页面。
+  - `flutter/lib/main.dart` 新增 `/budgets` 占位路由，避免 Hero 中“查看预算”跳转断路。
+
+### Added
+
+- **补充 Flutter 总览页专项开发文档与版本记录**:
+  - 新增 `docs/Flutter总览页复刻开发文档.md`，记录旧版总览页拆解、Flutter 对应实现策略、验收步骤和本轮迁移边界。
+  - 新增 `历史版本/2026-04-01-Flutter总览页完整复刻.md`，沉淀本次总览页复刻的目标、结果与验证记录。
+
+### Verified
+
+- `flutter analyze` 通过。
+- `flutter build web` 通过。
+- `flutter test` 未通过，当前本机仍被 `flutter_tester` 的 WebSocket 启动异常阻塞，需后续单独处理测试环境。
+
 ## 2.3.42 - 2026-04-01
 
 ### Added
