@@ -10,6 +10,12 @@ import 'widgets/hero_section.dart';
 import 'widgets/income_expense_card.dart';
 import 'widgets/recent_transactions_card.dart';
 
+double _dashboardContentMaxWidth(double width) {
+  if (width >= 1500) return 1480;
+  if (width >= 1280) return 1360;
+  return double.infinity;
+}
+
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
@@ -68,11 +74,18 @@ class _DashboardBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final horizontalPadding = width >= 1280
-            ? 24.0
+        final horizontalPadding = width >= 1500
+            ? 40.0
+            : width >= 1280
+            ? 32.0
             : width >= 720
             ? 20.0
             : 16.0;
+        final contentMaxWidth = _dashboardContentMaxWidth(width);
+        final availableContentWidth = (width - horizontalPadding * 2).clamp(
+          0.0,
+          contentMaxWidth,
+        );
         final criticalAlertsCount = data.budgetAlerts
             .where((alert) => alert.status != 'normal')
             .length;
@@ -95,7 +108,7 @@ class _DashboardBody extends StatelessWidget {
                 sliver: SliverToBoxAdapter(
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1680),
+                      constraints: BoxConstraints(maxWidth: contentMaxWidth),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -107,7 +120,7 @@ class _DashboardBody extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           _DashboardPanels(
-                            width: width,
+                            width: availableContentWidth,
                             data: data,
                             criticalAlertsCount: criticalAlertsCount,
                             onViewAll: onViewAll,
@@ -246,31 +259,50 @@ class _LoadingShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          sliver: SliverToBoxAdapter(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1680),
-                child: const Column(
-                  children: [
-                    _SkeletonBlock(height: 320, radius: 26),
-                    SizedBox(height: 16),
-                    _SkeletonBlock(height: 180, radius: 22),
-                    SizedBox(height: 16),
-                    _SkeletonBlock(height: 260, radius: 22),
-                    SizedBox(height: 16),
-                    _SkeletonBlock(height: 220, radius: 22),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final horizontalPadding = width >= 1500
+            ? 40.0
+            : width >= 1280
+            ? 32.0
+            : width >= 720
+            ? 20.0
+            : 16.0;
+        final contentMaxWidth = _dashboardContentMaxWidth(width);
+
+        return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                width >= 720 ? 20 : 16,
+                horizontalPadding,
+                32,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                    child: const Column(
+                      children: [
+                        _SkeletonBlock(height: 320, radius: 26),
+                        SizedBox(height: 16),
+                        _SkeletonBlock(height: 180, radius: 22),
+                        SizedBox(height: 16),
+                        _SkeletonBlock(height: 260, radius: 22),
+                        SizedBox(height: 16),
+                        _SkeletonBlock(height: 220, radius: 22),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

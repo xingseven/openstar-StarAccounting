@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.3.44 - 2026-04-01
+
+### Modified
+
+- **Flutter 总览页桌面宽度与左右边距对齐旧版**:
+  - `flutter/lib/features/dashboard/presentation/dashboard_page.dart` 新增桌面端内容最大宽度收束逻辑，大屏不再把总览页内容铺满整个工作区。
+  - 同步提高 `1280+` 与 `1500+` 宽屏下的左右 padding，让总览页回到旧版那种居中展示、两侧留白更明显的桌面节奏。
+  - 加载骨架页也同步使用相同宽度和边距规则，避免加载态与真实页面左右空间不一致。
+
+### Verified
+
+- `flutter analyze` 通过。
+
 ## 2.3.43 - 2026-04-01
 
 ### Modified
