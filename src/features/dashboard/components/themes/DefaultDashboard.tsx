@@ -11,8 +11,12 @@ import {
   ArrowUpRight,
   CalendarDays,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
+  Filter,
   PiggyBank,
+  Search,
   ShieldAlert,
   Sparkles,
   TrendingDown,
@@ -46,6 +50,21 @@ import {
 import { NovaHero, NovaMetricCard } from "@/themes/nova/nova-primitives";
 import { FrostHero, FrostMetricCard } from "@/themes/frost/frost-primitives";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetFooter,
+  BottomSheetHeader,
+  BottomSheetTitle,
+} from "@/components/ui/bottomsheet";
 import type { DashboardData } from "@/types";
 
 type CustomPeriodState = {
@@ -154,6 +173,8 @@ export function DashboardDefaultTheme({
   const DashboardMetricCard = isNova ? NovaMetricCard : ThemeMetricCard;
   const [alertsDismissed, setAlertsDismissed] = useState(false);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const isSkeletonVisible = loading;
 
   const netWorth = data.totalAssets - data.totalDebt;
@@ -741,6 +762,58 @@ export function DashboardDefaultTheme({
           </div>
         </section>
       </DelayedRender>
+
+      {/* 悬浮筛选按钮 - 桌面端 */}
+      {isDesktopFilterOpen ? (
+        <button
+          type="button"
+          aria-label="关闭筛选"
+          onClick={() => setIsDesktopFilterOpen(false)}
+          className="fixed inset-0 z-30 hidden bg-transparent md:block"
+        />
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setIsDesktopFilterOpen(true)}
+        className="fixed bottom-8 right-6 z-40 hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-[0_18px_44px_rgba(15,23,42,0.16)] transition hover:border-slate-300 hover:text-slate-950 md:inline-flex"
+      >
+        <Filter className="h-4 w-4" />
+        筛选
+      </button>
+
+      <DesktopFilterFloat
+        open={isDesktopFilterOpen}
+        dateFilter={dateFilter}
+        onDateFilterChange={onDateFilterChange}
+        customPeriod={customPeriod}
+        onCustomPeriodChange={onCustomPeriodChange}
+        yearOptions={yearOptions}
+        monthOptions={monthOptions}
+        refreshing={refreshing}
+      />
+
+      {/* 悬浮筛选按钮 - 移动端 */}
+      <button
+        type="button"
+        onClick={() => setIsMobileFilterOpen(true)}
+        className="fixed bottom-28 right-3 z-40 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md transition hover:border-slate-300 hover:text-slate-950 md:hidden"
+      >
+        <Filter className="h-4 w-4" />
+        筛选
+      </button>
+
+      <MobileFilterSheet
+        open={isMobileFilterOpen}
+        onOpenChange={setIsMobileFilterOpen}
+        dateFilter={dateFilter}
+        onDateFilterChange={onDateFilterChange}
+        customPeriod={customPeriod}
+        onCustomPeriodChange={onCustomPeriodChange}
+        yearOptions={yearOptions}
+        monthOptions={monthOptions}
+        refreshing={refreshing}
+      />
     </div>
   );
 }
@@ -1067,5 +1140,326 @@ function BudgetAlertCard({
         </div>
       </div>
     </div>
+  );
+}
+
+function DesktopFilterFloat({
+  open,
+  dateFilter,
+  onDateFilterChange,
+  customPeriod,
+  onCustomPeriodChange,
+  yearOptions,
+  monthOptions,
+  refreshing,
+}: {
+  open: boolean;
+  dateFilter: "month" | "all" | "custom";
+  onDateFilterChange?: (filter: "month" | "all" | "custom") => void;
+  customPeriod?: CustomPeriodState;
+  onCustomPeriodChange?: (period: CustomPeriodState) => void;
+  yearOptions: number[];
+  monthOptions: { value: string; label: string }[];
+  refreshing?: boolean;
+}) {
+  if (!open) return null;
+
+  function switchToCustomMonth() {
+    onDateFilterChange?.("custom");
+    onCustomPeriodChange?.({
+      ...customPeriod,
+      mode: "month",
+      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
+    } as CustomPeriodState);
+  }
+
+  return (
+    <div className="fixed bottom-24 right-6 z-40 hidden w-[380px] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:block">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">筛选数据范围</p>
+          <p className="mt-0.5 text-xs text-slate-500">选择时间范围查看不同时期的数据。</p>
+        </div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+          <Filter className="h-3.5 w-3.5" />
+          时间筛选
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-3">
+        <div className="space-y-2 rounded-xl bg-slate-50 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">时间</p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("month")}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition",
+                dateFilter === "month" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+              )}
+            >
+              本月
+            </button>
+            <button
+              type="button"
+              onClick={() => onDateFilterChange?.("all")}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition",
+                dateFilter === "all" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+              )}
+            >
+              全部
+            </button>
+            <button
+              type="button"
+              onClick={switchToCustomMonth}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition",
+                dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+              )}
+            >
+              自定义
+            </button>
+          </div>
+        </div>
+
+        {dateFilter === "custom" && (
+          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">时间范围</p>
+              <p className="mt-0.5 text-xs text-slate-500">可查看全年，也可以定位到某个月。</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onCustomPeriodChange?.({ ...customPeriod!, mode: "year" } as CustomPeriodState)}
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm font-medium transition",
+                    customPeriod?.mode === "year" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  全年
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onCustomPeriodChange?.({
+                      ...customPeriod,
+                      mode: "month",
+                      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
+                    } as CustomPeriodState)
+                  }
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm font-medium transition",
+                    customPeriod?.mode === "month" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  按月
+                </button>
+              </div>
+
+              <div className={cn("grid gap-3", customPeriod?.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
+                <select
+                  value={customPeriod?.year || ""}
+                  onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, year: e.target.value } as CustomPeriodState)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+                >
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y}>
+                      {y} 年
+                    </option>
+                  ))}
+                </select>
+
+                {customPeriod?.mode === "month" && (
+                  <select
+                    value={customPeriod?.month || ""}
+                    onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, month: e.target.value } as CustomPeriodState)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {monthOptions.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {refreshing && (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+            <span className="text-xs text-slate-500">加载中...</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MobileFilterSheet({
+  open,
+  onOpenChange,
+  dateFilter,
+  onDateFilterChange,
+  customPeriod,
+  onCustomPeriodChange,
+  yearOptions,
+  monthOptions,
+  refreshing,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  dateFilter: "month" | "all" | "custom";
+  onDateFilterChange?: (filter: "month" | "all" | "custom") => void;
+  customPeriod?: CustomPeriodState;
+  onCustomPeriodChange?: (period: CustomPeriodState) => void;
+  yearOptions: number[];
+  monthOptions: { value: string; label: string }[];
+  refreshing?: boolean;
+}) {
+  function switchToCustomMonth() {
+    onDateFilterChange?.("custom");
+    onCustomPeriodChange?.({
+      ...customPeriod,
+      mode: "month",
+      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
+    } as CustomPeriodState);
+  }
+
+  return (
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      <BottomSheetContent className="max-h-[80vh] overflow-y-auto">
+        <BottomSheetHeader>
+          <BottomSheetTitle>筛选数据范围</BottomSheetTitle>
+        </BottomSheetHeader>
+
+        <div className="space-y-4 p-4">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">时间</p>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => onDateFilterChange?.("month")}
+                className={cn(
+                  "rounded-full px-4 py-2.5 text-sm font-medium transition",
+                  dateFilter === "month" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                )}
+              >
+                本月
+              </button>
+              <button
+                type="button"
+                onClick={() => onDateFilterChange?.("all")}
+                className={cn(
+                  "rounded-full px-4 py-2.5 text-sm font-medium transition",
+                  dateFilter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                )}
+              >
+                全部
+              </button>
+              <button
+                type="button"
+                onClick={switchToCustomMonth}
+                className={cn(
+                  "rounded-full px-4 py-2.5 text-sm font-medium transition",
+                  dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                )}
+              >
+                自定义
+              </button>
+            </div>
+          </div>
+
+          {dateFilter === "custom" && (
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">时间范围</p>
+                <p className="mt-0.5 text-xs text-slate-500">可查看全年，也可以定位到某个月。</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onCustomPeriodChange?.({ ...customPeriod!, mode: "year" } as CustomPeriodState)}
+                  className={cn(
+                    "flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition",
+                    customPeriod?.mode === "year" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
+                  )}
+                >
+                  全年
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onCustomPeriodChange?.({
+                      ...customPeriod,
+                      mode: "month",
+                      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
+                    } as CustomPeriodState)
+                  }
+                  className={cn(
+                    "flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition",
+                    customPeriod?.mode === "month" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
+                  )}
+                >
+                  按月
+                </button>
+              </div>
+
+              <div className={cn("grid gap-3", customPeriod?.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
+                <select
+                  value={customPeriod?.year || ""}
+                  onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, year: e.target.value } as CustomPeriodState)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-blue-500 focus:outline-none"
+                >
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y}>
+                      {y} 年
+                    </option>
+                  ))}
+                </select>
+
+                {customPeriod?.mode === "month" && (
+                  <select
+                    value={customPeriod?.month || ""}
+                    onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, month: e.target.value } as CustomPeriodState)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {monthOptions.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          )}
+
+          {refreshing && (
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-3">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+              <span className="text-sm text-slate-500">加载中...</span>
+            </div>
+          )}
+        </div>
+
+        <BottomSheetFooter>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            完成
+          </button>
+        </BottomSheetFooter>
+      </BottomSheetContent>
+    </BottomSheet>
   );
 }
