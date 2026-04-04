@@ -1,97 +1,168 @@
 "use client";
 
-import { apiFetch } from "@/lib/api";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Bell, ChevronDown, LogOut, Settings2, User as UserIcon } from "lucide-react";
 import { clearAccessToken } from "@/lib/auth";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Bell, Search, User as UserIcon, LogOut } from "lucide-react";
-
-type MeResponse = {
-  user: { id: string; email: string; name: string | null };
-};
-
-const PAGE_TITLES: Record<string, string> = {
-  "/": "仪表盘",
-  "/assets": "资产管理",
-  "/consumption": "消费流水",
-  "/savings": "储蓄目标",
-  "/loans": "贷款管理",
-  "/connections": "设备连接",
-  "/settings": "系统设置",
-};
+import { cn } from "@/lib/utils";
+import { useUser } from "@/components/shared/UserContext";
+import { getPageMeta } from "@/components/shared/navigation";
 
 export function Header() {
-  const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<MeResponse["user"] | null>(null);
+  const { user } = useUser();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [hasInlineContent, setHasInlineContent] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inlineSlotRef = useRef<HTMLDivElement>(null);
+
+  const pageMeta = getPageMeta(pathname);
+  const displayName = user ? user.name || user.email.split("@")[0] : "未登录";
+  const emailText = user ? user.email : "请重新登录";
 
   useEffect(() => {
-    apiFetch<MeResponse>("/api/auth/me")
-      .then((data) => setUser(data.user))
-      .catch(() => {});
+    function handlePointerDown(event: PointerEvent) {
+      if (!dropdownRef.current?.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
+  useEffect(() => {
+    const slot = inlineSlotRef.current;
+    if (!slot) return;
+
+    const sync = () => {
+      setHasInlineContent(slot.childElementCount > 0);
+    };
+
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(slot, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   function logout() {
     clearAccessToken();
-    router.replace("/auth/login");
+    setShowDropdown(false);
+    window.location.href = "/auth/login";
   }
 
-  const title = PAGE_TITLES[pathname] || "消费面板";
-
   return (
-    <header className="h-16 border-b bg-white px-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-gray-800">{title}</h1>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="搜索..."
-            className="h-9 w-64 rounded-full border border-gray-200 bg-gray-50 pl-9 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-          />
+    <header
+      className="nova-header-shell rounded-[16px] border [background:var(--theme-header-bg)] backdrop-blur-md sm:rounded-[18px]"
+      style={{
+        borderColor: "var(--theme-header-border)",
+        boxShadow: "var(--theme-header-shadow)",
+      }}
+    >
+      <div className="flex min-h-[52px] items-center gap-2 px-3 py-2 sm:min-h-[60px] sm:gap-3 sm:px-5 sm:py-3">
+        <div className={cn("min-w-0 shrink-0 md:max-w-[240px] lg:max-w-[280px]", hasInlineContent && "md:hidden")}>
+          <h1 className="nova-header-title truncate text-[15px] font-semibold tracking-tight sm:text-xl" style={{ color: "var(--theme-body-text)" }}>
+            {pageMeta.title}
+          </h1>
+          <p className="nova-header-subtitle hidden truncate text-sm md:block" style={{ color: "var(--theme-muted-text)" }}>
+            {pageMeta.subtitle}
+          </p>
         </div>
 
-        <button className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors">
-          <Bell className="h-5 w-5" />
-        </button>
+        <div
+          id="dashboard-header-inline-slot"
+          ref={inlineSlotRef}
+          className="hidden min-w-0 flex-1 md:block [&:empty]:hidden"
+        />
 
-        <div className="h-8 w-px bg-gray-200 mx-1" />
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            aria-label="通知"
+            className="nova-header-button relative inline-flex h-9 w-9 items-center justify-center rounded-[16px] border transition hover:brightness-110 sm:h-10 sm:w-10 sm:rounded-[18px]"
+            style={{
+              background: "var(--theme-input-bg)",
+              color: "var(--theme-muted-text)",
+              borderColor: "var(--theme-input-border)",
+            }}
+          >
+            <Bell className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+            <span
+              className="absolute right-[10px] top-[10px] h-1.5 w-1.5 rounded-full bg-blue-500 sm:right-3 sm:top-3 sm:h-2 sm:w-2"
+              style={{ boxShadow: "0 0 0 2px var(--theme-header-bg)" }}
+            />
+          </button>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <div className="text-sm font-medium text-gray-900">
-              {user?.name || user?.email?.split("@")[0] || "User"}
-            </div>
-            <div className="text-xs text-gray-500">
-              {user?.email || "加载中..."}
-            </div>
-          </div>
-          
-          <div className="relative group">
-            <button className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
-              <UserIcon className="h-5 w-5" />
-            </button>
-            
-            {/* Dropdown (Simple CSS hover for now) */}
-            <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg border border-gray-100 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
-              <div className="px-4 py-2 border-b border-gray-100">
-                <p className="text-xs text-gray-500">已登录</p>
-                <p className="text-sm font-medium truncate">{user?.email}</p>
-              </div>
-              <a href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                个人设置
-              </a>
-              <button
-                onClick={logout}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setShowDropdown((value) => !value)}
+              className={cn(
+                "nova-header-user-button group flex items-center gap-1.5 rounded-[16px] border px-1 py-1 transition hover:brightness-110 sm:gap-2 sm:rounded-[18px] sm:px-1.5 sm:py-1.5",
+                showDropdown && "shadow-sm"
+              )}
+              style={{
+                background: "var(--theme-input-bg)",
+                borderColor: "var(--theme-input-border)",
+              }}
+              aria-label="用户菜单"
+              aria-expanded={showDropdown}
+            >
+              <div
+                className="nova-header-avatar flex h-8 w-8 items-center justify-center rounded-[14px] sm:h-9 sm:w-9 sm:rounded-[16px]"
+                style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}
               >
-                <LogOut className="h-4 w-4" />
-                退出登录
-              </button>
-            </div>
+                <UserIcon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+              </div>
+
+              <div className="hidden min-w-0 text-left md:block">
+                <p className="max-w-[140px] truncate text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{displayName}</p>
+                <p className="max-w-[180px] truncate text-xs" style={{ color: "var(--theme-muted-text)" }}>{emailText}</p>
+              </div>
+
+              <ChevronDown
+                className={cn("mr-1 hidden h-4 w-4 transition md:block", showDropdown && "rotate-180")}
+                style={{ color: "var(--theme-muted-text)" }}
+              />
+            </button>
+
+            {showDropdown ? (
+              <div
+                className="nova-header-menu absolute right-0 top-full z-50 mt-3 w-[240px] rounded-[20px] border p-2 backdrop-blur-xl"
+                style={{
+                  background: "var(--theme-surface-bg)",
+                  borderColor: "var(--theme-surface-border)",
+                  boxShadow: "var(--theme-surface-shadow)",
+                }}
+              >
+                <div className="nova-header-menu-card rounded-[16px] p-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                  <p className="truncate text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{displayName}</p>
+                  <p className="mt-1 truncate text-xs" style={{ color: "var(--theme-muted-text)" }}>{emailText}</p>
+                </div>
+
+                <div className="mt-2 space-y-1">
+                  <Link
+                    href="/settings"
+                    onClick={() => setShowDropdown(false)}
+                    className="nova-header-menu-link flex items-center gap-3 rounded-[16px] px-3 py-2.5 text-sm font-medium transition hover:bg-slate-50/80"
+                    style={{ color: "var(--theme-label-text)" }}
+                  >
+                    <Settings2 className="h-4 w-4" style={{ color: "var(--theme-muted-text)" }} />
+                    个人设置
+                  </Link>
+
+                  <button
+                    onClick={logout}
+                    className="nova-header-menu-danger flex w-full items-center gap-3 rounded-[16px] px-3 py-2.5 text-left text-sm font-medium transition hover:bg-red-50"
+                    style={{ color: "#ef4444" }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    退出登录
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

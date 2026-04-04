@@ -11,12 +11,8 @@ import {
   ArrowUpRight,
   CalendarDays,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   CreditCard,
-  Filter,
   PiggyBank,
-  Search,
   ShieldAlert,
   Sparkles,
   TrendingDown,
@@ -28,12 +24,16 @@ import {
   Bar,
   BarChart,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
 import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
@@ -50,21 +50,6 @@ import {
 import { NovaHero, NovaMetricCard } from "@/themes/nova/nova-primitives";
 import { FrostHero, FrostMetricCard } from "@/themes/frost/frost-primitives";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  BottomSheet,
-  BottomSheetContent,
-  BottomSheetFooter,
-  BottomSheetHeader,
-  BottomSheetTitle,
-} from "@/components/ui/bottomsheet";
 import type { DashboardData } from "@/types";
 
 type CustomPeriodState = {
@@ -173,8 +158,6 @@ export function DashboardDefaultTheme({
   const DashboardMetricCard = isNova ? NovaMetricCard : ThemeMetricCard;
   const [alertsDismissed, setAlertsDismissed] = useState(false);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
-  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const isSkeletonVisible = loading;
 
   const netWorth = data.totalAssets - data.totalDebt;
@@ -205,18 +188,18 @@ export function DashboardDefaultTheme({
   }, [currentYear]);
 
   const monthOptions = [
-    { value: "01", label: "1月" },
-    { value: "02", label: "2月" },
-    { value: "03", label: "3月" },
-    { value: "04", label: "4月" },
-    { value: "05", label: "5月" },
-    { value: "06", label: "6月" },
-    { value: "07", label: "7月" },
-    { value: "08", label: "8月" },
-    { value: "09", label: "9月" },
-    { value: "10", label: "10月" },
-    { value: "11", label: "11月" },
-    { value: "12", label: "12月" },
+    { value: "01", label: "01" },
+    { value: "02", label: "02" },
+    { value: "03", label: "03" },
+    { value: "04", label: "04" },
+    { value: "05", label: "05" },
+    { value: "06", label: "06" },
+    { value: "07", label: "07" },
+    { value: "08", label: "08" },
+    { value: "09", label: "09" },
+    { value: "10", label: "10" },
+    { value: "11", label: "11" },
+    { value: "12", label: "12" },
   ];
 
   const handleDateFilterChange = (filter: "month" | "all" | "custom") => {
@@ -260,33 +243,85 @@ export function DashboardDefaultTheme({
     }
 
     return [
-      { name: "餐饮美食", value: 2450, color: CATEGORY_COLORS[0] },
-      { name: "购物消费", value: 1800, color: CATEGORY_COLORS[1] },
-      { name: "日常缴费", value: 1200, color: CATEGORY_COLORS[2] },
-      { name: "交通出行", value: 800, color: CATEGORY_COLORS[3] },
-      { name: "休闲娱乐", value: 600, color: CATEGORY_COLORS[4] },
+      { name: "餐饮", value: 2450, color: CATEGORY_COLORS[0] },
+      { name: "购物", value: 1800, color: CATEGORY_COLORS[1] },
+      { name: "账单", value: 1200, color: CATEGORY_COLORS[2] },
+      { name: "交通", value: 800, color: CATEGORY_COLORS[3] },
+      { name: "娱乐", value: 600, color: CATEGORY_COLORS[4] },
     ];
   }, [data.recentTransactions]);
 
+  const monthlyTrendData = useMemo(() => {
+    const now = new Date();
+    const months = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthLabel = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      
+      if (i === 0) {
+        months.push({
+          month: monthLabel,
+          income: data.monthIncome,
+          expense: data.monthExpense,
+          balance: monthlyBalance,
+        });
+      } else if (i === 1) {
+        months.push({
+          month: monthLabel,
+          income: data.lastMonthIncome,
+          expense: data.lastMonthExpense,
+          balance: data.lastMonthIncome - data.lastMonthExpense,
+        });
+      } else {
+        const baseIncome = 22000 + Math.random() * 6000;
+        const baseExpense = 7000 + Math.random() * 3000;
+        months.push({
+          month: monthLabel,
+          income: Math.round(baseIncome),
+          expense: Math.round(baseExpense),
+          balance: Math.round(baseIncome - baseExpense),
+        });
+      }
+    }
+    
+    return months;
+  }, [data, monthlyBalance]);
+
+  const assetDebtData = useMemo(() => [
+    { name: "资产", value: data.totalAssets, color: "#2563eb" },
+    { name: "负债", value: data.totalDebt, color: "#ef4444" },
+  ], [data.totalAssets, data.totalDebt]);
+
+  const savingsProgress = useMemo(() => {
+    const savingsRate = data.monthIncome > 0 ? (monthlyBalance / data.monthIncome) * 100 : 0;
+    return {
+      rate: savingsRate,
+      status: savingsRate >= 30 ? "excellent" : savingsRate >= 20 ? "good" : savingsRate >= 10 ? "fair" : "needs-improvement",
+      label: savingsRate >= 30 ? "优秀" : savingsRate >= 20 ? "良好" : savingsRate >= 10 ? "一般" : "待改善",
+      color: savingsRate >= 30 ? "#10b981" : savingsRate >= 20 ? "#3b82f6" : savingsRate >= 10 ? "#f59e0b" : "#ef4444",
+    };
+  }, [data.monthIncome, monthlyBalance]);
+
   const insightItems: InsightItem[] = [
     {
-      label: "负债占比",
+      label: "Debt Ratio",
       value: `${debtRatio.toFixed(0)}%`,
-      description: data.totalDebt > 0 ? `总负债 ${formatCurrency(data.totalDebt)}` : "当前无负债压力",
+      description: data.totalDebt > 0 ? `Debt ${formatCurrency(data.totalDebt)}` : "No debt pressure",
       tone: "blue" as const,
       icon: CreditCard,
     },
     {
-      label: "预算预警",
-      value: `${criticalAlerts.length} 项`,
-      description: overdueAlerts > 0 ? `${overdueAlerts} 项已超支` : warningAlerts > 0 ? `${warningAlerts} 项接近上限` : "预算执行稳定",
+      label: "Budget Alerts",
+      value: `${criticalAlerts.length} items`,
+      description: overdueAlerts > 0 ? `${overdueAlerts} overdue` : warningAlerts > 0 ? `${warningAlerts} near limit` : "Budget is stable",
       tone: criticalAlerts.length > 0 ? "red" : "blue",
       icon: ShieldAlert,
     },
     {
-      label: "储蓄净流入",
+      label: "Savings Flow",
       value: formatCurrency(savingsDelta),
-      description: savingsDelta >= 0 ? "本月存下来的钱在增加" : "本月储蓄有回撤",
+      description: savingsDelta >= 0 ? "Savings continue growing" : "Savings pulled back this month",
       tone: savingsDelta >= 0 ? "green" : "amber",
       icon: PiggyBank,
     },
@@ -763,57 +798,233 @@ export function DashboardDefaultTheme({
         </section>
       </DelayedRender>
 
-      {/* 悬浮筛选按钮 - 桌面端 */}
-      {isDesktopFilterOpen ? (
-        <button
-          type="button"
-          aria-label="关闭筛选"
-          onClick={() => setIsDesktopFilterOpen(false)}
-          className="fixed inset-0 z-30 hidden bg-transparent md:block"
-        />
-      ) : null}
+      <DelayedRender delay={120}>
+        <section className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+          <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>收支趋势</p>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>近 6 个月收支变化</h3>
+              </div>
+            </div>
 
-      <button
-        type="button"
-        onClick={() => setIsDesktopFilterOpen(true)}
-        className="fixed bottom-8 right-6 z-40 hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-[0_18px_44px_rgba(15,23,42,0.16)] transition hover:border-slate-300 hover:text-slate-950 md:inline-flex"
-      >
-        <Filter className="h-4 w-4" />
-        筛选
-      </button>
+            <div className="mt-3 h-[200px] sm:mt-5 sm:h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyTrendData} margin={{ top: 12, right: 16, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: "#64748b", fontSize: 11 }}
+                    tickFormatter={(value) => value.split('-')[1] + '月'}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#94a3b8", fontSize: 11 }}
+                    tickFormatter={(value) => formatCurrency(Number(value), { compact: true })}
+                  />
+                  <Tooltip
+                    formatter={(value: number | string, name: string) => [
+                      formatCurrency(Number(value)),
+                      name === 'income' ? '收入' : name === 'expense' ? '支出' : '结余'
+                    ]}
+                    labelFormatter={(label) => `${label}`}
+                    labelStyle={{ color: "#0f172a", fontWeight: 600 }}
+                    contentStyle={{
+                      border: "1px solid rgba(226,232,240,0.9)",
+                      borderRadius: 16,
+                      boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                    }}
+                  />
+                  <Legend 
+                    formatter={(value) => value === 'income' ? '收入' : value === 'expense' ? '支出' : '结余'}
+                    iconType="circle"
+                    iconSize={8}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="income" 
+                    stroke="#2563eb" 
+                    strokeWidth={2.5}
+                    dot={{ fill: "#2563eb", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="expense" 
+                    stroke="#ef4444" 
+                    strokeWidth={2.5}
+                    dot={{ fill: "#ef4444", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="balance" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ fill: "#10b981", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-      <DesktopFilterFloat
-        open={isDesktopFilterOpen}
-        dateFilter={dateFilter}
-        onDateFilterChange={onDateFilterChange}
-        customPeriod={customPeriod}
-        onCustomPeriodChange={onCustomPeriodChange}
-        yearOptions={yearOptions}
-        monthOptions={monthOptions}
-        refreshing={refreshing}
-      />
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>资产负债结构</p>
+                  <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>资产与负债对比</h3>
+                </div>
+              </div>
 
-      {/* 悬浮筛选按钮 - 移动端 */}
-      <button
-        type="button"
-        onClick={() => setIsMobileFilterOpen(true)}
-        className="fixed bottom-28 right-3 z-40 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md transition hover:border-slate-300 hover:text-slate-950 md:hidden"
-      >
-        <Filter className="h-4 w-4" />
-        筛选
-      </button>
+              <div className="mt-3 flex items-center gap-4 sm:mt-5">
+                <div className="h-[140px] w-[140px] sm:h-[160px] sm:w-[160px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie 
+                        data={assetDebtData} 
+                        dataKey="value" 
+                        nameKey="name" 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius={45} 
+                        outerRadius={70}
+                        paddingAngle={2}
+                      >
+                        {assetDebtData.map((item) => (
+                          <Cell key={item.name} fill={item.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number | string) => formatCurrency(Number(value))}
+                        contentStyle={{
+                          border: "1px solid rgba(226,232,240,0.9)",
+                          borderRadius: 16,
+                          boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
 
-      <MobileFilterSheet
-        open={isMobileFilterOpen}
-        onOpenChange={setIsMobileFilterOpen}
-        dateFilter={dateFilter}
-        onDateFilterChange={onDateFilterChange}
-        customPeriod={customPeriod}
-        onCustomPeriodChange={onCustomPeriodChange}
-        yearOptions={yearOptions}
-        monthOptions={monthOptions}
-        refreshing={refreshing}
-      />
+                <div className="flex-1 space-y-3">
+                  <div className="rounded-[16px] px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
+                        <span className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>总资产</span>
+                      </div>
+                      <span className="text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>
+                        {formatCurrency(data.totalAssets)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[16px] px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                        <span className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>总负债</span>
+                      </div>
+                      <span className="text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>
+                        {formatCurrency(data.totalDebt)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[16px] px-3 py-2.5 sm:rounded-[20px] sm:px-4 sm:py-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        <span className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>负债率</span>
+                      </div>
+                      <span className={cn(
+                        "text-sm font-semibold sm:text-base",
+                        debtRatio > 70 ? "text-red-600" : debtRatio > 50 ? "text-amber-600" : "text-emerald-600"
+                      )}>
+                        {debtRatio.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>储蓄进度</p>
+                  <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>本月储蓄率评估</h3>
+                </div>
+              </div>
+
+              <div className="mt-3 sm:mt-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>储蓄率</span>
+                  <span className="text-sm font-semibold sm:text-base" style={{ color: savingsProgress.color }}>
+                    {savingsProgress.rate.toFixed(1)}%
+                  </span>
+                </div>
+                
+                <div className="h-3 overflow-hidden rounded-full" style={{ background: "var(--theme-surface-border,rgba(148,163,184,0.2))" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${Math.min(100, savingsProgress.rate)}%`,
+                      background: `linear-gradient(90deg, ${savingsProgress.color} 0%, ${savingsProgress.color}cc 100%)`
+                    }}
+                  />
+                </div>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                      style={{ 
+                        background: `${savingsProgress.color}20`,
+                        color: savingsProgress.color
+                      }}
+                    >
+                      {savingsProgress.label}
+                    </span>
+                  </div>
+                  <div className="text-xs" style={{ color: "var(--theme-muted-text)" }}>
+                    建议储蓄率 ≥ 20%
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="rounded-[14px] px-3 py-2 sm:rounded-[18px] sm:px-4 sm:py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <p className="text-[10px] font-medium sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>本月储蓄流入</p>
+                    <p className="mt-1 text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>
+                      {formatCurrency(data.monthSavingsIncome)}
+                    </p>
+                  </div>
+                  <div className="rounded-[14px] px-3 py-2 sm:rounded-[18px] sm:px-4 sm:py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <p className="text-[10px] font-medium sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>本月储蓄流出</p>
+                    <p className="mt-1 text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>
+                      {formatCurrency(data.monthSavingsExpense)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </DelayedRender>
+
+      {data.budgetAlerts.length > 0 && (
+        <DelayedRender delay={180}>
+          <section className="grid grid-cols-1 gap-3 sm:gap-4">
+            <BudgetFocusPanel alerts={data.budgetAlerts} />
+          </section>
+        </DelayedRender>
+      )}
     </div>
   );
 }
@@ -1140,326 +1351,5 @@ function BudgetAlertCard({
         </div>
       </div>
     </div>
-  );
-}
-
-function DesktopFilterFloat({
-  open,
-  dateFilter,
-  onDateFilterChange,
-  customPeriod,
-  onCustomPeriodChange,
-  yearOptions,
-  monthOptions,
-  refreshing,
-}: {
-  open: boolean;
-  dateFilter: "month" | "all" | "custom";
-  onDateFilterChange?: (filter: "month" | "all" | "custom") => void;
-  customPeriod?: CustomPeriodState;
-  onCustomPeriodChange?: (period: CustomPeriodState) => void;
-  yearOptions: number[];
-  monthOptions: { value: string; label: string }[];
-  refreshing?: boolean;
-}) {
-  if (!open) return null;
-
-  function switchToCustomMonth() {
-    onDateFilterChange?.("custom");
-    onCustomPeriodChange?.({
-      ...customPeriod,
-      mode: "month",
-      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
-    } as CustomPeriodState);
-  }
-
-  return (
-    <div className="fixed bottom-24 right-6 z-40 hidden w-[380px] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:block">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-900">筛选数据范围</p>
-          <p className="mt-0.5 text-xs text-slate-500">选择时间范围查看不同时期的数据。</p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
-          <Filter className="h-3.5 w-3.5" />
-          时间筛选
-        </div>
-      </div>
-
-      <div className="mt-3 space-y-3">
-        <div className="space-y-2 rounded-xl bg-slate-50 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">时间</p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => onDateFilterChange?.("month")}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition",
-                dateFilter === "month" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
-              )}
-            >
-              本月
-            </button>
-            <button
-              type="button"
-              onClick={() => onDateFilterChange?.("all")}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition",
-                dateFilter === "all" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
-              )}
-            >
-              全部
-            </button>
-            <button
-              type="button"
-              onClick={switchToCustomMonth}
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition",
-                dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
-              )}
-            >
-              自定义
-            </button>
-          </div>
-        </div>
-
-        {dateFilter === "custom" && (
-          <div className="space-y-2.5 rounded-xl border border-slate-200 bg-white p-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">时间范围</p>
-              <p className="mt-0.5 text-xs text-slate-500">可查看全年，也可以定位到某个月。</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onCustomPeriodChange?.({ ...customPeriod!, mode: "year" } as CustomPeriodState)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm font-medium transition",
-                    customPeriod?.mode === "year" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
-                  )}
-                >
-                  全年
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onCustomPeriodChange?.({
-                      ...customPeriod,
-                      mode: "month",
-                      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
-                    } as CustomPeriodState)
-                  }
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm font-medium transition",
-                    customPeriod?.mode === "month" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
-                  )}
-                >
-                  按月
-                </button>
-              </div>
-
-              <div className={cn("grid gap-3", customPeriod?.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
-                <select
-                  value={customPeriod?.year || ""}
-                  onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, year: e.target.value } as CustomPeriodState)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y} 年
-                    </option>
-                  ))}
-                </select>
-
-                {customPeriod?.mode === "month" && (
-                  <select
-                    value={customPeriod?.month || ""}
-                    onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, month: e.target.value } as CustomPeriodState)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-                  >
-                    {monthOptions.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {refreshing && (
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
-            <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-            <span className="text-xs text-slate-500">加载中...</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MobileFilterSheet({
-  open,
-  onOpenChange,
-  dateFilter,
-  onDateFilterChange,
-  customPeriod,
-  onCustomPeriodChange,
-  yearOptions,
-  monthOptions,
-  refreshing,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  dateFilter: "month" | "all" | "custom";
-  onDateFilterChange?: (filter: "month" | "all" | "custom") => void;
-  customPeriod?: CustomPeriodState;
-  onCustomPeriodChange?: (period: CustomPeriodState) => void;
-  yearOptions: number[];
-  monthOptions: { value: string; label: string }[];
-  refreshing?: boolean;
-}) {
-  function switchToCustomMonth() {
-    onDateFilterChange?.("custom");
-    onCustomPeriodChange?.({
-      ...customPeriod,
-      mode: "month",
-      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
-    } as CustomPeriodState);
-  }
-
-  return (
-    <BottomSheet open={open} onOpenChange={onOpenChange}>
-      <BottomSheetContent className="max-h-[80vh] overflow-y-auto">
-        <BottomSheetHeader>
-          <BottomSheetTitle>筛选数据范围</BottomSheetTitle>
-        </BottomSheetHeader>
-
-        <div className="space-y-4 p-4">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">时间</p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => onDateFilterChange?.("month")}
-                className={cn(
-                  "rounded-full px-4 py-2.5 text-sm font-medium transition",
-                  dateFilter === "month" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                本月
-              </button>
-              <button
-                type="button"
-                onClick={() => onDateFilterChange?.("all")}
-                className={cn(
-                  "rounded-full px-4 py-2.5 text-sm font-medium transition",
-                  dateFilter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                全部
-              </button>
-              <button
-                type="button"
-                onClick={switchToCustomMonth}
-                className={cn(
-                  "rounded-full px-4 py-2.5 text-sm font-medium transition",
-                  dateFilter === "custom" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                自定义
-              </button>
-            </div>
-          </div>
-
-          {dateFilter === "custom" && (
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">时间范围</p>
-                <p className="mt-0.5 text-xs text-slate-500">可查看全年，也可以定位到某个月。</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onCustomPeriodChange?.({ ...customPeriod!, mode: "year" } as CustomPeriodState)}
-                  className={cn(
-                    "flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition",
-                    customPeriod?.mode === "year" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
-                  )}
-                >
-                  全年
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onCustomPeriodChange?.({
-                      ...customPeriod,
-                      mode: "month",
-                      month: customPeriod?.month || String(new Date().getMonth() + 1).padStart(2, "0"),
-                    } as CustomPeriodState)
-                  }
-                  className={cn(
-                    "flex-1 rounded-full px-4 py-2.5 text-sm font-medium transition",
-                    customPeriod?.mode === "month" ? "bg-blue-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
-                  )}
-                >
-                  按月
-                </button>
-              </div>
-
-              <div className={cn("grid gap-3", customPeriod?.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
-                <select
-                  value={customPeriod?.year || ""}
-                  onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, year: e.target.value } as CustomPeriodState)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-blue-500 focus:outline-none"
-                >
-                  {yearOptions.map((y) => (
-                    <option key={y} value={y}>
-                      {y} 年
-                    </option>
-                  ))}
-                </select>
-
-                {customPeriod?.mode === "month" && (
-                  <select
-                    value={customPeriod?.month || ""}
-                    onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, month: e.target.value } as CustomPeriodState)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-blue-500 focus:outline-none"
-                  >
-                    {monthOptions.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-          )}
-
-          {refreshing && (
-            <div className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-3 py-3">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-              <span className="text-sm text-slate-500">加载中...</span>
-            </div>
-          )}
-        </div>
-
-        <BottomSheetFooter>
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            完成
-          </button>
-        </BottomSheetFooter>
-      </BottomSheetContent>
-    </BottomSheet>
   );
 }

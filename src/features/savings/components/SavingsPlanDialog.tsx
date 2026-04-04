@@ -1,10 +1,15 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+"use client";
+
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BottomSheet, BottomSheetContent, BottomSheetDescription, BottomSheetHeader, BottomSheetTitle } from "@/components/ui/bottomsheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, Trash2 } from "lucide-react";
-import { SavingsGoal } from "./themes/DefaultSavings";
-import { clsx } from "clsx";
+import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { ThemeActionBar, ThemeDialogSection, ThemeEmptyState, ThemeToolbar } from "@/components/shared/theme-primitives";
+import { addMonthsToMonthKey, getLocalMonthKey } from "./month-utils";
+import type { SavingsGoal } from "./themes/DefaultSavings";
 
 export type SavingsPlan = {
   id: string;
@@ -15,49 +20,43 @@ export type SavingsPlan = {
   salary: number;
   expenses: Record<string, number>;
   remark: string;
+  proofImage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+type CalculatedPlan = SavingsPlan & {
+  totalExp: number;
+  currentBalance: number;
+  totalAvailable: number;
+  remaining: number;
 };
 
 interface SavingsPlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   goal: SavingsGoal | null;
+  onPlansChanged?: () => void;
 }
 
-export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialogProps) {
+export function SavingsPlanDialog({ open, onOpenChange, goal, onPlansChanged }: SavingsPlanDialogProps) {
   const [plans, setPlans] = useState<SavingsPlan[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"setup" | "table">("setup");
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
-  // Setup States
-  const [duration, setDuration] = useState(12);
-  const [startMonth, setStartMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [depositDay, setDepositDay] = useState(15);
-  const [monthlyAmount, setMonthlyAmount] = useState(0);
-  const [baseSalary, setBaseSalary] = useState(0);
-  const [fixedExpenses, setFixedExpenses] = useState<{ name: string; amount: number }[]>([
-    { name: "固定支出1", amount: 0 },
-  ]);
-
-  useEffect(() => {
-    if (open && goal) {
-      fetchPlans();
-    }
-  }, [open, goal]);
-
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     if (!goal) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/savings/${goal.id}/plans`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      if (data.code === 200) {
-        setPlans(data.data.items);
-        if (data.data.items.length > 0) {
-          setActiveTab("table");
-        } else {
-          setActiveTab("setup");
+      const data = await apiFetch<{ items: SavingsPlan[] }>(`/api/savings/${goal.id}/plans`);
+      const items = data.items ?? [];
+      if (items.length > 0) {
+        setPlans(items);
+      } else {
+        const initialized = await initializeEmptyPlans(goal);
+        setPlans(initialized);
+        if (initialized.length > 0) {
+          onPlansChanged?.();
         }
       }
     } catch (error) {
@@ -65,127 +64,31 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
     } finally {
       setLoading(false);
     }
-  };
+  }, [goal, onPlansChanged]);
 
-  const handleGenerate = async () => {
-    if (!goal) return;
-    setLoading(true);
-    
-    const newPlans: any[] = [];
-    const [year, month] = startMonth.split("-").map(Number);
-    
-    // Carry over logic for Bi-Monthly
-    let previousCarryOver = 0;
+  useEffect(() => {
+    if (open && goal) {
+      void fetchPlans();
+    }
+  }, [open, goal, fetchPlans]);
 
-    for (let i = 0; i < duration; i++) {
-      const currentDate = new Date(year, month - 1 + i, 1);
-      const mStr = currentDate.toISOString().slice(0, 7); // YYYY-MM
-      const currentMonthNum = currentDate.getMonth() + 1; // 1-12
-
-      let planItem: any = {
-        month: mStr,
-        status: "PENDING",
-        salary: baseSalary,
-        expenses: {},
-        remark: "",
-      };
-
-      if (goal.type === "MONTHLY") {
-        planItem.amount = monthlyAmount;
-        planItem.remark = `每月${depositDay}号存款`;
-      } else {
-        // Bi-Monthly Logic
-        const isOdd = currentMonthNum % 2 !== 0;
-        const isTargetMonth = 
-          (goal.type === "BI_MONTHLY_ODD" && isOdd) || 
-          (goal.type === "BI_MONTHLY_EVEN" && !isOdd);
-
-        // Calculate expenses sum
-        let totalExpenses = 0;
-        fixedExpenses.forEach(exp => {
-          planItem.expenses[exp.name] = exp.amount;
-          totalExpenses += exp.amount;
-        });
-
-        const currentBalance = baseSalary - totalExpenses;
-        const totalAvailable = currentBalance + previousCarryOver;
-
-        if (isTargetMonth) {
-          // Default logic: Deposit everything available? Or user sets it?
-          // User requirement: "Can deposit 6000... if all deposited, 0 carry over"
-          // Let's default to depositing all available for now, user can edit later
-          planItem.amount = Math.max(0, totalAvailable);
-          previousCarryOver = 0;
-        } else {
-          planItem.amount = 0;
-          previousCarryOver = totalAvailable;
-        }
-      }
-      
-      newPlans.push(planItem);
+  const calculatedPlans: CalculatedPlan[] = useMemo(() => {
+    if (goal?.type === "MONTHLY") {
+      return plans.map((plan) => ({
+        ...plan,
+        totalExp: 0,
+        currentBalance: 0,
+        totalAvailable: 0,
+        remaining: 0,
+      }));
     }
 
-    try {
-      const res = await fetch(`/api/savings/${goal.id}/plans/batch`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          plans: newPlans,
-          config: {
-            duration,
-            startMonth,
-            depositDay,
-            monthlyAmount,
-            baseSalary,
-            fixedExpenses,
-          }
-        }),
-      });
-      const data = await res.json();
-      if (data.code === 200) {
-        setPlans(data.data.items);
-        setActiveTab("table");
-      }
-    } catch (error) {
-      console.error("Failed to generate plans", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdatePlan = async (id: string, updates: Partial<SavingsPlan>) => {
-    // Optimistic update
-    const updatedPlans = plans.map(p => p.id === id ? { ...p, ...updates } : p);
-    setPlans(updatedPlans);
-
-    try {
-      await fetch(`/api/savings/plans/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(updates),
-      });
-    } catch (error) {
-      console.error("Failed to update plan", error);
-      fetchPlans(); // Revert on error
-    }
-  };
-
-  // Helper to calculate dynamic values for Bi-Monthly table
-  const getCalculatedRows = () => {
     let carryOver = 0;
-    return plans.map(plan => {
-      const totalExp = Object.values(plan.expenses || {}).reduce((a, b) => a + Number(b), 0);
-      const currentBalance = (plan.salary || 0) - totalExp;
+    return plans.map((plan) => {
+      const totalExp = Object.values(plan.expenses || {}).reduce((sum, value) => sum + Number(value), 0);
+      const currentBalance = Number(plan.salary || 0) - totalExp;
       const totalAvailable = currentBalance + carryOver;
-      const remaining = totalAvailable - plan.amount;
-      
-      // Update carryOver for next iteration
+      const remaining = totalAvailable - Number(plan.amount || 0);
       carryOver = remaining;
 
       return {
@@ -193,216 +96,212 @@ export function SavingsPlanDialog({ open, onOpenChange, goal }: SavingsPlanDialo
         totalExp,
         currentBalance,
         totalAvailable,
-        remaining, // This is the "Carry Over" to next month
+        remaining,
       };
     });
-  };
+  }, [goal?.type, plans]);
 
-  const calculatedPlans = goal?.type === "MONTHLY" ? plans : getCalculatedRows();
+  const displayPlans = useMemo(() => {
+    const plansWithAmount = calculatedPlans.filter((plan) => Number(plan.amount) > 0);
+    return plansWithAmount.length > 0 ? plansWithAmount : calculatedPlans;
+  }, [calculatedPlans]);
+
+  const currentMonth = getLocalMonthKey();
+
+  async function handleUpdatePlan(id: string, updates: Partial<SavingsPlan>) {
+    const updatedPlans = plans.map((plan) => (plan.id === id ? { ...plan, ...updates } : plan));
+    setPlans(updatedPlans);
+
+    try {
+      await apiFetch(`/api/savings/plans/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(updates),
+      });
+
+      if (updates.status === "COMPLETED") {
+        const plan = plans.find((item) => item.id === id);
+        if (plan && plan.amount > 0) {
+          await apiFetch("/api/transactions", {
+            method: "POST",
+            body: JSON.stringify({
+              amount: plan.amount.toString(),
+              type: "INCOME" as const,
+              category: "储蓄存款",
+              platform: "手动打卡",
+              merchant: goal?.name || "储蓄目标",
+              date: new Date().toISOString(),
+              description: `储蓄打卡 - ${plan.month}`,
+            }),
+          }).catch((error) => console.error("Failed to create transaction for savings plan", error));
+        }
+      }
+
+      onPlansChanged?.();
+    } catch (error) {
+      console.error("Failed to update plan", error);
+      void fetchPlans();
+    }
+  }
+
+  function handleProofUpload(planId: string, file?: File | null) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = typeof reader.result === "string" ? reader.result : "";
+      if (!value) return;
+      void handleUpdatePlan(planId, { proofImage: value });
+    };
+    reader.readAsDataURL(file);
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[1000px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>指定计划 - {goal?.name}</DialogTitle>
-        </DialogHeader>
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      <BottomSheetContent className="flex max-h-[90vh] max-w-[920px] flex-col">
+        <BottomSheetHeader>
+          <BottomSheetTitle className="text-lg sm:text-xl">每月打卡 - {goal?.name}</BottomSheetTitle>
+          <BottomSheetDescription className="text-sm leading-6">卡片式查看每个月的计划存款、状态与凭证。</BottomSheetDescription>
+        </BottomSheetHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {activeTab === "setup" && (
-            <div className="p-4 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">开始月份</label>
-                  <Input type="month" value={startMonth} onChange={e => setStartMonth(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">持续月数</label>
-                  <Input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} />
-                </div>
-              </div>
+        <ThemeToolbar className="mt-4 justify-between">
+          <div className="text-base text-slate-500">当前显示 {displayPlans.length} 条计划记录</div>
+          <Button
+            variant="outline"
+            className="h-10 rounded-xl px-4 text-sm font-medium"
+            onClick={async () => {
+              if (!goal) return;
+              if (!confirm("将按 12 个月重新初始化打卡计划，确定吗？")) return;
+              setLoading(true);
+              const initialized = await initializeEmptyPlans(goal);
+              setPlans(initialized);
+              setLoading(false);
+              if (initialized.length > 0) onPlansChanged?.();
+            }}
+          >
+            重新初始化 12 个月
+          </Button>
+        </ThemeToolbar>
 
-              {goal?.type === "MONTHLY" ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">每月存款日</label>
-                    <Input type="number" min={1} max={31} value={depositDay} onChange={e => setDepositDay(Number(e.target.value))} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">每月存款金额</label>
-                    <Input type="number" value={monthlyAmount} onChange={e => setMonthlyAmount(Number(e.target.value))} />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">月薪 (Base)</label>
-                    <Input type="number" value={baseSalary} onChange={e => setBaseSalary(Number(e.target.value))} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">固定支出项</label>
-                    {fixedExpenses.map((exp, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input 
-                          placeholder="支出名称" 
-                          value={exp.name} 
-                          onChange={e => {
-                            const newExps = [...fixedExpenses];
-                            newExps[idx].name = e.target.value;
-                            setFixedExpenses(newExps);
-                          }} 
-                        />
-                        <Input 
-                          type="number" 
-                          placeholder="金额" 
-                          value={exp.amount} 
-                          onChange={e => {
-                            const newExps = [...fixedExpenses];
-                            newExps[idx].amount = Number(e.target.value);
-                            setFixedExpenses(newExps);
-                          }} 
-                        />
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setFixedExpenses(fixedExpenses.filter((_, i) => i !== idx))}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+        <div className="mt-4 flex-1 space-y-3 overflow-auto pr-1">
+          {loading ? (
+            <div className="py-8 text-center text-base text-slate-500">加载中...</div>
+          ) : displayPlans.length === 0 ? (
+            <ThemeEmptyState title="暂无计划" description="请先创建储蓄目标计划。" icon={goal?.type === "MONTHLY" ? undefined as never : undefined as never} />
+          ) : (
+            displayPlans.map((plan) => (
+              <ThemeDialogSection key={plan.id} className={plan.month === currentMonth ? "border-blue-300 ring-1 ring-blue-100" : undefined}>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-[180px] space-y-2">
+                    <div className="text-base font-semibold text-slate-900">{plan.month.replace("-", "/")}</div>
+                    <div className="text-sm text-slate-500">计划存款</div>
+                    <Input type="number" className="h-10 w-[148px] text-sm" value={plan.amount} onChange={(e) => void handleUpdatePlan(plan.id, { amount: Number(e.target.value) })} />
+                    {goal?.type !== "MONTHLY" ? (
+                      <div className="text-sm text-slate-500">
+                        可存金额：<span className="font-medium text-blue-600">¥{plan.totalAvailable.toLocaleString()}</span>
                       </div>
-                    ))}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setFixedExpenses([...fixedExpenses, { name: `固定支出${fixedExpenses.length + 1}`, amount: 0 }])}
+                    ) : null}
+                  </div>
+
+                  <div className="min-w-[160px] space-y-2">
+                    <div className="text-sm text-slate-500">打卡状态</div>
+                    <button
+                      type="button"
+                      onClick={() => void handleUpdatePlan(plan.id, { status: plan.status === "COMPLETED" ? "PENDING" : "COMPLETED" })}
+                      className={`rounded-lg px-3 py-2 text-sm font-medium ${plan.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}
                     >
-                      <Plus className="h-4 w-4 mr-2" /> 添加支出项
-                    </Button>
+                      {plan.status === "COMPLETED" ? "已存款" : "未存款"}
+                    </button>
+                    {plan.updatedAt && plan.status === "COMPLETED" ? (
+                      <div className="text-sm text-slate-400">
+                        打卡：{new Date(plan.updatedAt).toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </div>
+                    ) : null}
+                    <div className="text-sm text-slate-500">备注</div>
+                    <Input className="h-10 w-[180px] text-sm" value={plan.remark || ""} placeholder="备注..." onChange={(e) => void handleUpdatePlan(plan.id, { remark: e.target.value })} />
+                  </div>
+
+                  <div
+                    className={cn(
+                      "min-w-[190px] rounded-md border border-dashed p-3 transition-colors",
+                      dragOverId === plan.id ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-slate-50/60"
+                    )}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      setDragOverId(plan.id);
+                    }}
+                    onDragLeave={() => setDragOverId(null)}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      setDragOverId(null);
+                      handleProofUpload(plan.id, event.dataTransfer.files?.[0]);
+                    }}
+                  >
+                    <div className="mb-2 text-sm text-slate-500">打卡凭证</div>
+                    <label htmlFor={`plan-proof-${plan.id}`} className="inline-flex cursor-pointer items-center gap-2">
+                      <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200">上传</span>
+                    </label>
+                    <input id={`plan-proof-${plan.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => handleProofUpload(plan.id, e.target.files?.[0])} />
+                    <div className="mt-1 text-sm text-slate-400">支持拖入图片</div>
+                    {plan.proofImage ? (
+                      <div className="mt-2 space-y-1">
+                        <Image src={plan.proofImage} alt="打卡凭证" width={56} height={56} unoptimized className="h-14 w-14 rounded border object-cover" />
+                        <button type="button" className="block text-sm text-blue-600 hover:underline" onClick={() => window.open(plan.proofImage, "_blank")}>
+                          查看图片
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-              )}
-
-              <Button className="w-full" onClick={handleGenerate} disabled={loading}>
-                {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-                生成计划表
-              </Button>
-            </div>
-          )}
-
-          {activeTab === "table" && (
-            <div className="flex-1 overflow-auto p-1">
-              <div className="border rounded-lg">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 sticky top-0 z-10">
-                    <tr>
-                      <th className="p-3 font-medium">月份</th>
-                      {goal?.type !== "MONTHLY" && (
-                        <>
-                          <th className="p-3 font-medium">月薪</th>
-                          {/* Dynamic Expense Headers */}
-                          {Object.keys(plans[0]?.expenses || {}).map(key => (
-                            <th key={key} className="p-3 font-medium">{key}</th>
-                          ))}
-                          <th className="p-3 font-medium text-gray-500">本月结余</th>
-                          <th className="p-3 font-medium text-gray-500">上月结余</th>
-                          <th className="p-3 font-medium text-blue-600">可存金额</th>
-                        </>
-                      )}
-                      <th className="p-3 font-medium">计划存款</th>
-                      {goal?.type !== "MONTHLY" && (
-                        <th className="p-3 font-medium text-purple-600">下月结余</th>
-                      )}
-                      <th className="p-3 font-medium">状态</th>
-                      <th className="p-3 font-medium">备注</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {calculatedPlans.map((plan: any, idx) => (
-                      <tr key={plan.id} className="hover:bg-gray-50/50">
-                        <td className="p-3 font-medium">{plan.month}</td>
-                        
-                        {goal?.type !== "MONTHLY" && (
-                          <>
-                            <td className="p-3">
-                              <input 
-                                className="w-20 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none"
-                                type="number"
-                                value={plan.salary}
-                                onChange={(e) => handleUpdatePlan(plan.id, { salary: Number(e.target.value) })}
-                              />
-                            </td>
-                            {Object.keys(plan.expenses || {}).map(key => (
-                              <td key={key} className="p-3">
-                                <input 
-                                  className="w-20 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none"
-                                  type="number"
-                                  value={plan.expenses[key]}
-                                  onChange={(e) => {
-                                    const newExpenses = { ...plan.expenses, [key]: Number(e.target.value) };
-                                    handleUpdatePlan(plan.id, { expenses: newExpenses });
-                                  }}
-                                />
-                              </td>
-                            ))}
-                            <td className="p-3 text-gray-500">¥{plan.currentBalance?.toLocaleString()}</td>
-                            <td className="p-3 text-gray-500">
-                              {/* Previous Carry Over is derived from previous row's remaining */}
-                              ¥{(idx > 0 ? calculatedPlans[idx - 1].remaining : 0)?.toLocaleString()}
-                            </td>
-                            <td className="p-3 font-bold text-blue-600">¥{plan.totalAvailable?.toLocaleString()}</td>
-                          </>
-                        )}
-
-                        <td className="p-3">
-                          <input 
-                            className="w-24 bg-transparent font-bold border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none"
-                            type="number"
-                            value={plan.amount}
-                            onChange={(e) => handleUpdatePlan(plan.id, { amount: Number(e.target.value) })}
-                          />
-                        </td>
-
-                        {goal?.type !== "MONTHLY" && (
-                          <td className="p-3 font-bold text-purple-600">¥{plan.remaining?.toLocaleString()}</td>
-                        )}
-
-                        <td className="p-3">
-                          <button
-                            onClick={() => handleUpdatePlan(plan.id, { status: plan.status === "COMPLETED" ? "PENDING" : "COMPLETED" })}
-                            className={clsx(
-                              "px-2 py-1 rounded text-xs font-medium",
-                              plan.status === "COMPLETED" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                            )}
-                          >
-                            {plan.status === "COMPLETED" ? "已达成" : "进行中"}
-                          </button>
-                        </td>
-                        <td className="p-3">
-                          <input 
-                            className="w-full min-w-[100px] bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-gray-500"
-                            value={plan.remark || ""}
-                            placeholder={goal?.type === "MONTHLY" ? "备注..." : "备注"}
-                            onChange={(e) => handleUpdatePlan(plan.id, { remark: e.target.value })}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-4 flex justify-between">
-                 <Button variant="outline" onClick={() => {
-                   if (confirm("重新生成将覆盖现有计划，确定吗？")) {
-                     setActiveTab("setup");
-                   }
-                 }}>
-                   重置计划
-                 </Button>
-              </div>
-            </div>
+              </ThemeDialogSection>
+            ))
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <ThemeActionBar className="mt-4">
+          <Button type="button" variant="outline" className="h-10 rounded-xl px-4 text-sm font-medium" onClick={() => onOpenChange(false)}>
+            关闭
+          </Button>
+        </ThemeActionBar>
+      </BottomSheetContent>
+    </BottomSheet>
   );
+}
+
+async function initializeEmptyPlans(goal: SavingsGoal): Promise<SavingsPlan[]> {
+  const initDuration = 12;
+  const initStartMonth = getLocalMonthKey();
+  const draftPlans: Array<Omit<SavingsPlan, "id" | "goalId">> = [];
+
+  for (let index = 0; index < initDuration; index += 1) {
+    const monthText = addMonthsToMonthKey(initStartMonth, index);
+    draftPlans.push({
+      month: monthText,
+      amount: 0,
+      status: "PENDING",
+      salary: 0,
+      expenses: goal.type === "MONTHLY" ? {} : { 固定支出1: 0 },
+      remark: "",
+      proofImage: "",
+    });
+  }
+
+  try {
+    const data = await apiFetch<{ items: SavingsPlan[] }>(`/api/savings/${goal.id}/plans/batch`, {
+      method: "POST",
+      body: JSON.stringify({
+        plans: draftPlans,
+        config: {
+          duration: initDuration,
+          startMonth: initStartMonth,
+          depositDay: 15,
+          monthlyAmount: 0,
+          baseSalary: 0,
+          fixedExpenses: [{ name: "固定支出1", amount: 0 }],
+        },
+      }),
+    });
+    return data.items ?? [];
+  } catch (error) {
+    console.error("Failed to initialize plans", error);
+    return [];
+  }
 }

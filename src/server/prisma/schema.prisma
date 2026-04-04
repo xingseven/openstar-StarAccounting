@@ -1,0 +1,373 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 账户系统 ====================
+
+model account {
+  id        String   @id
+  name      String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  owner            user             @relation("UserOwnedAccounts", fields: [ownerId], references: [id], map: "Account_ownerId_fkey")
+  defaultUsers     user[]           @relation("UserDefaultAccount")
+  accountMember    account_member[]
+  aimodelconfigs   aimodelconfig[]
+  appconnections   appconnection[]
+  assets           asset[]
+  budgets          budget[]
+  importerrorlogs  importerrorlog[]
+  loans            loan[]
+  savingsgoals     savingsgoal[]
+  themeconfigs     themeconfig[]
+  transactions     transaction[]
+
+  @@index([ownerId], map: "Account_ownerId_idx")
+}
+
+model account_member {
+  id           String           @id
+  accountId    String
+  userId       String
+  role         account_role     @default(MEMBER)
+  nickname     String?
+  canViewOwn   Boolean          @default(true)
+  canManageOwn Boolean          @default(true)
+  canViewAll   Boolean          @default(false)
+  canManageAll Boolean          @default(false)
+  joinedAt     DateTime         @default(now())
+
+  account account @relation(fields: [accountId], references: [id], onDelete: Cascade, map: "AccountMember_accountId_fkey")
+  user    user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "AccountMember_userId_fkey")
+
+  @@unique([accountId, userId], map: "AccountMember_accountId_userId_key")
+  @@index([userId], map: "AccountMember_userId_idx")
+}
+
+enum account_role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ==================== 原有模型 ====================
+
+model aimodelconfig {
+  id          String   @id
+  userId      String
+  accountId   String
+  name        String
+  provider    String
+  type        String   @default("vision")
+  apiKey      String?
+  endpoint    String?
+  modelId     String?
+  description String?
+  status      String   @default("inactive")
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "aimodelconfig_ibfk_1")
+  account     account  @relation(fields: [accountId], references: [id], map: "AIModelConfig_accountId_fkey")
+
+  @@index([userId], map: "AIModelConfig_userId_idx")
+  @@index([accountId], map: "AIModelConfig_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model appconnection {
+  id         String    @id
+  userId     String
+  accountId  String
+  deviceId   String?
+  deviceName String?
+  ipAddress  String?
+  otpCode    String
+  isVerified Boolean   @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  verifiedAt DateTime?
+  user       user      @relation(fields: [userId], references: [id], map: "AppConnection_userId_fkey")
+  account    account   @relation(fields: [accountId], references: [id], map: "AppConnection_accountId_fkey")
+
+  @@unique([otpCode, isVerified], map: "AppConnection_otpCode_isVerified_key")
+  @@index([otpCode], map: "AppConnection_otpCode_idx")
+  @@index([userId, isVerified], map: "AppConnection_userId_isVerified_idx")
+  @@index([accountId], map: "AppConnection_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model asset {
+  id        String     @id
+  userId    String
+  accountId String
+  name      String
+  type      asset_type
+  balance   Decimal    @default(0.000000000000000000000000000000)
+  currency  String     @default("CNY")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  user      user       @relation(fields: [userId], references: [id], map: "Asset_userId_fkey")
+  account   account    @relation(fields: [accountId], references: [id], map: "Asset_accountId_fkey")
+
+  @@index([userId, type], map: "Asset_userId_type_idx")
+  @@index([accountId], map: "Asset_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model budget {
+  id           String           @id
+  userId       String
+  accountId    String
+  amount       Decimal
+  category     String           @default("ALL")
+  period       budget_period    @default(MONTHLY)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime
+  alertPercent Int              @default(80)
+  platform     String?
+  scopeType    budget_scopeType @default(GLOBAL)
+  user         user             @relation(fields: [userId], references: [id], map: "Budget_userId_fkey")
+  account      account          @relation(fields: [accountId], references: [id], map: "Budget_accountId_fkey")
+
+  @@unique([userId, category, period, scopeType, platform], map: "Budget_userId_category_period_scopeType_platform_key")
+  @@index([accountId], map: "Budget_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model exchangerate {
+  id        String   @id
+  from      String
+  to        String
+  rate      Decimal
+  updatedAt DateTime
+
+  @@unique([from, to], map: "ExchangeRate_from_to_key")
+}
+
+model importerrorlog {
+  id           String   @id
+  userId       String
+  accountId    String
+  fileName     String
+  lineNumber   Int
+  rawData      String   @db.Text
+  errorMessage String   @db.Text
+  errorType    String
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  user         user     @relation(fields: [userId], references: [id], map: "ImportErrorLog_userId_fkey")
+  account      account  @relation(fields: [accountId], references: [id], map: "ImportErrorLog_accountId_fkey")
+
+  @@index([userId], map: "ImportErrorLog_userId_idx")
+  @@index([userId, resolved], map: "ImportErrorLog_userId_resolved_idx")
+  @@index([accountId], map: "ImportErrorLog_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model loan {
+  id              String        @id
+  userId          String
+  accountId       String
+  platform        String
+  totalAmount     Decimal
+  remainingAmount Decimal
+  periods         Int
+  paidPeriods     Int
+  monthlyPayment  Decimal
+  dueDate         Int
+  status          loan_status   @default(ACTIVE)
+  matchKeywords   Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime
+  user            user          @relation(fields: [userId], references: [id], map: "Loan_userId_fkey")
+  account         account       @relation(fields: [accountId], references: [id], map: "Loan_accountId_fkey")
+  transaction     transaction[]
+
+  @@index([userId, status], map: "Loan_userId_status_idx")
+  @@index([accountId], map: "Loan_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model savingsgoal {
+  id            String                  @id
+  userId        String
+  accountId     String
+  name          String
+  targetAmount  Decimal
+  currentAmount Decimal                 @default(0.000000000000000000000000000000)
+  deadline      DateTime?
+  type          savingsgoal_type        @default(LONG_TERM)
+  status        savingsgoal_status      @default(ACTIVE)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime
+  depositType   savingsgoal_depositType @default(CASH)
+  planConfig    Json?
+  user          user                    @relation(fields: [userId], references: [id], map: "SavingsGoal_userId_fkey")
+  account       account                 @relation(fields: [accountId], references: [id], map: "SavingsGoal_accountId_fkey")
+  savingsplan   savingsplan[]
+
+  @@index([userId], map: "SavingsGoal_userId_fkey")
+  @@index([accountId], map: "SavingsGoal_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model savingsplan {
+  id          String             @id
+  goalId      String
+  amount      Decimal
+  status      savingsplan_status @default(PENDING)
+  month       String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime
+  expenses    Json?
+  remark      String?
+  salary      Decimal?           @default(0.000000000000000000000000000000)
+  proofImage  String?            @db.Text
+  savingsgoal savingsgoal        @relation(fields: [goalId], references: [id], onDelete: Cascade, map: "SavingsPlan_goalId_fkey")
+
+  @@index([goalId], map: "SavingsPlan_goalId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model themeconfig {
+  id           String   @id
+  userId       String   @unique(map: "ThemeConfig_userId_key")
+  accountId    String?
+  themeId      String   @default("default")
+  primaryColor String?
+  radius       Float?
+  isDarkMode   Boolean  @default(false)
+  chartStyle   Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  user         user     @relation(fields: [userId], references: [id], map: "ThemeConfig_userId_fkey")
+  account      account? @relation(fields: [accountId], references: [id], map: "ThemeConfig_accountId_fkey")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model transaction {
+  id            String           @id
+  userId        String
+  accountId     String
+  amount        Decimal
+  type          transaction_type
+  category      String
+  platform      String
+  merchant      String?
+  date          DateTime
+  description   String?
+  orderId       String?          @unique(map: "Transaction_orderId_key")
+  paymentMethod String?
+  status        String?
+  loanId        String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime
+  loan          loan?            @relation(fields: [loanId], references: [id], map: "Transaction_loanId_fkey")
+  user          user             @relation(fields: [userId], references: [id], map: "Transaction_userId_fkey")
+  account       account          @relation(fields: [accountId], references: [id], map: "Transaction_accountId_fkey")
+
+  @@index([loanId], map: "Transaction_loanId_fkey")
+  @@index([userId, date], map: "Transaction_userId_date_idx")
+  @@index([userId, loanId], map: "Transaction_userId_loanId_idx")
+  @@index([accountId], map: "Transaction_accountId_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user {
+  id              String          @id
+  email           String          @unique(map: "User_email_key")
+  password        String
+  name            String?
+  defaultAccountId String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  role            user_role       @default(USER)
+
+  // 账户关系
+  defaultAccount  account?        @relation("UserDefaultAccount", fields: [defaultAccountId], references: [id], map: "User_defaultAccountId_fkey")
+  ownedAccounts  account[]      @relation("UserOwnedAccounts")
+  memberships    account_member[]
+
+  // 业务关系
+  aimodelconfig   aimodelconfig[]
+  appconnection   appconnection[]
+  asset           asset[]
+  budget          budget[]
+  loan            loan[]
+  savingsgoal     savingsgoal[]
+  themeconfig     themeconfig[]
+  transaction     transaction[]
+  importerrorlog  importerrorlog[]
+}
+
+enum asset_type {
+  CASH
+  BANK_CARD
+  ALIPAY
+  WECHAT
+  INVESTMENT
+  OTHER
+}
+
+enum savingsplan_status {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum transaction_type {
+  INCOME
+  EXPENSE
+  TRANSFER
+  REPAYMENT
+}
+
+enum budget_period {
+  MONTHLY
+  YEARLY
+}
+
+enum savingsgoal_type {
+  MONTHLY
+  YEARLY
+  LONG_TERM
+  BI_MONTHLY_ODD
+  BI_MONTHLY_EVEN
+}
+
+enum user_role {
+  USER
+  ADMIN
+}
+
+enum savingsgoal_status {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum budget_scopeType {
+  GLOBAL
+  CATEGORY
+  PLATFORM
+}
+
+enum loan_status {
+  ACTIVE
+  PAID_OFF
+  OVERDUE
+}
+
+enum savingsgoal_depositType {
+  CASH
+  FIXED_TERM
+  HELP_DEPOSIT
+}

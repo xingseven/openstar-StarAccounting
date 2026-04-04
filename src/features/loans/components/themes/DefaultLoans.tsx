@@ -1,221 +1,325 @@
-import { 
-  Bar, 
-  BarChart, 
-  CartesianGrid, 
-  Cell, 
-  Pie, 
-  PieChart, 
-  XAxis, 
-  YAxis 
-} from "recharts";
+"use client";
+
+import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Banknote,
+  Building,
+  Calendar,
+  CreditCard,
+  HandCoins,
+  Home,
+  Landmark,
+  MoreHorizontal,
+  Plus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Plus, 
-  MoreHorizontal, 
-  Calendar,
-  Banknote,
-  Landmark,
-  CreditCard,
-  Building,
-  Home
-} from "lucide-react";
-import { clsx } from "clsx";
+import { DelayedRender } from "@/components/shared/DelayedRender";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { LoansLoadingShell } from "./LoansLoadingShell";
+import {
+  THEME_ICON_BUTTON_CLASS,
+  ThemeHero,
+  ThemeMetricCard,
+  ThemeSectionHeader,
+  ThemeSurface,
+  getThemeModuleStyle,
+} from "@/components/shared/theme-primitives";
+import { formatCurrency } from "@/lib/utils";
+import type { Loan } from "@/types";
 
-export type Loan = {
-  id: string;
-  platform: string;
-  totalAmount: number;
-  remainingAmount: number;
-  periods: number;
-  paidPeriods: number;
-  monthlyPayment: number;
-  dueDate: number;
-  status: "ACTIVE" | "COMPLETED" | "DEFAULT";
-  createdAt: string;
-};
+export type { Loan };
+
+const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 
 interface LoansViewProps {
   items: Loan[];
   platformData: Array<{ name: string; value: number; fill: string }>;
   paidVsRemainingData: Array<{ platform: string; paid: number; remaining: number }>;
+  loading?: boolean;
+  reconcileLoadingId?: string | null;
   onOpenCreate: () => void;
   onOpenEdit: (item: Loan) => void;
   onOpenSchedule: (item: Loan) => void;
+  onRepay: (item: Loan) => void;
+  onReconcile: (item: Loan) => void;
+}
+
+function getIcon(platform: string) {
+  if (platform.includes("�?)) return <Home className="h-5 w-5 text-amber-600" />;
+  if (platform.includes("�?)) return <CreditCard className="h-5 w-5 text-orange-600" />;
+  if (platform.includes("银行")) return <Landmark className="h-5 w-5 text-rose-600" />;
+  return <Building className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />;
+}
+
+function LoanCard({
+  item,
+  onOpenEdit,
+  onOpenSchedule,
+  onRepay,
+  onReconcile,
+  isReconciling,
+}: {
+  item: Loan;
+  onOpenEdit: (item: Loan) => void;
+  onOpenSchedule: (item: Loan) => void;
+  onRepay: (item: Loan) => void;
+  onReconcile: (item: Loan) => void;
+  isReconciling: boolean;
+}) {
+  const progress = item.totalAmount > 0 ? Math.min(100, ((item.totalAmount - item.remainingAmount) / item.totalAmount) * 100) : 0;
+  const mobileLightOutlineButtonClass =
+    "h-10 justify-center rounded-xl border-transparent px-4 text-xs font-medium hover:bg-slate-200 sm:border-border sm:bg-background sm:text-sm sm:text-foreground sm:hover:bg-muted";
+
+  return (
+    <ThemeSurface className="group p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div 
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-transparent sm:border-slate-200"
+            style={{ background: "var(--theme-dialog-section-bg)" }}
+          >
+            {getIcon(item.platform)}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>{item.platform}</p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+              <Calendar className="h-3.5 w-3.5" />
+              每月 {item.dueDate} 日还�?            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onOpenEdit(item)}
+          className={`${THEME_ICON_BUTTON_CLASS} h-10 w-10 rounded-xl`}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-4 space-y-3.5">
+        <div 
+          className="grid grid-cols-2 gap-3 rounded-[18px] px-4 py-3 sm:bg-transparent sm:px-0 sm:py-0"
+          style={{ background: "var(--theme-dialog-section-bg)" }}
+        >
+          <div>
+            <div className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+              <Banknote className="h-4 w-4" />
+              月供
+            </div>
+            <p className="mt-1 text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.monthlyPayment)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>剩余本金</p>
+            <p className="mt-1 text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.remainingAmount)}</p>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+            <span>进度 {progress.toFixed(1)}%</span>
+            <span>
+              {item.paidPeriods} / {item.periods} �?            </span>
+          </div>
+          <Progress value={progress} className="h-2" indicatorClassName="[background:var(--module-progress-gradient)]" />
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs sm:text-sm">
+            <span style={{ color: "var(--theme-muted-text)" }}>已还 {formatCurrency(item.totalAmount - item.remainingAmount)}</span>
+            <span className="font-medium" style={{ color: "var(--theme-body-text)" }}>总额 {formatCurrency(item.totalAmount)}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className={mobileLightOutlineButtonClass} 
+            onClick={() => onOpenSchedule(item)}
+            style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            还款计划
+          </Button>
+          <Button 
+            type="button" 
+            className="h-10 justify-center rounded-xl px-4 text-xs font-medium text-white hover:brightness-105 sm:text-sm"
+            style={{ background: "var(--module-accent-strong)" }}
+            onClick={() => onRepay(item)}
+          >
+            <HandCoins className="mr-2 h-4 w-4" />
+            登记还款
+          </Button>
+        </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-10 w-full justify-center rounded-xl text-xs font-medium sm:text-sm"
+          onClick={() => onReconcile(item)}
+          disabled={isReconciling}
+          style={{ color: "var(--theme-label-text)" }}
+        >
+          {isReconciling ? "扫描�?.." : "扫描历史还款"}
+        </Button>
+      </div>
+    </ThemeSurface>
+  );
 }
 
 export function LoansDefaultTheme({
   items,
   platformData,
   paidVsRemainingData,
+  loading = false,
+  reconcileLoadingId = null,
   onOpenCreate,
   onOpenEdit,
   onOpenSchedule,
+  onRepay,
+  onReconcile,
 }: LoansViewProps) {
-  const chartConfig = {
-    paid: { label: "已还", color: "hsl(var(--chart-1))" },
-    remaining: { label: "剩余", color: "hsl(var(--chart-2))" },
-  } satisfies ChartConfig;
+  const isSkeletonVisible = loading;
+  const totalRemaining = useMemo(() => items.reduce((sum, item) => sum + item.remainingAmount, 0), [items]);
+  const totalPaid = useMemo(() => items.reduce((sum, item) => sum + (item.totalAmount - item.remainingAmount), 0), [items]);
+  const totalMonthlyPayment = useMemo(() => items.reduce((sum, item) => sum + item.monthlyPayment, 0), [items]);
 
-  const getIcon = (platform: string) => {
-    if (platform.includes("房")) return <Home className="h-5 w-5 text-blue-500" />;
-    if (platform.includes("车")) return <CreditCard className="h-5 w-5 text-purple-500" />;
-    if (platform.includes("银行")) return <Landmark className="h-5 w-5 text-red-500" />;
-    return <Building className="h-5 w-5 text-gray-500" />;
+  if (isSkeletonVisible) {
+    return <LoansLoadingShell />;
+  }
+
+  const platformOption = {
+    tooltip: { trigger: "item" },
+    series: [
+      {
+        type: "pie",
+        radius: ["42%", "72%"],
+        label: { show: true, formatter: "{b}" },
+        data: platformData.map((item) => ({
+          value: item.value,
+          name: item.name,
+          itemStyle: { color: item.fill },
+        })),
+      },
+    ],
+  };
+
+  const progressOption = {
+    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    legend: {
+      data: ["已还", "剩余"],
+      top: 0,
+      left: "center",
+      itemWidth: 10,
+      itemHeight: 10,
+      textStyle: { color: "#64748b", fontSize: 11 },
+    },
+    grid: { left: 44, right: 16, top: 52, bottom: 50 },
+    xAxis: {
+      type: "category",
+      data: paidVsRemainingData.map((item) => item.platform),
+      axisLabel: { rotate: -18, color: "#64748b", fontSize: 11, margin: 12 },
+      axisLine: { show: false },
+      axisTick: { show: false },
+    },
+    yAxis: {
+      type: "value",
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: "rgba(148,163,184,0.14)" } },
+      axisLabel: { color: "#94a3b8", fontSize: 11 },
+    },
+    series: [
+      {
+        name: "已还",
+        type: "bar",
+        stack: "total",
+        data: paidVsRemainingData.map((item) => item.paid),
+        itemStyle: { color: "#b45309" },
+      },
+      {
+        name: "剩余",
+        type: "bar",
+        stack: "total",
+        data: paidVsRemainingData.map((item) => item.remaining),
+        itemStyle: { color: "#fdba74" },
+      },
+    ],
   };
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">贷款管理</h1>
-          <p className="text-gray-500 mt-1">清晰掌握负债情况，合理规划还款</p>
-        </div>
-        <Button onClick={onOpenCreate} className="bg-black hover:bg-gray-800 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          新增贷款
-        </Button>
-      </div>
+    <div className="mx-auto max-w-[1680px] space-y-3 sm:space-y-5" style={getThemeModuleStyle("loans")}>
+      <DelayedRender delay={0}>
+        <ThemeHero className="p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: "var(--theme-body-text)" }}>贷款工作�?/h1>
+              <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>统一查看贷款余额、月供压力和平台分布�?/p>
+            </div>
 
-      {/* Analysis Charts */}
-      {items.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Platform Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>贷款分布 (剩余金额)</CardTitle>
-              <CardDescription>各平台待还金额占比</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}} className="mx-auto aspect-square max-h-[300px]">
-                <PieChart>
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                  <Pie
-                    data={platformData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    strokeWidth={5}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    <ChartLegend content={<ChartLegendContent />} className="-translate-y-2 flex-wrap gap-2" verticalAlign="bottom" align="right" />
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* Paid vs Remaining */}
-          <Card>
-            <CardHeader>
-              <CardTitle>还款进度分析</CardTitle>
-              <CardDescription>已还本金 vs 剩余本金</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                <BarChart accessibilityLayer data={paidVsRemainingData}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="platform"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ChartLegend content={<ChartLegendContent />} verticalAlign="bottom" align="right" />
-                  <Bar dataKey="paid" stackId="a" fill="var(--color-chart-1)" radius={[0, 0, 4, 4]} />
-                  <Bar dataKey="remaining" stackId="a" fill="var(--color-chart-2)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Loan List */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {items.length === 0 ? (
-          <div className="col-span-full rounded border p-12 text-center text-gray-500 bg-gray-50/50 border-dashed">
-            <Landmark className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-            暂无贷款记录
+            <Button
+              onClick={onOpenCreate}
+              className="h-10 rounded-2xl px-4 text-sm font-medium text-white hover:brightness-105"
+              style={{ background: "var(--module-accent-strong)" }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              新增贷款
+            </Button>
           </div>
+        </ThemeHero>
+      </DelayedRender>
+
+      <DelayedRender delay={60}>
+        <div className="grid gap-3 md:grid-cols-4">
+          <ThemeMetricCard label="待还总额" value={formatCurrency(totalRemaining)} detail="当前负�? tone="red" icon={Landmark} className="p-4" hideDetailOnMobile />
+          <ThemeMetricCard label="已还金额" value={formatCurrency(totalPaid)} detail="累计偿付" tone="green" icon={HandCoins} className="p-4" hideDetailOnMobile />
+          <ThemeMetricCard label="月供合计" value={formatCurrency(totalMonthlyPayment)} detail="每月固定支出" tone="blue" icon={Banknote} className="p-4" hideDetailOnMobile />
+          <ThemeMetricCard label="贷款数量" value={`${items.length} 笔`} detail="当前管理�? tone="slate" icon={Building} className="p-4" hideDetailOnMobile />
+        </div>
+      </DelayedRender>
+
+      <DelayedRender delay={120}>
+        {items.length === 0 ? (
+          <ThemeSurface className="p-8">
+            <EmptyState icon={Landmark} title="暂无贷款记录" description="开始添加你的第一笔贷款吧�? />
+          </ThemeSurface>
         ) : (
-          items.map((item) => {
-            const progress = item.totalAmount > 0
-              ? Math.min(100, ((item.totalAmount - item.remainingAmount) / item.totalAmount) * 100)
-              : 0;
-            return (
-              <Card key={item.id} className="group hover:shadow-md transition-shadow relative overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-3">
-                      <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center border border-red-100">
-                        {getIcon(item.platform)}
-                      </div>
-                      <div>
-                        <CardTitle className="text-base font-semibold">{item.platform}</CardTitle>
-                        <CardDescription className="flex items-center gap-2 mt-1">
-                          <Calendar className="h-3 w-3" />
-                          每月 {item.dueDate} 日还款
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <button onClick={() => onOpenSchedule(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-blue-600 transition-colors" title="还款计划">
-                        <Calendar className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => onOpenEdit(item)} className="p-1.5 hover:bg-gray-100 rounded-md text-gray-500 hover:text-black transition-colors">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded-lg">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Banknote className="h-4 w-4" />
-                        月供
-                      </div>
-                      <span className="font-semibold text-gray-900">¥{item.monthlyPayment.toLocaleString()}</span>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs text-gray-500 font-medium">
-                        <span>进度 {progress.toFixed(1)}%</span>
-                        <span>{item.paidPeriods} / {item.periods} 期</span>
-                      </div>
-                      <Progress value={progress} className="h-2" />
-                      <div className="flex justify-between text-xs pt-1">
-                        <span className="text-gray-500">剩余 ¥{item.remainingAmount.toLocaleString()}</span>
-                        <span className="text-gray-900 font-medium">总额 ¥{item.totalAmount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                {/* Decorative bottom border */}
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-red-500 opacity-50" />
-              </Card>
-            );
-          })
-        )}
-      </div>
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => (
+              <LoanCard
+                key={item.id}
+                item={item}
+                onOpenEdit={onOpenEdit}
+                onOpenSchedule={onOpenSchedule}
+                onRepay={onRepay}
+                onReconcile={onReconcile}
+                isReconciling={reconcileLoadingId === item.id}
+              />
+            ))}
+            </div>
+          )}
+      </DelayedRender>
+
+      {items.length > 0 ? (
+        <DelayedRender delay={180}>
+          <div className="grid gap-3 sm:gap-4 xl:grid-cols-2">
+            <ThemeSurface className="p-4 sm:p-5 lg:p-6">
+              <ThemeSectionHeader eyebrow="贷款分布" title="剩余本金结构" description="看不同平台上的贷款余额占比�? />
+              <div className="mt-4 h-[280px] w-full sm:h-[300px]">
+                <ReactECharts option={platformOption} style={{ height: "100%", width: "100%" }} />
+              </div>
+            </ThemeSurface>
+
+            <ThemeSurface className="p-4 sm:p-5 lg:p-6">
+              <ThemeSectionHeader eyebrow="还款进度" title="已还 vs 剩余" description="不同贷款的偿还进度对比�? />
+              <div className="mt-4 h-[280px] w-full sm:h-[300px]">
+                <ReactECharts option={progressOption} style={{ height: "100%", width: "100%" }} />
+              </div>
+            </ThemeSurface>
+          </div>
+        </DelayedRender>
+      ) : null}
     </div>
   );
 }
+

@@ -8,10 +8,11 @@ COPY . .
 # Next.js build needs this environment variable to know where the API is during build time (if using getStaticProps)
 # or just for public env vars.
 # However, for client-side fetches, the browser needs to access the API.
-# If running in Docker Compose, "http://localhost:3004" might work if accessed from host browser,
-# but if SSR, it needs internal container name "http://server:3004".
+# If running in Docker Compose, the browser should still reach the host-exposed API port.
+# If SSR is used, it should point at the same server endpoint to avoid split configuration.
 # For simplicity, we assume client-side access mainly.
-ENV NEXT_PUBLIC_API_URL=http://localhost:3004
+ENV NEXT_PUBLIC_API_URL=http://localhost:3006
+ENV NEXT_PUBLIC_API_BASE_URL=http://localhost:3006
 RUN npm run build
 
 # Production image

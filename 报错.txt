@@ -1,0 +1,12 @@
+inspector.js:7  POST http://localhost:3006/api/ai/models 500 (Internal Server Error)
+window.fetch @ inspector.js:7
+apiFetch @ api.ts:21
+handleSubmit @ page.tsx:215
+executeDispatch @ react-dom-client.development.js:20543
+runWithFiberInDEV @ react-dom-client.development.js:986
+processDispatchQueue @ react-dom-client.development.js:20593
+(匿名) @ react-dom-client.development.js:21164
+batchedUpdates$1 @ react-dom-client.development.js:3377
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
+dispatchEvent @ react-dom-client.development.js:25693
+dispatchDiscreteEvent @ react-dom-client.development.js:25661

@@ -2,73 +2,84 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Wallet, 
-  CreditCard, 
-  PiggyBank, 
-  Landmark, 
-  Link as LinkIcon, 
-  Settings,
-  Palette
-} from "lucide-react";
-import { clsx } from "clsx";
+import { cn } from "@/lib/utils";
+import { NAV_ITEMS } from "@/components/shared/navigation";
 
-const items = [
-  { href: "/", label: "总览", icon: LayoutDashboard },
-  { href: "/assets", label: "资产", icon: Wallet },
-  { href: "/consumption", label: "消费", icon: CreditCard },
-  { href: "/savings", label: "储蓄", icon: PiggyBank },
-  { href: "/loans", label: "贷款", icon: Landmark },
-  { href: "/connections", label: "连接", icon: LinkIcon },
-  { href: "/themes", label: "主题", icon: Palette },
-  { href: "/settings", label: "设置", icon: Settings },
-];
-
-export function Sidebar() {
+export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r bg-white flex flex-col hidden md:flex shrink-0 h-full">
-      <div className="p-6 border-b flex items-center gap-3 shrink-0">
-        <div className="h-9 w-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
-          X
+    <div className="flex h-full flex-col overflow-hidden [background:var(--theme-sidebar-bg)]">
+      <div className="px-4 pb-4 pt-3">
+        <div className="flex items-center gap-3">
+          <div className="nova-sidebar-brand-mark flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-sm font-bold text-white">
+            OS
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold tracking-tight" style={{ color: "var(--theme-body-text)" }}>Star Accounting</p>
+            <p className="mt-0.5 truncate text-xs [color:var(--theme-sidebar-muted)]">分析过去，规划未来</p>
+          </div>
         </div>
-        <span className="font-bold text-xl text-gray-900 tracking-tight">XFDashboard</span>
       </div>
-      
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        <div className="text-xs font-semibold text-gray-400 mb-2 px-3 uppercase tracking-wider">
-          Menu
-        </div>
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={clsx(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                isActive
-                  ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Icon className={clsx("h-5 w-5 transition-colors", isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500")} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
 
-      <div className="p-4 border-t bg-gray-50/50 shrink-0">
-        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-4 text-white shadow-lg">
-          <h4 className="font-semibold text-sm mb-1">OpenStar</h4>
-          <p className="text-xs text-blue-100 opacity-90">
-            开源个人财务管理面板
-          </p>
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] [color:var(--theme-sidebar-muted)]">Navigation</div>
+
+        <div className="space-y-1.5">
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "nova-sidebar-link group flex items-center gap-3 rounded-[16px] px-3 py-2.5 transition-colors",
+                  isActive
+                    ? "[background:var(--theme-sidebar-active-bg)] [color:var(--theme-sidebar-active-text)]"
+                    : "[color:var(--theme-sidebar-text)] hover:[background:var(--theme-sidebar-hover-bg)] hover:[color:var(--theme-sidebar-hover-text)]"
+                )}
+              >
+                <div
+                  className={cn(
+                    "nova-sidebar-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] transition-colors",
+                    isActive
+                      ? "[background:var(--theme-sidebar-icon-active-bg)] [color:var(--theme-sidebar-icon-active-text)]"
+                      : "[background:var(--theme-sidebar-icon-bg)] [color:var(--theme-sidebar-icon-text)] group-hover:bg-white/88 group-hover:text-slate-600"
+                  )}
+                >
+                  <Icon className="h-4.5 w-4.5" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{item.label}</p>
+                  <p className={cn("nova-sidebar-caption mt-0.5 truncate text-xs", isActive ? "opacity-80" : "[color:var(--theme-sidebar-muted)] group-hover:text-slate-500")}>
+                    {item.caption}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
+      </nav>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden h-full w-72 shrink-0 md:flex">
+      <div
+        className="nova-sidebar-shell h-full w-full overflow-hidden rounded-[22px] border [background:var(--theme-sidebar-bg)] backdrop-blur-md"
+        style={{
+          borderColor: "var(--theme-sidebar-border)",
+          boxShadow: "var(--theme-shell-shadow)",
+        }}
+      >
+        <SidebarContent />
       </div>
     </aside>
   );

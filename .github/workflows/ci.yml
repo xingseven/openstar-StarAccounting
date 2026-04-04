@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./src/server
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./src/server
+        run: npx prisma generate
+
+      - name: Lint backend
+        working-directory: ./src/server
+        run: npm run lint --if-present
+
+      - name: Lint frontend
+        working-directory: ./web
+        run: npm run lint --if-present
+
+      - name: Type check frontend
+        working-directory: ./web
+        run: npm run typecheck --if-present
+
+      - name: Build frontend
+        working-directory: ./web
+        run: npm run build
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd src/server && npm ci
+          cd ../../web && npm ci
+
+      - name: Setup Playwright
+        working-directory: ./web
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        working-directory: ./web
+        run: npm run test:e2e --if-present
+        env:
+          DATABASE_URL: mysql://root:rootpassword@localhost:3306/testdb
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 30

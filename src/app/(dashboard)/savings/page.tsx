@@ -1,64 +1,65 @@
 "use client";
 
 import { apiFetch } from "@/lib/api";
-import { useEffect, useState } from "react";
-import { 
-  SavingsDefaultTheme, 
-  SavingsGoal, 
-  TransactionItem 
-} from "@/features/savings/components/themes/DefaultSavings";
+import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { SavingsLoadingShell } from "@/features/savings/components/themes/SavingsLoadingShell";
+import type { SavingsGoal, TransactionItem } from "@/features/savings/components/themes/DefaultSavings";
+import { useNoticeDialog } from "@/components/ui/confirm-dialog";
+import { getCachedSavingsData, loadSavingsData } from "@/features/savings/data-loader";
+
+const SavingsDefaultTheme = dynamic(
+  () => import("@/features/savings/components/themes/DefaultSavings").then(mod => mod.SavingsDefaultTheme),
+  {
+    ssr: false,
+    loading: () => <SavingsLoadingShell />
+  }
+);
 import { SavingsGoalDialog } from "@/features/savings/components/SavingsGoalDialog";
+import { SavingsPlanDialog } from "@/features/savings/components/SavingsPlanDialog";
+import { SavingsWithdrawalDialog } from "@/features/savings/components/SavingsWithdrawalDialog";
 
 export default function SavingsPage() {
-  const [items, setItems] = useState<SavingsGoal[]>([]);
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialData = getCachedSavingsData();
+  const { notify, NoticeDialog } = useNoticeDialog();
+  const [items, setItems] = useState<SavingsGoal[]>(initialData?.items ?? []);
+  const [transactions, setTransactions] = useState<TransactionItem[]>(initialData?.transactions ?? []);
+  const [loading, setLoading] = useState(!initialData);
 
   // Modal & Form states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SavingsGoal | null>(null);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [planItem, setPlanItem] = useState<SavingsGoal | null>(null);
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+  const [withdrawalItem, setWithdrawalItem] = useState<SavingsGoal | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
-    setLoading(true);
+  const loadData = useCallback(async () => {
+    const cachedData = getCachedSavingsData();
+    if (cachedData) {
+      setItems(cachedData.items);
+      setTransactions(cachedData.transactions);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     try {
-      // 1. Load Goals
-      const goalsData = await apiFetch<{ items: any[] }>("/api/savings");
-      const list = goalsData.items.map((i) => ({
-        ...i,
-        targetAmount: Number(i.targetAmount),
-        currentAmount: Number(i.currentAmount),
-      }));
-      setItems(list);
-
-      // 2. Load Savings Related Transactions
-      // Filter by common savings keywords
-      const qs = new URLSearchParams({
-        page: "1",
-        pageSize: "50",
-      });
-      // We can't filter by multiple categories easily in current API without loop or new API
-      // For now, let's fetch recent transactions and filter client side or use a broad search if available
-      // The current API supports 'category' param? No, it supports type, platform, date.
-      // Let's use the 'category' filter if I added it? I didn't add category filter to GET /api/transactions
-      // I will fetch recent 100 transactions and filter client side for now as a quick fix
-      // TODO: Add category filter to backend
-      const transData = await apiFetch<{ items: TransactionItem[] }>(`/api/transactions?pageSize=100`);
-      const savingsKeywords = ["储蓄", "存款", "理财", "基金", "股票", "定投", "Savings", "Deposit"];
-      const filtered = transData.items.filter(t => 
-        savingsKeywords.some(k => t.category.includes(k))
-      );
-      setTransactions(filtered);
-
-    } catch (e) {
-      console.error(e);
+      const data = await loadSavingsData();
+      // 如果 API 返回空数据，使用 mock 数据用于展示
+      setItems(data.items);
+      setTransactions(data.transactions);
+    } catch (loadError) {
+      console.warn("Failed to fetch savings data:", loadError);
+      setItems([]);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   function openCreate() {
     setEditingItem(null);
@@ -68,6 +69,16 @@ export default function SavingsPage() {
   function openEdit(item: SavingsGoal) {
     setEditingItem(item);
     setIsModalOpen(true);
+  }
+
+  function openPunch(item: SavingsGoal) {
+    setPlanItem(item);
+    setIsPlanModalOpen(true);
+  }
+
+  function openWithdrawal(item: SavingsGoal) {
+    setWithdrawalItem(item);
+    setIsWithdrawalModalOpen(true);
   }
 
   async function handleSave(data: Partial<SavingsGoal>) {
@@ -84,9 +95,12 @@ export default function SavingsPage() {
         });
       }
       setIsModalOpen(false);
-      loadData();
+      await loadData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "操作失败");
+      notify({
+        title: "保存储蓄目标失败",
+        description: err instanceof Error ? err.message : "请稍后重试。",
+      });
       throw err;
     }
   }
@@ -95,10 +109,93 @@ export default function SavingsPage() {
     try {
       await apiFetch(`/api/savings/${id}`, { method: "DELETE" });
       setIsModalOpen(false);
-      loadData();
-    } catch (e) {
-      alert("删除失败");
-      throw e;
+      await loadData();
+    } catch (deleteError) {
+      notify({
+        title: "删除储蓄目标失败",
+        description: deleteError instanceof Error ? deleteError.message : "请稍后重试。",
+      });
+      throw deleteError;
+    }
+  }
+
+  async function handleArchive(item: SavingsGoal) {
+    try {
+      await apiFetch(`/api/savings/${item.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...item, status: "ARCHIVED" }),
+      });
+      await loadData();
+    } catch (archiveError) {
+      notify({
+        title: "归档储蓄目标失败",
+        description: archiveError instanceof Error ? archiveError.message : "请稍后重试。",
+      });
+      throw archiveError;
+    }
+  }
+
+  async function handleBatchDelete(ids: string[]) {
+    try {
+      await Promise.all(ids.map((id) => apiFetch(`/api/savings/${id}`, { method: "DELETE" })));
+      await loadData();
+    } catch (deleteError) {
+      notify({
+        title: "批量删除失败",
+        description: deleteError instanceof Error ? deleteError.message : "请稍后重试。",
+      });
+      throw deleteError;
+    }
+  }
+
+  async function handleBatchArchive(ids: string[]) {
+    try {
+      await Promise.all(
+        ids.map((id) => {
+          const item = items.find((entry) => entry.id === id);
+          if (!item) {
+            return Promise.resolve(undefined);
+          }
+          return apiFetch(`/api/savings/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({ ...item, status: "ARCHIVED" }),
+          });
+        })
+      );
+      await loadData();
+    } catch (archiveError) {
+      notify({
+        title: "批量归档失败",
+        description: archiveError instanceof Error ? archiveError.message : "请稍后重试。",
+      });
+      throw archiveError;
+    }
+  }
+
+  function handleCopy(item: SavingsGoal) {
+    // Open create dialog with copied data
+    setEditingItem({
+      ...item,
+      id: "",
+      name: `${item.name} (副本)`,
+      currentAmount: 0,
+      createdAt: new Date().toISOString(),
+    });
+    setIsModalOpen(true);
+  }
+
+  async function handleImageChange(item: SavingsGoal, image: string | null) {
+    try {
+      await apiFetch(`/api/savings/${item.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ ...item, image }),
+      });
+      await loadData();
+    } catch (imageError) {
+      notify({
+        title: "保存图片失败",
+        description: imageError instanceof Error ? imageError.message : "请稍后重试。",
+      });
     }
   }
 
@@ -108,14 +205,23 @@ export default function SavingsPage() {
 
   return (
     <>
-      <SavingsDefaultTheme 
+      <SavingsDefaultTheme
         items={items}
         transactions={transactions}
         totalSaved={totalSaved}
         totalTarget={totalTarget}
         overallProgress={overallProgress}
+        loading={loading}
         onOpenCreate={openCreate}
         onOpenEdit={openEdit}
+        onOpenPunch={openPunch}
+        onOpenWithdrawal={openWithdrawal}
+        onDelete={(item) => handleDelete(item.id)}
+        onArchive={handleArchive}
+        onBatchDelete={handleBatchDelete}
+        onBatchArchive={handleBatchArchive}
+        onCopy={handleCopy}
+        onImageChange={handleImageChange}
       />
 
       <SavingsGoalDialog
@@ -124,7 +230,24 @@ export default function SavingsPage() {
         initialData={editingItem}
         onSave={handleSave}
         onDelete={handleDelete}
+        onDataChanged={loadData}
       />
+
+      <SavingsPlanDialog
+        open={isPlanModalOpen}
+        onOpenChange={setIsPlanModalOpen}
+        goal={planItem}
+        onPlansChanged={loadData}
+      />
+
+      <SavingsWithdrawalDialog
+        open={isWithdrawalModalOpen}
+        onOpenChange={setIsWithdrawalModalOpen}
+        goal={withdrawalItem}
+        onWithdrawalChanged={loadData}
+      />
+
+      {NoticeDialog}
     </>
   );
 }
