@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.3.73 - 2026-04-04
+
+### Fixed
+
+- **修复DustyBlueDashboard构建错误**:
+  - 修复 `web/src/features/dashboard/components/themes/DustyBlueDashboard.tsx` 中的语法错误。
+  - 修复 categories useMemo 中未闭合的 if 语句，添加缺失的 return 语句和依赖数组。
+  - 解决 "Expected ',', got '<eof>'" 构建错误。
+
+### Verified
+
+- TypeScript类型检查通过，无错误
+
 ## 2.3.72 - 2026-04-04
 
 ### Modified
