@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.3.72 - 2026-04-04
+
+### Modified
+
+- **默认主题总览页面"近期收支"模块改为交易明细表**:
+  - 更新 `src/features/dashboard/components/themes/DefaultDashboard.tsx`，将IncomeExpenseCard组件从收支概览改为交易明细表。
+  - 显示最近5条交易记录，包含交易类型、分类、时间、商户、金额和平台信息。
+  - 使用卡片式布局，每条记录显示收入/支出图标、分类标签、时间戳和金额。
+  - 支持空状态展示，当没有交易记录时显示友好的提示信息。
+  - 添加"查看全部"按钮，方便用户跳转到消费页面查看完整记录。
+  - 删除不再使用的getMonthOverMonthMeta函数和MOM_BADGE_CLASS常量。
+
+### Verified
+
+- TypeScript类型检查通过，无错误
+
 ## 2.3.71 - 2026-04-04
 
 ### Modified

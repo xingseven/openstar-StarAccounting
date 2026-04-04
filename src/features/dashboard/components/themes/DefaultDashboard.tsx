@@ -81,12 +81,6 @@ const STAT_TONE_CLASS: Record<"blue" | "red" | "green" | "amber", string> = {
   amber: "bg-amber-50 text-amber-700 ring-amber-100",
 };
 
-const MOM_BADGE_CLASS = {
-  positive: "text-emerald-700",
-  negative: "text-red-700",
-  neutral: "text-slate-600",
-} as const;
-
 type Tone = "blue" | "red" | "green" | "amber";
 
 const ALERT_STYLE: Record<AlertStatus, { badge: string; line: string; text: string; icon: LucideIcon; label: string }> = {
@@ -639,14 +633,7 @@ export function DashboardDefaultTheme({
       <DelayedRender delay={60}>
         <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.85fr)] xl:grid-rows-[auto_auto]">
           <div className="col-span-2 w-full p-4 sm:p-6">
-            <IncomeExpenseCard
-              income={data.monthIncome}
-              expense={data.monthExpense}
-              lastMonthIncome={data.lastMonthIncome}
-              lastMonthExpense={data.lastMonthExpense}
-              balance={formatCurrency(monthlyBalance)}
-              positiveBalance={monthlyBalance >= 0}
-            />
+            <IncomeExpenseCard transactions={data.recentTransactions} />
           </div>
 
           <div className={cn(SURFACE_CLASS, "row-span-2 p-4 sm:p-6")}>
@@ -1141,109 +1128,103 @@ function MetricRailCard({
 }
 
 function IncomeExpenseCard({
-  income,
-  expense,
-  lastMonthIncome,
-  lastMonthExpense,
-  balance,
-  positiveBalance,
+  transactions,
 }: {
-  income: number;
-  expense: number;
-  lastMonthIncome: number;
-  lastMonthExpense: number;
-  balance: string;
-  positiveBalance: boolean;
+  transactions: DashboardData["recentTransactions"];
 }) {
-  const incomeChange = getMonthOverMonthMeta(income, lastMonthIncome, true);
-  const expenseChange = getMonthOverMonthMeta(expense, lastMonthExpense, false);
+  const displayTransactions = transactions.slice(0, 5);
 
   return (
     <div className={cn(SURFACE_CLASS, "col-span-2 p-4 sm:p-5 xl:col-span-1")}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月收支</p>
-          <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入与支出概览</h3>
+          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>交易明细</p>
+          <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>最近5条记录</h3>
         </div>
-        <span
-          className={cn(
-            "rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:px-3 sm:text-xs",
-            positiveBalance ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-red-50 text-red-700 ring-red-100"
-          )}
+        <Link
+          href="/consumption"
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
+          style={{ background: "var(--module-accent-strong)" }}
         >
-          结余 {balance}
-        </span>
+          查看全部
+          <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3">
-        <div className="rounded-[18px] bg-red-50/80 p-3 ring-1 ring-red-100 sm:rounded-[20px] sm:p-4">
-          <div className="flex items-center gap-2 text-xs font-medium text-red-700 sm:text-sm">
-            <ArrowDownLeft className="h-4 w-4" />
-            本月支出
+      <div className="mt-4 sm:mt-5">
+        {displayTransactions.length === 0 ? (
+          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-[20px] px-3 text-center sm:rounded-[24px]" style={{ background: "var(--theme-dialog-section-bg)" }}>
+            <div className="rounded-full bg-white p-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)] sm:p-3">
+              <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: "var(--theme-muted-text)" }} />
+            </div>
+            <p className="mt-3 text-sm font-medium sm:mt-4 sm:text-base" style={{ color: "var(--theme-label-text)" }}>暂无交易记录</p>
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>录入一笔账单后，这里会显示最近的交易。</p>
           </div>
-          <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense, { compact: true })}</p>
-          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense)}</p>
-          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月消费总额</p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", expenseChange.badgeClass)}>
-              <expenseChange.icon className="h-3.5 w-3.5" />
-              {expenseChange.label}
-            </span>
-            <span className="text-xs" style={{ color: "var(--theme-muted-text)" }}>{expenseChange.previousLabel}</span>
-          </div>
-        </div>
+        ) : (
+          <div className="space-y-2">
+            {displayTransactions.map((transaction) => {
+              const isIncome = transaction.type === "INCOME";
+              const date = new Date(transaction.date);
+              const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
+              const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 
-        <div className="rounded-[18px] bg-blue-50/80 p-3 ring-1 ring-blue-100 sm:rounded-[20px] sm:p-4">
-          <div className="flex items-center gap-2 text-xs font-medium text-blue-700 sm:text-sm">
-            <ArrowUpRight className="h-4 w-4" />
-            本月收入
+              return (
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between gap-3 rounded-[16px] px-3 py-2.5 transition hover:brightness-[0.98] sm:rounded-[18px] sm:px-4 sm:py-3"
+                  style={{ background: "var(--theme-dialog-section-bg)" }}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9",
+                      isIncome ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-600"
+                    )}>
+                      {isIncome ? <ArrowDownLeft className="h-4 w-4 sm:h-4.5 sm:w-4.5" /> : <ArrowUpRight className="h-4 w-4 sm:h-4.5 sm:w-4.5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>
+                          {transaction.category || "未分类"}
+                        </p>
+                        <span className={cn(
+                          "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium sm:px-2 sm:text-[11px]",
+                          isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600"
+                        )}>
+                          {isIncome ? "收入" : "支出"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
+                        <span>{dateStr}</span>
+                        <span>·</span>
+                        <span>{timeStr}</span>
+                        {transaction.merchant && (
+                          <>
+                            <span>·</span>
+                            <span className="truncate">{transaction.merchant}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={cn(
+                      "text-sm font-semibold sm:text-base",
+                      isIncome ? "text-blue-600" : "text-red-600"
+                    )}>
+                      {isIncome ? "+" : "-"}{formatCurrency(Number(transaction.amount), { withSymbol: false })}
+                    </p>
+                    <p className="text-[10px] sm:text-[11px]" style={{ color: "var(--theme-muted-text)" }}>
+                      {transaction.platform}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income, { compact: true })}</p>
-          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income)}</p>
-          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>已记录入账</p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", incomeChange.badgeClass)}>
-              <incomeChange.icon className="h-3.5 w-3.5" />
-              {incomeChange.label}
-            </span>
-            <span className="text-xs" style={{ color: "var(--theme-muted-text)" }}>{incomeChange.previousLabel}</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
-}
-
-function getMonthOverMonthMeta(current: number, previous: number, favorableWhenIncreasing: boolean) {
-  if (previous <= 0) {
-    return {
-      label: current === 0 ? "环比 0%" : "环比 新增",
-      previousLabel: "上月无记录",
-      badgeClass: MOM_BADGE_CLASS.neutral,
-      icon: ArrowRight,
-    };
-  }
-
-  const delta = ((current - previous) / previous) * 100;
-
-  if (Math.abs(delta) < 0.1) {
-    return {
-      label: "环比 0%",
-      previousLabel: `上月 ${formatCurrency(previous)}`,
-      badgeClass: MOM_BADGE_CLASS.neutral,
-      icon: ArrowRight,
-    };
-  }
-
-  const rising = delta > 0;
-  const favorable = favorableWhenIncreasing ? rising : !rising;
-
-  return {
-    label: `环比 ${delta > 0 ? "+" : ""}${Math.abs(delta) >= 10 ? delta.toFixed(0) : delta.toFixed(1)}%`,
-    previousLabel: `上月 ${formatCurrency(previous)}`,
-    badgeClass: favorable ? MOM_BADGE_CLASS.positive : MOM_BADGE_CLASS.negative,
-    icon: rising ? ArrowUp : TrendingDown,
-  };
 }
 
 function CompactStat({
