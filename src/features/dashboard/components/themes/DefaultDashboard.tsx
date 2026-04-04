@@ -1,315 +1,1071 @@
-import { 
-  ArrowUpRight, 
-  Wallet, 
-  CreditCard, 
-  Banknote, 
-  TrendingUp,
-  MoreHorizontal,
-  Calendar
-} from "lucide-react";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Cell
-} from 'recharts';
-import { clsx } from "clsx";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import Link from "next/link";
+"use client";
 
-export type DashboardData = {
-  totalAssets: number;
-  totalDebt: number;
-  monthExpense: number;
-  monthIncome: number;
-  recentTransactions: Array<{
-    id: string;
-    date: string;
-    type: "EXPENSE" | "INCOME";
-    amount: string;
-    category: string;
-    platform: string;
-    merchant?: string;
-  }>;
+import { type CSSProperties, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpRight,
+  CalendarDays,
+  ChevronDown,
+  CreditCard,
+  PiggyBank,
+  ShieldAlert,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { cn, formatCurrency } from "@/lib/utils";
+import { CompactTransactionRow, formatCompactTransactionDateTime } from "@/components/shared/compact-transaction-row";
+import { DelayedRender } from "@/components/shared/DelayedRender";
+import { useTheme } from "@/components/shared/theme-provider";
+import { DashboardLoadingShell } from "./DashboardLoadingShell";
+import {
+  THEME_SURFACE_CLASS,
+  ThemeHero,
+  ThemeMetricCard,
+  ThemeSurface,
+  getThemeModuleStyle,
+} from "@/components/shared/theme-primitives";
+import { NovaHero, NovaMetricCard } from "@/themes/nova/nova-primitives";
+import { FrostHero, FrostMetricCard } from "@/themes/frost/frost-primitives";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { DashboardData } from "@/types";
+
+type CustomPeriodState = {
+  mode: "year" | "month";
+  year: string;
+  month: string;
 };
 
 interface DashboardViewProps {
   data: DashboardData;
   loading?: boolean;
+  refreshing?: boolean;
+  dateFilter?: "month" | "all" | "custom";
+  onDateFilterChange?: (filter: "month" | "all" | "custom") => void;
+  customPeriod?: CustomPeriodState;
+  onCustomPeriodChange?: (period: CustomPeriodState) => void;
+  dateRangeLabel?: string;
+  comparisonLabel?: string;
 }
 
-export function DashboardDefaultTheme({ data, loading }: DashboardViewProps) {
-  const netWorth = data.totalAssets - data.totalDebt;
-  const balance = data.monthIncome - data.monthExpense;
+type AlertStatus = "normal" | "warning" | "overdue";
 
-  const chartData = [
-    { name: '支出', value: data.monthExpense, color: '#ef4444' },
-    { name: '收入', value: data.monthIncome, color: '#22c55e' },
-    { name: '结余', value: Math.max(0, balance), color: '#3b82f6' },
+const SURFACE_CLASS = THEME_SURFACE_CLASS;
+
+const STAT_TONE_CLASS: Record<"blue" | "red" | "green" | "amber", string> = {
+  blue: "bg-blue-50 text-blue-700 ring-blue-100",
+  red: "bg-red-50 text-red-700 ring-red-100",
+  green: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  amber: "bg-amber-50 text-amber-700 ring-amber-100",
+};
+
+const MOM_BADGE_CLASS = {
+  positive: "text-emerald-700",
+  negative: "text-red-700",
+  neutral: "text-slate-600",
+} as const;
+
+type Tone = "blue" | "red" | "green" | "amber";
+
+const ALERT_STYLE: Record<AlertStatus, { badge: string; line: string; text: string; icon: LucideIcon; label: string }> = {
+  normal: {
+    badge: "bg-slate-100 text-slate-600",
+    line: "from-slate-300 to-slate-100",
+    text: "text-slate-700",
+    icon: AlertCircle,
+    label: "正常",
+  },
+  warning: {
+    badge: "bg-amber-100 text-amber-700",
+    line: "from-amber-400 to-amber-100",
+    text: "text-amber-700",
+    icon: AlertTriangle,
+    label: "预警",
+  },
+  overdue: {
+    badge: "bg-red-100 text-red-700",
+    line: "from-red-500 to-red-100",
+    text: "text-red-700",
+    icon: ShieldAlert,
+    label: "超支",
+  },
+};
+
+const CATEGORY_COLORS = ["#2563eb", "#0f766e", "#f59e0b", "#ef4444", "#7c3aed"];
+
+type InsightItem = {
+  label: string;
+  value: string;
+  description: string;
+  tone: Tone;
+  icon: LucideIcon;
+};
+
+const HERO_METRIC_LABEL_CLASS = "min-w-0 truncate whitespace-nowrap sm:overflow-visible sm:text-clip sm:whitespace-normal";
+
+const NOVA_DASHBOARD_STYLE: CSSProperties = {
+  "--module-surface-tint": "rgba(99, 179, 255, 0.08)",
+  "--module-surface-border": "rgba(255, 255, 255, 0.06)",
+  "--module-hero-tint": "rgba(99, 179, 255, 0.12)",
+  "--module-hero-border": "rgba(255, 255, 255, 0.08)",
+  "--module-metric-tint": "rgba(99, 179, 255, 0.14)",
+  "--module-metric-border": "rgba(255, 255, 255, 0.08)",
+  "--module-accent-strong": "#63b3ff",
+  "--module-accent-text": "#d8eaff",
+  "--module-accent-soft": "rgba(99, 179, 255, 0.14)",
+  "--module-accent-ring": "rgba(99, 179, 255, 0.18)",
+  "--module-progress-gradient": "linear-gradient(90deg, #63b3ff 0%, #9fd5ff 100%)",
+  "--module-soft-panel": "rgba(255, 255, 255, 0.06)",
+} as CSSProperties;
+
+export function DashboardDefaultTheme({ 
+  data, 
+  loading, 
+  refreshing,
+  dateFilter = "month",
+  onDateFilterChange,
+  customPeriod,
+  onCustomPeriodChange,
+  dateRangeLabel,
+  comparisonLabel,
+}: DashboardViewProps) {
+  const { themeId } = useTheme();
+  const isNova = themeId === "nova";
+  const isFrost = themeId === "frost";
+  const DashboardHero = isNova ? NovaHero : isFrost ? FrostHero : ThemeHero;
+  const DashboardMetricCard = isNova ? NovaMetricCard : ThemeMetricCard;
+  const [alertsDismissed, setAlertsDismissed] = useState(false);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+  const isSkeletonVisible = loading;
+
+  const netWorth = data.totalAssets - data.totalDebt;
+  const monthlyBalance = data.monthIncome - data.monthExpense;
+  const savingsDelta = data.monthSavingsIncome - data.monthSavingsExpense;
+  const debtRatio = data.totalAssets > 0 ? Math.min(100, (data.totalDebt / data.totalAssets) * 100) : 0;
+  const savingsRate = data.monthIncome > 0 ? (monthlyBalance / data.monthIncome) * 100 : 0;
+  const criticalAlerts = data.budgetAlerts.filter((alert) => alert.status !== "normal");
+  const overdueAlerts = data.budgetAlerts.filter((alert) => alert.status === "overdue").length;
+  const warningAlerts = data.budgetAlerts.filter((alert) => alert.status === "warning").length;
+  const recentTransactions = data.recentTransactions.slice(0, 5);
+
+  const periodLabel = useMemo(() => {
+    if (dateRangeLabel) return dateRangeLabel;
+    return new Intl.DateTimeFormat("zh-CN", {
+      year: "numeric",
+      month: "long",
+    }).format(new Date());
+  }, [dateRangeLabel]);
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = useMemo(() => {
+    const years = [];
+    for (let y = currentYear; y >= currentYear - 5; y--) {
+      years.push(y);
+    }
+    return years;
+  }, [currentYear]);
+
+  const monthOptions = [
+    { value: "01", label: "1月" },
+    { value: "02", label: "2月" },
+    { value: "03", label: "3月" },
+    { value: "04", label: "4月" },
+    { value: "05", label: "5月" },
+    { value: "06", label: "6月" },
+    { value: "07", label: "7月" },
+    { value: "08", label: "8月" },
+    { value: "09", label: "9月" },
+    { value: "10", label: "10月" },
+    { value: "11", label: "11月" },
+    { value: "12", label: "12月" },
   ];
 
-  const chartConfig = {
-    expense: {
-      label: "支出",
-      color: "hsl(var(--chart-1))",
-    },
-    income: {
-      label: "收入",
-      color: "hsl(var(--chart-2))",
-    },
-    balance: {
-      label: "结余",
-      color: "hsl(var(--chart-3))",
-    },
-  } satisfies ChartConfig;
+  const handleDateFilterChange = (filter: "month" | "all" | "custom") => {
+    onDateFilterChange?.(filter);
+    if (filter !== "custom") {
+      setDatePopoverOpen(false);
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+  const handleCustomPeriodConfirm = () => {
+    setDatePopoverOpen(false);
+  };
+
+  const cashFlowData = [
+    { name: "支出", value: data.monthExpense, color: "#ef4444" },
+    { name: "收入", value: data.monthIncome, color: "#2563eb" },
+    { name: "结余", value: Math.max(monthlyBalance, 0), color: "#0f766e" },
+  ];
+
+  const categoryDistribution = useMemo(() => {
+    const totals = new Map<string, number>();
+
+    data.recentTransactions
+      .filter((transaction) => transaction.type === "EXPENSE")
+      .forEach((transaction) => {
+        const key = transaction.category || "未分类";
+        totals.set(key, (totals.get(key) ?? 0) + Number(transaction.amount));
+      });
+
+    const values = Array.from(totals.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+      }));
+
+    if (values.length > 0) {
+      return values;
+    }
+
+    return [
+      { name: "餐饮美食", value: 2450, color: CATEGORY_COLORS[0] },
+      { name: "购物消费", value: 1800, color: CATEGORY_COLORS[1] },
+      { name: "日常缴费", value: 1200, color: CATEGORY_COLORS[2] },
+      { name: "交通出行", value: 800, color: CATEGORY_COLORS[3] },
+      { name: "休闲娱乐", value: 600, color: CATEGORY_COLORS[4] },
+    ];
+  }, [data.recentTransactions]);
+
+  const insightItems: InsightItem[] = [
+    {
+      label: "负债占比",
+      value: `${debtRatio.toFixed(0)}%`,
+      description: data.totalDebt > 0 ? `总负债 ${formatCurrency(data.totalDebt)}` : "当前无负债压力",
+      tone: "blue" as const,
+      icon: CreditCard,
+    },
+    {
+      label: "预算预警",
+      value: `${criticalAlerts.length} 项`,
+      description: overdueAlerts > 0 ? `${overdueAlerts} 项已超支` : warningAlerts > 0 ? `${warningAlerts} 项接近上限` : "预算执行稳定",
+      tone: criticalAlerts.length > 0 ? "red" : "blue",
+      icon: ShieldAlert,
+    },
+    {
+      label: "储蓄净流入",
+      value: formatCurrency(savingsDelta),
+      description: savingsDelta >= 0 ? "本月存下来的钱在增加" : "本月储蓄有回撤",
+      tone: savingsDelta >= 0 ? "green" : "amber",
+      icon: PiggyBank,
+    },
+  ];
+
+  if (isSkeletonVisible) {
+    return <DashboardLoadingShell />;
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Top Stats Cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Net Worth Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white shadow-xl">
+    <div
+      className="mx-auto max-w-[1680px] space-y-3 pb-1 sm:space-y-5 sm:pb-2"
+      style={isNova ? NOVA_DASHBOARD_STYLE : getThemeModuleStyle("dashboard")}
+    >
+      <DelayedRender delay={0}>
+        <DashboardHero className="p-3.5 sm:p-6 lg:p-8">
           <div className="relative z-10">
-            <div className="flex items-center gap-2 text-gray-300 mb-2">
-              <Wallet className="h-4 w-4" />
-              <span className="text-sm font-medium">净资产</span>
-            </div>
-            <div className="text-3xl font-bold tracking-tight">
-              ¥ {netWorth.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div className="mt-4 flex items-center justify-between text-xs text-gray-400">
-              <div>
-                <p>总资产</p>
-                <p className="text-gray-200 font-medium">¥{data.totalAssets.toFixed(0)}</p>
-              </div>
-              <div className="text-right">
-                <p>负债</p>
-                <p className="text-red-300 font-medium">-¥{data.totalDebt.toFixed(0)}</p>
-              </div>
-            </div>
-          </div>
-          {/* Decorative circle */}
-          <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5 blur-3xl"></div>
-        </div>
-        
-        {/* Monthly Expense */}
-        <StatCard 
-          title="本月支出" 
-          value={data.monthExpense} 
-          icon={CreditCard}
-          trend="up" // Logic for trend to be implemented
-          color="red"
-        />
+            <div className="space-y-3 sm:space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium sm:gap-2 sm:px-3 sm:text-xs"
+                    style={{
+                      background: "var(--module-accent-soft)",
+                      color: "var(--module-accent-text)",
+                      boxShadow: "inset 0 0 0 1px var(--module-accent-ring)",
+                    }}
+                  >
+                    <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    总览仪表盘
+                  </span>
+                  <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition hover:brightness-95 sm:gap-2 sm:px-3 sm:text-xs",
+                          !isNova && "bg-slate-900 text-white"
+                        )}
+                        style={
+                          isNova
+                            ? {
+                                background: "rgba(255,255,255,0.08)",
+                                color: "#d8eaff",
+                                boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
+                              }
+                            : undefined
+                        }
+                      >
+                        <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        {periodLabel}
+                        <ChevronDown className={cn("h-3 w-3 transition", datePopoverOpen && "rotate-180")} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-3" align="start">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleDateFilterChange("month")}
+                            className={cn(
+                              "flex-1 rounded-lg px-3 py-2 text-xs font-medium transition",
+                              dateFilter === "month"
+                                ? "bg-slate-900 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            )}
+                          >
+                            本月
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDateFilterChange("all")}
+                            className={cn(
+                              "flex-1 rounded-lg px-3 py-2 text-xs font-medium transition",
+                              dateFilter === "all"
+                                ? "bg-slate-900 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            )}
+                          >
+                            全部
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDateFilterChange("custom")}
+                            className={cn(
+                              "flex-1 rounded-lg px-3 py-2 text-xs font-medium transition",
+                              dateFilter === "custom"
+                                ? "bg-slate-900 text-white"
+                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            )}
+                          >
+                            自定义
+                          </button>
+                        </div>
 
-        {/* Monthly Income */}
-        <StatCard 
-          title="本月收入" 
-          value={data.monthIncome} 
-          icon={Banknote}
-          trend="up"
-          color="green"
-        />
+                        {dateFilter === "custom" && (
+                          <div className="space-y-2.5 border-t pt-3">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => onCustomPeriodChange?.({ ...customPeriod!, mode: "month" })}
+                                className={cn(
+                                  "flex-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition",
+                                  customPeriod?.mode === "month"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                                )}
+                              >
+                                按月
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onCustomPeriodChange?.({ ...customPeriod!, mode: "year" })}
+                                className={cn(
+                                  "flex-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition",
+                                  customPeriod?.mode === "year"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                                )}
+                              >
+                                按年
+                              </button>
+                            </div>
 
-        {/* Monthly Balance */}
-        <StatCard 
-          title="本月结余" 
-          value={balance} 
-          icon={TrendingUp}
-          trend={balance >= 0 ? "up" : "down"}
-          color="blue"
-        />
-      </div>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={customPeriod?.year || ""}
+                                onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, year: e.target.value })}
+                                className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+                              >
+                                {yearOptions.map((y) => (
+                                  <option key={y} value={y}>
+                                    {y} 年
+                                  </option>
+                                ))}
+                              </select>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Main Chart Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="border-gray-100 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="space-y-1">
-                <CardTitle className="text-lg font-bold text-gray-900">收支概览</CardTitle>
-                <CardDescription>本月资金流动统计</CardDescription>
-              </div>
-              <button className="p-2 hover:bg-gray-50 rounded-lg text-gray-400">
-                <MoreHorizontal className="h-5 w-5" />
-              </button>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-                <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 0 }}>
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    width={40}
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
-                  />
-                  <XAxis dataKey="value" type="number" hide />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
-                  />
-                  <Bar dataKey="value" layout="vertical" radius={5} barSize={32}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                              {customPeriod?.mode === "month" && (
+                                <select
+                                  value={customPeriod?.month || ""}
+                                  onChange={(e) => onCustomPeriodChange?.({ ...customPeriod!, month: e.target.value })}
+                                  className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+                                >
+                                  {monthOptions.map((m) => (
+                                    <option key={m.value} value={m.value}>
+                                      {m.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900">近期交易</h3>
-              <Link href="/consumption" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                查看全部 <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-            
-            <div className="space-y-1">
-              {data.recentTransactions.length === 0 ? (
-                <div className="py-12 text-center">
-                  <div className="mx-auto h-12 w-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                    <Calendar className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 text-sm">暂无交易记录</p>
-                </div>
-              ) : (
-                data.recentTransactions.map((t) => (
-                  <div key={t.id} className="group flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={clsx(
-                        "flex h-10 w-10 items-center justify-center rounded-full border shadow-sm",
-                        t.type === "EXPENSE" ? "bg-white border-gray-100" : "bg-green-50 border-green-100"
-                      )}>
-                        {t.type === "EXPENSE" ? (
-                          <span className="text-lg">💸</span>
-                        ) : (
-                          <span className="text-lg">💰</span>
+                            <button
+                              type="button"
+                              onClick={handleCustomPeriodConfirm}
+                              className="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
+                            >
+                              确认
+                            </button>
+                          </div>
+                        )}
+
+                        {refreshing && (
+                          <div className="flex items-center justify-center gap-2 border-t pt-3">
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                            <span className="text-xs text-slate-500">加载中...</span>
+                          </div>
                         )}
                       </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div
+                    className={cn(
+                      "rounded-[14px] px-3 py-2 sm:rounded-[16px] sm:px-3.5 sm:py-2.5",
+                      !isNova && "ring-1 ring-black/5"
+                    )}
+                    style={
+                      isNova
+                        ? {
+                            background: "rgba(255,255,255,0.08)",
+                            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.05)",
+                          }
+                        : {
+                            background: "rgba(255,255,255,0.68)",
+                          }
+                    }
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {monthlyBalance >= 0 ? <TrendingUp className="h-3.5 w-3.5 text-emerald-600" /> : <TrendingDown className="h-3.5 w-3.5 text-amber-600" />}
                       <div>
-                        <div className="font-semibold text-gray-900">{t.category || "未分类"}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
-                          <span>{new Date(t.date).toLocaleDateString()}</span>
-                          <span>·</span>
-                          <span>{t.merchant || t.platform}</span>
-                        </div>
+                        <p className="text-sm font-semibold sm:text-base" style={{ color: "var(--theme-body-text)" }}>{`${savingsRate.toFixed(0)}%`}</p>
+                        <p className="text-[10px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>本月结余率</p>
                       </div>
                     </div>
-                    <div className={clsx(
-                      "font-bold tabular-nums",
-                      t.type === "INCOME" ? "text-green-600" : "text-gray-900"
-                    )}>
-                      {t.type === "EXPENSE" ? "-" : "+"}
-                      {Number(t.amount).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2.5 sm:space-y-4">
+                <div className="space-y-2 sm:space-y-3">
+                  <p className="hidden max-w-xl text-[13px] leading-5 sm:block sm:text-sm sm:leading-6" style={{ color: "var(--theme-label-text)" }}>
+                    资产、负债、现金流和预算风险放在同一屏里，优先看见本月真正影响决策的数字。
+                  </p>
+                  <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2 sm:gap-x-6 sm:gap-y-3">
+                    <div>
+                      <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>当前净资产</p>
+                      <h1 className="mt-1 text-[1.75rem] font-semibold tracking-tight sm:mt-2 sm:text-5xl" style={{ color: "var(--theme-body-text)" }}>
+                        {formatCurrency(netWorth)}
+                      </h1>
+                    </div>
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm",
+                        monthlyBalance >= 0
+                          ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                          : "bg-red-50 text-red-700 ring-red-100"
+                      )}
+                    >
+                      {monthlyBalance >= 0 ? <ArrowUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                      本月结余 {formatCurrency(monthlyBalance)}
                     </div>
                   </div>
+                </div>
+
+                <section className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
+                  <HeroStatCard
+                    label="总资产"
+                    value={formatCurrency(data.totalAssets)}
+                    mobileValue={formatCurrency(data.totalAssets, { compact: true })}
+                    detail="含资产和储蓄计划"
+                    tone="blue"
+                    icon={Wallet}
+                    isNova={isNova}
+                    isFrost={isFrost}
+                    labelClassName={HERO_METRIC_LABEL_CLASS}
+                  />
+                  <HeroStatCard
+                    label="总负债"
+                    value={formatCurrency(data.totalDebt)}
+                    mobileValue={formatCurrency(data.totalDebt, { compact: true })}
+                    detail={data.totalDebt > 0 ? "持续关注偿付节奏" : "当前状态健康"}
+                    tone="red"
+                    icon={CreditCard}
+                    isNova={isNova}
+                    isFrost={isFrost}
+                    labelClassName={HERO_METRIC_LABEL_CLASS}
+                  />
+                  <HeroStatCard
+                    label="储蓄净流入"
+                    value={formatCurrency(savingsDelta)}
+                    mobileValue={formatCurrency(savingsDelta, { compact: true })}
+                    detail={`${formatCurrency(data.monthSavingsIncome)} 流入 / ${formatCurrency(data.monthSavingsExpense)} 流出`}
+                    tone={savingsDelta >= 0 ? "green" : "amber"}
+                    icon={PiggyBank}
+                    isNova={isNova}
+                    isFrost={isFrost}
+                    labelClassName={HERO_METRIC_LABEL_CLASS}
+                  />
+                  {insightItems.map((item) => (
+                    <DashboardMetricCard
+                      key={item.label}
+                      label={item.label}
+                      value={item.value}
+                      detail={item.description}
+                      tone={item.tone}
+                      icon={item.icon}
+                      className="sm:p-2.5"
+                      labelClassName={HERO_METRIC_LABEL_CLASS}
+                      hideDetailOnMobile
+                    />
+                  ))}
+                </section>
+              </div>
+
+              {criticalAlerts.length > 0 && !alertsDismissed ? (
+                <div className="hidden flex-wrap items-center justify-between gap-2.5 rounded-[18px] border border-amber-100 bg-amber-50 px-3 py-2.5 sm:flex sm:gap-3 sm:rounded-[20px] sm:px-4 sm:py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-amber-100 p-2 text-amber-700 sm:rounded-2xl">
+                      <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>预算提醒正在升温</p>
+                      <p className="text-xs sm:text-sm" style={{ color: "var(--theme-label-text)" }}>
+                        当前有 {criticalAlerts.length} 项预算需要关注，其中 {overdueAlerts} 项已经超支。
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href="/budgets"
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
+                      style={{ background: "var(--module-accent-strong)" }}
+                    >
+                      查看预算
+                      <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setAlertsDismissed(true)}
+                      className="rounded-full px-2.5 py-1.5 text-xs font-medium transition hover:brightness-95 sm:px-3 sm:py-2 sm:text-sm"
+                      style={{ color: "var(--theme-label-text)", background: "var(--theme-input-bg)" }}
+                    >
+                      暂时收起
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </DashboardHero>
+      </DelayedRender>
+
+      <DelayedRender delay={60}>
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.85fr)] xl:grid-rows-[auto_auto]">
+          <div className="col-span-2 w-full p-4 sm:p-6">
+            <IncomeExpenseCard
+              income={data.monthIncome}
+              expense={data.monthExpense}
+              lastMonthIncome={data.lastMonthIncome}
+              lastMonthExpense={data.lastMonthExpense}
+              balance={formatCurrency(monthlyBalance)}
+              positiveBalance={monthlyBalance >= 0}
+            />
+          </div>
+
+          <div className={cn(SURFACE_CLASS, "row-span-2 p-4 sm:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>最近交易</p>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>最近录入的流水</h3>
+              </div>
+              <Link
+                href="/consumption"
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium text-white transition hover:brightness-105 sm:px-3 sm:py-2 sm:text-sm"
+                style={{ background: "var(--module-accent-strong)" }}
+              >
+                查看全部
+                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-4 space-y-0 [&>*:last-child]:border-b-0 sm:mt-5">
+              {data.recentTransactions.length === 0 ? (
+                <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[20px] px-3 text-center sm:min-h-[220px] sm:rounded-[24px]" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                  <div className="rounded-full bg-white p-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)] sm:p-3">
+                    <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: "var(--theme-muted-text)" }} />
+                  </div>
+                  <p className="mt-3 text-sm font-medium sm:mt-4 sm:text-base" style={{ color: "var(--theme-label-text)" }}>还没有最近交易</p>
+                  <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>录入一笔账单后，这里会自动出现最新动态。</p>
+                </div>
+              ) : (
+                recentTransactions.map((transaction, index) => (
+                  <TransactionRow key={transaction.id} transaction={transaction} className={index >= 3 ? "hidden sm:flex" : undefined} />
                 ))
               )}
             </div>
           </div>
-        </div>
 
-        {/* Sidebar / Quick Actions */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">快捷入口</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <QuickAction href="/assets" icon={Wallet} label="资产管理" color="blue" />
-              <QuickAction href="/loans" icon={Banknote} label="贷款管理" color="purple" />
-              <QuickAction href="/savings" icon={TrendingUp} label="储蓄目标" color="amber" />
-              <QuickAction href="/connections" icon={CreditCard} label="连接管理" color="indigo" />
+          <div className={cn(SURFACE_CLASS, "p-4 sm:p-5 lg:p-6")}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月现金流</p>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>收入、支出与可留存空间</h3>
+              </div>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:px-3 sm:text-xs",
+                  monthlyBalance >= 0
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
+                    : "bg-red-50 text-red-700 ring-red-100"
+                )}
+              >
+                结余 {formatCurrency(monthlyBalance)}
+              </span>
+            </div>
+
+            <div className="mt-3 grid gap-2.5 sm:mt-5 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,200px)]">
+              <div className="h-[152px] min-w-0 sm:h-[210px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={cashFlowData} margin={{ top: 12, right: 6, left: -20, bottom: 0 }}>
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#94a3b8", fontSize: 12 }}
+                      tickFormatter={(value) => formatCurrency(Number(value), { compact: true })}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                      formatter={(value: number | string) => formatCurrency(Number(value))}
+                      labelStyle={{ color: "#0f172a", fontWeight: 600 }}
+                      contentStyle={{
+                        border: "1px solid rgba(226,232,240,0.9)",
+                        borderRadius: 16,
+                        boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                      }}
+                    />
+                    <Bar dataKey="value" radius={[10, 10, 5, 5]} barSize={24}>
+                      {cashFlowData.map((item) => (
+                        <Cell key={item.name} fill={item.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5 lg:grid-cols-1">
+                <CompactStat
+                  label="收入覆盖支出"
+                  value={data.monthExpense > 0 ? `${((data.monthIncome / data.monthExpense) * 100).toFixed(0)}%` : "100%"}
+                  tone={data.monthIncome >= data.monthExpense ? "green" : "red"}
+                  className="h-[52px] sm:h-[62px]"
+                />
+                <CompactStat
+                  label="资产缓冲"
+                  value={data.monthExpense > 0 ? `${(data.totalAssets / data.monthExpense).toFixed(1)} 月` : "充足"}
+                  tone="blue"
+                  className="h-[52px] sm:h-[62px]"
+                />
+                <CompactStat
+                  label="预算风险"
+                  value={criticalAlerts.length > 0 ? `${criticalAlerts.length} 项` : "低"}
+                  tone={criticalAlerts.length > 0 ? "amber" : "green"}
+                  className="h-[52px] sm:h-[62px]"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-blue-600 p-6 text-white shadow-lg relative overflow-hidden">
-            <div className="relative z-10">
-              <h3 className="text-lg font-bold mb-2">需要帮助？</h3>
-              <p className="text-blue-100 text-sm mb-4">
-                查看文档了解如何更好地管理您的财务。
-              </p>
-              <button className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors">
-                查看文档
-              </button>
+          <div className={cn(SURFACE_CLASS, "p-4 sm:p-6")}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>近期消费构成</p>
+                <h3 className="mt-1 text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>最近交易里的主要花费</h3>
+              </div>
             </div>
-            <div className="absolute right-0 bottom-0 h-32 w-32 bg-white/10 rounded-full blur-2xl translate-x-10 translate-y-10"></div>
+
+            <div className="mt-3 grid grid-cols-[118px_minmax(0,1fr)] items-center gap-3 sm:mt-5 sm:grid-cols-[156px_minmax(0,1fr)] sm:gap-5">
+              <div className="mx-auto h-[118px] w-full max-w-[118px] sm:h-[156px] sm:max-w-[156px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={categoryDistribution} dataKey="value" nameKey="name" innerRadius={38} outerRadius={56} paddingAngle={3}>
+                      {categoryDistribution.map((item) => (
+                        <Cell key={item.name} fill={item.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number | string) => formatCurrency(Number(value))}
+                      contentStyle={{
+                        border: "1px solid rgba(226,232,240,0.9)",
+                        borderRadius: 16,
+                        boxShadow: "0 16px 40px rgba(15,23,42,0.12)",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="space-y-1.5 sm:space-y-2">
+                {categoryDistribution.slice(0, 3).map((item) => (
+                  <div key={item.name} className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 sm:gap-3 sm:rounded-2xl sm:px-3 sm:py-2.5" style={{ background: "var(--theme-dialog-section-bg)" }}>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5" style={{ backgroundColor: item.color }} />
+                      <span className="truncate text-[11px] font-medium sm:text-sm" style={{ color: "var(--theme-label-text)" }}>{item.name}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(item.value, { compact: true })}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </DelayedRender>
     </div>
   );
 }
 
-function StatCard({ title, value, icon: Icon, trend, color }: { 
-  title: string; 
-  value: number; 
-  icon: any; 
-  trend: "up" | "down";
-  color: "red" | "green" | "blue";
+function BudgetFocusPanel({ alerts }: { alerts: DashboardData["budgetAlerts"] }) {
+  const visibleBudgetAlerts = alerts.slice(0, 4);
+
+  return (
+    <ThemeSurface className="p-4 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>预算关注</p>
+          <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>需要优先处理的预算项</h3>
+        </div>
+        <span className="rounded-full px-2 py-1 text-[11px] font-medium sm:px-2.5 sm:text-xs" style={{ background: "var(--theme-empty-icon-bg)", color: "var(--theme-label-text)" }}>
+          {alerts.length} 项
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-2 sm:mt-5 sm:space-y-3">
+        {alerts.length === 0 ? (
+          <div className="rounded-[20px] px-4 py-5 text-center sm:rounded-[24px] sm:py-6" style={{ background: "var(--theme-dialog-section-bg)" }}>
+            <p className="text-sm font-medium sm:text-base" style={{ color: "var(--theme-label-text)" }}>预算执行稳定</p>
+            <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>当前没有需要提醒的预算异常。</p>
+          </div>
+        ) : (
+          visibleBudgetAlerts.map((alert, index) => (
+            <BudgetAlertCard key={alert.id} alert={alert} className={index >= 2 ? "hidden sm:block" : undefined} />
+          ))
+        )}
+      </div>
+    </ThemeSurface>
+  );
+}
+
+function HeroStatCard({
+  label,
+  value,
+  mobileValue,
+  detail,
+  tone,
+  icon: Icon,
+  isNova = false,
+  isFrost = false,
+  labelClassName,
+}: {
+  label: string;
+  value: string;
+  mobileValue?: string;
+  detail: string;
+  tone: Tone;
+  icon: LucideIcon;
+  isNova?: boolean;
+  isFrost?: boolean;
+  labelClassName?: string;
 }) {
-  const colorStyles = {
-    red: "text-red-600 bg-red-50",
-    green: "text-green-600 bg-green-50",
-    blue: "text-blue-600 bg-blue-50",
-  };
+  if (isFrost) {
+    return (
+      <FrostMetricCard
+        label={label}
+        value={value}
+        mobileValue={mobileValue}
+        detail={detail}
+        accentColor="#2d7dd2"
+        className="sm:p-2.5"
+      />
+    );
+  }
+
+  const MetricCard = isNova ? NovaMetricCard : ThemeMetricCard;
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-gray-500">
-          <div className={clsx("p-2 rounded-lg", colorStyles[color])}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <span className="text-sm font-medium">{title}</span>
+    <MetricCard
+      label={label}
+      value={value}
+      mobileValue={mobileValue}
+      detail={detail}
+      tone={tone}
+      icon={Icon}
+      className="sm:p-2.5"
+      labelClassName={labelClassName}
+      hideDetailOnMobile
+    />
+  );
+}
+
+function MetricRailCard({
+  label,
+  value,
+  mobileValue,
+  detail,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  mobileValue?: string;
+  detail: string;
+  icon: LucideIcon;
+  tone: Tone;
+}) {
+  return (
+    <ThemeMetricCard
+      label={label}
+      value={value}
+      mobileValue={mobileValue}
+      detail={detail}
+      tone={tone}
+      icon={Icon}
+      className="p-2.5 sm:p-3.5"
+      hideDetailOnMobile
+    />
+  );
+}
+
+function IncomeExpenseCard({
+  income,
+  expense,
+  lastMonthIncome,
+  lastMonthExpense,
+  balance,
+  positiveBalance,
+}: {
+  income: number;
+  expense: number;
+  lastMonthIncome: number;
+  lastMonthExpense: number;
+  balance: string;
+  positiveBalance: boolean;
+}) {
+  const incomeChange = getMonthOverMonthMeta(income, lastMonthIncome, true);
+  const expenseChange = getMonthOverMonthMeta(expense, lastMonthExpense, false);
+
+  return (
+    <div className={cn(SURFACE_CLASS, "col-span-2 p-4 sm:p-5 xl:col-span-1")}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月收支</p>
+          <h3 className="mt-1 text-lg font-semibold sm:text-xl" style={{ color: "var(--theme-body-text)" }}>收入与支出概览</h3>
         </div>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 sm:px-3 sm:text-xs",
+            positiveBalance ? "bg-emerald-50 text-emerald-700 ring-emerald-100" : "bg-red-50 text-red-700 ring-red-100"
+          )}
+        >
+          结余 {balance}
+        </span>
       </div>
-      <div className="flex items-end justify-between">
-        <div className="text-2xl font-bold text-gray-900">
-          ¥ {Math.abs(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3">
+        <div className="rounded-[18px] bg-red-50/80 p-3 ring-1 ring-red-100 sm:rounded-[20px] sm:p-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-red-700 sm:text-sm">
+            <ArrowDownLeft className="h-4 w-4" />
+            本月支出
+          </div>
+          <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense, { compact: true })}</p>
+          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(expense)}</p>
+          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>本月消费总额</p>
+          <div className="mt-3 flex items-center gap-2">
+            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", expenseChange.badgeClass)}>
+              <expenseChange.icon className="h-3.5 w-3.5" />
+              {expenseChange.label}
+            </span>
+            <span className="text-xs" style={{ color: "var(--theme-muted-text)" }}>{expenseChange.previousLabel}</span>
+          </div>
+        </div>
+
+        <div className="rounded-[18px] bg-blue-50/80 p-3 ring-1 ring-blue-100 sm:rounded-[20px] sm:p-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-blue-700 sm:text-sm">
+            <ArrowUpRight className="h-4 w-4" />
+            本月收入
+          </div>
+          <p className="mt-2 break-all text-base font-semibold tracking-tight sm:hidden" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income, { compact: true })}</p>
+          <p className="mt-2 hidden break-all text-xl font-semibold tracking-tight sm:block" style={{ color: "var(--theme-body-text)" }}>{formatCurrency(income)}</p>
+          <p className="mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>已记录入账</p>
+          <div className="mt-3 flex items-center gap-2">
+            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", incomeChange.badgeClass)}>
+              <incomeChange.icon className="h-3.5 w-3.5" />
+              {incomeChange.label}
+            </span>
+            <span className="text-xs" style={{ color: "var(--theme-muted-text)" }}>{incomeChange.previousLabel}</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function QuickAction({ href, icon: Icon, label, color }: { href: string; icon: any; label: string; color: string }) {
-  const bgColors: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
-    purple: "bg-purple-50 text-purple-600 group-hover:bg-purple-100",
-    amber: "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
-    indigo: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
+function getMonthOverMonthMeta(current: number, previous: number, favorableWhenIncreasing: boolean) {
+  if (previous <= 0) {
+    return {
+      label: current === 0 ? "环比 0%" : "环比 新增",
+      previousLabel: "上月无记录",
+      badgeClass: MOM_BADGE_CLASS.neutral,
+      icon: ArrowRight,
+    };
+  }
+
+  const delta = ((current - previous) / previous) * 100;
+
+  if (Math.abs(delta) < 0.1) {
+    return {
+      label: "环比 0%",
+      previousLabel: `上月 ${formatCurrency(previous)}`,
+      badgeClass: MOM_BADGE_CLASS.neutral,
+      icon: ArrowRight,
+    };
+  }
+
+  const rising = delta > 0;
+  const favorable = favorableWhenIncreasing ? rising : !rising;
+
+  return {
+    label: `环比 ${delta > 0 ? "+" : ""}${Math.abs(delta) >= 10 ? delta.toFixed(0) : delta.toFixed(1)}%`,
+    previousLabel: `上月 ${formatCurrency(previous)}`,
+    badgeClass: favorable ? MOM_BADGE_CLASS.positive : MOM_BADGE_CLASS.negative,
+    icon: rising ? ArrowUp : TrendingDown,
   };
+}
+
+function CompactStat({
+  label,
+  value,
+  tone,
+  className,
+}: {
+  label: string;
+  value: string;
+  tone: Tone;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-[16px] px-2.5 py-2 sm:rounded-[22px] sm:px-4 sm:py-3", className)} style={{ background: "var(--theme-dialog-section-bg)" }}>
+      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <span className="text-[10px] font-medium sm:text-[11px]" style={{ color: "var(--theme-muted-text)" }}>{label}</span>
+        <span className={cn("w-fit rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 sm:px-2.5 sm:text-xs", STAT_TONE_CLASS[tone])}>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function TransactionRow({
+  transaction,
+  className,
+}: {
+  transaction: DashboardData["recentTransactions"][number];
+  className?: string;
+}) {
+  const isIncome = transaction.type === "INCOME";
 
   return (
-    <Link href={href} className="group flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-all hover:shadow-sm">
-      <div className={clsx("h-10 w-10 rounded-full flex items-center justify-center mb-2 transition-colors", bgColors[color])}>
-        <Icon className="h-5 w-5" />
+    <CompactTransactionRow
+      className={className}
+      icon={isIncome ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+      iconClassName={isIncome ? "bg-blue-100 text-blue-700" : "bg-slate-900 text-white"}
+      primary={transaction.category || "未分类"}
+      secondary={transaction.merchant || transaction.platform}
+      meta={[formatCompactTransactionDateTime(transaction.date)]}
+      trailing={
+        <div className="text-sm font-semibold" style={{ color: isIncome ? "#1d4ed8" : "var(--theme-body-text)" }}>
+          <span className="mr-1 text-[10px] font-medium" style={{ color: "var(--theme-muted-text)" }}>
+            {isIncome ? "收入" : "支出"}
+          </span>
+          <span>
+            {isIncome ? "+" : "-"}
+            {formatCurrency(Number(transaction.amount), { withSymbol: false, decimals: 2 })}
+          </span>
+        </div>
+      }
+    />
+  );
+}
+
+function BudgetAlertCard({
+  alert,
+  className,
+}: {
+  alert: DashboardData["budgetAlerts"][number];
+  className?: string;
+}) {
+  const style = ALERT_STYLE[alert.status];
+  const Icon = style.icon;
+  const scopeLabel = alert.category === "ALL" ? "总预算" : alert.category;
+
+  return (
+    <div className={cn("relative overflow-hidden rounded-[18px] p-3 sm:rounded-[24px] sm:p-4", className)} style={{ background: "var(--theme-dialog-section-bg)" }}>
+      <div className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", style.line)} />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className={cn("rounded-xl p-2 sm:rounded-2xl sm:p-2.5", style.badge)}>
+            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>
+              {scopeLabel}
+              {alert.scopeType === "PLATFORM" && alert.platform ? ` · ${alert.platform}` : ""}
+            </p>
+            <p className="mt-1 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
+              {alert.period === "MONTHLY" ? "月度预算" : "年度预算"} · 已用 {formatCurrency(Number(alert.used))} /{" "}
+              {formatCurrency(Number(alert.amount))}
+            </p>
+          </div>
+        </div>
+        <span className={cn("shrink-0 rounded-full px-2 py-1 text-[10px] font-medium sm:px-2.5 sm:text-xs", style.badge)}>{style.label}</span>
       </div>
-      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
-    </Link>
+      <div className="mt-3 sm:mt-4">
+        <div className="flex items-center justify-between text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
+          <span>使用进度</span>
+          <span className={cn("font-semibold", style.text)}>{alert.percent.toFixed(0)}%</span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full" style={{ background: "var(--theme-surface-border,rgba(148,163,184,0.2))" }}>
+          <div
+            className={cn(
+              "h-full rounded-full",
+              alert.status === "overdue"
+                ? "bg-red-500"
+                : alert.status === "warning"
+                  ? "bg-amber-400"
+                  : "bg-slate-400"
+            )}
+            style={{ width: `${Math.min(100, Math.max(alert.percent, 6))}%` }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
