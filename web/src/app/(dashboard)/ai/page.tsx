@@ -510,14 +510,15 @@ export default function AIPage() {
       ) : null}
 
       <BottomSheet open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <BottomSheetContent className="max-w-2xl sm:py-4">
+        <BottomSheetContent className="max-h-[80vh] sm:max-h-[calc(100vh-2rem)] max-w-2xl overflow-hidden sm:py-4">
           <BottomSheetHeader className="sm:pb-2">
             <BottomSheetTitle>{editingModel ? "编辑模型" : "添加新模型"}</BottomSheetTitle>
             <BottomSheetDescription>
               {editingModel ? "更新模型的基础信息和启用参数。" : "先登记模型信息，后续可继续补充或调整配置。"}
             </BottomSheetDescription>
           </BottomSheetHeader>
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3">
             {formNotice ? <ThemeNotice tone={formNotice.tone} title={formNotice.title} description={formNotice.description} /> : null}
 
             <ThemeNotice
@@ -623,7 +624,8 @@ export default function AIPage() {
                 </div>
               </ThemeFormField>
             </ThemeDialogSection>
-            <ThemeActionBar className="mt-3">
+            </div>
+            <ThemeActionBar className="mt-3 shrink-0">
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="h-11 rounded-2xl sm:min-w-28">
                 取消
               </Button>
@@ -636,7 +638,7 @@ export default function AIPage() {
       </BottomSheet>
 
       <BottomSheet open={isConfigModalOpen} onOpenChange={setIsConfigModalOpen}>
-        <BottomSheetContent className="max-h-[calc(100vh-1rem)] max-w-md overflow-hidden">
+        <BottomSheetContent className="max-h-[70vh] sm:max-h-[calc(100vh-2rem)] max-w-md overflow-hidden">
           <BottomSheetHeader>
             <BottomSheetTitle>配置模型</BottomSheetTitle>
             <BottomSheetDescription>补全可直接调用模型服务的运行参数，并在保存前完成连通性测试。</BottomSheetDescription>
