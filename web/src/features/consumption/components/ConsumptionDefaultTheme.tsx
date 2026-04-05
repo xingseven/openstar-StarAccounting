@@ -518,6 +518,26 @@ function ChartEmpty({ text }: { text: string }) {
   );
 }
 
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="px-1">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2B6AF2]">{eyebrow}</p>
+      <div className="mt-1 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <h2 className="text-lg font-semibold tracking-tight text-[#0f172a] sm:text-[22px]">{title}</h2>
+        <p className="max-w-2xl text-xs leading-5 text-[#64748b] sm:text-sm">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 function MiniDonut({
   data,
   centerLabel,
@@ -1224,492 +1244,544 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
         style={getThemeModuleStyle("consumption")}
       >
         <DelayedRender delay={0}>
-          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-[1fr_1fr_1.3fr_1.3fr]">
-            <Card className="bg-[#2B6AF2] p-3 pb-4 text-white sm:p-3 sm:pb-4">
-              <div className="flex items-start justify-between">
-                <p className="text-[13px] font-semibold text-white/90">总支出</p>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5">
-                  <Check className="h-3.5 w-3.5 stroke-[3] sm:h-3 sm:w-3" />
-                </div>
-              </div>
-              <div className="mt-2 flex items-baseline gap-2 sm:mt-4">
-                <p className="font-numbers text-[28px] font-bold leading-none tracking-tight sm:text-[64px]">
-                  {formatCurrency(data.summary.totalExpense, { withSymbol: false })}
-                </p>
-                {formatSignedRate(data.summary.comparison.totalExpenseRate) ? (
-                  <span className="text-[10px] font-semibold text-white/80 sm:text-xs">
-                    {formatSignedRate(data.summary.comparison.totalExpenseRate)}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1 text-[10px] font-medium text-white sm:mt-6 sm:text-xs">
-                {dateRangeLabel} · {data.summary.expenseCount} 笔记录
-              </p>
-            </Card>
-
-            <Card className="bg-[#4CC98F] p-3 pb-4 text-white sm:p-3 sm:pb-4">
-              <div className="flex items-start justify-between">
-                <p className="text-[13px] font-semibold text-white/90">总收入</p>
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 sm:h-5 sm:w-5">
-                  <Check className="h-3.5 w-3.5 stroke-[3] sm:h-3 sm:w-3" />
-                </div>
-              </div>
-              <div className="mt-2 flex items-baseline gap-2 sm:mt-4">
-                <p className="font-numbers text-[28px] font-bold leading-none tracking-tight sm:text-[64px]">
-                  {formatCurrency(data.summary.totalIncome, { withSymbol: false })}
-                </p>
-                {formatSignedRate(data.summary.comparison.totalIncomeRate) ? (
-                  <span className="text-[10px] font-semibold text-white/80 sm:text-xs">
-                    {formatSignedRate(data.summary.comparison.totalIncomeRate)}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1 text-[10px] font-medium text-white sm:mt-6 sm:text-xs">
-                结余 {formatCurrency(netBalance, { withSymbol: false })}
-              </p>
-            </Card>
-
-            <Card className="p-3 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[13px] font-bold text-[#1e293b]">记录质量</h3>
-                <ActionDots />
-              </div>
-              <div className="mt-3 space-y-2 sm:mt-3">
-                <p className="text-[10px] font-semibold text-[#64748b] sm:text-xs">备注覆盖率</p>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[#f1f5f9]">
-                  <div
-                    className="h-full rounded-full bg-[#4CC98F]"
-                    style={{ width: `${Math.min(100, Math.max(0, noteCoverage))}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between pt-1">
-                  <p className="text-[10px] font-semibold text-[#64748b] sm:text-xs">
-                    已备注 {qualityNotedCount} / {qualityTransactionCount}
-                  </p>
-                  <p className="font-numbers text-[10px] font-bold text-[#0f172a] sm:text-xs">
-                    {noteCoverage.toFixed(0)}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4">
-                <div className="rounded-[16px] bg-[#f8fafc] px-3 py-2">
-                  <p className="text-[10px] font-medium text-[#64748b]">平均每笔</p>
-                  <p className="mt-1 text-xs font-semibold text-[#0f172a] sm:text-sm">
-                    {formatCurrency(averageExpense, { compact: true })}
-                  </p>
-                </div>
-                <div className="rounded-[16px] bg-[#f8fafc] px-3 py-2">
-                  <p className="text-[10px] font-medium text-[#64748b]">头部商户</p>
-                  <p className="mt-1 truncate text-xs font-semibold text-[#0f172a] sm:text-sm">
-                    {topMerchantName}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-wrap gap-1.5 sm:mt-4">
-                <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[10px] font-semibold text-[#64748b]">
-                  {usingMockData ? "演示数据" : "真实数据"}
-                </span>
-                {refreshing ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#2B6AF2]">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    刷新中
-                  </span>
-                ) : null}
-              </div>
-            </Card>
-
-            <Card className="bg-[#D8E6FC] p-3 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[13px] font-bold text-[#1e293b]">消费排行</h3>
-                <ActionDots />
-              </div>
-              <div className="mt-3 space-y-2 sm:mt-3 sm:space-y-2">
-                {topCategories.length > 0 ? (
-                  topCategories.map((category) => (
-                    <div key={category.name} className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex w-[80px] items-center gap-1.5 sm:w-[100px] sm:gap-2">
-                        <div
-                          className="h-2.5 w-2.5 rounded-sm sm:h-3 sm:w-3"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        <span className="truncate text-[10px] font-semibold text-[#475569] sm:text-xs">
-                          {category.name}
+          <div className="space-y-2 sm:space-y-4">
+            <SectionHeading
+              eyebrow="Overview"
+              title="消费总览与最近流水"
+              description="消费页保持默认主题的卡片语言和配色节奏，但模块顺序按消费分析场景重排，先看快照，再看流水入口。"
+            />
+            <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1.42fr)_minmax(340px,0.92fr)]">
+              <Card className="p-0">
+                <div className="grid gap-3 p-3 sm:p-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.92fr)]">
+                  <div>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2B6AF2]">
+                          消费快照
+                        </p>
+                        <h3 className="mt-2 text-[24px] font-semibold tracking-tight text-[#0f172a] sm:text-[30px]">
+                          围绕当前筛选范围组织信息
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-[#64748b]">
+                          {dateRangeLabel} · 当前周期 {currentPeriodLabel}
+                          <span className="mx-2 text-[#cbd5e1]">/</span>
+                          对比 {comparisonPeriodLabel}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[10px] font-semibold text-[#64748b]">
+                          {usingMockData ? "演示数据" : "真实数据"}
                         </span>
+                        {refreshing ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2.5 py-1 text-[10px] font-semibold text-[#2B6AF2]">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            刷新中
+                          </span>
+                        ) : null}
                       </div>
-                      <div className="h-[30px] flex-1 sm:h-[40px]">
-                        {category.trendData.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={category.trendData}>
-                              <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke={category.color}
-                                strokeWidth={1.5}
-                                dot={false}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        ) : (
-                          <div className="h-full rounded-full bg-white/50" />
-                        )}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[22px] bg-[#2B6AF2] p-4 text-white sm:p-5">
+                        <div className="flex items-start justify-between">
+                          <p className="text-[13px] font-semibold text-white/90">总支出</p>
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                            <Check className="h-3.5 w-3.5 stroke-[3]" />
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-baseline gap-2">
+                          <p className="font-numbers text-[30px] font-bold leading-none tracking-tight sm:text-[44px]">
+                            {formatCurrency(data.summary.totalExpense, { withSymbol: false })}
+                          </p>
+                          {formatSignedRate(data.summary.comparison.totalExpenseRate) ? (
+                            <span className="text-[10px] font-semibold text-white/80 sm:text-xs">
+                              {formatSignedRate(data.summary.comparison.totalExpenseRate)}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 text-[11px] font-medium text-white/85">
+                          {data.summary.expenseCount} 笔记录
+                        </p>
                       </div>
-                      <div className="w-[60px] text-right sm:w-[70px]">
-                        <p className="font-numbers text-[10px] font-bold text-[#1e293b] sm:text-xs">
-                          {formatCurrency(category.value, { withSymbol: false })}
+
+                      <div className="rounded-[22px] bg-[#4CC98F] p-4 text-white sm:p-5">
+                        <div className="flex items-start justify-between">
+                          <p className="text-[13px] font-semibold text-white/90">总收入</p>
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                            <Check className="h-3.5 w-3.5 stroke-[3]" />
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-baseline gap-2">
+                          <p className="font-numbers text-[30px] font-bold leading-none tracking-tight sm:text-[44px]">
+                            {formatCurrency(data.summary.totalIncome, { withSymbol: false })}
+                          </p>
+                          {formatSignedRate(data.summary.comparison.totalIncomeRate) ? (
+                            <span className="text-[10px] font-semibold text-white/80 sm:text-xs">
+                              {formatSignedRate(data.summary.comparison.totalIncomeRate)}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 text-[11px] font-medium text-white/85">
+                          结余 {formatCurrency(netBalance, { withSymbol: false })}
                         </p>
                       </div>
                     </div>
-                  ))
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-[18px] bg-[#f8fafc] px-4 py-3">
+                        <p className="text-[11px] font-medium text-[#64748b]">平均每笔</p>
+                        <p className="mt-1 text-base font-semibold text-[#0f172a]">
+                          {formatCurrency(averageExpense, { compact: true })}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#94a3b8]">按当前筛选重新计算</p>
+                      </div>
+                      <div className="rounded-[18px] bg-[#f8fafc] px-4 py-3">
+                        <p className="text-[11px] font-medium text-[#64748b]">备注覆盖</p>
+                        <p className="mt-1 text-base font-semibold text-[#0f172a]">
+                          {noteCoverage.toFixed(0)}%
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#94a3b8]">
+                          已备注 {qualityNotedCount} / {qualityTransactionCount}
+                        </p>
+                      </div>
+                      <div className="rounded-[18px] bg-[#f8fafc] px-4 py-3">
+                        <p className="text-[11px] font-medium text-[#64748b]">头部商户</p>
+                        <p className="mt-1 truncate text-base font-semibold text-[#0f172a]">
+                          {topMerchantName}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#94a3b8]">当前范围内金额最高</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[22px] bg-[#f8fafc] p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#64748b]">
+                          消费节奏
+                        </p>
+                        <h4 className="mt-1 text-base font-semibold text-[#0f172a]">
+                          重点分类的短期波动
+                        </h4>
+                      </div>
+                      <ActionDots />
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {topCategories.length > 0 ? (
+                        topCategories.map((category) => (
+                          <div key={category.name} className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex w-[88px] items-center gap-1.5 sm:w-[104px] sm:gap-2">
+                              <div
+                                className="h-2.5 w-2.5 rounded-sm sm:h-3 sm:w-3"
+                                style={{ backgroundColor: category.color }}
+                              />
+                              <span className="truncate text-[10px] font-semibold text-[#475569] sm:text-xs">
+                                {category.name}
+                              </span>
+                            </div>
+                            <div className="h-[30px] flex-1 sm:h-[40px]">
+                              {category.trendData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={category.trendData}>
+                                    <Line
+                                      type="monotone"
+                                      dataKey="value"
+                                      stroke={category.color}
+                                      strokeWidth={1.5}
+                                      dot={false}
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              ) : (
+                                <div className="h-full rounded-full bg-white" />
+                              )}
+                            </div>
+                            <div className="w-[62px] text-right sm:w-[72px]">
+                              <p className="font-numbers text-[10px] font-bold text-[#1e293b] sm:text-xs">
+                                {formatCurrency(category.value, { withSymbol: false })}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-[10px] font-semibold text-[#475569] sm:text-xs">
+                          暂无可展示分类
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-[18px] bg-white px-4 py-3">
+                        <p className="text-[11px] font-medium text-[#64748b]">净结余</p>
+                        <p className="mt-1 text-lg font-semibold text-[#0f172a]">
+                          {formatCurrency(netBalance, { compact: true })}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#94a3b8]">
+                          收入减支出的当前结果
+                        </p>
+                      </div>
+                      <div className="rounded-[18px] bg-white px-4 py-3">
+                        <p className="text-[11px] font-medium text-[#64748b]">记录密度</p>
+                        <p className="mt-1 text-lg font-semibold text-[#0f172a]">
+                          {qualityTransactionCount} 笔
+                        </p>
+                        <p className="mt-1 text-[11px] text-[#94a3b8]">
+                          当前筛选范围的有效流水
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-0">
+                <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
+                  <div>
+                    <h3 className="text-[13px] font-semibold text-[#0f172a]">近期流水</h3>
+                    <p className="text-[10px] text-[#64748b] sm:text-xs">
+                      {dateRangeLabel} · 最近 {Math.min(5, displayTransactions.length)} 条
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNotesOnly((current) => !current)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition",
+                        notesOnly
+                          ? "bg-slate-900 text-white"
+                          : "bg-[#F1F5F9] text-[#475569] hover:bg-[#e2e8f0]",
+                      )}
+                    >
+                      只看备注
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[10px]",
+                          notesOnly ? "bg-white/15 text-white" : "bg-white text-[#64748b]",
+                        )}
+                      >
+                        {notedTransactions.length}
+                      </span>
+                    </button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={openAIDialog}
+                      className="rounded-full bg-[#2B6AF2] px-3 text-xs text-white hover:bg-[#245ad0]"
+                    >
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      AI记一笔
+                    </Button>
+                  </div>
+                </div>
+
+                {displayTransactions.length === 0 ? (
+                  <div className="flex min-h-[140px] flex-col items-center justify-center rounded-lg px-4 text-center sm:min-h-[180px]">
+                    <CalendarDays className="h-6 w-6 text-slate-300 sm:h-8 sm:w-8" />
+                    <p className="mt-2 text-xs font-medium text-slate-500 sm:mt-3">
+                      {notesOnly ? "当前筛选下没有备注流水" : "暂无匹配流水"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {notesOnly ? "可以关闭“只看备注”或补充备注后再查看。" : "试试调整关键词、平台或时间筛选条件。"}
+                    </p>
+                  </div>
                 ) : (
-                  <span className="text-[10px] font-semibold text-[#475569] sm:text-xs">暂无可展示分类</span>
+                  <div className="overflow-x-auto px-2 pb-2 sm:px-4 sm:pb-4">
+                    <table className="w-full min-w-[560px]">
+                      <thead>
+                        <tr className="border-b border-slate-200">
+                          <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">类型</th>
+                          <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">分类</th>
+                          <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">商户</th>
+                          <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">时间</th>
+                          <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">金额</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleTransactions.map((transaction) => {
+                          const isIncome = isIncomeTransaction(transaction.type);
+
+                          return (
+                            <tr
+                              key={transaction.id}
+                              className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/30"
+                            >
+                              <td className="px-2 py-1.5 sm:px-3 sm:py-2">
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium sm:text-xs",
+                                    isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600",
+                                  )}
+                                >
+                                  {isIncome ? "收入" : "支出"}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1.5 text-[10px] font-medium text-slate-700 sm:px-3 sm:py-2 sm:text-xs">
+                                <div>{transaction.category || "未分类"}</div>
+                                {transaction.description ? (
+                                  <div className="mt-0.5 truncate text-[10px] text-slate-400">
+                                    {transaction.description}
+                                  </div>
+                                ) : null}
+                              </td>
+                              <td className="px-2 py-1.5 text-[10px] text-slate-500 sm:px-3 sm:py-2 sm:text-xs">
+                                {transaction.merchant || getPlatformLabel(transaction.platform)}
+                              </td>
+                              <td className="px-2 py-1.5 text-[10px] text-slate-500 sm:px-3 sm:py-2 sm:text-xs">
+                                {formatTransactionDateTime(transaction.date)}
+                              </td>
+                              <td
+                                className={cn(
+                                  "px-2 py-1.5 text-right text-[10px] font-semibold sm:px-3 sm:py-2 sm:text-xs",
+                                  isIncome ? "text-blue-600" : "text-red-600",
+                                )}
+                              >
+                                {isIncome ? "+" : "-"}
+                                {formatCurrency(toNumber(transaction.amount), { withSymbol: false })}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
         </DelayedRender>
 
         <DelayedRender delay={30}>
-          <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader title="收支趋势" action={<FilterBadge />} />
-              <div className="h-[140px] sm:h-[180px] md:h-[220px]">
-                {activeTrend.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={activeTrend} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="consumptionIncomeGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2B6AF2" stopOpacity={0.22} />
-                          <stop offset="95%" stopColor="#2B6AF2" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="consumptionExpenseGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4CC98F" stopOpacity={0.22} />
-                          <stop offset="95%" stopColor="#4CC98F" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" {...chartAxisProps} />
-                      <YAxis {...yAxisProps} />
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
-                          name === "expense" ? "支出" : "收入",
-                        ]}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="expense"
-                        name="expense"
-                        stroke="#4CC98F"
-                        strokeWidth={2}
-                        fill="url(#consumptionExpenseGradient)"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="income"
-                        name="income"
-                        stroke="#2B6AF2"
-                        strokeWidth={2}
-                        fill="url(#consumptionIncomeGradient)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <ChartEmpty text="暂无趋势数据" />
-                )}
-              </div>
-            </Card>
+          <div className="space-y-2 sm:space-y-4">
+            <SectionHeading
+              eyebrow="Trends"
+              title="收支变化与平台结构"
+              description="先看金额波动，再看渠道构成。趋势和对比放前面，方便在筛选后快速判断变化原因。"
+            />
+            <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)]">
+              <Card>
+                <CardHeader title="收支趋势" action={<FilterBadge />} />
+                <div className="h-[220px] sm:h-[280px] xl:h-[320px]">
+                  {activeTrend.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={activeTrend} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="consumptionIncomeGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#2B6AF2" stopOpacity={0.22} />
+                            <stop offset="95%" stopColor="#2B6AF2" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="consumptionExpenseGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#4CC98F" stopOpacity={0.22} />
+                            <stop offset="95%" stopColor="#4CC98F" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" {...chartAxisProps} />
+                        <YAxis {...yAxisProps} />
+                        <Tooltip
+                          contentStyle={TOOLTIP_STYLE}
+                          formatter={(value: number, name: string) => [
+                            formatCurrency(value),
+                            name === "expense" ? "支出" : "收入",
+                          ]}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="expense"
+                          name="expense"
+                          stroke="#4CC98F"
+                          strokeWidth={2}
+                          fill="url(#consumptionExpenseGradient)"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="income"
+                          name="income"
+                          stroke="#2B6AF2"
+                          strokeWidth={2}
+                          fill="url(#consumptionIncomeGradient)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无趋势数据" />
+                  )}
+                </div>
+              </Card>
 
-            <Card>
-              <CardHeader title="区间对比" action={<FilterBadge />} />
-              <div className="h-[140px] sm:h-[180px] md:h-[220px]">
-                {comparisonData.some((item) => item.expense > 0 || item.income > 0) ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={comparisonData}
-                      margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-                      barGap={6}
-                      barCategoryGap="30%"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" {...chartAxisProps} />
-                      <YAxis {...yAxisProps} />
-                      <Tooltip
-                        cursor={{ fill: "#f8fafc" }}
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
-                          name === "expense" ? "支出" : "收入",
-                        ]}
-                      />
-                      <Bar dataKey="expense" name="expense" fill="#4CC98F" radius={[6, 6, 0, 0]} barSize={20} />
-                      <Bar dataKey="income" name="income" fill="#2B6AF2" radius={[6, 6, 0, 0]} barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <ChartEmpty text="暂无对比数据" />
-                )}
-              </div>
-            </Card>
+              <div className="grid gap-2 sm:gap-4">
+                <Card>
+                  <CardHeader title="区间对比" action={<FilterBadge />} />
+                  <div className="h-[180px] sm:h-[220px]">
+                    {comparisonData.some((item) => item.expense > 0 || item.income > 0) ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={comparisonData}
+                          margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+                          barGap={6}
+                          barCategoryGap="30%"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="name" {...chartAxisProps} />
+                          <YAxis {...yAxisProps} />
+                          <Tooltip
+                            cursor={{ fill: "#f8fafc" }}
+                            contentStyle={TOOLTIP_STYLE}
+                            formatter={(value: number, name: string) => [
+                              formatCurrency(value),
+                              name === "expense" ? "支出" : "收入",
+                            ]}
+                          />
+                          <Bar dataKey="expense" name="expense" fill="#4CC98F" radius={[6, 6, 0, 0]} barSize={20} />
+                          <Bar dataKey="income" name="income" fill="#2B6AF2" radius={[6, 6, 0, 0]} barSize={20} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <ChartEmpty text="暂无对比数据" />
+                    )}
+                  </div>
+                </Card>
 
-            <Card>
-              <CardHeader title="分类结构" action={<FilterBadge />} />
-              <div className="h-[140px] sm:h-[180px] md:h-[220px]">
-                {categoryBreakdownData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={categoryBreakdownData}
-                      margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
-                      layout="vertical"
-                      barCategoryGap="20%"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                      <XAxis type="number" {...yAxisProps} />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#64748b", fontSize: 10, fontWeight: 600 }}
-                        width={72}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "#f8fafc" }}
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number) => formatCurrency(value)}
-                      />
-                      <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
-                        {categoryBreakdownData.map((entry) => (
-                          <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <ChartEmpty text="暂无分类数据" />
-                )}
+                <Card>
+                  <CardHeader title="平台构成" action={<FilterBadge />} />
+                  <div className="flex h-[220px]">
+                    <div className="relative flex w-1/2 items-center justify-center">
+                      <div className="absolute inset-0 m-auto flex flex-col items-center justify-center gap-1">
+                        {platformData.length > 0 ? (
+                          platformData.slice(0, 3).map((item) => {
+                            const total = platformData.reduce((sum, current) => sum + current.value, 0);
+                            const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
+
+                            return (
+                              <div key={item.name} className="flex items-center gap-1.5">
+                                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                                <span className="text-xs font-semibold text-[#64748b]">{percentage}%</span>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <span className="text-xs font-medium text-[#64748b]">暂无数据</span>
+                        )}
+                      </div>
+
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                          <Pie
+                            data={platformData.length > 0 ? platformData : [{ name: "暂无数据", value: 1, fill: "#f1f5f9" }]}
+                            innerRadius="65%"
+                            outerRadius="90%"
+                            paddingAngle={6}
+                            dataKey="value"
+                            stroke="none"
+                            cornerRadius={8}
+                          >
+                            {(platformData.length > 0 ? platformData : [{ name: "暂无数据", value: 1, fill: "#f1f5f9" }]).map((entry) => (
+                              <Cell key={entry.name} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number) => formatCurrency(value)}
+                            contentStyle={TOOLTIP_STYLE}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="flex w-1/2 flex-col justify-center gap-2 pl-2 sm:gap-2.5 sm:pl-4">
+                      {platformData.length > 0 ? (
+                        platformData.map((item) => (
+                          <div key={item.name} className="flex items-center gap-2">
+                            <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: item.fill }} />
+                            <span className="flex-1 truncate text-xs font-medium text-[#475569]">{item.name}</span>
+                            <span className="font-numbers shrink-0 text-xs font-semibold text-[#0f172a]">
+                              {formatCurrency(item.value, { withSymbol: false, compact: true })}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-xs font-medium text-[#64748b]">暂无平台数据</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
               </div>
-            </Card>
+            </div>
           </div>
         </DelayedRender>
 
         <DelayedRender delay={60}>
-          <div className="grid grid-cols-1 gap-2 sm:gap-4 lg:grid-cols-12">
-            <Card className="lg:col-span-4">
-              <CardHeader title={bucketMode === "month" ? "月度支出" : "每日支出"} action={<FilterBadge />} />
-              <div className="h-[140px] sm:h-[180px] md:h-[220px]">
-                {dailyExpenseData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={dailyExpenseData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="consumptionDailyExpenseGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2B6AF2" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#2B6AF2" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" {...chartAxisProps} />
-                      <YAxis {...yAxisProps} />
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        formatter={(value: number) => [
-                          formatCurrency(value),
-                          bucketMode === "month" ? "月支出" : "日支出",
-                        ]}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#2B6AF2"
-                        strokeWidth={2}
-                        fill="url(#consumptionDailyExpenseGradient)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <ChartEmpty text="暂无支出分布" />
-                )}
-              </div>
-            </Card>
-
-            <Card className="lg:col-span-4">
-              <CardHeader title="平台构成" action={<FilterBadge />} />
-              <div className="flex h-[140px] sm:h-[180px] md:h-[220px]">
-                <div className="relative flex w-1/2 items-center justify-center">
-                  <div className="absolute inset-0 m-auto flex flex-col items-center justify-center gap-1">
-                    {platformData.length > 0 ? (
-                      platformData.slice(0, 3).map((item) => {
-                        const total = platformData.reduce((sum, current) => sum + current.value, 0);
-                        const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0;
-
-                        return (
-                          <div key={item.name} className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
-                            <span className="text-xs font-semibold text-[#64748b]">{percentage}%</span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <span className="text-xs font-medium text-[#64748b]">暂无数据</span>
-                    )}
-                  </div>
-
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                      <Pie
-                        data={platformData.length > 0 ? platformData : [{ name: "暂无数据", value: 1, fill: "#f1f5f9" }]}
-                        innerRadius="65%"
-                        outerRadius="90%"
-                        paddingAngle={6}
-                        dataKey="value"
-                        stroke="none"
-                        cornerRadius={8}
-                      >
-                        {(platformData.length > 0 ? platformData : [{ name: "暂无数据", value: 1, fill: "#f1f5f9" }]).map((entry) => (
-                          <Cell key={entry.name} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
-                        contentStyle={TOOLTIP_STYLE}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="flex w-1/2 flex-col justify-center gap-2 pl-2 sm:gap-2.5 sm:pl-4">
-                  {platformData.length > 0 ? (
-                    platformData.map((item) => (
-                      <div key={item.name} className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: item.fill }} />
-                        <span className="flex-1 truncate text-xs font-medium text-[#475569]">{item.name}</span>
-                        <span className="font-numbers shrink-0 text-xs font-semibold text-[#0f172a]">
-                          {formatCurrency(item.value, { withSymbol: false, compact: true })}
-                        </span>
-                      </div>
-                    ))
+          <div className="space-y-2 sm:space-y-4">
+            <SectionHeading
+              eyebrow="Structure"
+              title="分类层级与阶段堆叠"
+              description="把日常消费的短周期起伏和分类堆叠放在同一段，先看趋势，再看是哪类支出把曲线推上去。"
+            />
+            <div className="grid grid-cols-1 gap-2 sm:gap-4 lg:grid-cols-12">
+              <Card className="lg:col-span-4">
+                <CardHeader title={bucketMode === "month" ? "月度支出" : "每日支出"} action={<FilterBadge />} />
+                <div className="h-[220px] sm:h-[260px]">
+                  {dailyExpenseData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={dailyExpenseData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="consumptionDailyExpenseGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#2B6AF2" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#2B6AF2" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" {...chartAxisProps} />
+                        <YAxis {...yAxisProps} />
+                        <Tooltip
+                          contentStyle={TOOLTIP_STYLE}
+                          formatter={(value: number) => [
+                            formatCurrency(value),
+                            bucketMode === "month" ? "月支出" : "日支出",
+                          ]}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#2B6AF2"
+                          strokeWidth={2}
+                          fill="url(#consumptionDailyExpenseGradient)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   ) : (
-                    <span className="text-xs font-medium text-[#64748b]">暂无平台数据</span>
+                    <ChartEmpty text="暂无支出分布" />
                   )}
                 </div>
-              </div>
-            </Card>
+              </Card>
 
-            <Card className="p-0 lg:col-span-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#0f172a]">近期流水</h3>
-                  <p className="text-[10px] text-[#64748b] sm:text-xs">
-                    {dateRangeLabel} · 最近 {Math.min(5, displayTransactions.length)} 条
-                  </p>
+              <Card className="lg:col-span-8">
+                <CardHeader title="分类堆叠趋势" action={<FilterBadge />} />
+                <div className="h-[240px] sm:h-[320px]">
+                  {data.stackedBar.length > 0 && stackedKeys.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.stackedBar} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="day" {...chartAxisProps} />
+                        <YAxis {...yAxisProps} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                        {stackedKeys.map((key, index) => (
+                          <Bar
+                            key={key}
+                            dataKey={key}
+                            stackId="consumption-stack"
+                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            radius={index === stackedKeys.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无堆叠趋势数据" />
+                  )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNotesOnly((current) => !current)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                      notesOnly
-                        ? "bg-slate-900 text-white"
-                        : "bg-[#F1F5F9] text-[#475569] hover:bg-[#e2e8f0]",
-                    )}
-                  >
-                    只看备注
-                    <span
-                      className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[10px]",
-                        notesOnly ? "bg-white/15 text-white" : "bg-white text-[#64748b]",
-                      )}
-                    >
-                      {notedTransactions.length}
-                    </span>
-                  </button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={openAIDialog}
-                    className="rounded-full bg-[#2B6AF2] px-3 text-xs text-white hover:bg-[#245ad0]"
-                  >
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                    AI记一笔
-                  </Button>
-                </div>
-              </div>
-
-              {displayTransactions.length === 0 ? (
-                <div className="flex min-h-[140px] flex-col items-center justify-center rounded-lg px-4 text-center sm:min-h-[180px]">
-                  <CalendarDays className="h-6 w-6 text-slate-300 sm:h-8 sm:w-8" />
-                  <p className="mt-2 text-xs font-medium text-slate-500 sm:mt-3">
-                    {notesOnly ? "当前筛选下没有备注流水" : "暂无匹配流水"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {notesOnly ? "可以关闭“只看备注”或补充备注后再查看。" : "试试调整关键词、平台或时间筛选条件。"}
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto px-2 pb-2 sm:px-4 sm:pb-4">
-                  <table className="w-full min-w-[560px]">
-                    <thead>
-                      <tr className="border-b border-slate-200">
-                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">类型</th>
-                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">分类</th>
-                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">商户</th>
-                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">时间</th>
-                        <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-500 sm:px-3 sm:py-2 sm:text-xs">金额</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleTransactions.map((transaction) => {
-                        const isIncome = isIncomeTransaction(transaction.type);
-
-                        return (
-                          <tr
-                            key={transaction.id}
-                            className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/30"
-                          >
-                            <td className="px-2 py-1.5 sm:px-3 sm:py-2">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium sm:text-xs",
-                                  isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600",
-                                )}
-                              >
-                                {isIncome ? "收入" : "支出"}
-                              </span>
-                            </td>
-                            <td className="px-2 py-1.5 text-[10px] font-medium text-slate-700 sm:px-3 sm:py-2 sm:text-xs">
-                              <div>{transaction.category || "未分类"}</div>
-                              {transaction.description ? (
-                                <div className="mt-0.5 truncate text-[10px] text-slate-400">
-                                  {transaction.description}
-                                </div>
-                              ) : null}
-                            </td>
-                            <td className="px-2 py-1.5 text-[10px] text-slate-500 sm:px-3 sm:py-2 sm:text-xs">
-                              {transaction.merchant || getPlatformLabel(transaction.platform)}
-                            </td>
-                            <td className="px-2 py-1.5 text-[10px] text-slate-500 sm:px-3 sm:py-2 sm:text-xs">
-                              {formatTransactionDateTime(transaction.date)}
-                            </td>
-                            <td
-                              className={cn(
-                                "px-2 py-1.5 text-right text-[10px] font-semibold sm:px-3 sm:py-2 sm:text-xs",
-                                isIncome ? "text-blue-600" : "text-red-600",
-                              )}
-                            >
-                              {isIncome ? "+" : "-"}
-                              {formatCurrency(toNumber(transaction.amount), { withSymbol: false })}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
+              </Card>
+            </div>
           </div>
         </DelayedRender>
 
@@ -2086,29 +2158,6 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
               </div>
             </Card>
           </div>
-        </DelayedRender>
-
-        <DelayedRender delay={180}>
-          <Card>
-            <CardHeader title="分类堆叠趋势" action={<FilterBadge />} />
-            <div className="h-[240px] sm:h-[320px]">
-              {data.stackedBar.length > 0 && stackedKeys.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.stackedBar} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="day" {...chartAxisProps} />
-                    <YAxis {...yAxisProps} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
-                    {stackedKeys.map((key, index) => (
-                      <Bar key={key} dataKey={key} stackId="consumption-stack" fill={CHART_COLORS[index % CHART_COLORS.length]} radius={index === stackedKeys.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <ChartEmpty text="暂无堆叠趋势数据" />
-              )}
-            </div>
-          </Card>
         </DelayedRender>
 
         <DelayedRender delay={210}>

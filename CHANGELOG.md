@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.103 - 2026-04-05
+
+### Changed
+
+- **消费页改为“主题一致、业务排版独立”，不再强绑首页三卡骨架**:
+  - 更新 `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`，将消费页顶层重组为“消费总览与最近流水 / 收支变化与平台结构 / 分类层级与阶段堆叠”三段式，保留默认主题的蓝绿卡片语言、圆角、阴影与卡片表面，但不再机械复用 `DefaultDashboard` 的顶部三卡排法。
+  - 将“近期流水”提升为首屏右侧入口，把“消费节奏”与重点分类微趋势合并进总览区，把“分类堆叠趋势”前置到结构段，整体信息层级更贴近消费分析场景。
+
+### Docs
+
+- **补充主题一致性与骨架复用边界并同步版本记录**:
+  - 更新 `docs/主题开发框架文档.md`，明确“主题一致性”默认指卡片语言、色彩、节奏和壳层一致，不默认等于复用目标主题的模块骨架；只有用户明确要求连布局 / 骨架也同构时，才直接照搬目标主题结构。
+  - 更新 `docs/开发进度.md`，新增 V2.3.103 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.24`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/features/consumption/components/ConsumptionDefaultTheme.tsx src/features/consumption/components/ConsumptionLoadingShell.tsx`
+- `git diff --check -- web/src/features/consumption/components/ConsumptionDefaultTheme.tsx web/src/features/consumption/components/ConsumptionLoadingShell.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+- `npm.cmd --prefix web run typecheck`
+
 ## 2.3.102 - 2026-04-05
 
 ### Changed
