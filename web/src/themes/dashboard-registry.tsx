@@ -15,6 +15,25 @@ import { getDashboardEntryFileNameForTheme } from "@/themes/dashboard-routes";
 export type DashboardThemeProps = {
   data: DashboardData;
   loading?: boolean;
+  refreshing?: boolean;
+  dateFilter?: "month" | "all" | "custom";
+  onDateFilterChange?: (filter: "month" | "all" | "custom") => void;
+  customPeriod?: {
+    mode: "year" | "month";
+    year: string;
+    month: string;
+  };
+  onCustomPeriodChange?: (period: {
+    mode: "year" | "month";
+    year: string;
+    month: string;
+  }) => void;
+  dateRangeLabel?: string;
+  comparisonLabel?: string;
+  platform?: string;
+  onPlatformChange?: (value: string) => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 };
 
 type DashboardThemeComponent = ComponentType<DashboardThemeProps>;

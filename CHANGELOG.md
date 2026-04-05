@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.3.84 - 2026-04-05
+
+### Changed
+
+- **总览页筛选接入真实数据查询**:
+  - 重写 `web/src/features/dashboard/components/DashboardPageShell.tsx`，补齐日期筛选、自定义时间、平台和关键词状态，并在筛选变化时重新加载总览数据。
+  - 重写 `web/src/features/dashboard/data-loader.ts`，新增 `DashboardQuery`，支持按日期区间、对比区间、平台和关键词查询，同时按查询条件拆分缓存键。
+  - 更新 `web/src/features/dashboard/components/themes/DefaultDashboard.tsx` 与 `web/src/themes/dashboard-registry.tsx`，把共享筛选器的状态与回调继续透传到默认主题总览页。
+
+### Docs
+
+- **主题文档与版本记录同步**:
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.7`，补充总览页共享筛选器的真实接线方式。
+  - `docs/开发进度.md`、`CHANGELOG.md` 同步记录本次总览页筛选接线修复。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- web/src/features/dashboard/data-loader.ts web/src/features/dashboard/components/DashboardPageShell.tsx web/src/themes/dashboard-registry.tsx web/src/features/dashboard/components/themes/DefaultDashboard.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.83 - 2026-04-05
 
 ### Changed

@@ -42,6 +42,10 @@ interface DashboardViewProps {
   onCustomPeriodChange?: (period: CustomPeriodState) => void;
   dateRangeLabel?: string;
   comparisonLabel?: string;
+  platform?: string;
+  onPlatformChange?: (value: string) => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 }
 
 /* ────────── Helper functions for dynamic charts based on real data ────────── */
@@ -127,6 +131,11 @@ export function DashboardDefaultTheme({
   customPeriod,
   onCustomPeriodChange,
   dateRangeLabel,
+  comparisonLabel,
+  platform,
+  onPlatformChange,
+  searchQuery,
+  onSearchQueryChange,
 }: DashboardViewProps) {
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -137,6 +146,24 @@ export function DashboardDefaultTheme({
     const date = new Date();
     return MONTH_LABELS[date.getMonth()]; // E.g., "Dec"
   }, [dateRangeLabel]);
+  const currentComparisonLabel = comparisonLabel?.replace(/^较/, "") || "上期";
+  const currentPeriodShortLabel = useMemo(() => {
+    if (dateFilter === "all") return "全部";
+
+    if (dateFilter === "custom") {
+      if (customPeriod?.mode === "year" && customPeriod.year) {
+        return `${customPeriod.year}年`;
+      }
+
+      if (customPeriod?.year && customPeriod.month) {
+        return `${customPeriod.month}月`;
+      }
+
+      return "本期";
+    }
+
+    return "本月";
+  }, [customPeriod, dateFilter]);
 
   const currentYear = new Date().getFullYear();
   const yearOptions = useMemo(() => {
@@ -244,19 +271,19 @@ export function DashboardDefaultTheme({
   }, [data.recentTransactions, data.monthIncome, data.monthExpense]);
 
   const monthComparisonData = useMemo(() => [
-    { 
-      name: "上月", 
-      income: data.lastMonthIncome, 
+    {
+      name: currentComparisonLabel,
+      income: data.lastMonthIncome,
       expense: data.lastMonthExpense,
       savings: Math.max(0, data.lastMonthIncome - data.lastMonthExpense)
     },
-    { 
-      name: "本月", 
-      income: data.monthIncome, 
+    {
+      name: currentPeriodShortLabel,
+      income: data.monthIncome,
       expense: data.monthExpense,
       savings: Math.max(0, data.monthIncome - data.monthExpense)
     },
-  ], [data.monthIncome, data.monthExpense, data.lastMonthIncome, data.lastMonthExpense]);
+  ], [currentComparisonLabel, currentPeriodShortLabel, data.monthIncome, data.monthExpense, data.lastMonthIncome, data.lastMonthExpense]);
 
   const categoryBreakdownData = useMemo(() => {
     const map = new Map<string, number>();
@@ -655,6 +682,10 @@ export function DashboardDefaultTheme({
         onDateFilterChange={onDateFilterChange}
         customPeriod={customPeriod}
         onCustomPeriodChange={onCustomPeriodChange}
+        platform={platform}
+        onPlatformChange={onPlatformChange}
+        searchQuery={searchQuery}
+        onSearchQueryChange={onSearchQueryChange}
       />
     </div>
   );
