@@ -75,10 +75,10 @@ export const THEME_DARK_PANEL_CLASS =
   "relative overflow-hidden rounded-xl bg-[#0066ff] shadow-[0_4px_12px_rgba(0,102,255,0.2)] text-white sm:rounded-2xl sm:[background:var(--theme-dark-panel-bg)] sm:[box-shadow:var(--theme-dark-panel-shadow)]";
 
 export const THEME_DIALOG_INPUT_CLASS =
-  "h-12 w-full rounded-xl bg-gray-50 border-none px-4 text-sm [color:var(--theme-body-text)] placeholder:text-gray-400 transition-all focus:bg-white focus:ring-2 focus:ring-[#0066ff]/20 sm:border sm:[border-color:var(--theme-input-border)] sm:[background:var(--theme-input-bg)] sm:shadow-sm sm:focus:ring-4 sm:focus:ring-primary/10";
+  "h-12 w-full rounded-xl border px-4 text-sm [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] [color:var(--theme-body-text)] placeholder:text-[var(--theme-hint-text)] transition-all outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60";
 
 export const THEME_DIALOG_SELECT_CLASS =
-  "h-12 w-full appearance-none rounded-xl border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] px-4 text-sm [color:var(--theme-body-text)] transition-all outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20";
+  "h-12 w-full appearance-none rounded-xl border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] px-4 text-sm [color:var(--theme-body-text)] transition-all outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60";
 
 export const THEME_TEXTAREA_CLASS =
   "min-h-[110px] w-full rounded-xl border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] px-4 py-3 text-sm [color:var(--theme-body-text)] transition-all outline-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/20";
@@ -94,6 +94,15 @@ export const THEME_ICON_BUTTON_CLASS =
 
 export const THEME_LIST_ITEM_CLASS =
   "flex items-center justify-between rounded-[18px] border [border-color:var(--module-surface-border)] [background:var(--theme-surface-bg)] px-5 py-3.5 text-xs transition-all md:hover:[box-shadow:var(--theme-surface-shadow)] sm:text-sm";
+
+export const THEME_FLOATING_PANEL_CLASS =
+  "rounded-[24px] border [border-color:var(--theme-surface-border)] [background:var(--theme-surface-bg)] [box-shadow:var(--theme-surface-shadow)]";
+
+export const THEME_FLOATING_SECTION_CLASS =
+  "rounded-[20px] p-3 ring-1 ring-inset ring-black/5 [background:var(--theme-dialog-section-bg)]";
+
+export const THEME_FLOATING_TRIGGER_CLASS =
+  "inline-flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-medium transition [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] [color:var(--theme-body-text)] hover:brightness-95";
 
 const MODULE_ACCENT_STYLE_MAP: Record<ThemeModuleAccent, CSSProperties> = {
   dashboard: {
@@ -238,6 +247,11 @@ export function ThemeSectionHeader({
         >
           {title}
         </h2>
+        {description ? (
+          <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--theme-muted-text)" }}>
+            {description}
+          </p>
+        ) : null}
       </div>
       {action}
     </div>
@@ -273,7 +287,6 @@ export function ThemeMetricCard({
   const iconStyle = TONE_ICON_STYLE_MAP[tone];
   const hasIcon = Icon && iconVisibility !== "none";
   const showMobileIcon = Icon && iconVisibility === "always";
-  const showDesktopIcon = Icon && (iconVisibility === "always" || iconVisibility === "desktop");
 
   return (
     <div

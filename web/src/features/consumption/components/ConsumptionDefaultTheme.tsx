@@ -24,6 +24,8 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -33,9 +35,12 @@ import {
   Camera,
   Check,
   ChevronDown,
+  Grid3X3,
   Loader2,
   MoreVertical,
+  ReceiptText,
   Sparkles,
+  Store,
 } from "lucide-react";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { FloatingFilter } from "@/components/shared/FloatingFilter";
@@ -504,6 +509,124 @@ function ChartEmpty({ text }: { text: string }) {
   );
 }
 
+function MiniDonut({
+  data,
+  centerLabel,
+}: {
+  data: Array<{ name: string; value: number; fill: string }>;
+  centerLabel: string;
+}) {
+  return (
+    <div className="relative h-[112px] w-[112px]">
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center">
+        <span className="text-[11px] font-semibold text-[#64748b]">{centerLabel}</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data.length > 0 ? data : [{ name: "暂无", value: 1, fill: "#e2e8f0" }]}
+            dataKey="value"
+            innerRadius="62%"
+            outerRadius="88%"
+            paddingAngle={4}
+            stroke="none"
+            cornerRadius={6}
+          >
+            {(data.length > 0 ? data : [{ name: "暂无", value: 1, fill: "#e2e8f0" }]).map((entry) => (
+              <Cell key={entry.name} fill={entry.fill} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function HeatmapGrid({ data }: { data: ConsumptionData["heatmap"] }) {
+  const maxValue = Math.max(...data.data.map((item) => item.total), 1);
+
+  function resolveCellValue(platform: string, category: string) {
+    return data.data.find((item) => item.platform === platform && item.category === category)?.total ?? 0;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[560px] space-y-2">
+        <div
+          className="grid gap-2"
+          style={{ gridTemplateColumns: `120px repeat(${data.platforms.length}, minmax(72px, 1fr))` }}
+        >
+          <div />
+          {data.platforms.map((platform) => (
+            <div
+              key={platform}
+              className="rounded-[14px] bg-[#f8fafc] px-2 py-2 text-center text-[11px] font-semibold text-[#64748b]"
+            >
+              {platform}
+            </div>
+          ))}
+        </div>
+        {data.categories.map((category) => (
+          <div
+            key={category}
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `120px repeat(${data.platforms.length}, minmax(72px, 1fr))` }}
+          >
+            <div className="flex items-center rounded-[14px] bg-[#f8fafc] px-3 text-[11px] font-semibold text-[#475569]">
+              {category}
+            </div>
+            {data.platforms.map((platform) => {
+              const total = resolveCellValue(platform, category);
+              const ratio = total / maxValue;
+
+              return (
+                <div
+                  key={`${platform}-${category}`}
+                  className="rounded-[14px] px-2 py-3 text-center text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: `rgba(43,106,242,${0.08 + ratio * 0.32})`,
+                    color: ratio > 0.55 ? "#ffffff" : "#1e293b",
+                  }}
+                >
+                  {total > 0 ? formatCurrency(total, { withSymbol: false, compact: true }) : "-"}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalendarHeatGrid({ calendar }: { calendar: ConsumptionData["calendar"] }) {
+  const visibleDays = [...calendar]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-35);
+  const maxValue = Math.max(...visibleDays.map((item) => item.value), 1);
+
+  return (
+    <div className="grid grid-cols-7 gap-2">
+      {visibleDays.map((item) => {
+        const ratio = item.value / maxValue;
+
+        return (
+          <div
+            key={item.date}
+            className="rounded-[16px] px-2 py-2.5 text-center"
+            style={{ backgroundColor: `rgba(43,106,242,${0.08 + ratio * 0.3})` }}
+          >
+            <div className="text-[11px] font-semibold text-[#475569]">{item.day}</div>
+            <div className="mt-1 text-[10px] font-medium text-[#64748b]">
+              {item.value > 0 ? formatCurrency(item.value, { withSymbol: false, compact: true }) : "-"}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const chartAxisProps = {
   axisLine: false,
   tickLine: false,
@@ -718,6 +841,147 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
 
     return data.merchants[0]?.merchant || "暂无";
   }, [analysisTransactions, data.merchants]);
+
+  const merchantRankings = useMemo(
+    () =>
+      data.merchants.slice(0, 6).map((item, index) => ({
+        merchant: item.merchant,
+        total: Math.round(toNumber(item.total)),
+        fill: item.fill || CHART_COLORS[index % CHART_COLORS.length],
+      })),
+    [data.merchants],
+  );
+
+  const repeatMerchantRows = data.insights.recurringMerchants.slice(0, 4);
+
+  const structureGroups = useMemo(
+    () => [
+      {
+        key: "style",
+        title: "固定 / 灵活 / 波动",
+        centerLabel: "结构",
+        items: data.insights.spendingStyle.map((item, index) => ({
+          name: item.name,
+          value: Math.round(item.value),
+          fill: item.fill || CHART_COLORS[index % CHART_COLORS.length],
+        })),
+      },
+      {
+        key: "necessity",
+        title: "必要 vs 可选",
+        centerLabel: "必要性",
+        items: data.insights.necessitySplit.map((item, index) => ({
+          name: item.name,
+          value: Math.round(item.value),
+          fill: item.fill || CHART_COLORS[index % CHART_COLORS.length],
+        })),
+      },
+      {
+        key: "nature",
+        title: "消费 vs 周转",
+        centerLabel: "性质",
+        items: data.insights.transactionNature.map((item, index) => ({
+          name: item.name,
+          value: Math.round(item.value),
+          fill: item.fill || CHART_COLORS[index % CHART_COLORS.length],
+        })),
+      },
+    ],
+    [data.insights.necessitySplit, data.insights.spendingStyle, data.insights.transactionNature],
+  );
+
+  const concentrationData = useMemo(
+    () => [
+      {
+        name: "头部商户",
+        value: data.insights.concentration.topMerchantShare,
+        color: "#2B6AF2",
+      },
+      {
+        name: "前三商户",
+        value: data.insights.concentration.top3MerchantShare,
+        color: "#4CC98F",
+      },
+      {
+        name: "头部分类",
+        value: data.insights.concentration.topCategoryShare,
+        color: "#92C0F2",
+      },
+      {
+        name: "重复商户",
+        value: data.insights.concentration.repeatMerchantShare,
+        color: "#F5A623",
+      },
+    ],
+    [data.insights.concentration],
+  );
+
+  const budgetVarianceData = useMemo(
+    () =>
+      data.insights.budgetVariance.map((item) => ({
+        name: item.name,
+        budget: item.budget,
+        spent: item.spent,
+      })),
+    [data.insights.budgetVariance],
+  );
+
+  const hotspotData = useMemo(
+    () =>
+      data.insights.timeCategoryHotspots.slice(0, 5).map((item, index) => ({
+        name: item.label,
+        value: item.total,
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      })),
+    [data.insights.timeCategoryHotspots],
+  );
+
+  const weekendPreferenceData = useMemo(
+    () =>
+      data.insights.weekendPreference.slice(0, 5).map((item, index) => ({
+        name: item.name,
+        weekend: item.weekend,
+        weekday: item.weekday,
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      })),
+    [data.insights.weekendPreference],
+  );
+
+  const remarkBreakdownData = useMemo(
+    () =>
+      data.insights.remarkBreakdown.slice(0, 6).map((item, index) => ({
+        name: item.name,
+        total: item.total,
+        share: item.share,
+        color: item.fill || CHART_COLORS[index % CHART_COLORS.length],
+        category: item.category,
+        merchant: item.merchant,
+        count: item.count,
+      })),
+    [data.insights.remarkBreakdown],
+  );
+
+  const stackedKeys = useMemo(() => {
+    const keySet = new Set<string>();
+    data.stackedBar.forEach((item) => {
+      Object.keys(item).forEach((key) => {
+        if (key !== "day") keySet.add(key);
+      });
+    });
+    return Array.from(keySet).slice(0, 4);
+  }, [data.stackedBar]);
+
+  const sankeyFlowData = useMemo(() => {
+    const nodes = data.sankey.nodes.map((item) => item.name);
+    return data.sankey.links
+      .map((link, index) => ({
+        name: `${nodes[link.source] ?? "来源"} → ${nodes[link.target] ?? "去向"}`,
+        value: Math.round(link.value),
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 6);
+  }, [data.sankey.links, data.sankey.nodes]);
 
   const availableExpenseCategories = useMemo(
     () =>
@@ -1335,6 +1599,525 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
             </Card>
           </div>
         </DelayedRender>
+
+        <DelayedRender delay={90}>
+          <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1.95fr)_minmax(320px,1fr)]">
+            <Card>
+              <CardHeader title="商户排行与分类观察" action={<FilterBadge />} />
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+                <div className="space-y-2">
+                  {merchantRankings.length > 0 ? (
+                    merchantRankings.map((merchant, index) => (
+                      <div key={merchant.merchant} className="rounded-[18px] bg-[#f8fafc] p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                              style={{ backgroundColor: merchant.fill }}
+                            >
+                              {index + 1}
+                            </div>
+                            <span className="truncate text-sm font-semibold text-[#0f172a]">
+                              {merchant.merchant}
+                            </span>
+                          </div>
+                          <span className="font-numbers text-sm font-bold text-[#0f172a]">
+                            {formatCurrency(merchant.total)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <ChartEmpty text="暂无商户排行" />
+                  )}
+                </div>
+
+                <div className="h-[220px]">
+                  {categoryBreakdownData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={categoryBreakdownData}
+                        margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                        layout="vertical"
+                        barCategoryGap="24%"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                        <XAxis type="number" {...yAxisProps} />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                          width={72}
+                        />
+                        <Tooltip
+                          cursor={{ fill: "#f8fafc" }}
+                          contentStyle={TOOLTIP_STYLE}
+                          formatter={(value: number) => formatCurrency(value)}
+                        />
+                        <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={18}>
+                          {categoryBreakdownData.map((entry) => (
+                            <Cell key={entry.name} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无分类排行" />
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="平台 x 分类热区" action={<ActionDots />} />
+              <div className="mt-1">
+                {data.heatmap.data.length > 0 ? (
+                  <HeatmapGrid data={data.heatmap} />
+                ) : (
+                  <div className="flex h-[220px] flex-col items-center justify-center rounded-[18px] bg-[#f8fafc] text-center">
+                    <Grid3X3 className="h-8 w-8 text-slate-300" />
+                    <p className="mt-3 text-sm font-semibold text-slate-500">暂无热区数据</p>
+                    <p className="mt-1 text-xs text-slate-400">记录更多交易后会展示平台与分类的交叉分布。</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </DelayedRender>
+
+        <DelayedRender delay={120}>
+          <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-2">
+            <Card>
+              <CardHeader title="消费结构图谱" action={<ActionDots />} />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {structureGroups.map((group) => (
+                  <div key={group.key} className="rounded-[18px] bg-[#f8fafc] p-3">
+                    <p className="min-h-10 text-xs font-semibold leading-5 text-[#64748b]">
+                      {group.title}
+                    </p>
+                    <div className="mt-1 flex justify-center">
+                      <MiniDonut data={group.items} centerLabel={group.centerLabel} />
+                    </div>
+                    <div className="mt-2 space-y-1.5">
+                      {group.items.map((item) => (
+                        <div key={item.name} className="flex items-center justify-between gap-2 text-[11px]">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
+                            <span className="truncate text-[#475569]">{item.name}</span>
+                          </div>
+                          <span className="font-semibold text-[#0f172a]">
+                            {Math.round((item.value / Math.max(group.items.reduce((sum, current) => sum + current.value, 0), 1)) * 100)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="重复商户与集中度" action={<ActionDots />} />
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {concentrationData.map((metric) => (
+                  <div key={metric.name} className="rounded-[18px] bg-[#f8fafc] px-3 py-3">
+                    <p className="text-[11px] font-medium text-[#64748b]">{metric.name}</p>
+                    <p className="mt-1 text-lg font-semibold text-[#0f172a]">{metric.value.toFixed(0)}%</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                <div className="space-y-2">
+                  {repeatMerchantRows.length > 0 ? (
+                    repeatMerchantRows.map((item) => (
+                      <div key={item.merchant} className="rounded-[18px] bg-[#f8fafc] p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-[#0f172a]">{item.merchant}</p>
+                            <p className="mt-0.5 text-xs text-[#64748b]">
+                              {item.category} · {item.cadenceLabel}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-[#0f172a]">{formatCurrency(item.total)}</p>
+                            <p className="text-xs text-[#64748b]">{item.count} 笔</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex h-[220px] flex-col items-center justify-center rounded-[18px] bg-[#f8fafc] text-center">
+                      <Store className="h-8 w-8 text-slate-300" />
+                      <p className="mt-3 text-sm font-semibold text-slate-500">暂无重复商户</p>
+                    </div>
+                  )}
+                </div>
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={concentrationData}
+                      margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                      layout="vertical"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" domain={[0, 100]} axisLine={false} tickLine={false} />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                        width={72}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "#f8fafc" }}
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={(value: number) => `${value.toFixed(1)}%`}
+                      />
+                      <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={18}>
+                        {concentrationData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="预算偏差与大额支出" action={<ActionDots />} />
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="h-[240px]">
+                  {budgetVarianceData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={budgetVarianceData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" {...chartAxisProps} />
+                        <YAxis {...yAxisProps} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                        <Bar dataKey="budget" fill="#92C0F2" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="spent" fill="#2B6AF2" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无预算对比" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {data.insights.largeExpenses.length > 0 ? (
+                    data.insights.largeExpenses.slice(0, 4).map((item) => (
+                      <div key={`${item.merchant}-${item.date}`} className="rounded-[18px] bg-[#f8fafc] p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-[#0f172a]">{item.merchant}</p>
+                            <p className="mt-0.5 text-xs text-[#64748b]">{item.category} · {item.reason}</p>
+                          </div>
+                          <span className="font-numbers text-sm font-bold text-[#2B6AF2]">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <ChartEmpty text="暂无大额支出" />
+                  )}
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="时段热点与周末偏好" action={<ActionDots />} />
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="h-[240px]">
+                  {hotspotData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={hotspotData}
+                        margin={{ top: 10, right: 12, left: 0, bottom: 0 }}
+                        layout="vertical"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                        <XAxis type="number" {...yAxisProps} />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                          width={84}
+                        />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                        <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={16}>
+                          {hotspotData.map((entry) => (
+                            <Cell key={entry.name} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无热点数据" />
+                  )}
+                </div>
+
+                <div className="h-[240px]">
+                  {weekendPreferenceData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={weekendPreferenceData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" {...chartAxisProps} />
+                        <YAxis {...yAxisProps} />
+                        <Tooltip
+                          contentStyle={TOOLTIP_STYLE}
+                          formatter={(value: number, name: string) => [
+                            formatCurrency(value),
+                            name === "weekend" ? "周末" : "工作日",
+                          ]}
+                        />
+                        <Bar dataKey="weekend" fill="#4CC98F" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="weekday" fill="#2B6AF2" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无周末偏好" />
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </DelayedRender>
+
+        <DelayedRender delay={150}>
+          <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+            <Card>
+              <CardHeader title="备注洞察" action={<ActionDots />} />
+              <div className="h-[220px] sm:h-[260px]">
+                {remarkBreakdownData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={remarkBreakdownData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#64748b", fontSize: 10, fontWeight: 600 }}
+                        interval={0}
+                        angle={-18}
+                        textAnchor="end"
+                        height={42}
+                      />
+                      <YAxis {...yAxisProps} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                      <Bar dataKey="total" radius={[6, 6, 0, 0]}>
+                        {remarkBreakdownData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center rounded-[18px] bg-[#f8fafc] text-center">
+                    <ReceiptText className="h-8 w-8 text-slate-300" />
+                    <p className="mt-3 text-sm font-semibold text-slate-500">暂无备注图谱</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="备注摘要" action={<ActionDots />} />
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {
+                    label: "备注金额",
+                    value: formatCurrency(data.insights.remarkOverview.total),
+                    detail: `${data.insights.remarkOverview.share.toFixed(0)}% 支出已备注`,
+                  },
+                  {
+                    label: "备注笔数",
+                    value: `${data.insights.remarkOverview.count} 笔`,
+                    detail: "当前筛选范围",
+                  },
+                  {
+                    label: "备注种类",
+                    value: `${data.insights.remarkOverview.distinctCount} 类`,
+                    detail: "按文本去重",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[18px] bg-[#f8fafc] px-3 py-3">
+                    <p className="text-[11px] font-medium text-[#64748b]">{item.label}</p>
+                    <p className="mt-1 text-base font-semibold text-[#0f172a]">{item.value}</p>
+                    <p className="mt-1 text-[11px] leading-4 text-[#94a3b8]">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 space-y-2">
+                {remarkBreakdownData.slice(0, 4).map((item) => (
+                  <div key={item.name} className="rounded-[18px] bg-[#f8fafc] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#0f172a]">{item.name}</p>
+                        <p className="mt-0.5 text-xs text-[#64748b]">
+                          {item.category} · {item.merchant}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-[#0f172a]">{formatCurrency(item.total)}</p>
+                        <p className="text-xs text-[#64748b]">{item.count} 笔 · {item.share.toFixed(0)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </DelayedRender>
+
+        <DelayedRender delay={180}>
+          <Card>
+            <CardHeader title="分类堆叠趋势" action={<FilterBadge />} />
+            <div className="h-[240px] sm:h-[320px]">
+              {data.stackedBar.length > 0 && stackedKeys.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.stackedBar} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="day" {...chartAxisProps} />
+                    <YAxis {...yAxisProps} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                    {stackedKeys.map((key, index) => (
+                      <Bar key={key} dataKey={key} stackId="consumption-stack" fill={CHART_COLORS[index % CHART_COLORS.length]} radius={index === stackedKeys.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ChartEmpty text="暂无堆叠趋势数据" />
+              )}
+            </div>
+          </Card>
+        </DelayedRender>
+
+        <DelayedRender delay={210}>
+          <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.96fr)]">
+            <Card>
+              <CardHeader title="热力日历" action={<ActionDots />} />
+              {data.calendar.length > 0 ? (
+                <CalendarHeatGrid calendar={data.calendar} />
+              ) : (
+                <ChartEmpty text="暂无日历热力" />
+              )}
+            </Card>
+
+            <Card>
+              <CardHeader title="周内 / 周末分布" action={<ActionDots />} />
+              <div className="h-[240px] sm:h-[320px]">
+                {data.weekdayWeekend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={data.weekdayWeekend}
+                        dataKey="value"
+                        innerRadius="55%"
+                        outerRadius="82%"
+                        paddingAngle={6}
+                        stroke="none"
+                      >
+                        {data.weekdayWeekend.map((entry, index) => (
+                          <Cell key={entry.name} fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartEmpty text="暂无周内分布" />
+                )}
+              </div>
+            </Card>
+          </div>
+        </DelayedRender>
+
+        <DelayedRender delay={240}>
+          <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-2">
+            <Card>
+              <CardHeader title="资金流向摘要" action={<ActionDots />} />
+              <div className="h-[240px] sm:h-[320px]">
+                {sankeyFlowData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={sankeyFlowData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" {...yAxisProps} />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
+                        width={130}
+                      />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
+                      <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={16}>
+                        {sankeyFlowData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ChartEmpty text="暂无资金流向" />
+                )}
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="时段散点与金额分布" action={<ActionDots />} />
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="h-[240px]">
+                  {data.scatter.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis type="number" dataKey="hour" name="hour" unit="h" domain={[0, 24]} {...chartAxisProps} />
+                        <YAxis type="number" dataKey="amount" name="amount" {...yAxisProps} />
+                        <Tooltip
+                          cursor={{ strokeDasharray: "3 3" }}
+                          contentStyle={TOOLTIP_STYLE}
+                          formatter={(value: number, name: string) => [
+                            name === "amount" ? formatCurrency(value) : value,
+                            name === "amount" ? "金额" : "小时",
+                          ]}
+                        />
+                        <Scatter data={data.scatter} fill="#2B6AF2" />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无时段散点" />
+                  )}
+                </div>
+                <div className="h-[240px]">
+                  {data.histogram.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.histogram} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="range" {...chartAxisProps} />
+                        <YAxis {...yAxisProps} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => `${value} 笔`} />
+                        <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                          {data.histogram.map((entry, index) => (
+                            <Cell key={entry.range} fill={entry.fill || CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <ChartEmpty text="暂无金额分布" />
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </DelayedRender>
       </div>
 
       <BottomSheet open={isAIDialogOpen} onOpenChange={handleDialogOpenChange}>
@@ -1539,6 +2322,7 @@ export function ConsumptionDefaultTheme(props: ConsumptionViewProps) {
       <FloatingFilter
         isOpen={isFilterOpen}
         onOpenChange={setIsFilterOpen}
+        module="consumption"
         transactionCount={props.data.transactions.length}
         dateFilter={props.dateFilter}
         onDateFilterChange={props.onDateFilterChange}

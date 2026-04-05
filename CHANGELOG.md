@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.99 - 2026-04-05
+
+### Changed
+
+- **共享筛选器与底部弹层跟随主题收口**:
+  - 更新 `web/src/components/shared/theme-primitives.tsx`，补充共享浮层面板、区块、触发器以及对话框输入框 / 选择器的主题原语类名，并让 `ThemeSectionHeader` 正式渲染 `description`。
+  - 更新 `web/src/components/ui/bottomsheet.tsx`、`web/src/components/ui/select.tsx`，将底部弹层、拖拽条、关闭按钮、标题、副标题、下拉触发器、下拉内容、选项与分隔线统一切到主题 token，不再固定默认灰白样式。
+  - 更新 `web/src/components/shared/FloatingFilter.tsx`，让移动端筛选底部弹层和桌面端筛选浮层通过共享主题原语与模块 accent 自动跟随当前主题；默认总览页继续走 `dashboard` 模块，消费页显式接入 `module="consumption"`。
+  - 顺手清理 `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` 和 `web/src/components/shared/theme-primitives.tsx` 中的既有未使用告警与缺失描述渲染问题。
+
+### Docs
+
+- **主题框架规则与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充“共享筛选器 / BottomSheet / Select 只通过 token 和主题原语换皮，不在共享组件里堆 `themeId` 分支；结构变化显著时才拆变体”的约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.99 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.19`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/components/shared/FloatingFilter.tsx src/components/shared/theme-primitives.tsx src/components/ui/bottomsheet.tsx src/components/ui/select.tsx src/features/consumption/components/ConsumptionDefaultTheme.tsx`
+- `git diff --check -- web/src/components/shared/theme-primitives.tsx web/src/components/ui/bottomsheet.tsx web/src/components/ui/select.tsx web/src/components/shared/FloatingFilter.tsx web/src/features/consumption/components/ConsumptionDefaultTheme.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+- `npm.cmd run typecheck` blocked by pre-existing errors in `web/src/app/(dashboard)/connections/page.tsx`
+
 ## 2.3.98 - 2026-04-05
 
 ### Changed

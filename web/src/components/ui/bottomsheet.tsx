@@ -39,11 +39,11 @@ const BottomSheetContent = React.forwardRef<
 >(({ className, children, hideClose = false, onInteractOutside, onPointerDownOutside, ...props }, ref) => (
   <BottomSheetPortal>
     <BottomSheetOverlay />
-    <DialogPrimitive.Content
+  <DialogPrimitive.Content
       ref={ref}
       className={cn(
         "bottom-sheet-content fixed inset-x-0 bottom-0 z-50 mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-t-[28px] border px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_48px_rgba(15,23,42,0.18)] outline-none",
-        "[background:var(--theme-surface-bg)] [border-color:var(--theme-surface-border)]",
+        "[background:var(--theme-surface-bg)] [border-color:var(--theme-surface-border)] [box-shadow:var(--theme-surface-shadow)]",
         className
       )}
       onInteractOutside={(event) => {
@@ -69,9 +69,9 @@ const BottomSheetContent = React.forwardRef<
       }}
       {...props}
     >
-      <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-300/90" />
+      <div className="mx-auto h-1.5 w-12 rounded-full [background:var(--theme-input-border)]" />
       {!hideClose ? (
-        <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300">
+        <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border [border-color:var(--theme-input-border)] [background:var(--theme-input-bg)] [color:var(--theme-muted-text)] transition hover:brightness-95 hover:[color:var(--theme-body-text)] focus:outline-none focus:ring-2 focus:ring-ring/30">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
@@ -104,7 +104,7 @@ const BottomSheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold tracking-tight text-slate-950 sm:text-xl", className)}
+    className={cn("text-lg font-semibold tracking-tight [color:var(--theme-body-text)] sm:text-xl", className)}
     {...props}
   />
 ));
@@ -116,7 +116,7 @@ const BottomSheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm leading-6 text-slate-500", className)}
+    className={cn("text-sm leading-6 [color:var(--theme-muted-text)]", className)}
     {...props}
   />
 ));
