@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.3.88 - 2026-04-05
+
+### Changed
+
+- **后端统计链路稳定性与总览聚合性能优化**:
+  - 新增 `server/src/main.ts` 中的 `/api/dashboard/summary`，由后端一次性聚合总览页所需数据，替代前端并发拼接 9 个接口。
+  - 修复 `/api/metrics/consumption/summary` 对 `platform`、`search` 的忽略问题，并补上 `accountId` 级别的查询收口。
+  - 修复消费统计、资产、储蓄、预算等高频读取接口的账户范围，避免多账户数据混查。
+  - 将 `/api/budgets` 与 `/api/budgets/alerts` 从“每条预算一次 aggregate”改为“单次读取支出交易后本地复用预算健康计算”，去掉 N+1 查询。
+  - 移除消费总览接口中的重复 `console.time` 调试计时，减少并发请求时的日志噪音。
+  - 更新 `web/src/features/dashboard/data-loader.ts`，总览页改为直接消费新的后端聚合接口。
+
+### Docs
+
+- **稳定性与性能排查文档建档**:
+  - 新增 `docs/后端稳定性与总览性能优化开发文档.md`，记录本次慢查询来源、接口收口策略与验收结果。
+  - 更新 `docs/开发进度.md`，新增 V2.3.88 进度记录。
+
+### Verified
+
+- `npm.cmd --prefix server run build`
+- `npm.cmd --prefix web run typecheck`
+- `npm.cmd run build`
+- 本地热态压测 `/api/dashboard/summary` 约 `86ms`
+
 ## 2.3.87 - 2026-04-05
 
 ### Changed

@@ -1,5 +1,6 @@
 import cors from "cors";
 import crypto from "crypto";
+import type { PrismaClient } from "@prisma/client";
 import express, { type Request, type Response } from "express";
 import fs from "fs";
 import multer from "multer";
@@ -1219,12 +1220,16 @@ function parseQuery(req: Request) {
         ? req.query.end
         : "";
   const type = typeof req.query.type === "string" ? req.query.type : "EXPENSE";
+  const platform = typeof req.query.platform === "string" ? req.query.platform : "";
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
   const start = startDate ? new Date(startDate) : null;
   const end = endDate ? new Date(endDate) : null;
   return {
     startDate,
     endDate,
     type,
+    platform,
+    search,
     start: start && !Number.isNaN(start.getTime()) ? start : null,
     end: end && !Number.isNaN(end.getTime()) ? end : null,
   };
@@ -2476,31 +2481,363 @@ function buildConsumptionDashboardExtended(
   };
 }
 
-app.get("/api/metrics/consumption/summary", async (req, res) => {
-  const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+type DashboardSummaryResponse = {
+  totalAssets: number;
+  totalDebt: number;
+  monthExpense: number;
+  monthIncome: number;
+  lastMonthExpense: number;
+  lastMonthIncome: number;
+  monthSavingsIncome: number;
+  monthSavingsExpense: number;
+  recentTransactions: Array<{
+    id: string;
+    date: string;
+    type: "EXPENSE" | "INCOME";
+    amount: string;
+    category: string;
+    platform: string;
+    merchant?: string | null;
+  }>;
+  budgetAlerts: Array<{
+    id: string;
+    category: string;
+    platform?: string | null;
+    period: string;
+    scopeType: string;
+    amount: string;
+    used: string;
+    percent: number;
+    status: BudgetStatus;
+    alertPercent: number;
+  }>;
+};
+
+function parseOptionalDateQuery(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function matchesTransactionSearch(
+  item: { merchant?: string | null; description?: string | null; category?: string | null },
+  search?: string | null,
+) {
+  if (!search) return true;
+  const keyword = search.toLocaleLowerCase("zh-CN");
+  const text = `${item.merchant ?? ""} ${item.description ?? ""} ${item.category ?? ""}`.toLocaleLowerCase("zh-CN");
+  return text.includes(keyword);
+}
+
+function buildPrismaTransactionWhere(params: {
+  userId: string;
+  accountId: string;
+  start?: Date | null;
+  end?: Date | null;
+  type?: string | null;
+  platform?: string | null;
+  search?: string | null;
+}) {
+  const where: Record<string, unknown> = {
+    userId: params.userId,
+    accountId: params.accountId,
+  };
+
+  if (params.type) where.type = params.type;
+  if (params.platform) where.platform = params.platform;
+  if (params.start || params.end) {
+    where.date = {
+      ...(params.start ? { gte: params.start } : {}),
+      ...(params.end ? { lte: params.end } : {}),
+    };
+  }
+  if (params.search) {
+    where.OR = [
+      { merchant: { contains: params.search } },
+      { description: { contains: params.search } },
+      { category: { contains: params.search } },
+    ];
+  }
+
+  return where;
+}
+
+function filterTransactionsInMemory<T extends {
+  type: string;
+  platform?: string | null;
+  merchant?: string | null;
+  description?: string | null;
+  category: string;
+  date: string;
+}>(
+  items: T[],
+  params: {
+    start?: Date | null;
+    end?: Date | null;
+    type?: string | null;
+    platform?: string | null;
+    search?: string | null;
+  },
+) {
+  return items.filter((item) => {
+    if (params.type && item.type !== params.type) return false;
+    if (params.platform && item.platform !== params.platform) return false;
+    const ts = new Date(item.date).getTime();
+    if (params.start && ts < params.start.getTime()) return false;
+    if (params.end && ts > params.end.getTime()) return false;
+    return matchesTransactionSearch(item, params.search);
+  });
+}
+
+async function queryConsumptionSummaryWithPrisma(prisma: PrismaClient, where: Record<string, unknown>) {
+  const [count, sum] = await Promise.all([
+    prisma.transaction.count({ where }),
+    prisma.transaction.aggregate({ where, _sum: { amount: true } }),
+  ]);
+
+  const totalExpense = String(sum._sum.amount ?? 0);
+  return {
+    totalExpense,
+    expenseCount: count,
+    avgExpense: count > 0 ? String(Number(totalExpense) / count) : "0",
+  };
+}
+
+function queryConsumptionSummaryInMemory(
+  items: Array<{
+    amount: string | number;
+    type: string;
+    platform?: string | null;
+    merchant?: string | null;
+    description?: string | null;
+    category: string;
+    date: string;
+  }>,
+  params: {
+    start?: Date | null;
+    end?: Date | null;
+    type?: string | null;
+    platform?: string | null;
+    search?: string | null;
+  },
+) {
+  const filtered = filterTransactionsInMemory(items, params);
+  const total = filtered.reduce((sum, item) => sum + Number(item.amount), 0);
+  const count = filtered.length;
+
+  return {
+    totalExpense: total.toFixed(2),
+    expenseCount: count,
+    avgExpense: count > 0 ? (total / count).toFixed(2) : "0",
+  };
+}
+
+function buildBudgetHealthPayload(
+  budgets: Array<{
+    id: string;
+    amount: unknown;
+    category: string;
+    period: "MONTHLY" | "YEARLY";
+    scopeType?: string | null;
+    platform?: string | null;
+    alertPercent?: number | null;
+  }>,
+  transactions: Array<{
+    amount: unknown;
+    type: string;
+    category: string;
+    platform?: string | null;
+    date: Date | string;
+  }>,
+  now = new Date(),
+) {
+  const normalizedTransactions = transactions.map((item) => ({
+    amount: Number(item.amount),
+    type: isTransactionType(item.type) ? item.type : "EXPENSE",
+    category: item.category,
+    platform: item.platform ?? undefined,
+    date: item.date instanceof Date ? item.date : new Date(item.date),
+  }));
+
+  return budgets.map((budget) => {
+    const health = calculateBudgetHealth(
+      {
+        amount: Number(budget.amount),
+        category: budget.category,
+        period: budget.period === "YEARLY" ? "YEARLY" : "MONTHLY",
+        scopeType:
+          budget.scopeType === "CATEGORY" || budget.scopeType === "PLATFORM"
+            ? budget.scopeType
+            : "GLOBAL",
+        platform: budget.platform ?? undefined,
+        alertPercent: budget.alertPercent ?? undefined,
+      },
+      normalizedTransactions,
+      now,
+    );
+
+    return {
+      id: budget.id,
+      category: budget.category,
+      platform: budget.platform ?? null,
+      period: budget.period,
+      scopeType: budget.scopeType ?? "GLOBAL",
+      amount: String(budget.amount),
+      used: health.used.toFixed(2),
+      percent: health.percent,
+      status: health.status,
+      alertPercent: health.alertPercent,
+    };
+  });
+}
+
+app.get("/api/dashboard/summary", async (req, res) => {
+  const { start, end, platform, search } = parseQuery(req);
+  const compareStart = parseOptionalDateQuery(req.query.compareStartDate);
+  const compareEnd = parseOptionalDateQuery(req.query.compareEndDate);
+  const pageSize = Math.min(200, Math.max(1, Number(req.query.pageSize ?? 100) || 100));
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+
+  const { userId, accountId } = account;
   const prisma = getPrisma();
+  const savingsKeywords = ["\u50A8\u84C4", "\u5B58\u6B3E"];
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
+      const now = new Date();
+      const currentYearStart = new Date(now.getFullYear(), 0, 1);
+      const currentExpenseWhere = buildPrismaTransactionWhere({ userId, accountId, start, end, type: "EXPENSE", platform, search });
+      const currentIncomeWhere = buildPrismaTransactionWhere({ userId, accountId, start, end, type: "INCOME", platform, search });
+      const compareExpenseWhere = buildPrismaTransactionWhere({
+        userId,
+        accountId,
+        start: compareStart,
+        end: compareEnd,
+        type: "EXPENSE",
+        platform,
+        search,
+      });
+      const compareIncomeWhere = buildPrismaTransactionWhere({
+        userId,
+        accountId,
+        start: compareStart,
+        end: compareEnd,
+        type: "INCOME",
+        platform,
+        search,
+      });
+      const recentTransactionsWhere = buildPrismaTransactionWhere({ userId, accountId, start, end, platform, search });
+      const budgetTransactionsWhere = buildPrismaTransactionWhere({
+        userId,
+        accountId,
+        start: currentYearStart,
+        end: now,
+        type: "EXPENSE",
+      });
 
-      const [count, sum] = await Promise.all([
-        prisma.transaction.count({ where }),
-        prisma.transaction.aggregate({ where, _sum: { amount: true } }),
+      const [
+        assetsData,
+        ratesData,
+        loansData,
+        savingsData,
+        currentExpenseSummary,
+        currentIncomeSummary,
+        compareExpenseSummary,
+        compareIncomeSummary,
+        recentTransactions,
+        budgets,
+        budgetTransactions,
+      ] = await Promise.all([
+        prisma.asset.findMany({ where: { userId, accountId }, orderBy: { createdAt: "desc" } }),
+        prisma.exchangerate.findMany(),
+        prisma.loan.findMany({ where: { userId, accountId }, orderBy: { createdAt: "desc" } }),
+        prisma.savingsgoal.findMany({ where: { userId, accountId }, orderBy: { createdAt: "desc" } }),
+        queryConsumptionSummaryWithPrisma(prisma, currentExpenseWhere),
+        queryConsumptionSummaryWithPrisma(prisma, currentIncomeWhere),
+        compareStart || compareEnd
+          ? queryConsumptionSummaryWithPrisma(prisma, compareExpenseWhere)
+          : Promise.resolve({ totalExpense: "0", expenseCount: 0, avgExpense: "0" }),
+        compareStart || compareEnd
+          ? queryConsumptionSummaryWithPrisma(prisma, compareIncomeWhere)
+          : Promise.resolve({ totalExpense: "0", expenseCount: 0, avgExpense: "0" }),
+        prisma.transaction.findMany({
+          where: recentTransactionsWhere,
+          orderBy: { date: "desc" },
+          take: pageSize,
+          select: {
+            id: true,
+            date: true,
+            type: true,
+            amount: true,
+            category: true,
+            platform: true,
+            merchant: true,
+          },
+        }),
+        prisma.budget.findMany({ where: { userId, accountId }, orderBy: { createdAt: "desc" } }),
+        prisma.transaction.findMany({
+          where: budgetTransactionsWhere,
+          select: {
+            amount: true,
+            type: true,
+            category: true,
+            platform: true,
+            date: true,
+          },
+        }),
       ]);
 
-      const totalExpense = String(sum._sum.amount ?? 0);
-      const avgExpense = count > 0 ? String(Number(totalExpense) / count) : "0";
+      const rateItems = ratesData.map((item) => ({
+        from: item.from,
+        to: item.to,
+        rate: Number(item.rate),
+      }));
+      const totalAssets =
+        assetsData.reduce((sum, item) => sum + Number(calculateAssetValue(item as any, "CNY", rateItems)), 0) +
+        savingsData.reduce(
+          (sum, item) => sum + (getSavingsAssetSyncConfig(item.planConfig).syncToAssets ? 0 : Number(item.currentAmount)),
+          0,
+        );
+      const recentItems = recentTransactions.map((item) => ({
+        ...item,
+        date: item.date.toISOString(),
+        amount: String(item.amount),
+        platform: item.platform ?? "",
+      })) as DashboardSummaryResponse["recentTransactions"];
+      const savingsTransactions = recentItems.filter((item) =>
+        savingsKeywords.some((keyword) => item.category?.includes(keyword) || item.merchant?.includes(keyword)),
+      );
+      const budgetAlerts = buildBudgetHealthPayload(
+        budgets.map((item) => ({
+          id: item.id,
+          amount: item.amount,
+          category: item.category,
+          period: item.period,
+          scopeType: item.scopeType,
+          platform: item.platform,
+          alertPercent: item.alertPercent,
+        })),
+        budgetTransactions,
+        now,
+      ).filter((item) => item.status !== "normal");
 
-      jsonOk(res, { totalExpense, expenseCount: count, avgExpense });
+      jsonOk<DashboardSummaryResponse>(res, {
+        totalAssets,
+        totalDebt: loansData.reduce((sum, item) => sum + Number(item.remainingAmount), 0),
+        monthExpense: Number(currentExpenseSummary.totalExpense),
+        monthIncome: Number(currentIncomeSummary.totalExpense),
+        lastMonthExpense: Number(compareExpenseSummary.totalExpense),
+        lastMonthIncome: Number(compareIncomeSummary.totalExpense),
+        monthSavingsIncome: savingsTransactions
+          .filter((item) => item.type === "INCOME")
+          .reduce((sum, item) => sum + Number(item.amount), 0),
+        monthSavingsExpense: savingsTransactions
+          .filter((item) => item.type === "EXPENSE")
+          .reduce((sum, item) => sum + Number(item.amount), 0),
+        recentTransactions: recentItems,
+        budgetAlerts,
+      });
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -2509,46 +2846,127 @@ app.get("/api/metrics/consumption/summary", async (req, res) => {
     }
   }
 
-  const all = transactionsByUser.get(userId) ?? [];
-  const filtered = all.filter((t) => {
-    if (t.type !== type) return false;
-    const ts = new Date(t.date).getTime();
-    if (start && ts < start.getTime()) return false;
-    if (end && ts > end.getTime()) return false;
-    return true;
-  });
+  const now = new Date();
+  const currentYearStart = new Date(now.getFullYear(), 0, 1);
+  const allTransactions = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
+  const currentTransactions = filterTransactionsInMemory(allTransactions, { start, end, platform, search });
+  const recentTransactions = currentTransactions.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, pageSize);
+  const budgetAlerts = buildBudgetHealthPayload(
+    (budgetsByUser.get(userId) ?? []).map((item) => ({
+      id: item.id,
+      amount: item.amount,
+      category: item.category,
+      period: item.period,
+      scopeType: (item as { scopeType?: string | null }).scopeType,
+      platform: (item as { platform?: string | null }).platform,
+      alertPercent: (item as { alertPercent?: number | null }).alertPercent,
+    })),
+    filterTransactionsInMemory(allTransactions, { start: currentYearStart, end: now, type: "EXPENSE" }).map((item) => ({
+      amount: item.amount,
+      type: item.type,
+      category: item.category,
+      platform: item.platform,
+      date: item.date,
+    })) as Array<{
+      amount: string;
+      type: "EXPENSE" | "INCOME" | "TRANSFER" | "REPAYMENT";
+      category: string;
+      platform?: string | null;
+      date: string;
+    }>,
+    now,
+  ).filter((item) => item.status !== "normal");
 
-  const total = filtered.reduce((acc, t) => acc + Number(t.amount), 0);
-  const count = filtered.length;
-  jsonOk(res, {
-    totalExpense: total.toFixed(2),
-    expenseCount: count,
-    avgExpense: count > 0 ? (total / count).toFixed(2) : "0",
+  const rateItems = Array.from(exchangeRates.values()).map((item) => ({
+    from: item.from,
+    to: item.to,
+    rate: Number(item.rate),
+  }));
+  const assets = assetsByUser.get(userId) ?? [];
+  const savings = savingsGoalsByUser.get(userId) ?? [];
+  const recentItems = recentTransactions.map((item) => ({
+    id: item.id,
+    date: item.date,
+    type: item.type as "EXPENSE" | "INCOME",
+    amount: item.amount,
+    category: item.category,
+    platform: item.platform ?? "",
+    merchant: item.merchant,
+  }));
+  const savingsTransactions = recentItems.filter((item) =>
+    savingsKeywords.some((keyword) => item.category?.includes(keyword) || item.merchant?.includes(keyword)),
+  );
+
+  jsonOk<DashboardSummaryResponse>(res, {
+    totalAssets:
+      assets.reduce((sum, item) => sum + Number(calculateAssetValue(item as any, "CNY", rateItems)), 0) +
+      savings.reduce((sum, item) => sum + (getSavingsAssetSyncConfig(item.planConfig).syncToAssets ? 0 : Number(item.currentAmount)), 0),
+    totalDebt: (loansByUser.get(userId) ?? []).reduce((sum, item) => sum + Number(item.remainingAmount), 0),
+    monthExpense: Number(queryConsumptionSummaryInMemory(allTransactions, { start, end, type: "EXPENSE", platform, search }).totalExpense),
+    monthIncome: Number(queryConsumptionSummaryInMemory(allTransactions, { start, end, type: "INCOME", platform, search }).totalExpense),
+    lastMonthExpense: Number(
+      queryConsumptionSummaryInMemory(allTransactions, {
+        start: compareStart,
+        end: compareEnd,
+        type: "EXPENSE",
+        platform,
+        search,
+      }).totalExpense,
+    ),
+    lastMonthIncome: Number(
+      queryConsumptionSummaryInMemory(allTransactions, {
+        start: compareStart,
+        end: compareEnd,
+        type: "INCOME",
+        platform,
+        search,
+      }).totalExpense,
+    ),
+    monthSavingsIncome: savingsTransactions
+      .filter((item) => item.type === "INCOME")
+      .reduce((sum, item) => sum + Number(item.amount), 0),
+    monthSavingsExpense: savingsTransactions
+      .filter((item) => item.type === "EXPENSE")
+      .reduce((sum, item) => sum + Number(item.amount), 0),
+    recentTransactions: recentItems,
+    budgetAlerts,
   });
+});
+
+app.get("/api/metrics/consumption/summary", async (req, res) => {
+  const { start, end, type, platform, search } = parseQuery(req);
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
+  const prisma = getPrisma();
+
+  if (prisma) {
+    try {
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end, type, platform, search });
+      jsonOk(res, await queryConsumptionSummaryWithPrisma(prisma, where));
+      return;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown";
+      jsonFail(res, 500, 50000, "INTERNAL_ERROR", message);
+      return;
+    }
+  }
+
+  const all = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
+  jsonOk(res, queryConsumptionSummaryInMemory(all, { start, end, type, platform, search }));
 });
 
 app.get("/api/consumption/dashboard", async (req, res) => {
   const { start, end } = parseQuery(req);
   const bucket = req.query.bucket === "month" ? "month" : "day";
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      console.time("dashboard_total");
-      const where: Record<string, unknown> = { userId };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
-
-      const account = await requireAccountId(req, res);
-      if (!account) return;
-
-      console.time("dashboard_db_query");
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end });
       const [rows, budgets, rules] = await Promise.all([
         prisma.transaction.findMany({
           where,
@@ -2564,7 +2982,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
           },
         }),
         prisma.budget.findMany({
-          where: { userId },
+          where: { userId, accountId },
           select: {
             amount: true,
             category: true,
@@ -2576,9 +2994,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
         }),
         getMerchantCategoryRules(prisma, account.userId, account.accountId),
       ]);
-      console.timeEnd("dashboard_db_query");
 
-      console.time("dashboard_build_data");
       const dashboardData = buildConsumptionDashboardExtended(
         rows,
         bucket,
@@ -2593,10 +3009,8 @@ app.get("/api/consumption/dashboard", async (req, res) => {
         { start: start ?? undefined, end: end ?? undefined },
         rules,
       );
-      console.timeEnd("dashboard_build_data");
 
       jsonOk(res, dashboardData);
-      console.timeEnd("dashboard_total");
       return;
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown";
@@ -2622,8 +3036,6 @@ app.get("/api/consumption/dashboard", async (req, res) => {
     if (end && ts > end.getTime()) return false;
     return true;
   });
-  const account = await requireAccountId(req, res);
-  if (!account) return;
 
   jsonOk(
     res,
@@ -2643,19 +3055,14 @@ app.get("/api/consumption/dashboard", async (req, res) => {
 
 app.get("/api/metrics/consumption/by-platform", async (req, res) => {
   const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end, type });
 
       // @ts-ignore - Prisma aggregation type mismatch
       const rows = await prisma.transaction.groupBy({
@@ -2682,7 +3089,7 @@ app.get("/api/metrics/consumption/by-platform", async (req, res) => {
     }
   }
 
-  const all = transactionsByUser.get(userId) ?? [];
+  const all = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const map = new Map<string, { total: number; count: number }>();
 
   for (const t of all) {
@@ -2706,20 +3113,15 @@ app.get("/api/metrics/consumption/by-platform", async (req, res) => {
 
 app.get("/api/metrics/consumption/by-category", async (req, res) => {
   const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const limit = Math.max(1, Math.min(100, Number(req.query.limit ?? 10)));
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end, type });
 
       // @ts-ignore - Prisma aggregation type mismatch
       const rows = await prisma.transaction.groupBy({
@@ -2747,7 +3149,7 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
     }
   }
 
-  const all = transactionsByUser.get(userId) ?? [];
+  const all = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const map = new Map<string, { total: number; count: number }>();
 
   for (const t of all) {
@@ -2772,20 +3174,15 @@ app.get("/api/metrics/consumption/by-category", async (req, res) => {
 
 app.get("/api/metrics/consumption/by-merchant", async (req, res) => {
   const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const limit = Math.max(1, Math.min(100, Number(req.query.limit ?? 10)));
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end, type });
 
       // @ts-ignore - Prisma aggregation type mismatch
       const rows = await prisma.transaction.groupBy({
@@ -2817,19 +3214,14 @@ app.get("/api/metrics/consumption/by-merchant", async (req, res) => {
 
 app.get("/api/metrics/consumption/daily-category", async (req, res) => {
   const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end, type });
 
       const rows = await prisma.transaction.findMany({
         where,
@@ -2852,7 +3244,7 @@ app.get("/api/metrics/consumption/daily-category", async (req, res) => {
     }
   }
 
-  const all = transactionsByUser.get(userId) ?? [];
+  const all = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const filtered = all.filter((t) => {
     if (t.type !== type) return false;
     const ts = new Date(t.date).getTime();
@@ -2874,8 +3266,9 @@ app.get("/api/metrics/consumption/daily-category", async (req, res) => {
 
 app.get("/api/metrics/consumption/platform-category", async (req, res) => {
   const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const prisma = getPrisma();
 
   if (prisma) {
@@ -2883,14 +3276,7 @@ app.get("/api/metrics/consumption/platform-category", async (req, res) => {
       // @ts-ignore - Prisma aggregation type mismatch
       const rows = await prisma.transaction.groupBy({
         by: ["platform", "category"],
-        where: {
-          userId,
-          type: type as any,
-          date: {
-            ...(start ? { gte: start } : {}),
-            ...(end ? { lte: end } : {}),
-          }
-        },
+        where: buildPrismaTransactionWhere({ userId, accountId, start, end, type }) as any,
         _sum: { amount: true },
       });
 
@@ -2914,20 +3300,15 @@ app.get("/api/metrics/consumption/platform-category", async (req, res) => {
 
 app.get("/api/metrics/consumption/daily", async (req, res) => {
   const { start, end, type } = parseQuery(req);
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
   const groupBy = req.query.groupBy === "month" ? "month" : "day";
   const prisma = getPrisma();
 
   if (prisma) {
     try {
-      const where: Record<string, unknown> = { userId, type };
-      if (start || end) {
-        where.date = {
-          ...(start ? { gte: start } : {}),
-          ...(end ? { lte: end } : {}),
-        };
-      }
+      const where = buildPrismaTransactionWhere({ userId, accountId, start, end, type });
 
       const rows = await prisma.transaction.findMany({
         where,
@@ -2949,7 +3330,7 @@ app.get("/api/metrics/consumption/daily", async (req, res) => {
     }
   }
 
-  const all = transactionsByUser.get(userId) ?? [];
+  const all = transactionsByAccount.get(accountId) ?? transactionsByUser.get(userId) ?? [];
   const filtered = all.filter((t) => {
     if (t.type !== type) return false;
     const ts = new Date(t.date).getTime();
@@ -4662,14 +5043,15 @@ app.delete("/api/connect/:id", async (req, res) => {
 
 // Savings Goal API
 app.get("/api/savings", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
       const goals = await prisma.savingsgoal.findMany({
-        where: { userId },
+        where: { userId, accountId },
         orderBy: { createdAt: "desc" },
       });
       jsonOk(res, { items: goals });
@@ -5554,8 +5936,9 @@ app.post("/api/loans/:id/reconcile", async (req, res) => {
 
 // Asset API
 app.get("/api/assets", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const targetCurrency = typeof req.query.currency === "string" ? req.query.currency : "CNY";
 
@@ -5567,7 +5950,7 @@ app.get("/api/assets", async (req, res) => {
     try {
       const [assetsData, ratesData] = await Promise.all([
         prisma.asset.findMany({
-          where: { userId },
+          where: { userId, accountId },
           orderBy: { createdAt: "desc" },
         }),
         prisma.exchangerate.findMany(),
@@ -5735,65 +6118,56 @@ app.delete("/api/assets/:id", async (req, res) => {
 
 // Budget API
 app.get("/api/budgets", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const budgets = await prisma.budget.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-      });
       const now = new Date();
-      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const currentYearStart = new Date(now.getFullYear(), 0, 1);
+      const [budgets, expenseTransactions] = await Promise.all([
+        prisma.budget.findMany({
+          where: { userId, accountId },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.transaction.findMany({
+          where: buildPrismaTransactionWhere({ userId, accountId, start: currentYearStart, end: now, type: "EXPENSE" }),
+          select: {
+            amount: true,
+            type: true,
+            category: true,
+            platform: true,
+            date: true,
+          },
+        }),
+      ]);
 
-      const items = await Promise.all(
-        budgets.map(async (b) => {
-          const start = b.period === "MONTHLY" ? currentMonthStart : currentYearStart;
-          const where: any = {
-            userId,
-            type: "EXPENSE",
-            date: { gte: start },
-          };
-          
-          const scopeType = b.scopeType || "GLOBAL";
-          if (scopeType === "CATEGORY" && b.category !== "ALL") {
-            where.category = b.category;
-          } else if (scopeType === "PLATFORM" && b.platform) {
-            where.platform = b.platform;
-          } else if (scopeType === "GLOBAL" && b.category !== "ALL") {
-            where.category = b.category;
-          }
-          
-          const sum = await prisma.transaction.aggregate({
-            where,
-            _sum: { amount: true },
-          });
-          
-          const used = Number(sum._sum.amount ?? 0);
-          const budgetAmount = Number(b.amount);
-          const percent = budgetAmount > 0 ? (used / budgetAmount) * 100 : 0;
-          const alertPercent = b.alertPercent ?? 80;
-          
-          let status: BudgetStatus = "normal";
-          if (percent >= 100) {
-            status = "overdue";
-          } else if (percent >= alertPercent) {
-            status = "warning";
-          }
-
-          return {
-            ...b,
-            amount: String(b.amount),
-            used: used.toFixed(2),
-            percent: percent.toFixed(2),
-            status,
-            alertPercent,
-          };
-        })
-      );
+      const items = buildBudgetHealthPayload(
+        budgets.map((item) => ({
+          id: item.id,
+          amount: item.amount,
+          category: item.category,
+          period: item.period,
+          scopeType: item.scopeType,
+          platform: item.platform,
+          alertPercent: item.alertPercent,
+        })),
+        expenseTransactions,
+        now,
+      ).map((item) => ({
+        id: item.id,
+        category: item.category,
+        platform: item.platform,
+        period: item.period,
+        scopeType: item.scopeType,
+        amount: item.amount,
+        used: item.used,
+        percent: item.percent.toFixed(2),
+        status: item.status,
+        alertPercent: item.alertPercent,
+      }));
 
       jsonOk(res, { items });
       return;
@@ -5955,82 +6329,45 @@ app.delete("/api/budgets/:id", async (req, res) => {
 });
 
 app.get("/api/budgets/alerts", async (req, res) => {
-  const userId = await requireUserId(req, res);
-  if (!userId) return;
+  const account = await requireAccountId(req, res);
+  if (!account) return;
+  const { userId, accountId } = account;
 
   const prisma = getPrisma();
   if (prisma) {
     try {
-      const budgets = await prisma.budget.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-      });
       const now = new Date();
-      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const currentYearStart = new Date(now.getFullYear(), 0, 1);
+      const [budgets, expenseTransactions] = await Promise.all([
+        prisma.budget.findMany({
+          where: { userId, accountId },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.transaction.findMany({
+          where: buildPrismaTransactionWhere({ userId, accountId, start: currentYearStart, end: now, type: "EXPENSE" }),
+          select: {
+            amount: true,
+            type: true,
+            category: true,
+            platform: true,
+            date: true,
+          },
+        }),
+      ]);
 
-      const alerts: Array<{
-        id: string;
-        category: string;
-        platform?: string | null;
-        period: string;
-        scopeType: string;
-        amount: string;
-        used: string;
-        percent: number;
-        status: BudgetStatus;
-        alertPercent: number;
-      }> = [];
-
-      for (const b of budgets) {
-        const start = b.period === "MONTHLY" ? currentMonthStart : currentYearStart;
-        const where: any = {
-          userId,
-          type: "EXPENSE",
-          date: { gte: start },
-        };
-        
-        const scopeType = b.scopeType || "GLOBAL";
-        if (scopeType === "CATEGORY" && b.category !== "ALL") {
-          where.category = b.category;
-        } else if (scopeType === "PLATFORM" && b.platform) {
-          where.platform = b.platform;
-        } else if (scopeType === "GLOBAL" && b.category !== "ALL") {
-          where.category = b.category;
-        }
-        
-        const sum = await prisma.transaction.aggregate({
-          where,
-          _sum: { amount: true },
-        });
-        
-        const used = Number(sum._sum.amount ?? 0);
-        const budgetAmount = Number(b.amount);
-        const percent = budgetAmount > 0 ? (used / budgetAmount) * 100 : 0;
-        const alertPercent = b.alertPercent ?? 80;
-        
-        let status: BudgetStatus = "normal";
-        if (percent >= 100) {
-          status = "overdue";
-        } else if (percent >= alertPercent) {
-          status = "warning";
-        }
-
-        if (status !== "normal") {
-          alerts.push({
-            id: b.id,
-            category: b.category,
-            platform: b.platform,
-            period: b.period,
-            scopeType: b.scopeType || "GLOBAL",
-            amount: String(b.amount),
-            used: used.toFixed(2),
-            percent,
-            status,
-            alertPercent,
-          });
-        }
-      }
+      const alerts = buildBudgetHealthPayload(
+        budgets.map((item) => ({
+          id: item.id,
+          amount: item.amount,
+          category: item.category,
+          period: item.period,
+          scopeType: item.scopeType,
+          platform: item.platform,
+          alertPercent: item.alertPercent,
+        })),
+        expenseTransactions,
+        now,
+      ).filter((item) => item.status !== "normal");
 
       jsonOk(res, { alerts });
       return;
