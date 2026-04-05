@@ -369,7 +369,6 @@ export function DashboardDefaultTheme({
       className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5"
       style={{
         ...getThemeModuleStyle("dashboard"),
-        minHeight: "100vh",
         padding: "16px",
       }}
     >

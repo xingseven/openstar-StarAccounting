@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.87 - 2026-04-05
+
+### Changed
+
+- **移除总览页不必要的滚动条**:
+  - 在 `web/src/features/dashboard/components/themes/DefaultDashboard.tsx` 中移除 `minHeight: "100vh"` 设置。
+  - 避免内容未超出视口时出现多余的滚动条。
+
 ## 2.3.86 - 2026-04-05
 
 ### Changed
