@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.105 - 2026-04-05
+
+### Changed
+
+- **修复骨架切真实内容时的整屏白闪**:
+  - 更新 `web/src/components/shared/DelayedRender.tsx`，将非懒加载场景从“先返回 `null`，延迟后再挂真实节点”改为“先挂真实节点，再做轻量位移动效”。
+  - 移除骨架卸载后到真实模块挂载前的空窗，避免页面在加载完成瞬间出现整块白闪。
+  - 保留懒加载场景的视口进入后挂载能力，但统一走更平滑的 reveal 逻辑，不再依赖首屏空白占位。
+
+### Docs
+
+- **过渡渲染规则与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，新增“骨架切真实内容时不得留下 `null` 空窗；延迟渲染只负责轻量入场动效”的规则。
+  - 更新 `docs/开发进度.md`，新增 V2.3.105 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.26`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/components/shared/DelayedRender.tsx`
+- `npm.cmd run typecheck`
+- `git diff --check -- web/src/components/shared/DelayedRender.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.104 - 2026-04-05
 
 ### Changed
