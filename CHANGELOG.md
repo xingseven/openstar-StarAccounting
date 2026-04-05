@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.3.96 - 2026-04-05
+
+### Docs
+
+- **补充主题接入公共骨架框架的文档接线说明**:
+  - 更新 `docs/主题开发框架文档.md`，明确主题不会直接在 Manifest 中声明骨架框架，而是通过 `dashboardVariant -> dashboard-registry -> XxxLoadingShell -> PageLoadingShell` 接入。
+  - 补充“复用现有变体时如何自动复用骨架”和“新增独立主题变体时如何用共享骨架块组装 `XxxLoadingShell`”的约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.96 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.16`。
+
+### Verified
+
+- `git diff --check -- docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.95 - 2026-04-05
 
 ### Changed
