@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.98 - 2026-04-05
+
+### Changed
+
+- **消费页默认主题对齐 `DefaultDashboard` 工作台骨架**:
+  - 重写 `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`，将消费页改成与 `web/src/features/dashboard/components/themes/DefaultDashboard.tsx` 同构的三行工作台布局：4 张概览卡、3 张图表卡，以及“支出趋势 + 平台构成 + 近期流水”收口区。
+  - 第一行统一为蓝卡总支出、绿卡总收入、白卡记录质量、浅蓝卡消费排行，消费图表和流水区都跟随默认主题卡片语言，不再保留旧版长分析面板结构。
+  - 保留并接回共享悬浮筛选器、本地平台/关键词过滤、`只看备注` 开关，以及 `AI记一笔 -> /api/ai/scan-receipt -> /api/transactions` 的底部弹层记账流程。
+  - 重写 `web/src/features/consumption/components/ConsumptionLoadingShell.tsx`，让消费页骨架屏与真实页面保持同一套 4 + 3 + 3 工作台模块顺序。
+
+### Docs
+
+- **主题一致性规则与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充“当功能页被明确要求与某个既有主题 100% 一致时，必须直接复用目标主题的工作台结构与 LoadingShell 镜像”的约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.98 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.18`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/features/consumption/components/ConsumptionDefaultTheme.tsx src/features/consumption/components/ConsumptionLoadingShell.tsx`
+- `git diff --check -- web/src/features/consumption/components/ConsumptionDefaultTheme.tsx web/src/features/consumption/components/ConsumptionLoadingShell.tsx`
+- `npm.cmd --prefix web run typecheck` blocked by pre-existing errors in `web/src/features/loans/components/themes/DefaultLoans.tsx`
+
 ## 2.3.97 - 2026-04-05
 
 ### Changed
