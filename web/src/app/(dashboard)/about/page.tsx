@@ -94,8 +94,8 @@ const fallbackVersionHistory: VersionItem[] = [
     date: "2026-03-30",
     type: "feature",
     highlights: [
-      "账单导入改为强制识别订单号，微信按“交易单号”、支付宝按“交易订单号”去重，缺少订单号直接记为无效行。",
-      "数据页补齐统一分类目录与输入建议，消费页新增规则备注分析和“只看有备注”筛选，便于复盘固定场景支出。",
+      "账单导入改为强制识别订单号，微信按"交易单号"、支付宝按"交易订单号"去重，缺少订单号直接记为无效行。",
+      "数据页补齐统一分类目录与输入建议，消费页新增规则备注分析和"只看有备注"筛选，便于复盘固定场景支出。",
     ],
   },
   {
@@ -244,10 +244,10 @@ const contributors = [
 ];
 
 function VersionTypeBadge({ type }: { type: string }) {
-  const styleMap: Record<string, string> = {
-    major: "border-slate-200 bg-slate-100 text-slate-700",
-    feature: "border-blue-200 bg-blue-50 text-blue-700",
-    bugfix: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  const styleMap: Record<string, { bg: string; text: string; border: string }> = {
+    major: { bg: "var(--theme-tag-text-bg)", text: "var(--theme-tag-text-text)", border: "var(--theme-surface-border)" },
+    feature: { bg: "var(--theme-status-info-bg)", text: "var(--theme-status-info-text)", border: "var(--theme-surface-border)" },
+    bugfix: { bg: "var(--theme-status-success-bg)", text: "var(--theme-status-success-text)", border: "var(--theme-surface-border)" },
   };
   const labelMap: Record<string, string> = {
     major: "重大更新",
@@ -255,8 +255,13 @@ function VersionTypeBadge({ type }: { type: string }) {
     bugfix: "修复更新",
   };
 
+  const style = styleMap[type] ?? styleMap.feature;
+
   return (
-    <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", styleMap[type] ?? styleMap.feature)}>
+    <span
+      className="rounded-full border px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-medium"
+      style={{ background: style.bg, color: style.text, borderColor: style.border }}
+    >
       {labelMap[type] ?? type}
     </span>
   );
@@ -358,7 +363,7 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="rounded-[22px] bg-white/40 p-5 sm:p-6">
+            <div className="rounded-[22px] p-5 sm:p-6" style={{ background: "var(--theme-dialog-section-bg)" }}>
               <Skeleton className="h-4 w-24 rounded-full opacity-60" />
               <div className="mt-4 grid grid-cols-5 gap-x-2 gap-y-4 sm:grid-cols-[repeat(6,64px)] sm:gap-x-3 lg:grid-cols-[repeat(8,64px)]">
                 {Array.from({ length: 8 }).map((_, index) => (
@@ -441,66 +446,86 @@ export default function AboutPage() {
 
   return (
     <div className="mx-auto max-w-[1680px] space-y-4 py-4 sm:space-y-5 sm:py-6 lg:py-8">
-      <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
+      <ThemeHero className="bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),linear-gradient(180deg,var(--theme-hero-bg)_0%,var(--theme-surface-bg)_100%)]">
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-              <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+            <div
+              className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em]"
+              style={{
+                background: "var(--theme-input-bg)",
+                borderColor: "var(--theme-input-border)",
+                color: "var(--theme-muted-text)",
+              }}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: "var(--module-accent-strong)" }} />
               Open Source Workspace
             </div>
 
             <div>
-              <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">关于 Star Accounting</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-3xl lg:text-4xl" style={{ color: "var(--theme-body-text)" }}>关于 Star Accounting</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 sm:text-base" style={{ color: "var(--theme-muted-text)" }}>
                 现在关于页面已经接入统一更新检查、网站镜像优先下载和网页版刷新更新能力。用户不需要直接跳转 GitHub，就能检查和获取新版本。
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2 text-sm">
               {["更新检查", "网站镜像优先", "App 安装包下载", "网页版刷新更新"].map((item) => (
-                <span key={item} className="rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-slate-600 shadow-sm">
+                <span
+                  key={item}
+                  className="rounded-full border px-3 py-1.5 text-xs sm:text-sm shadow-sm"
+                  style={{
+                    background: "var(--theme-input-bg)",
+                    borderColor: "var(--theme-input-border)",
+                    color: "var(--theme-muted-text)",
+                  }}
+                >
                   {item}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="bg-white/40 p-5 sm:p-6">
+          <div className="rounded-[20px] sm:rounded-[22px] p-5 sm:p-6" style={{ background: "var(--theme-dialog-section-bg)" }}>
             <div>
-              <p className="text-sm font-medium text-slate-500">项目贡献者</p>
+              <p className="text-xs sm:text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>项目贡献者</p>
             </div>
 
-            <div className="mt-4 grid grid-cols-5 justify-start gap-x-2 gap-y-4 sm:grid-cols-[repeat(6,64px)] sm:gap-x-3 lg:grid-cols-[repeat(8,64px)]">
+            <div className="mt-4 grid grid-cols-4 justify-start gap-x-2 gap-y-4 sm:grid-cols-[repeat(6,64px)] sm:gap-x-3 lg:grid-cols-[repeat(8,64px)]">
               {contributors.map((contributor) => (
                 <a
                   key={contributor.name}
                   href={contributor.profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-16 flex-col items-center justify-start rounded-xl py-1 text-center transition hover:bg-slate-50"
+                  className="flex w-14 flex-col items-center justify-start rounded-xl py-1 text-center transition sm:w-16"
+                  style={{ background: "transparent" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-input-bg)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                 >
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-sm font-semibold text-white"
-                    style={
-                      contributor.avatarUrl
+                    className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-semibold text-white sm:h-12 sm:w-12 sm:text-sm"
+                    style={{
+                      background: "var(--theme-body-text)",
+                      ...(contributor.avatarUrl
                         ? {
                             backgroundImage: `url(${contributor.avatarUrl})`,
                             backgroundPosition: "center",
                             backgroundRepeat: "no-repeat",
                             backgroundSize: "cover",
                           }
-                        : undefined
-                    }
+                        : {}),
+                    }}
                   >
                     {!contributor.avatarUrl ? contributor.initials : null}
                   </div>
-                  <span className="mt-2 line-clamp-2 text-[11px] font-medium leading-4 text-slate-900">{contributor.name}</span>
+                  <span className="mt-1.5 line-clamp-2 text-[10px] font-medium leading-4 sm:mt-2 sm:text-[11px]" style={{ color: "var(--theme-body-text)" }}>{contributor.name}</span>
                 </a>
               ))}
             </div>
           </div>
         </div>
       </ThemeHero>
+
       <ThemeSurface className="p-4 sm:p-6">
         <ThemeSectionHeader
           eyebrow="关于我们"
@@ -510,31 +535,58 @@ export default function AboutPage() {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {aboutStory.map((item) => (
-            <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
-              <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+            <div
+              key={item.title}
+              className="rounded-[20px] sm:rounded-[22px] border p-4"
+              style={{
+                background: "var(--theme-dialog-section-bg)",
+                borderColor: "var(--theme-surface-border)",
+              }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>{item.title}</p>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--theme-muted-text)" }}>{item.description}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-5 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm">
+        <div
+          className="mt-5 rounded-[22px] sm:rounded-[24px] border p-5 shadow-sm"
+          style={{
+            background: "var(--theme-surface-bg)",
+            borderColor: "var(--theme-surface-border)",
+          }}
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-500">我们的定位</p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-950">把财务管理做成一个长期可维护的工作台</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="text-sm font-medium" style={{ color: "var(--theme-muted-text)" }}>我们的定位</p>
+              <h3 className="mt-1 text-base sm:text-lg font-semibold" style={{ color: "var(--theme-body-text)" }}>把财务管理做成一个长期可维护的工作台</h3>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--theme-muted-text)" }}>
                 Star Accounting 关注的不是单次展示，而是把资产、预算、储蓄、贷款、更新与 AI
                 工具整合进一个可以持续演进的个人财务系统，让你能自己部署、自己扩展，也能长期积累自己的数据与流程。
               </p>
             </div>
-            <div className="rounded-2xl bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+            <div
+              className="rounded-2xl px-3 py-2 text-xs sm:text-sm font-medium"
+              style={{
+                background: "var(--theme-status-info-bg)",
+                color: "var(--theme-status-info-text)",
+              }}
+            >
               Open Source
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {["个人财务工作台", "开源可部署", "持续迭代", "网站与 App 更新统一入口"].map((item) => (
-              <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600">
+              <span
+                key={item}
+                className="rounded-full border px-3 py-1.5 text-xs sm:text-sm"
+                style={{
+                  background: "var(--theme-input-bg)",
+                  borderColor: "var(--theme-input-border)",
+                  color: "var(--theme-muted-text)",
+                }}
+              >
                 {item}
               </span>
             ))}
@@ -543,27 +595,39 @@ export default function AboutPage() {
 
         <div className="mt-5">
           <div className="mb-3 flex items-center gap-2">
-            <Globe className="h-4 w-4 text-blue-600" />
-            <p className="text-sm font-semibold text-slate-950">开源网站</p>
+            <Globe className="h-4 w-4" style={{ color: "var(--module-accent-strong)" }} />
+            <p className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>开源网站</p>
           </div>
           <a
             href={openSourceWebsite.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92))] p-5 shadow-sm transition hover:bg-slate-50"
+            className="group block rounded-[22px] sm:rounded-[24px] border p-5 shadow-sm transition"
+            style={{
+              background: "var(--theme-surface-bg)",
+              borderColor: "var(--theme-surface-border)",
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-dialog-section-bg)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "var(--theme-surface-bg)"}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl"
+                  style={{
+                    background: "var(--theme-status-info-bg)",
+                    color: "var(--theme-status-info-text)",
+                  }}
+                >
                   <Globe className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-base font-semibold text-slate-950">{openSourceWebsite.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{openSourceWebsite.description}</p>
+                  <p className="text-sm sm:text-base font-semibold" style={{ color: "var(--theme-body-text)" }}>{openSourceWebsite.label}</p>
+                  <p className="mt-2 text-sm leading-6" style={{ color: "var(--theme-muted-text)" }}>{openSourceWebsite.description}</p>
                 </div>
               </div>
 
-              <div className="mt-0.5 flex items-center gap-1 text-sm font-medium text-blue-600">
+              <div className="mt-0.5 flex items-center gap-1 text-xs sm:text-sm font-medium" style={{ color: "var(--module-accent-strong)" }}>
                 访问
                 <ExternalLink className="h-3.5 w-3.5" />
               </div>
@@ -579,17 +643,22 @@ export default function AboutPage() {
             title={`最新检测：v${updateInfo.latestVersion}`}
             description={`上次检查时间：${formatDateTime(updateInfo.checkedAt)}`}
             action={
-              <Button variant="outline" className="rounded-2xl" onClick={() => void loadUpdateInfo()} disabled={isCheckingUpdates}>
+              <Button variant="outline" className="rounded-2xl h-9 sm:h-10" onClick={() => void loadUpdateInfo()} disabled={isCheckingUpdates}>
                 <RefreshCw className={cn("h-4 w-4", isCheckingUpdates && "animate-spin")} />
-                检查更新
               </Button>
             }
           />
 
-          <div className={cn(
-            "mt-5 rounded-[22px] border px-4 py-4 text-xs sm:text-sm",
-            updateInfo.hasUpdate ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          )}>
+          <div
+            className={cn(
+              "mt-5 rounded-[20px] sm:rounded-[22px] border px-4 py-4 text-xs sm:text-sm",
+            )}
+            style={{
+              background: updateInfo.hasUpdate ? "var(--theme-status-warning-bg)" : "var(--theme-status-success-bg)",
+              borderColor: updateInfo.hasUpdate ? "var(--theme-status-warning-text)" : "var(--theme-status-success-text)",
+              color: updateInfo.hasUpdate ? "var(--theme-status-warning-text)" : "var(--theme-status-success-text)",
+            }}
+          >
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5" />
               {updateInfo.hasUpdate ? `检测到新版本 v${updateInfo.latestVersion}` : "当前已经是最新版本"}
@@ -597,11 +666,11 @@ export default function AboutPage() {
           </div>
 
           <div className="mt-5 space-y-3">
-            <h3 className="text-xs font-semibold text-slate-900 sm:text-sm">本次更新重点</h3>
+            <h3 className="text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>本次更新重点</h3>
             <ul className="space-y-2">
               {(updateInfo.notes.length > 0 ? updateInfo.notes : ["当前更新清单暂无额外说明。"]).map((note, index) => (
-                <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:text-sm">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                <li key={index} className="flex items-start gap-2 text-xs leading-5 sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--theme-status-success-text)" }} />
                   {note}
                 </li>
               ))}
@@ -617,36 +686,48 @@ export default function AboutPage() {
           />
 
           <div className="mt-5 grid gap-4">
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+            <div
+              className="rounded-[20px] sm:rounded-[22px] border p-4"
+              style={{
+                background: "var(--theme-dialog-section-bg)",
+                borderColor: "var(--theme-surface-border)",
+              }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-xs font-semibold text-slate-950 sm:text-sm">网页版</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">{updateInfo.web.description}</p>
-                  <p className="mt-2 text-xs text-slate-400">
+                  <h3 className="text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>网页版</h3>
+                  <p className="mt-1 text-xs leading-5 sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{updateInfo.web.description}</p>
+                  <p className="mt-2 text-xs" style={{ color: "var(--theme-hint-text)" }}>
                     当前 v{updateInfo.web.currentVersion} · 最新 v{updateInfo.web.latestVersion}
                   </p>
                 </div>
-                <Globe className="h-5 w-5 text-slate-400" />
+                <Globe className="h-5 w-5" style={{ color: "var(--theme-hint-text)" }} />
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button className="rounded-2xl" onClick={() => void handleRefreshWeb()} disabled={isRefreshingWeb}>
+                <Button className="rounded-2xl h-9 sm:h-10" onClick={() => void handleRefreshWeb()} disabled={isRefreshingWeb}>
                   <RefreshCw className={cn("h-4 w-4", isRefreshingWeb && "animate-spin")} />
                   刷新并更新
                 </Button>
               </div>
             </div>
 
-            <div className="rounded-[22px] border border-slate-200 bg-slate-50/70 p-4">
+            <div
+              className="rounded-[20px] sm:rounded-[22px] border p-4"
+              style={{
+                background: "var(--theme-dialog-section-bg)",
+                borderColor: "var(--theme-surface-border)",
+              }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-xs font-semibold text-slate-950 sm:text-sm">移动端 App</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">{updateInfo.app.description}</p>
-                  <p className="mt-2 text-xs text-slate-400">
+                  <h3 className="text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>移动端 App</h3>
+                  <p className="mt-1 text-xs leading-5 sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>{updateInfo.app.description}</p>
+                  <p className="mt-2 text-xs" style={{ color: "var(--theme-hint-text)" }}>
                     当前 v{updateInfo.app.currentVersion} · 最新 v{updateInfo.app.latestVersion}
                   </p>
                 </div>
-                <Smartphone className="h-5 w-5 text-slate-400" />
+                <Smartphone className="h-5 w-5" style={{ color: "var(--theme-hint-text)" }} />
               </div>
 
               <div className="mt-4 flex flex-col gap-2">
@@ -658,18 +739,25 @@ export default function AboutPage() {
                       className={THEME_LIST_ITEM_CLASS}
                     >
                       <div>
-                        <div className="text-sm font-medium text-slate-900">{item.label}</div>
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="text-sm font-medium" style={{ color: "var(--theme-body-text)" }}>{item.label}</div>
+                        <div className="mt-1 text-xs" style={{ color: "var(--theme-muted-text)" }}>
                           {item.fileName}
                           {item.size ? ` · ${item.size}` : ""}
                         </div>
-                        {item.description ? <div className="mt-1 text-xs text-slate-400">{item.description}</div> : null}
+                        {item.description ? <div className="mt-1 text-xs" style={{ color: "var(--theme-hint-text)" }}>{item.description}</div> : null}
                       </div>
-                      <Download className="h-4 w-4 text-slate-500" />
+                      <Download className="h-4 w-4" style={{ color: "var(--theme-muted-text)" }} />
                     </a>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-4 text-xs leading-5 text-slate-500 sm:text-sm">
+                  <div
+                    className="rounded-2xl border border-dashed px-4 py-4 text-xs leading-5 sm:text-sm"
+                    style={{
+                      background: "var(--theme-input-bg)",
+                      borderColor: "var(--theme-input-border)",
+                      color: "var(--theme-muted-text)",
+                    }}
+                  >
                     当前还没有上传新的安装包。把安装包放到网站镜像或 GitHub Release 后，这里会自动显示下载入口。
                   </div>
                 )}
@@ -687,10 +775,22 @@ export default function AboutPage() {
           action={
             showAllVersions ? (
               <div className="flex gap-2">
-                <button onClick={() => setExpandedVersions(versionHistory.map((item) => item.version))} className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100">
+                <button
+                  onClick={() => setExpandedVersions(versionHistory.map((item) => item.version))}
+                  className="rounded-lg px-3 py-1.5 text-xs transition"
+                  style={{ color: "var(--theme-muted-text)" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-dialog-section-bg)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                >
                   展开全部
                 </button>
-                <button onClick={() => setExpandedVersions([])} className="rounded-lg px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100">
+                <button
+                  onClick={() => setExpandedVersions([])}
+                  className="rounded-lg px-3 py-1.5 text-xs transition"
+                  style={{ color: "var(--theme-muted-text)" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-dialog-section-bg)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                >
                   收起全部
                 </button>
               </div>
@@ -700,29 +800,36 @@ export default function AboutPage() {
 
         <div className="mt-5 space-y-3">
           {visibleVersions.map((item) => (
-            <div key={item.version} className={cn("overflow-hidden rounded-xl border transition-all", item.version === currentVersion ? "border-blue-200 bg-blue-50/50" : "border-slate-200")}>
+            <div
+              key={item.version}
+              className={cn("overflow-hidden rounded-xl border transition-all")}
+              style={{
+                background: item.version === currentVersion ? "var(--theme-status-info-bg)" : "var(--theme-surface-bg)",
+                borderColor: item.version === currentVersion ? "var(--theme-status-info-text)" : "var(--theme-surface-border)",
+              }}
+            >
               <button
                 onClick={() =>
                   setExpandedVersions((prev) =>
                     prev.includes(item.version) ? prev.filter((version) => version !== item.version) : [...prev, item.version]
                   )
                 }
-                className="flex w-full items-center justify-between p-4 text-left"
+                className="flex w-full items-center justify-between gap-2 p-3 sm:p-4 text-left"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-3">
                   <VersionTypeBadge type={item.type} />
-                  <span className="text-xs font-semibold text-slate-900 sm:text-sm">v{item.version}</span>
-                  <span className="text-xs text-slate-400">{item.date}</span>
+                  <span className="text-xs font-semibold sm:text-sm" style={{ color: "var(--theme-body-text)" }}>v{item.version}</span>
+                  <span className="text-[10px] sm:text-xs" style={{ color: "var(--theme-hint-text)" }}>{item.date}</span>
                 </div>
-                {expandedVersions.includes(item.version) ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                {expandedVersions.includes(item.version) ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: "var(--theme-hint-text)" }} /> : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: "var(--theme-hint-text)" }} />}
               </button>
 
               {expandedVersions.includes(item.version) ? (
-                <div className="border-t border-slate-200 px-4 pb-4 pt-3">
+                <div className="border-t px-3 sm:px-4 pb-3 sm:pb-4 pt-3" style={{ borderColor: "var(--theme-surface-border)" }}>
                   <ul className="space-y-2">
                     {item.highlights.map((highlight, index) => (
-                      <li key={index} className="flex items-start gap-2 text-xs leading-5 text-slate-600 sm:text-sm">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                      <li key={index} className="flex items-start gap-2 text-xs leading-5 sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--theme-status-success-text)" }} />
                         {highlight}
                       </li>
                     ))}
@@ -735,7 +842,14 @@ export default function AboutPage() {
           {!showAllVersions && versionHistory.length > DEFAULT_VISIBLE_VERSION_COUNT ? (
             <button
               onClick={() => setShowAllVersions(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 py-3 text-xs font-medium text-blue-600 transition hover:bg-blue-50 sm:text-sm"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-3 text-xs font-medium transition sm:text-sm"
+              style={{
+                background: "transparent",
+                borderColor: "var(--module-accent-strong)",
+                color: "var(--module-accent-strong)",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "var(--module-accent-soft)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
             >
               查看全部历史版本 ({versionHistory.length})
               <ChevronDown className="h-4 w-4" />
@@ -743,7 +857,6 @@ export default function AboutPage() {
           ) : null}
         </div>
       </ThemeSurface>
-
     </div>
   );
 }
