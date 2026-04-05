@@ -369,10 +369,8 @@ export function DashboardDefaultTheme({
       className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5"
       style={{
         ...getThemeModuleStyle("dashboard"),
-        background: "#F5F6FA",
         minHeight: "100vh",
         padding: "16px",
-        borderRadius: "24px",
       }}
     >
       {/* ═══════ ROW 1: 4 Cards ═══════ */}

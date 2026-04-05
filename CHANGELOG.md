@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.86 - 2026-04-05
+
+### Changed
+
+- **移除总览页默认主题的灰色背景层**:
+  - 在 `web/src/features/dashboard/components/themes/DefaultDashboard.tsx` 中移除外层容器的灰色背景色 `#F5F6FA` 和圆角样式。
+  - 页面现在使用透明背景，更好地融入整体主题。
+
 ## 2.3.85 - 2026-04-05
 
 ### Changed
