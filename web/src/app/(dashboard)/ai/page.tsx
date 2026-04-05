@@ -438,7 +438,7 @@ export default function AIPage() {
           title="AI 智能记账"
           description="配置视觉或文本模型后，可在消费页使用 AI 拍照记账与智能分析。"
           action={
-            <Button onClick={openCreate} className="rounded-2xl bg-slate-900 hover:bg-slate-800">
+            <Button onClick={openCreate} className="rounded-2xl bg-[var(--theme-body-text)] hover:opacity-90">
               <Plus className="mr-2 h-4 w-4" />
               添加模型
             </Button>
@@ -464,7 +464,7 @@ export default function AIPage() {
               {expandedSection === "configured" ? <ChevronDown className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />}
               <h2 className="text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>已配置模型</h2>
             </div>
-            <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">{configuredModels.length} 个</span>
+            <span className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: "var(--theme-status-success-bg)", color: "var(--theme-status-success-text)" }}>{configuredModels.length} 个</span>
           </button>
           {expandedSection === "configured" ? (
             <div className="mt-5 space-y-3">
@@ -483,7 +483,7 @@ export default function AIPage() {
               {expandedSection === "unconfigured" ? <ChevronDown className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "var(--theme-muted-text)" }} />}
               <h2 className="text-base font-semibold sm:text-lg" style={{ color: "var(--theme-body-text)" }}>未配置模型</h2>
             </div>
-            <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700">{unconfiguredModels.length} 个</span>
+            <span className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: "var(--theme-status-warning-bg)", color: "var(--theme-status-warning-text)" }}>{unconfiguredModels.length} 个</span>
           </button>
           {expandedSection === "unconfigured" ? (
             <div className="mt-5 space-y-3">
@@ -601,7 +601,8 @@ export default function AIPage() {
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-slate-600" style={{ color: "var(--theme-muted-text)" }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                    style={{ color: "var(--theme-muted-text)" }}
                   >
                     {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -659,7 +660,8 @@ export default function AIPage() {
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:text-slate-600" style={{ color: "var(--theme-muted-text)" }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-70"
+                    style={{ color: "var(--theme-muted-text)" }}
                   >
                     {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -715,19 +717,34 @@ function ModelCard({
   return (
     <div className={cn("flex items-center justify-between rounded-xl border p-4 transition-all", model.status === "active" ? THEME_STATUS_SUCCESS_SURFACE_CLASS : THEME_STATUS_NEUTRAL_SURFACE_CLASS)}>
       <div className="flex items-center gap-4">
-        <div className={cn("rounded-lg p-2", model.status === "active" ? "bg-green-100" : "")} style={model.status !== "active" ? { background: "var(--theme-empty-icon-bg)" } : {}}>
-          <Brain className={cn("h-5 w-5", model.status === "active" ? "text-green-600" : "")} style={model.status !== "active" ? { color: "var(--theme-muted-text)" } : {}} />
+        <div
+          className="rounded-lg p-2"
+          style={model.status === "active" ? { background: "var(--theme-status-success-bg)" } : { background: "var(--theme-empty-icon-bg)" }}
+        >
+          <Brain
+            className="h-5 w-5"
+            style={model.status === "active" ? { color: "var(--theme-status-success-text)" } : { color: "var(--theme-muted-text)" }}
+          />
         </div>
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>{model.name}</span>
-            {model.status === "active" ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-yellow-600" />}
-            {model.isDefault ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700">默认</span> : null}
+            {model.status === "active" ? (
+              <CheckCircle2 className="h-4 w-4" style={{ color: "var(--theme-status-success-text)" }} />
+            ) : (
+              <AlertCircle className="h-4 w-4" style={{ color: "var(--theme-status-warning-text)" }} />
+            )}
+            {model.isDefault ? (
+              <span className="rounded px-1.5 py-0.5 text-xs" style={{ background: "var(--theme-status-info-bg)", color: "var(--theme-status-info-text)" }}>默认</span>
+            ) : null}
           </div>
           <div className="mt-1 flex items-center gap-2 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
             <span>{model.provider}</span>
             <span>·</span>
-            <span className={cn("rounded px-1.5 py-0.5", model.type === "vision" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700")}>
+            <span
+              className="rounded px-1.5 py-0.5"
+              style={model.type === "vision" ? { background: "var(--theme-tag-vision-bg)", color: "var(--theme-tag-vision-text)" } : { background: "var(--theme-tag-text-bg)", color: "var(--theme-tag-text-text)" }}
+            >
               {model.type === "vision" ? "视觉" : "文本"}
             </span>
           </div>
@@ -744,14 +761,23 @@ function ModelCard({
             <Settings className="h-4 w-4" />
           </Button>
           {showActions ? (
-            <div className="absolute right-0 top-full z-10 mt-1 min-w-[132px] rounded-lg border bg-white py-1 shadow-lg">
+            <div
+              className="absolute right-0 top-full z-10 mt-1 min-w-[132px] rounded-lg border py-1 shadow-lg"
+              style={{
+                background: "var(--theme-surface-bg)",
+                borderColor: "var(--theme-surface-border)",
+              }}
+            >
               {!model.isDefault ? (
                 <button
                   onClick={() => {
                     onSetDefault();
                     setShowActions(false);
                   }}
-                  className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-slate-50"
+                  className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm transition-colors"
+                  style={{ color: "var(--theme-body-text)" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-dialog-section-bg)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   设为默认
@@ -762,7 +788,10 @@ function ModelCard({
                   onEdit();
                   setShowActions(false);
                 }}
-                className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-slate-50"
+                className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm transition-colors"
+                style={{ color: "var(--theme-body-text)" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "var(--theme-dialog-section-bg)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
                 <Edit className="h-3 w-3" />
                 编辑
@@ -772,7 +801,10 @@ function ModelCard({
                   onDelete();
                   setShowActions(false);
                 }}
-                className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                className="flex w-full items-center gap-2 whitespace-nowrap px-3 py-2 text-left text-sm transition-colors"
+                style={{ color: "#DC2626" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "#FEF2F2"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
                 <Trash2 className="h-3 w-3" />
                 删除
