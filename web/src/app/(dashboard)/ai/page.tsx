@@ -729,34 +729,34 @@ function ModelCard({
   const [showActions, setShowActions] = useState(false);
 
   return (
-    <div className={cn("flex items-center justify-between rounded-xl border p-4 transition-all", model.status === "active" ? THEME_STATUS_SUCCESS_SURFACE_CLASS : THEME_STATUS_NEUTRAL_SURFACE_CLASS)}>
-      <div className="flex items-center gap-4">
+    <div className={cn("flex items-center justify-between rounded-xl border p-3 sm:p-4 transition-all", model.status === "active" ? THEME_STATUS_SUCCESS_SURFACE_CLASS : THEME_STATUS_NEUTRAL_SURFACE_CLASS)}>
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         <div
-          className="rounded-lg p-2"
+          className="rounded-lg p-1.5 sm:p-2 shrink-0"
           style={model.status === "active" ? { background: "var(--theme-status-success-bg)" } : { background: "var(--theme-empty-icon-bg)" }}
         >
           <Brain
-            className="h-5 w-5"
+            className="h-4 w-4 sm:h-5 sm:w-5"
             style={model.status === "active" ? { color: "var(--theme-status-success-text)" } : { color: "var(--theme-muted-text)" }}
           />
         </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium sm:text-base" style={{ color: "var(--theme-body-text)" }}>{model.name}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-xs sm:text-sm font-medium sm:font-medium truncate" style={{ color: "var(--theme-body-text)" }}>{model.name}</span>
             {model.status === "active" ? (
-              <CheckCircle2 className="h-4 w-4" style={{ color: "var(--theme-status-success-text)" }} />
+              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" style={{ color: "var(--theme-status-success-text)" }} />
             ) : (
-              <AlertCircle className="h-4 w-4" style={{ color: "var(--theme-status-warning-text)" }} />
+              <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" style={{ color: "var(--theme-status-warning-text)" }} />
             )}
             {model.isDefault ? (
-              <span className="rounded px-1.5 py-0.5 text-xs" style={{ background: "var(--theme-status-info-bg)", color: "var(--theme-status-info-text)" }}>默认</span>
+              <span className="rounded px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs shrink-0" style={{ background: "var(--theme-status-info-bg)", color: "var(--theme-status-info-text)" }}>默认</span>
             ) : null}
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[11px] sm:text-xs" style={{ color: "var(--theme-muted-text)" }}>
-            <span>{model.provider}</span>
-            <span>·</span>
+          <div className="mt-0.5 sm:mt-1 flex items-center gap-1 sm:gap-2 text-[10px] sm:text-[11px]" style={{ color: "var(--theme-muted-text)" }}>
+            <span className="truncate">{model.provider}</span>
+            <span className="shrink-0">·</span>
             <span
-              className="rounded px-1.5 py-0.5"
+              className="rounded px-1 sm:px-1.5 py-0.5 shrink-0"
               style={model.type === "vision" ? { background: "var(--theme-tag-vision-bg)", color: "var(--theme-tag-vision-text)" } : { background: "var(--theme-tag-text-bg)", color: "var(--theme-tag-text-text)" }}
             >
               {model.type === "vision" ? "视觉" : "文本"}
@@ -765,14 +765,14 @@ function ModelCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={onConfig}>
-          <Key className="mr-1 h-3 w-3" />
-          {model.apiKeyConfigured ? "修改" : "配置"}
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <Button variant="outline" size="sm" onClick={onConfig} className="h-8 sm:h-9 px-2 sm:px-3">
+          <Key className="h-3 w-3 sm:mr-1" />
+          <span className="hidden sm:inline">{model.apiKeyConfigured ? "修改" : "配置"}</span>
         </Button>
         <div className="relative">
-          <Button variant="ghost" size="sm" onClick={() => setShowActions(!showActions)}>
-            <Settings className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={() => setShowActions(!showActions)} className="h-8 w-8 sm:h-9 sm:w-9 p-0">
+            <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           {showActions ? (
             <div
