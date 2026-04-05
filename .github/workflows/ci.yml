@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Install backend dependencies
-        working-directory: ./src/server
+        working-directory: ./server
         run: npm ci
 
       - name: Install frontend dependencies
@@ -32,11 +32,11 @@ jobs:
         run: npm ci
 
       - name: Generate Prisma Client
-        working-directory: ./src/server
+        working-directory: ./server
         run: npx prisma generate
 
       - name: Lint backend
-        working-directory: ./src/server
+        working-directory: ./server
         run: npm run lint --if-present
 
       - name: Lint frontend
@@ -78,8 +78,8 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd src/server && npm ci
-          cd ../../web && npm ci
+          cd server && npm ci
+          cd ../web && npm ci
 
       - name: Setup Playwright
         working-directory: ./web

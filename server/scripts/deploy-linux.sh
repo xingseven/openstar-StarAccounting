@@ -23,13 +23,13 @@ fail() {
 usage() {
   cat <<'EOF'
 Usage:
-  bash src/server/scripts/deploy-linux.sh --app-dir /srv/openstar-StarAccounting [options]
+  bash server/scripts/deploy-linux.sh --app-dir /srv/openstar-StarAccounting [options]
 
 Options:
   --app-dir <path>               Repository root on the server. Required.
   --branch <name>                Git branch to deploy. Default: main.
   --remote <name>                Git remote to pull from. Default: origin.
-  --server-process-name <name>   PM2 process name for src/server. Default: openstar-server.
+  --server-process-name <name>   PM2 process name for server. Default: openstar-server.
   --web-process-name <name>      PM2 process name for web. Default: openstar-web.
   --server-health-url <url>      Health check URL for backend. Default: http://127.0.0.1:3006/api/health.
   --web-health-url <url>         Health check URL for frontend. Default: http://127.0.0.1:3000/.
@@ -148,7 +148,7 @@ require_command curl
 APP_DIR="$(cd "$APP_DIR" && pwd)"
 
 [[ -d "$APP_DIR/.git" ]] || fail "Repository root not found: $APP_DIR"
-[[ -d "$APP_DIR/src/server" ]] || fail "Missing backend directory: $APP_DIR/src/server"
+[[ -d "$APP_DIR/server" ]] || fail "Missing backend directory: $APP_DIR/server"
 [[ -d "$APP_DIR/web" ]] || fail "Missing frontend directory: $APP_DIR/web"
 
 cd "$APP_DIR"
@@ -160,7 +160,7 @@ run git pull --ff-only "$REMOTE_NAME" "$BRANCH"
 
 log "Installing and building backend"
 (
-  cd "$APP_DIR/src/server"
+  cd "$APP_DIR/server"
   run npm ci
   run npx prisma generate
   run npm run build
@@ -174,7 +174,7 @@ log "Installing and building frontend"
 )
 
 log "Restarting services with pm2"
-restart_pm2_process "$SERVER_PROCESS_NAME" "$APP_DIR/src/server"
+restart_pm2_process "$SERVER_PROCESS_NAME" "$APP_DIR/server"
 restart_pm2_process "$WEB_PROCESS_NAME" "$APP_DIR/web"
 pm2 save >/dev/null 2>&1 || true
 

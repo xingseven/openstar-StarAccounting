@@ -41,19 +41,19 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: |
-            src/server/package-lock.json
+            server/package-lock.json
             web/package-lock.json
 
       - name: Install backend dependencies
-        working-directory: ./src/server
+        working-directory: ./server
         run: npm ci
 
       - name: Generate Prisma Client
-        working-directory: ./src/server
+        working-directory: ./server
         run: npx prisma generate
 
       - name: Build backend
-        working-directory: ./src/server
+        working-directory: ./server
         run: npm run build
 
       - name: Install frontend dependencies
@@ -80,7 +80,7 @@ jobs:
           script_stop: true
           command_timeout: 45m
           script: |
-            bash "${{ secrets.DEPLOY_LINUX_APP_DIR }}/src/server/scripts/deploy-linux.sh" \
+            bash "${{ secrets.DEPLOY_LINUX_APP_DIR }}/server/scripts/deploy-linux.sh" \
               --app-dir "${{ secrets.DEPLOY_LINUX_APP_DIR }}" \
               --branch "${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"
 
@@ -100,4 +100,4 @@ jobs:
           script_stop: true
           command_timeout: 45m
           script: |
-            powershell -NoProfile -ExecutionPolicy Bypass -File "${{ secrets.DEPLOY_WINDOWS_APP_DIR }}\src\server\scripts\deploy-windows.ps1" -AppDir "${{ secrets.DEPLOY_WINDOWS_APP_DIR }}" -Branch "${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"
+            powershell -NoProfile -ExecutionPolicy Bypass -File "${{ secrets.DEPLOY_WINDOWS_APP_DIR }}\server\scripts\deploy-windows.ps1" -AppDir "${{ secrets.DEPLOY_WINDOWS_APP_DIR }}" -Branch "${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name }}"

@@ -1151,13 +1151,14 @@ const TRANSFER_KEYWORDS = ["转账", "红包", "还款", "借款", "信用卡", 
 const REFUND_KEYWORDS = ["退款", "退货", "退回", "返还", "售后"];
 const SUBSCRIPTION_KEYWORDS = ["会员", "订阅", "连续包月", "自动续费", "视频", "音乐", "网盘", "云盘", "plus", "premium"];
 const DASHBOARD_TIMEZONE = process.env.APP_TIMEZONE?.trim() || "Asia/Shanghai";
+const dashboardDateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DASHBOARD_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+});
 function getDashboardDateParts(date) {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: DASHBOARD_TIMEZONE,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(date);
+    const parts = dashboardDateFormatter.formatToParts(date);
     const get = (type) => parts.find((part) => part.type === type)?.value ?? "";
     return {
         year: get("year"),
@@ -1165,8 +1166,23 @@ function getDashboardDateParts(date) {
         day: get("day"),
     };
 }
+const dashboardLocalDateFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: DASHBOARD_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+});
 function toDashboardLocalDate(date) {
-    return new Date(date.toLocaleString("en-US", { timeZone: DASHBOARD_TIMEZONE }));
+    const parts = dashboardLocalDateFormatter.formatToParts(date);
+    const get = (type) => parts.find((part) => part.type === type)?.value ?? "00";
+    // Create a strict local date string: YYYY-MM-DDTHH:mm:ss
+    // Then parse it as local time
+    const isoStr = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
+    return new Date(isoStr);
 }
 function includesAnyKeyword(text, keywords) {
     return keywords.some((keyword) => text.includes(keyword));
@@ -1335,9 +1351,15 @@ function buildConsumptionDashboard(rows, bucket = "day") {
     const cashflowRows = [];
     const dailyCategoryRows = [];
     const platformCategoryMap = new Map();
-    const recentTransactions = [...rows]
-        .sort((a, b) => new Date(String(b.date)).getTime() - new Date(String(a.date)).getTime())
-        .slice(0, 50);
+    // Pre-calculate timestamps to avoid O(N log N) Date parsing overhead during sorting
+    const rowsWithTs = rows.map(row => ({
+        row,
+        ts: row.date instanceof Date ? row.date.getTime() : new Date(row.date).getTime(),
+    }));
+    const recentTransactions = [...rowsWithTs]
+        .sort((a, b) => b.ts - a.ts)
+        .slice(0, 50)
+        .map(item => item.row);
     let totalExpense = 0;
     let totalIncome = 0;
     let expenseCount = 0;
@@ -1349,17 +1371,17 @@ function buildConsumptionDashboard(rows, bucket = "day") {
         { range: "1k-5k", count: 0, fill: "#2563eb" },
         { range: "5k+", count: 0, fill: "#1d4ed8" },
     ];
-    const scatter = rows
-        .filter((row) => row.type === "EXPENSE")
-        .sort((a, b) => new Date(String(b.date)).getTime() - new Date(String(a.date)).getTime())
+    const scatter = rowsWithTs
+        .filter((item) => item.row.type === "EXPENSE")
+        .sort((a, b) => b.ts - a.ts)
         .slice(0, 160)
-        .map((row, index) => {
-        const date = new Date(String(row.date));
+        .map((item, index) => {
+        const date = item.row.date instanceof Date ? item.row.date : new Date(item.row.date);
         return {
             id: index,
             hour: date.getHours() + date.getMinutes() / 60,
-            amount: Number(row.amount ?? 0),
-            category: row.category || "未分类",
+            amount: Number(item.row.amount ?? 0),
+            category: item.row.category || "未分类",
         };
     });
     for (const row of rows) {
@@ -1761,6 +1783,15 @@ function buildConsumptionDashboardExtended(rows, bucket = "day", budgets = [], r
         share: (item.value / transactionNatureBase) * 100,
     }));
     const budgetPeriod = resolveBudgetInsightPeriod(range?.start, range?.end);
+    const budgetTransactionRows = budgetPeriod && budgets.length > 0
+        ? rows.map((row) => ({
+            amount: Number(row.amount ?? 0),
+            type: row.type,
+            category: row.category?.trim() || "未分类",
+            platform: row.platform ?? undefined,
+            date: row.date,
+        }))
+        : [];
     const budgetVariance = budgetPeriod
         ? budgets
             .filter((budget) => budget.period === budgetPeriod)
@@ -1772,13 +1803,7 @@ function buildConsumptionDashboardExtended(rows, bucket = "day", budgets = [], r
                 period: budget.period,
                 scopeType: budget.scopeType,
                 alertPercent: budget.alertPercent ?? undefined,
-            }, rows.map((row) => ({
-                amount: Number(row.amount ?? 0),
-                type: row.type,
-                category: row.category?.trim() || "未分类",
-                platform: row.platform ?? undefined,
-                date: row.date,
-            })), range?.end ?? new Date());
+            }, budgetTransactionRows, range?.end ?? new Date());
             const variance = spent - budget.amount;
             const percent = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
             const status = percent >= 100 ? "over" : percent >= (budget.alertPercent ?? 80) ? "warning" : "healthy";
@@ -1970,6 +1995,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
     const prisma = getPrisma();
     if (prisma) {
         try {
+            console.time("dashboard_total");
             const where = { userId };
             if (start || end) {
                 where.date = {
@@ -1980,6 +2006,7 @@ app.get("/api/consumption/dashboard", async (req, res) => {
             const account = await requireAccountId(req, res);
             if (!account)
                 return;
+            console.time("dashboard_db_query");
             const [rows, budgets, rules] = await Promise.all([
                 prisma.transaction.findMany({
                     where,
@@ -2007,14 +2034,19 @@ app.get("/api/consumption/dashboard", async (req, res) => {
                 }),
                 getMerchantCategoryRules(prisma, account.userId, account.accountId),
             ]);
-            jsonOk(res, buildConsumptionDashboardExtended(rows, bucket, budgets.map((item) => ({
+            console.timeEnd("dashboard_db_query");
+            console.time("dashboard_build_data");
+            const dashboardData = buildConsumptionDashboardExtended(rows, bucket, budgets.map((item) => ({
                 amount: Number(item.amount),
                 category: item.category,
                 platform: item.platform,
                 period: item.period,
                 scopeType: item.scopeType,
                 alertPercent: item.alertPercent,
-            })), { start: start ?? undefined, end: end ?? undefined }, rules));
+            })), { start: start ?? undefined, end: end ?? undefined }, rules);
+            console.timeEnd("dashboard_build_data");
+            jsonOk(res, dashboardData);
+            console.timeEnd("dashboard_total");
             return;
         }
         catch (e) {

@@ -39,7 +39,7 @@
 1. 关于页已接入更新检查接口与网页刷新更新入口。
 2. 后端已提供 `/api/update/check` 和 `/api/update/download/...`。
 3. 仓库已存在 `.github/workflows/ci.yml`。
-4. 仓库已存在 `docker-compose.yml`、`web/Dockerfile`、`src/server/Dockerfile`。
+4. 仓库已存在 `docker-compose.yml`、`web/Dockerfile`、`server/Dockerfile`。
 
 ### 4.2 缺口
 
@@ -80,7 +80,7 @@
 
 使用 `pm2` 管理两个常驻进程：
 
-1. `src/server`：执行 `npm start`
+1. `server`：执行 `npm start`
 2. `web`：执行 `npm start`
 
 原因：
@@ -120,7 +120,7 @@ GitHub Actions 使用 SSH 执行部署脚本。
 1. 校验 `git`、`node`、`npm`、`pm2`、`curl`。
 2. 检查工作目录是否干净。
 3. 同步指定分支最新代码。
-4. 在 `src/server` 执行：
+4. 在 `server` 执行：
    - `npm ci`
    - `npx prisma generate`
    - `npm run build`
@@ -136,7 +136,7 @@ GitHub Actions 使用 SSH 执行部署脚本。
 2. 校验仓库目录存在。
 3. 校验工作区干净。
 4. 拉取指定分支最新代码。
-5. 构建 `src/server` 与 `web`。
+5. 构建 `server` 与 `web`。
 6. 用 `pm2` 启动或重启服务。
 7. 通过 HTTP 请求检查服务是否恢复。
 

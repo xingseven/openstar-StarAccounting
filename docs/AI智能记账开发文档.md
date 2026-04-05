@@ -49,7 +49,7 @@
 - 在 `.env` 配置 `VOLC_API_KEY` 和 `VOLC_MODEL_ENDPOINT`。
 
 ### 第二阶段：后端视觉解析服务
-- 创建 `src/server/src/services/doubaoAi.ts`。
+- 创建 `server/src/services/doubaoAi.ts`。
 - 实现图片转 Base64 逻辑。
 - 编写调用豆包接口的代码，处理 API 响应。
 

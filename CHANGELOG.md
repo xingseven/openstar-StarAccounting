@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.82 - 2026-04-05
+
+### Changed
+
+- **后端目录收口到根目录 `server/`**:
+  - 将原 `src/server/` 后端工程整体迁移到根目录 `server/`，保留 Prisma、脚本、源码、测试与已提交构建产物。
+  - 更新根目录 `package.json` 的 `dev:server`，统一从 `server/` 启动后端。
+  - 更新 `docker-compose.yml`、`.github/workflows/ci.yml`、`.github/workflows/deploy-non-docker.yml` 与 `server/scripts/deploy-linux.sh`、`server/scripts/deploy-windows.ps1`，统一改为引用根目录 `server/`。
+  - 更新 `README.md` 与当前仍使用的运维文档，移除对 `src/server/` 的现行说明。
+
+### Docs
+
+- **目录收口文档同步**:
+  - 新增 `docs/后端目录收口开发文档.md`，记录后端迁移范围、受影响入口、执行步骤和验收标准。
+  - 更新 `docs/前端目录收口开发文档.md`，小版本升级到 `v1.0.2`，将最终仓库结构改写为 `web/ + server/`。
+  - 更新 `docs/开发进度.md`，新增 V2.3.82 进度记录。
+
+### Verified
+
+- `npm.cmd --prefix server run build`
+- `npm.cmd run build`
+- `git diff --check -- package.json docker-compose.yml README.md CHANGELOG.md docs/开发进度.md docs/前端目录收口开发文档.md docs/后端目录收口开发文档.md .github/workflows/ci.yml .github/workflows/deploy-non-docker.yml server/scripts/deploy-linux.sh server/scripts/deploy-windows.ps1`
+
 ## 2.3.81 - 2026-04-05
 
 ### Changed

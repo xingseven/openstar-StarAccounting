@@ -211,13 +211,13 @@ async function fetchAnalysisData() {
 ### 新增文件
 
 - `web/src/features/consumption/components/AIAnalysisCard.tsx` - AI 分析卡片组件
-- `src/server/src/services/aiAnalyzer.ts` - AI 分析服务（可选）
+- `server/src/services/aiAnalyzer.ts` - AI 分析服务（可选）
 
 ### 修改文件
 
 - `web/src/app/(dashboard)/consumption/page.tsx` - 集成 AI 分析卡片
 - `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx` - 调整顶部布局
-- `src/server/src/main.ts` - 新增 API 路由
+- `server/src/main.ts` - 新增 API 路由
 
 ## 8. 预计工作量
 
@@ -225,4 +225,3 @@ async function fetchAnalysisData() {
 - 前端组件：1 天
 - 调试优化：0.5 天
 - **总计：约 2 天**
-

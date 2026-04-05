@@ -137,7 +137,7 @@ $script:NpxBin = Resolve-Command @("npx.cmd", "npx")
 $script:Pm2Bin = Resolve-Command @("pm2.cmd", "pm2")
 
 $ResolvedAppDir = (Resolve-Path -LiteralPath $AppDir).Path
-$ServerDir = Join-Path $ResolvedAppDir "src\server"
+$ServerDir = Join-Path $ResolvedAppDir "server"
 $WebDir = Join-Path $ResolvedAppDir "web"
 
 if (-not (Test-Path -LiteralPath (Join-Path $ResolvedAppDir ".git"))) {

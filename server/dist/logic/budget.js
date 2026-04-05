@@ -12,7 +12,7 @@ export function calculateBudgetUsage(budget, transactions, now = new Date()) {
             continue;
         if (scopeType === "GLOBAL" && budget.category !== "ALL" && t.category !== budget.category)
             continue;
-        const d = new Date(t.date);
+        const d = t.date instanceof Date ? t.date : new Date(t.date);
         if (Number.isNaN(d.getTime()))
             continue;
         if (budget.period === "MONTHLY") {
