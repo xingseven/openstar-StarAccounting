@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.93 - 2026-04-05
+
+### Changed
+
+- **修复默认主题总览页骨架屏仍保留旧背景壳且模块结构漂移**:
+  - 更新 `web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx`，移除已删除页面样式遗留的灰色大背景壳、外层圆角容器和 `min-h-screen`。
+  - 对齐骨架屏与 `DefaultDashboard.tsx` 的外层容器间距、卡片圆角和模块布局，避免加载态与真实页面出现两套骨架。
+  - 将第三行骨架改成和真实页面一致的“日度支出趋势 + 商户构成环图 + 最近交易表格”。
+
+### Docs
+
+- **LoadingShell 同步约定与版本记录更新**:
+  - 更新 `docs/主题开发框架文档.md`，补充 Dashboard 页面调整容器、背景壳层或模块顺序时，必须同步更新对应 LoadingShell 的规则。
+  - 更新 `docs/开发进度.md`，新增 V2.3.93 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.13`。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.92 - 2026-04-05
 
 ### Changed
