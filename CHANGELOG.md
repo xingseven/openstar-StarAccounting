@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.106 - 2026-04-05
+
+### Changed
+
+- **取消首屏整体位移动画，修正真实模块上移感**:
+  - 再次更新 `web/src/components/shared/DelayedRender.tsx`，移除非懒加载场景下的整体 `translateY` 位移和延迟 reveal。
+  - 非懒加载首屏内容改为直接稳定渲染，不再出现“真实模块整体先低一点再往上回弹”的视觉偏移。
+  - `lazy=true` 的区块仍保留轻量透明度过渡，但不再影响首屏主模块。
+
+### Docs
+
+- **首屏稳定渲染规则与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，新增“非懒加载首屏内容不得再做整块位移或延迟 reveal；延迟渲染只保留给 `lazy=true` 的低优先级区块”的规则。
+  - 更新 `docs/开发进度.md`，新增 V2.3.106 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.27`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/components/shared/DelayedRender.tsx`
+- `npm.cmd run typecheck`
+- `git diff --check -- web/src/components/shared/DelayedRender.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.105 - 2026-04-05
 
 ### Changed

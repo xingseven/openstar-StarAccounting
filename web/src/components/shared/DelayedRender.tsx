@@ -21,10 +21,14 @@ export function DelayedRender({
   fallback,
 }: DelayedRenderProps) {
   const [shouldRender, setShouldRender] = useState(!lazy);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(!lazy);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!lazy) {
+      return;
+    }
+
     let timerId: number | undefined;
     let raf1: number | undefined;
     let raf2: number | undefined;
@@ -44,16 +48,6 @@ export function DelayedRender({
       }
       reveal();
     };
-
-    if (!lazy) {
-      scheduleReveal();
-
-      return () => {
-        if (timerId !== undefined) window.clearTimeout(timerId);
-        if (raf1 !== undefined) window.cancelAnimationFrame(raf1);
-        if (raf2 !== undefined) window.cancelAnimationFrame(raf2);
-      };
-    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -83,8 +77,8 @@ export function DelayedRender({
       {shouldRender ? (
         <div
           className={cn(
-            "h-full w-full transition-[transform,filter] duration-500 ease-out motion-reduce:transform-none motion-reduce:transition-none",
-            isVisible ? "translate-y-0 blur-0" : "translate-y-2 blur-[1px]"
+            "h-full w-full transition-opacity duration-300 ease-out motion-reduce:transition-none",
+            isVisible ? "opacity-100" : "opacity-0"
           )}
         >
           {children}
