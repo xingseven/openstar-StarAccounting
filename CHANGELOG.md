@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.85 - 2026-04-05
+
+### Changed
+
+- **修复总览页全部时间筛选误回退到本月**:
+  - 修正 `web/src/features/dashboard/data-loader.ts` 的查询归一化逻辑。
+  - 现在仅在完全不传 query 时才使用默认本月查询；当总览页选择“全部时间”时，空的 `startDate/endDate` 会被保留下来，不再被错误覆盖为本月区间。
+
+### Docs
+
+- **主题文档与版本记录同步**:
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.8`，补充“全部时间”筛选的空区间处理约定。
+  - `docs/开发进度.md`、`CHANGELOG.md` 同步记录本次补丁修复。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- web/src/features/dashboard/data-loader.ts docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.84 - 2026-04-05
 
 ### Changed

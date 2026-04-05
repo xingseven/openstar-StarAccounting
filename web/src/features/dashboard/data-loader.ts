@@ -116,15 +116,26 @@ function getDefaultDashboardQuery(): DashboardQuery {
 }
 
 function normalizeDashboardQuery(query?: DashboardQuery) {
-  const fallback = getDefaultDashboardQuery();
-  const normalizedSearch = query?.search?.trim();
-  const normalizedPlatform = query?.platform && query.platform !== "all" ? query.platform : undefined;
+  if (!query) {
+    const fallback = getDefaultDashboardQuery();
+    return {
+      startDate: fallback.startDate,
+      endDate: fallback.endDate,
+      compareStartDate: fallback.compareStartDate,
+      compareEndDate: fallback.compareEndDate,
+      platform: undefined,
+      search: undefined,
+    };
+  }
+
+  const normalizedSearch = query.search?.trim();
+  const normalizedPlatform = query.platform && query.platform !== "all" ? query.platform : undefined;
 
   return {
-    startDate: query?.startDate ?? fallback.startDate,
-    endDate: query?.endDate ?? fallback.endDate,
-    compareStartDate: query?.compareStartDate,
-    compareEndDate: query?.compareEndDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
+    compareStartDate: query.compareStartDate,
+    compareEndDate: query.compareEndDate,
     platform: normalizedPlatform,
     search: normalizedSearch ? normalizedSearch : undefined,
   };
