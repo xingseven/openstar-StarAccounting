@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.3.102 - 2026-04-05
+
+### Changed
+
+- **优化消费页本地筛选卡顿，保留现有图表密度与布局**:
+  - 更新 `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`，将平台筛选与关键词搜索拆成“输入状态”和“重图表结果状态”两层，让悬浮筛选器保持即时响应，重分析区域通过延迟值低优先级刷新。
+  - 为交易列表预计算金额、日期、平台、小写搜索串与备注标记，避免每次筛选都重复拼接字符串、解析日期和转换金额。
+  - 当本地未启用平台 / 搜索过滤时，分析卡片优先复用后端已经返回的分类 Pareto、平台分布与商户排行聚合结果，减少前端全量重算。
+  - 修正消费页头部商户兜底文案中的乱码，避免性能改动顺手引入异常展示。
+
+### Docs
+
+- **补充重图表页面筛选性能约定并同步版本记录**:
+  - 更新 `docs/主题开发框架文档.md`，新增“重图表页面的本地筛选输入状态与重结果状态要分层，优先用 `useDeferredValue` 等低优先级机制承接图表刷新”的规则。
+  - 更新 `docs/开发进度.md`，新增 V2.3.102 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.22`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/features/consumption/components/ConsumptionDefaultTheme.tsx src/features/consumption/components/ConsumptionLoadingShell.tsx`
+- `git diff --check -- web/src/features/consumption/components/ConsumptionDefaultTheme.tsx docs/Dashboard拖拽布局开发文档.md docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+- `npm.cmd --prefix web run typecheck` blocked by pre-existing errors in `web/src/app/(dashboard)/connections/page.tsx`
+
 ## 2.3.101 - 2026-04-05
 
 ### Docs

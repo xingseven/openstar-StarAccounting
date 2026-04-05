@@ -255,6 +255,14 @@ type CategoryTrendItem = {
   trendData: Array<{ name: string; value: number }>;
 };
 
+type PreparedTransaction = ConsumptionData["transactions"][number] & {
+  amountValue: number;
+  parsedDateValue: Date | null;
+  platformValue: string;
+  searchHaystack: string;
+  hasNote: boolean;
+};
+
 const CHART_COLORS = ["#2B6AF2", "#4CC98F", "#92C0F2", "#F5A623", "#A56BFA"];
 const TOOLTIP_STYLE = {
   borderRadius: 12,
@@ -358,18 +366,18 @@ function getBucketKey(date: Date, bucketMode: "day" | "month") {
 }
 
 function buildTrendSeriesFromTransactions(
-  transactions: ConsumptionData["transactions"],
+  transactions: PreparedTransaction[],
   bucketMode: "day" | "month",
 ) {
   const grouped = new Map<string, { expense: number; income: number }>();
 
   transactions.forEach((transaction) => {
-    const date = parseDate(transaction.date);
+    const date = transaction.parsedDateValue ?? parseDate(transaction.date);
     if (!date) return;
 
     const key = getBucketKey(date, bucketMode);
     const current = grouped.get(key) ?? { expense: 0, income: 0 };
-    const amount = toNumber(transaction.amount);
+    const amount = transaction.amountValue ?? toNumber(transaction.amount);
 
     if (isIncomeTransaction(transaction.type)) current.income += amount;
     else current.expense += amount;
@@ -404,7 +412,7 @@ function normalizeDateTimeLocal(value?: string) {
 }
 
 function buildTopCategoryRows(
-  transactions: ConsumptionData["transactions"],
+  transactions: PreparedTransaction[],
   bucketMode: "day" | "month",
 ) {
   const totals = new Map<string, number>();
@@ -413,11 +421,11 @@ function buildTopCategoryRows(
   transactions.forEach((transaction) => {
     if (isIncomeTransaction(transaction.type)) return;
 
-    const date = parseDate(transaction.date);
+    const date = transaction.parsedDateValue ?? parseDate(transaction.date);
     if (!date) return;
 
     const category = transaction.category || "未分类";
-    const amount = toNumber(transaction.amount);
+    const amount = transaction.amountValue ?? toNumber(transaction.amount);
     const bucketKey = getBucketKey(date, bucketMode);
 
     totals.set(category, (totals.get(category) ?? 0) + amount);
@@ -715,7 +723,6 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
   const [isScanning, setIsScanning] = useState(false);
   const [formState, setFormState] = useState<TransactionFormState>(DEFAULT_FORM_STATE);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const deferredSearchQuery = useDeferredValue(searchQuery);
   const { categories } = useTransactionCategories();
 
   const bucketMode = dateFilter === "all" || (dateFilter === "custom" && customPeriod?.mode === "year")
@@ -723,33 +730,52 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
     : "day";
   const currentPeriodLabel = getCurrentPeriodLabel(dateFilter, customPeriod);
   const comparisonPeriodLabel = comparisonLabel || "对比期";
-  const searchNeedle = deferredSearchQuery.trim().toLowerCase();
-  const hasLocalFilters = platformFilter !== "all" || searchNeedle.length > 0;
+  const normalizedPlatformFilter = platformFilter.toLowerCase();
+  const searchNeedle = searchQuery.trim().toLowerCase();
+  const hasLocalFilters = normalizedPlatformFilter !== "all" || searchNeedle.length > 0;
+
+  const preparedTransactions = useMemo<PreparedTransaction[]>(
+    () =>
+      data.transactions.map((transaction) => ({
+        ...transaction,
+        amountValue: toNumber(transaction.amount),
+        parsedDateValue: parseDate(transaction.date),
+        platformValue: transaction.platform.toLowerCase(),
+        searchHaystack: [
+          transaction.merchant,
+          transaction.category,
+          transaction.description,
+          getPlatformLabel(transaction.platform),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase(),
+        hasNote: Boolean(transaction.description?.trim()),
+      })),
+    [data.transactions],
+  );
 
   const filteredTransactions = useMemo(() => {
-    return data.transactions.filter((transaction) => {
+    if (!hasLocalFilters) return preparedTransactions;
+
+    return preparedTransactions.filter((transaction) => {
       const matchesPlatform =
-        platformFilter === "all" || transaction.platform.toLowerCase() === platformFilter.toLowerCase();
-
-      const haystack = [
-        transaction.merchant,
-        transaction.category,
-        transaction.description,
-        getPlatformLabel(transaction.platform),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch = !searchNeedle || haystack.includes(searchNeedle);
+        normalizedPlatformFilter === "all" || transaction.platformValue === normalizedPlatformFilter;
+      const matchesSearch = !searchNeedle || transaction.searchHaystack.includes(searchNeedle);
       return matchesPlatform && matchesSearch;
     });
-  }, [data.transactions, platformFilter, searchNeedle]);
+  }, [hasLocalFilters, normalizedPlatformFilter, preparedTransactions, searchNeedle]);
 
-  const analysisTransactions = hasLocalFilters ? filteredTransactions : data.transactions;
-  const notedTransactions = filteredTransactions.filter((transaction) => Boolean(transaction.description?.trim()));
-  const displayTransactions = notesOnly ? notedTransactions : filteredTransactions;
-  const visibleTransactions = displayTransactions.slice(0, 5);
+  const analysisTransactions = filteredTransactions;
+  const notedTransactions = useMemo(
+    () => filteredTransactions.filter((transaction) => transaction.hasNote),
+    [filteredTransactions],
+  );
+  const displayTransactions = useMemo(
+    () => (notesOnly ? notedTransactions : filteredTransactions),
+    [filteredTransactions, notedTransactions, notesOnly],
+  );
+  const visibleTransactions = useMemo(() => displayTransactions.slice(0, 5), [displayTransactions]);
 
   const activeTrend = useMemo<TrendPoint[]>(() => {
     if (hasLocalFilters) {
@@ -801,12 +827,20 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
   ]);
 
   const categoryBreakdownData = useMemo(() => {
+    if (!hasLocalFilters) {
+      return data.pareto.slice(0, 5).map((item, index) => ({
+        name: item.name,
+        value: Math.round(toNumber(item.value)),
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      }));
+    }
+
     const categoryTotals = new Map<string, number>();
 
     analysisTransactions.forEach((transaction) => {
       if (isIncomeTransaction(transaction.type)) return;
       const category = transaction.category || "未分类";
-      categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + toNumber(transaction.amount));
+      categoryTotals.set(category, (categoryTotals.get(category) ?? 0) + transaction.amountValue);
     });
 
     if (categoryTotals.size > 0) {
@@ -825,15 +859,23 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
       value: Math.round(toNumber(item.value)),
       color: CHART_COLORS[index % CHART_COLORS.length],
     }));
-  }, [analysisTransactions, data.pareto]);
+  }, [analysisTransactions, data.pareto, hasLocalFilters]);
 
   const platformData = useMemo(() => {
+    if (!hasLocalFilters) {
+      return data.platformDistribution.slice(0, 5).map((item, index) => ({
+        name: item.name,
+        value: Math.round(toNumber(item.value)),
+        fill: item.fill || CHART_COLORS[index % CHART_COLORS.length],
+      }));
+    }
+
     const grouped = new Map<string, number>();
 
     analysisTransactions.forEach((transaction) => {
       if (isIncomeTransaction(transaction.type)) return;
       const platform = getPlatformLabel(transaction.platform);
-      grouped.set(platform, (grouped.get(platform) ?? 0) + toNumber(transaction.amount));
+      grouped.set(platform, (grouped.get(platform) ?? 0) + transaction.amountValue);
     });
 
     if (grouped.size > 0) {
@@ -852,7 +894,7 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
       value: Math.round(toNumber(item.value)),
       fill: item.fill || CHART_COLORS[index % CHART_COLORS.length],
     }));
-  }, [analysisTransactions, data.platformDistribution]);
+  }, [analysisTransactions, data.platformDistribution, hasLocalFilters]);
 
   const topCategories = useMemo(() => {
     const derived = buildTopCategoryRows(analysisTransactions, bucketMode);
@@ -867,20 +909,24 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
   }, [analysisTransactions, bucketMode, data.pareto]);
 
   const qualityTransactionCount = analysisTransactions.length;
-  const qualityNotedCount = analysisTransactions.filter((item) => Boolean(item.description?.trim())).length;
+  const qualityNotedCount = analysisTransactions.filter((item) => item.hasNote).length;
   const noteCoverage = qualityTransactionCount > 0 ? (qualityNotedCount / qualityTransactionCount) * 100 : 0;
   const averageExpense =
     data.summary.expenseCount > 0 ? data.summary.totalExpense / data.summary.expenseCount : 0;
   const netBalance = data.summary.totalIncome - data.summary.totalExpense;
 
   const topMerchantName = useMemo(() => {
+    if (!hasLocalFilters) {
+      return data.merchants[0]?.merchant || "暂无";
+    }
+
     if (analysisTransactions.length > 0) {
       const grouped = new Map<string, number>();
 
       analysisTransactions.forEach((transaction) => {
         if (isIncomeTransaction(transaction.type)) return;
         const merchant = transaction.merchant || getPlatformLabel(transaction.platform);
-        grouped.set(merchant, (grouped.get(merchant) ?? 0) + toNumber(transaction.amount));
+        grouped.set(merchant, (grouped.get(merchant) ?? 0) + transaction.amountValue);
       });
 
       const topMerchant = Array.from(grouped.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
@@ -888,7 +934,7 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
     }
 
     return data.merchants[0]?.merchant || "暂无";
-  }, [analysisTransactions, data.merchants]);
+  }, [analysisTransactions, data.merchants, hasLocalFilters]);
 
   const merchantRankings = useMemo(
     () =>
@@ -2373,14 +2419,16 @@ export function ConsumptionDefaultTheme(props: ConsumptionViewProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [platformFilter, setPlatformFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredPlatformFilter = useDeferredValue(platformFilter);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   return (
     <>
       <ConsumptionDefaultThemeView
         {...props}
-        platformFilter={platformFilter}
+        platformFilter={deferredPlatformFilter}
         onPlatformFilterChange={setPlatformFilter}
-        searchQuery={searchQuery}
+        searchQuery={deferredSearchQuery}
         onSearchQueryChange={setSearchQuery}
       />
       <FloatingFilter
