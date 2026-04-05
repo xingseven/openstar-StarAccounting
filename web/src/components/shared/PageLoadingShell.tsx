@@ -207,6 +207,364 @@ export function LoadingFeatureCard({
   );
 }
 
+type WorkspaceTone = "white" | "blue" | "emerald" | "sky";
+
+function getWorkspaceToneClass(tone: WorkspaceTone) {
+  switch (tone) {
+    case "blue":
+      return "bg-[#2B6AF2] text-white";
+    case "emerald":
+      return "bg-[#4CC98F] text-white";
+    case "sky":
+      return "bg-[#D8E6FC]";
+    default:
+      return "bg-white shadow-[0_8px_30px_rgb(0,0,0,0.03)]";
+  }
+}
+
+function getWorkspaceSkeletonClass(tone: WorkspaceTone, kind: "primary" | "secondary" | "muted") {
+  if (tone === "white") {
+    if (kind === "primary") return "bg-slate-200";
+    if (kind === "secondary") return "bg-slate-100";
+    return "bg-slate-50";
+  }
+
+  if (tone === "sky") {
+    if (kind === "primary") return "bg-white/75";
+    if (kind === "secondary") return "bg-white/60";
+    return "bg-white/40";
+  }
+
+  if (kind === "primary") return "bg-white/50";
+  if (kind === "secondary") return "bg-white/35";
+  return "bg-white/20";
+}
+
+export function LoadingWorkspaceCard({
+  children,
+  className,
+  paddingClassName = "p-3 sm:p-6",
+  tone = "white",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  paddingClassName?: string;
+  tone?: WorkspaceTone;
+}) {
+  return (
+    <section
+      className={cn(
+        "relative overflow-hidden rounded-[20px] sm:rounded-[24px]",
+        getWorkspaceToneClass(tone),
+        paddingClassName,
+        className,
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
+export function LoadingWorkspaceCardHeader({
+  className,
+  titleWidthClassName = "w-20",
+  action = "dots",
+  actionWidthClassName = "w-14",
+  tone = "white",
+}: {
+  className?: string;
+  titleWidthClassName?: string;
+  action?: "dots" | "pill" | "badge" | "none";
+  actionWidthClassName?: string;
+  tone?: WorkspaceTone;
+}) {
+  return (
+    <div className={cn("flex items-center justify-between gap-2", className)}>
+      <Skeleton
+        className={cn(
+          "h-4 rounded-full sm:h-5",
+          titleWidthClassName,
+          getWorkspaceSkeletonClass(tone, "primary"),
+        )}
+      />
+
+      {action === "none" ? null : action === "dots" ? (
+        <Skeleton className={cn("h-6 w-6 rounded-full", getWorkspaceSkeletonClass(tone, "secondary"))} />
+      ) : (
+        <Skeleton
+          className={cn(
+            "h-5 rounded-full sm:h-6",
+            actionWidthClassName,
+            getWorkspaceSkeletonClass(tone, "secondary"),
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
+export function LoadingWorkspaceHighlightCard({
+  className,
+  tone = "blue",
+  showInlineStat = false,
+  showFooter = true,
+  showTopMetaLine = false,
+}: {
+  className?: string;
+  tone?: "blue" | "emerald";
+  showInlineStat?: boolean;
+  showFooter?: boolean;
+  showTopMetaLine?: boolean;
+}) {
+  return (
+    <LoadingWorkspaceCard tone={tone} className={className} paddingClassName="p-3 pb-4 sm:p-3 sm:pb-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-2">
+          <Skeleton className={cn("h-4 w-16 rounded-full", getWorkspaceSkeletonClass(tone, "primary"))} />
+          {showTopMetaLine ? (
+            <Skeleton className={cn("h-3 w-24 rounded-full sm:w-32", getWorkspaceSkeletonClass(tone, "secondary"))} />
+          ) : null}
+        </div>
+        <Skeleton className={cn("h-6 w-6 rounded-full sm:h-5 sm:w-5", getWorkspaceSkeletonClass(tone, "muted"))} />
+      </div>
+
+      <div className={cn("mt-2", showInlineStat && "flex items-baseline gap-2 sm:mt-4")}>
+        <Skeleton className={cn("h-7 w-20 rounded-lg sm:h-8 sm:w-24", getWorkspaceSkeletonClass(tone, "primary"))} />
+        {showInlineStat ? (
+          <Skeleton className={cn("h-3 w-14 rounded-full sm:w-16", getWorkspaceSkeletonClass(tone, "secondary"))} />
+        ) : null}
+      </div>
+
+      {showFooter ? (
+        <Skeleton className={cn("mt-2 h-3 w-32 rounded-full sm:mt-6 sm:w-40", getWorkspaceSkeletonClass(tone, "secondary"))} />
+      ) : null}
+    </LoadingWorkspaceCard>
+  );
+}
+
+export function LoadingWorkspaceProgressCard({
+  className,
+  rowCount = 3,
+  footerVariant = "split",
+}: {
+  className?: string;
+  rowCount?: number;
+  footerVariant?: "split" | "panel" | "none";
+}) {
+  return (
+    <LoadingWorkspaceCard className={className} paddingClassName="p-3 sm:p-3">
+      <LoadingWorkspaceCardHeader />
+
+      <div className="mt-3 space-y-2 sm:mt-3">
+        {Array.from({ length: rowCount }).map((_, index) => (
+          <div key={`workspace-progress-${index}`} className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <Skeleton className="h-3 w-20 rounded-full bg-slate-200" />
+              <Skeleton className="h-3 w-10 rounded-full bg-slate-100" />
+            </div>
+            <Skeleton className="h-2 w-full rounded-full bg-slate-100" />
+          </div>
+        ))}
+      </div>
+
+      {footerVariant === "split" ? (
+        <div className="mt-3 flex items-center justify-between rounded-[16px] bg-[#f8fafc] px-3 py-2 sm:mt-4">
+          <div className="space-y-1">
+            <Skeleton className="h-3 w-16 rounded-full bg-slate-100" />
+            <Skeleton className="h-3 w-12 rounded-full bg-slate-200" />
+          </div>
+          <div className="space-y-1 text-right">
+            <Skeleton className="ml-auto h-3 w-16 rounded-full bg-slate-100" />
+            <Skeleton className="ml-auto h-3 w-8 rounded-full bg-slate-200" />
+          </div>
+        </div>
+      ) : null}
+
+      {footerVariant === "panel" ? (
+        <div className="mt-4 rounded-[16px] bg-[#f8fafc] px-3 py-2">
+          <div className="flex justify-between gap-3">
+            <Skeleton className="h-7 w-16 rounded-lg bg-slate-200" />
+            <Skeleton className="h-7 w-10 rounded-lg bg-slate-100" />
+          </div>
+        </div>
+      ) : null}
+    </LoadingWorkspaceCard>
+  );
+}
+
+export function LoadingWorkspaceTrendList({
+  className,
+  rowCount = 3,
+  tone = "sky",
+  showSparkline = true,
+  rowBackground = false,
+}: {
+  className?: string;
+  rowCount?: number;
+  tone?: WorkspaceTone;
+  showSparkline?: boolean;
+  rowBackground?: boolean;
+}) {
+  return (
+    <div className={cn("space-y-2 sm:space-y-3", className)}>
+      {Array.from({ length: rowCount }).map((_, index) => (
+        <div
+          key={`workspace-trend-row-${index}`}
+          className={cn("flex items-center gap-2 sm:gap-3", rowBackground && "rounded-[18px] bg-[#f8fafc] p-3")}
+        >
+          <div className="flex w-[80px] items-center gap-1.5 sm:w-[100px] sm:gap-2">
+            <Skeleton className={cn("h-2.5 w-2.5 rounded-sm sm:h-3 sm:w-3", getWorkspaceSkeletonClass(tone, "primary"))} />
+            <Skeleton className={cn("h-3 w-14 rounded-full sm:w-20", getWorkspaceSkeletonClass(tone, "secondary"))} />
+          </div>
+          {showSparkline ? (
+            <Skeleton className={cn("h-6 flex-1 rounded-full sm:h-8", getWorkspaceSkeletonClass(tone, "secondary"))} />
+          ) : (
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className={cn("h-3 w-24 rounded-full", getWorkspaceSkeletonClass(tone, "secondary"))} />
+              <Skeleton className={cn("h-2 w-full rounded-full", getWorkspaceSkeletonClass(tone, "muted"))} />
+            </div>
+          )}
+          <Skeleton className={cn("h-3 w-[60px] rounded-full sm:w-[70px]", getWorkspaceSkeletonClass(tone, "primary"))} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function LoadingWorkspaceChartCard({
+  className,
+  chart = "area",
+  headerAction = "pill",
+  tone = "white",
+  bodyHeightClassName = "h-[140px] sm:h-[180px] md:h-[220px]",
+}: {
+  className?: string;
+  chart?: "area" | "bars" | "horizontal-bars" | "donut" | "stack";
+  headerAction?: "dots" | "pill" | "badge" | "none";
+  tone?: WorkspaceTone;
+  bodyHeightClassName?: string;
+}) {
+  return (
+    <LoadingWorkspaceCard className={className}>
+      <LoadingWorkspaceCardHeader action={headerAction} tone={tone} className="mb-3 sm:mb-6" />
+
+      <div className={bodyHeightClassName}>
+        {chart === "area" ? (
+          <div className="flex h-full w-full items-end opacity-20">
+            <svg viewBox="0 0 200 80" className="h-full w-full" preserveAspectRatio="none">
+              <path d="M0 60 Q 30 20, 60 40 T 120 30 T 200 50 L 200 80 L 0 80 Z" fill="currentColor" className="text-slate-300" />
+            </svg>
+          </div>
+        ) : null}
+
+        {chart === "bars" ? (
+          <div className="flex h-full w-full items-end gap-2 px-3 sm:gap-3 sm:px-4">
+            {["35%", "55%", "45%", "70%", "50%", "80%", "60%"].map((height, index) => (
+              <Skeleton key={`workspace-bars-${index}`} className="w-full rounded-t-md bg-slate-200" style={{ height }} />
+            ))}
+          </div>
+        ) : null}
+
+        {chart === "horizontal-bars" ? (
+          <div className="flex h-full w-full flex-col justify-center gap-3 px-1">
+            {["88%", "72%", "64%", "49%", "36%"].map((width, index) => (
+              <div key={`workspace-horizontal-bars-${index}`} className="flex items-center gap-2">
+                <Skeleton className="h-3 w-12 rounded-full bg-slate-200" />
+                <Skeleton className="h-4 rounded-full bg-slate-200" style={{ width }} />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {chart === "donut" ? (
+          <div className="flex h-full">
+            <div className="flex w-1/2 items-center justify-center">
+              <Skeleton className="h-[96px] w-[96px] rounded-full bg-slate-100 sm:h-[120px] sm:w-[120px] md:h-[140px] md:w-[140px]" />
+            </div>
+            <div className="flex w-1/2 flex-col justify-center gap-2 pl-2 sm:gap-2.5 sm:pl-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={`workspace-donut-legend-${index}`} className="flex items-center gap-2">
+                  <Skeleton className="h-2.5 w-2.5 rounded-sm bg-slate-200" />
+                  <Skeleton className="h-3 flex-1 rounded-full bg-slate-200" />
+                  <Skeleton className="h-3 w-10 rounded-full bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {chart === "stack" ? (
+          <div className="space-y-3">
+            <Skeleton className="h-11 w-full rounded-2xl bg-slate-100" />
+            <Skeleton className="h-11 w-full rounded-2xl bg-blue-100" />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={`workspace-stack-${index}`} className="rounded-[18px] bg-slate-50 p-3">
+                <Skeleton className="h-3 w-16 rounded-full bg-slate-200" />
+                <Skeleton className="mt-2 h-4 w-24 rounded-full bg-slate-200" />
+                <Skeleton className="mt-2 h-3 w-28 rounded-full bg-slate-100" />
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </LoadingWorkspaceCard>
+  );
+}
+
+export function LoadingWorkspaceTableCard({
+  className,
+  columns = 5,
+  rows = 5,
+  headerMetaWidthClassName = "w-12",
+}: {
+  className?: string;
+  columns?: number;
+  rows?: number;
+  headerMetaWidthClassName?: string;
+}) {
+  return (
+    <LoadingWorkspaceCard className={className} paddingClassName="p-0">
+      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-20 rounded-full bg-slate-200 sm:w-24" />
+          <Skeleton className="h-3 w-28 rounded-full bg-slate-100 sm:w-36" />
+        </div>
+        <Skeleton className={cn("h-6 rounded-full bg-slate-100", headerMetaWidthClassName)} />
+      </div>
+
+      <div className="px-2 pb-2 sm:px-4 sm:pb-4">
+        <div className="border-b border-slate-200 pb-1.5 sm:pb-2">
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+            {Array.from({ length: columns }).map((_, index) => (
+              <Skeleton key={`workspace-table-head-${index}`} className="h-3 rounded-full bg-slate-100" />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-2">
+          {Array.from({ length: rows }).map((_, rowIndex) => (
+            <div
+              key={`workspace-table-row-${rowIndex}`}
+              className="grid items-center gap-2 border-b border-slate-100 pb-2 last:border-b-0"
+              style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+            >
+              {Array.from({ length: columns }).map((__, colIndex) => (
+                <Skeleton
+                  key={`workspace-table-cell-${rowIndex}-${colIndex}`}
+                  className={cn(
+                    "h-3 rounded-full",
+                    colIndex === 0 ? "w-10 bg-slate-100" : colIndex === columns - 1 ? "ml-auto w-12 bg-slate-200" : "w-full max-w-[64px] bg-slate-200",
+                  )}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </LoadingWorkspaceCard>
+  );
+}
+
 export function LoadingPageShell({
   children,
   className,

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.97 - 2026-04-05
+
+### Changed
+
+- **默认主题页族公共骨架迁移收口**:
+  - 扩充 `web/src/components/shared/PageLoadingShell.tsx`，新增默认主题工作台语义的共享骨架块，包括工作台卡片壳、卡片头、强调指标卡、进度卡、趋势列表、图表卡和表格卡。
+  - 重写 `web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx`，将默认主题总览页骨架改成“共享工作台块 + 页面薄封装”组合。
+  - 重写 `web/src/features/assets/components/themes/AssetsLoadingShell.tsx`，让默认主题资产页骨架复用同一套共享工作台块，只保留关注账户列表这一小段页面局部占位。
+  - 现在默认主题页族中的消费页、储蓄页、借贷页、总览页、资产页都已经接到公共骨架框架上。
+
+### Docs
+
+- **补充公共骨架迁移知识点和注意点**:
+  - 更新 `docs/主题开发框架文档.md`，新增“公共骨架迁移知识点”和“公共骨架迁移注意点”，并明确默认主题页族的迁移范围。
+  - 更新 `docs/开发进度.md`，新增 V2.3.97 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.17`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/components/shared/PageLoadingShell.tsx src/features/dashboard/components/themes/DashboardLoadingShell.tsx src/features/assets/components/themes/AssetsLoadingShell.tsx`
+- `git diff --check -- web/src/components/shared/PageLoadingShell.tsx web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx web/src/features/assets/components/themes/AssetsLoadingShell.tsx docs/主题开发框架文档.md`
+
 ## 2.3.96 - 2026-04-05
 
 ### Docs
