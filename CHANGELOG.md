@@ -1,5 +1,62 @@
 # Changelog
 
+## 2.3.76 - 2026-04-05
+
+### Changed
+
+- **web 前端并回主仓库统一追踪**:
+  - 将根仓库中的 `web` 从 gitlink 目录调整为普通受管目录，后续前端改动可直接随主仓库提交和推送。
+  - 补齐根仓库对 `web/.next`、`web/playwright-report` 等前端产物的忽略规则，避免并仓后误提交构建输出。
+
+### Docs
+
+- **主题文档与版本记录同步**:
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.2`，补充 `web/` 已并回主仓库统一管理的说明。
+  - `docs/开发进度.md`、`CHANGELOG.md` 同步记录本次仓库结构调整。
+
+### Verified
+
+- `npm.cmd run typecheck`
+
+## 2.3.75 - 2026-04-05
+
+### Changed
+
+- **总览路由补充当前 Dashboard 文件定位信息**:
+  - `web/src/app/(dashboard)/page.tsx` 新增 `data-dashboard-entry-file`，可直接看到当前主题实际命中的总览文件名。
+  - 路由入口同时引入 `getDashboardEntryFileName(themeId)`，让“当前主题 -> 实际总览文件”的定位链路更直接。
+
+### Docs
+
+- **主题开发文档补充总览文件反查说明**:
+  - `docs/主题开发框架文档.md` 升级到 `v2.1 / v2.1.1`。
+  - 补充 `page.tsx -> getDashboardEntryFileName(themeId) -> DASHBOARD_ENTRY_FILES -> [ThemeName]Dashboard.tsx` 的查找路径。
+
+### Verified
+
+- `npm.cmd run typecheck`
+- `npm.cmd run build` 失败：Next.js 在预渲染 `/_global-error` 时抛出 `Expected workUnitAsyncStorage to have a store`
+
+## 2.3.74 - 2026-04-05
+
+### Changed
+
+- **主题系统改为三层分发架构**:
+  - 新增 `web/src/themes/theme-manifest.ts`，将 Dashboard 变体、Header、Sidebar、移动端导航和主题预览风格统一收口到接线层。
+  - 新增 `web/src/themes/dashboard-registry.tsx`，集中管理 Dashboard 动态加载注册表，移除总览页入口中的长串主题条件分支。
+  - `web/src/components/shared/Header.tsx`、`web/src/components/shared/Sidebar.tsx`、`web/src/components/shared/MobileBottomNav.tsx` 与 `web/src/app/(dashboard)/themes/page.tsx` 改为优先读取 manifest，而不是继续直接判断主题名。
+
+### Docs
+
+- **主题开发文档同步升级**:
+  - 重写 `docs/主题开发框架文档.md`，正式切换为 `token -> manifest -> registry -> shared pages / dedicated overrides` 的说明方式。
+  - 补充新增主题步骤、共享页拆分边界、Dashboard 注册规则和反模式清单。
+
+### Verified
+
+- `npm.cmd run typecheck`
+- `npm.cmd run build`
+
 ## 2.3.73 - 2026-04-04
 
 ### Fixed

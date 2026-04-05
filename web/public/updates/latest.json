@@ -1,0 +1,21 @@
+{
+  "version": "2.3.74",
+  "publishedAt": "2026-04-05",
+  "notes": [
+    "主题系统新增 manifest 接线层，Dashboard、Header、Sidebar、移动端导航和主题预览不再直接在页面里堆 themeId 分支。",
+    "Dashboard 动态加载注册表集中到 web/src/themes/dashboard-registry.tsx，后续新增主题时可以优先复用已有变体。",
+    "主题开发框架文档已同步升级为 token -> manifest -> registry 分层说明，后续扩展边界更清晰。"
+  ],
+  "web": {
+    "version": "2.3.74",
+    "action": "refresh",
+    "description": "网页版更新到 2.3.74 后，刷新页面即可获取新的主题分层架构与统一接线逻辑。",
+    "downloads": []
+  },
+  "app": {
+    "version": "2.3.74",
+    "action": "reinstall",
+    "description": "移动端 App 暂未上传新的安装包。后续完成 2.3.74 安装包后，这里会自动展示下载入口。",
+    "downloads": []
+  }
+}
