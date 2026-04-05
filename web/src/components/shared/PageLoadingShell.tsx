@@ -52,9 +52,16 @@ function LoadingHeroStatCard() {
   );
 }
 
-function LoadingMetricCard() {
+export function LoadingMetricCard({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className="rounded-[18px] p-3 sm:rounded-[20px] sm:p-4" style={{ background: "var(--theme-metric-bg)" }}>
+    <div
+      className={cn("rounded-[18px] p-3 sm:rounded-[20px] sm:p-4", className)}
+      style={{ background: "var(--theme-metric-bg)" }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <Skeleton className="h-3.5 w-20 rounded-full bg-white/70 sm:h-4" />
@@ -69,7 +76,7 @@ function LoadingMetricCard() {
   );
 }
 
-function LoadingBars({
+export function LoadingBars({
   className,
 }: {
   className?: string;
@@ -89,13 +96,15 @@ function LoadingBars({
   );
 }
 
-function LoadingListRows({
+export function LoadingListRows({
   count = 4,
+  className,
 }: {
   count?: number;
+  className?: string;
 }) {
   return (
-    <div className="space-y-2.5">
+    <div className={cn("space-y-2.5", className)}>
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={`loading-row-${index}`}
@@ -116,10 +125,14 @@ function LoadingListRows({
   );
 }
 
-function LoadingDonut() {
+export function LoadingDonut({
+  className,
+}: {
+  className?: string;
+}) {
   return (
     <div
-      className="grid items-center gap-4 rounded-[20px] p-4 sm:grid-cols-[160px_minmax(0,1fr)]"
+      className={cn("grid items-center gap-4 rounded-[20px] p-4 sm:grid-cols-[160px_minmax(0,1fr)]", className)}
       style={{ background: "var(--theme-dialog-section-bg)" }}
     >
       <Skeleton className="mx-auto h-[132px] w-[132px] rounded-full sm:h-[160px] sm:w-[160px]" />
@@ -135,13 +148,15 @@ function LoadingDonut() {
   );
 }
 
-function LoadingSurfaceHeader({
+export function LoadingSurfaceHeader({
   actionWidthClassName = "w-24",
+  className,
 }: {
   actionWidthClassName?: string;
+  className?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3">
+    <div className={cn("flex items-start justify-between gap-3", className)}>
       <div className="space-y-2">
         <Skeleton className="h-4 w-24 rounded-full" />
         <Skeleton className="h-7 w-40 rounded-[14px] sm:h-8 sm:w-52" />
@@ -152,9 +167,13 @@ function LoadingSurfaceHeader({
   );
 }
 
-function LoadingCard() {
+export function LoadingFeatureCard({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className={cn(THEME_SURFACE_CLASS, "p-4 sm:p-5")}>
+    <div className={cn(THEME_SURFACE_CLASS, "p-4 sm:p-5", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Skeleton className="h-11 w-11 rounded-2xl" />
@@ -192,23 +211,72 @@ export function LoadingPageShell({
   children,
   className,
   maxWidth = "dashboard",
+  ...props
 }: {
   children: React.ReactNode;
   className?: string;
   maxWidth?: "dashboard" | "5xl";
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      aria-busy="true"
-      aria-live="polite"
+      aria-busy={props["aria-busy"] ?? "true"}
+      aria-live={props["aria-live"] ?? "polite"}
       className={cn(
         "mx-auto space-y-4 pb-2 sm:space-y-5",
         maxWidth === "dashboard" ? "max-w-[1680px]" : "max-w-5xl",
         className,
       )}
+      {...props}
     >
       {children}
     </div>
+  );
+}
+
+export function LoadingSurfaceShell({
+  children,
+  className,
+  paddingClassName = "p-3.5 sm:p-6",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  paddingClassName?: string;
+}) {
+  return <section className={cn(THEME_SURFACE_CLASS, paddingClassName, className)}>{children}</section>;
+}
+
+export function LoadingCompactHeroShell({
+  className,
+  titleWidthClassName = "w-36",
+  descriptionWidthClassName = "w-52",
+  actionWidthClassName = "w-28",
+  darkAction = true,
+}: {
+  className?: string;
+  titleWidthClassName?: string;
+  descriptionWidthClassName?: string;
+  actionWidthClassName?: string;
+  darkAction?: boolean;
+}) {
+  return (
+    <section className={cn(THEME_HERO_CLASS, "relative overflow-hidden p-4 sm:p-6 lg:p-8", className)}>
+      <div className="absolute inset-y-0 right-0 hidden w-[30%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.12),transparent_70%)] lg:block" />
+      <div className="absolute -right-16 top-6 h-40 w-40 rounded-full bg-blue-200/30 blur-3xl sm:h-52 sm:w-52" />
+
+      <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <Skeleton className={cn("h-6 rounded-[14px] bg-white/80 sm:h-7", titleWidthClassName)} />
+          <Skeleton className={cn("h-4 rounded-full bg-white/60", descriptionWidthClassName)} />
+        </div>
+        <Skeleton
+          className={cn(
+            "h-10 rounded-2xl",
+            actionWidthClassName,
+            darkAction ? "bg-slate-900/85" : "bg-white/75",
+          )}
+        />
+      </div>
+    </section>
   );
 }
 
@@ -400,8 +468,59 @@ export function LoadingCardGrid({
   return (
     <div className={cn("grid gap-3 sm:gap-4", gridClassName, className)}>
       {Array.from({ length: count }).map((_, index) => (
-        <LoadingCard key={`loading-card-${index}`} />
+        <LoadingFeatureCard key={`loading-card-${index}`} />
       ))}
     </div>
+  );
+}
+
+export function LoadingTableSurface({
+  className,
+  columns = 5,
+  rows = 5,
+}: {
+  className?: string;
+  columns?: number;
+  rows?: number;
+}) {
+  return (
+    <LoadingSurfaceShell className={className} paddingClassName="p-0">
+      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-20 rounded-full bg-slate-200 sm:w-24" />
+          <Skeleton className="h-3 w-28 rounded-full bg-slate-100 sm:w-36" />
+        </div>
+      </div>
+
+      <div className="px-2 pb-2 sm:px-4 sm:pb-4">
+        <div className="border-b border-slate-200 pb-1.5 sm:pb-2">
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+            {Array.from({ length: columns }).map((_, index) => (
+              <Skeleton key={`loading-table-head-${index}`} className="h-3 rounded-full bg-slate-100" />
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-2">
+          {Array.from({ length: rows }).map((_, rowIndex) => (
+            <div
+              key={`loading-table-row-${rowIndex}`}
+              className="grid items-center gap-2 border-b border-slate-100 pb-2 last:border-b-0"
+              style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+            >
+              {Array.from({ length: columns }).map((__, colIndex) => (
+                <Skeleton
+                  key={`loading-table-cell-${rowIndex}-${colIndex}`}
+                  className={cn(
+                    "h-3 rounded-full",
+                    colIndex === 0 ? "w-10 bg-slate-100" : colIndex === columns - 1 ? "ml-auto w-12 bg-slate-200" : "w-full max-w-[64px] bg-slate-200",
+                  )}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </LoadingSurfaceShell>
   );
 }

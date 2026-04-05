@@ -1,3 +1,9 @@
+import {
+  LoadingCardGrid,
+  LoadingChartSurface,
+  LoadingMetricGrid,
+  LoadingPageShell,
+} from "@/components/shared/PageLoadingShell";
 import { GridDecoration } from "@/components/shared/GridDecoration";
 import { Skeleton } from "@/components/shared/Skeletons";
 
@@ -12,62 +18,9 @@ function LoadingHeroStat() {
   );
 }
 
-function LoadingMetricShell() {
-  return (
-    <div className="rounded-[20px] p-3 sm:rounded-[22px] sm:p-4" style={{ background: "var(--theme-metric-bg)" }}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-3.5 w-20 rounded-full bg-white/70" />
-          <Skeleton className="h-7 w-28 rounded-[12px] bg-white/85 sm:h-8" />
-          <Skeleton className="h-3 w-24 rounded-full bg-white/60" />
-        </div>
-        <div className="rounded-2xl bg-white/78 p-2.5 ring-1 ring-white/70">
-          <Skeleton className="h-4 w-4 rounded bg-slate-200" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LoadingAssetCard() {
-  return (
-    <div className="overflow-hidden rounded-[22px] sm:rounded-[24px]" style={{ background: "var(--theme-surface-bg)" }}>
-      <div className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-11 w-11 shrink-0 rounded-2xl" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-28 rounded-full" />
-              <Skeleton className="h-3 w-20 rounded-full opacity-60" />
-            </div>
-          </div>
-          <Skeleton className="h-7 w-7 rounded-xl opacity-50" />
-        </div>
-
-        <div className="mt-4 space-y-2">
-          <Skeleton className="h-3.5 w-16 rounded-full opacity-60" />
-          <Skeleton className="h-8 w-36 rounded-[12px]" />
-          <Skeleton className="h-3 w-24 rounded-full opacity-50" />
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-[14px] p-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
-            <Skeleton className="mb-1.5 h-3 w-12 rounded-full opacity-60" />
-            <Skeleton className="h-4 w-20 rounded-full" />
-          </div>
-          <div className="rounded-[14px] p-3" style={{ background: "var(--theme-dialog-section-bg)" }}>
-            <Skeleton className="mb-1.5 h-3 w-12 rounded-full opacity-60" />
-            <Skeleton className="h-4 w-16 rounded-full" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function AssetsLoadingShell() {
   return (
-    <div aria-busy="true" aria-live="polite" className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5">
+    <LoadingPageShell>
       <section className="relative overflow-hidden rounded-[22px] [background:var(--theme-hero-bg)] p-4 sm:rounded-[26px] sm:p-6 lg:p-8">
         <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.16),transparent_70%)] lg:block" />
         <div className="absolute -right-20 top-8 h-44 w-44 rounded-full bg-blue-200/35 blur-3xl sm:h-56 sm:w-56" />
@@ -96,9 +49,9 @@ export function AssetsLoadingShell() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <LoadingHeroStat />
-            <LoadingHeroStat />
-            <LoadingHeroStat />
+            {Array.from({ length: 3 }).map((_, index) => (
+              <LoadingHeroStat key={`asset-hero-stat-${index}`} />
+            ))}
           </div>
 
           <div className="overflow-hidden rounded-[20px] bg-[var(--theme-dark-panel-bg)] p-4 text-white sm:p-5">
@@ -119,7 +72,7 @@ export function AssetsLoadingShell() {
               </div>
               <div className="grid gap-3 xl:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="rounded-[18px] border border-white/10 bg-white/[0.04] p-4 space-y-2.5">
+                  <div key={`asset-hero-progress-${index}`} className="rounded-[18px] border border-white/10 bg-white/[0.04] p-4 space-y-2.5">
                     <Skeleton className="h-3 w-20 rounded-full bg-white/20" />
                     <div className="space-y-1.5">
                       <div className="flex justify-between">
@@ -138,37 +91,12 @@ export function AssetsLoadingShell() {
         </div>
       </section>
 
-      <div className="grid gap-3 md:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <LoadingMetricShell key={index} />
-        ))}
-      </div>
+      <LoadingMetricGrid count={4} />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.4fr)]">
-        <div className="overflow-hidden rounded-[22px] p-4 sm:p-6" style={{ background: "var(--theme-surface-bg)" }}>
-          <div className="space-y-2 mb-5">
-            <Skeleton className="h-3.5 w-20 rounded-full opacity-60" />
-            <Skeleton className="h-7 w-36 rounded-[12px]" />
-          </div>
-          <div className="grid items-center gap-4 rounded-[18px] p-4 sm:grid-cols-[160px_minmax(0,1fr)]" style={{ background: "var(--theme-dialog-section-bg)" }}>
-            <Skeleton className="mx-auto h-[160px] w-[160px] rounded-full" />
-            <div className="space-y-3">
-              {["70%", "55%", "45%"].map((width, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Skeleton className="h-2.5 w-2.5 rounded-full" />
-                  <Skeleton className="h-3.5 rounded-full" style={{ width }} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <LoadingAssetCard key={index} />
-          ))}
-        </div>
+        <LoadingChartSurface variant="donut" />
+        <LoadingCardGrid count={3} />
       </div>
-    </div>
+    </LoadingPageShell>
   );
 }

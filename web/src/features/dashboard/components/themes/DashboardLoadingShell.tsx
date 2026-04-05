@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/shared/Skeletons";
+import { LoadingPageShell, LoadingTableSurface } from "@/components/shared/PageLoadingShell";
 import { getThemeModuleStyle } from "@/components/shared/theme-primitives";
 import { cn } from "@/lib/utils";
 
@@ -83,47 +84,12 @@ function LoadingDonutCard({ className }: { className?: string }) {
   );
 }
 
-function LoadingTableCard({ className }: { className?: string }) {
-  return (
-    <LoadingCard className={cn("p-0", className)}>
-      <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
-        <div className="space-y-1">
-          <Skeleton className="h-4 w-20 rounded-full bg-slate-200 sm:w-24" />
-          <Skeleton className="h-3 w-28 rounded-full bg-slate-100 sm:w-36" />
-        </div>
-      </div>
-
-      <div className="px-2 pb-2 sm:px-4 sm:pb-4">
-        <div className="border-b border-slate-200 pb-1.5 sm:pb-2">
-          <div className="grid grid-cols-5 gap-2">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={index} className="h-3 rounded-full bg-slate-100" />
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2 pt-2">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="grid grid-cols-5 items-center gap-2 border-b border-slate-100 pb-2 last:border-b-0">
-              <Skeleton className="h-5 w-10 rounded-full bg-slate-100" />
-              <Skeleton className="h-3 w-12 rounded-full bg-slate-200" />
-              <Skeleton className="h-3 w-14 rounded-full bg-slate-200" />
-              <Skeleton className="h-3 w-16 rounded-full bg-slate-100" />
-              <Skeleton className="ml-auto h-3 w-12 rounded-full bg-slate-200" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </LoadingCard>
-  );
-}
-
 export function DashboardLoadingShell() {
   return (
-    <div
+    <LoadingPageShell
       aria-busy="true"
       aria-live="polite"
-      className="mx-auto max-w-[1680px] space-y-4 px-0.5 pb-2 sm:space-y-5 sm:px-4"
+      className="px-0.5 sm:px-4"
       style={getThemeModuleStyle("dashboard")}
     >
       <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-[1fr_1fr_1.3fr_1.3fr]">
@@ -190,8 +156,8 @@ export function DashboardLoadingShell() {
       <div className="grid grid-cols-1 gap-2 sm:gap-4 lg:grid-cols-12">
         <LoadingChartCard chart="area" className="lg:col-span-4" />
         <LoadingDonutCard className="lg:col-span-4" />
-        <LoadingTableCard className="lg:col-span-4" />
+        <LoadingTableSurface className="lg:col-span-4" />
       </div>
-    </div>
+    </LoadingPageShell>
   );
 }

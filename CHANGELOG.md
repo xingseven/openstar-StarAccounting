@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.94 - 2026-04-05
+
+### Changed
+
+- **抽取公共真实骨架框架并统一核心业务页 LoadingShell**:
+  - 扩充 `web/src/components/shared/PageLoadingShell.tsx`，新增紧凑 Hero、通用 Surface、表格骨架、列表骨架、图表骨架和卡片骨架等共享加载块。
+  - 将 `DashboardLoadingShell.tsx`、`ConsumptionLoadingShell.tsx`、`AssetsLoadingShell.tsx`、`SavingsLoadingShell.tsx`、`LoansLoadingShell.tsx`、`DataLoadingShell.tsx` 改为基于共享骨架框架组装，收敛重复实现。
+  - 核心业务页后续调整加载态时，不再需要复制整页骨架，只需修改共享骨架块或页面薄封装组合。
+
+### Docs
+
+- **共享加载骨架框架约定与版本记录更新**:
+  - 更新 `docs/主题开发框架文档.md`，新增 `PageLoadingShell` 共享加载骨架框架使用约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.94 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.14`。
+
+### Verified
+
+- `git diff --check -- web/src/components/shared/PageLoadingShell.tsx web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx web/src/features/consumption/components/ConsumptionLoadingShell.tsx web/src/features/assets/components/themes/AssetsLoadingShell.tsx web/src/features/savings/components/themes/SavingsLoadingShell.tsx web/src/features/loans/components/themes/LoansLoadingShell.tsx web/src/app/(dashboard)/data/DataLoadingShell.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+- `npm.cmd --prefix web run typecheck` blocked by pre-existing syntax error in `web/src/features/savings/components/themes/DefaultSavings.tsx`
+
 ## 2.3.93 - 2026-04-05
 
 ### Changed
