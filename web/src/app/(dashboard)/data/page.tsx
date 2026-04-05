@@ -798,82 +798,82 @@ export default function DataPage() {
             </div>
             <p className="text-xs text-[#64748b] mb-4">从已出现过的交易对方里搜索并勾选，绑定到一个分类后，后续导入和手动补录会自动套用。</p>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
-              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
-                <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-3 sm:p-4">
+                <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="text-xs font-semibold text-[#64748b] mb-1 block">规则名称</label>
+                    <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">规则名称</label>
                     <Input
                       value={ruleName}
                       onChange={(event) => setRuleName(event.target.value)}
-                      placeholder="例如：房租 / 物业费 / 固定订阅"
-                      className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                      placeholder="例如：房租"
+                      className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-[#64748b] mb-1 block">目标分类</label>
+                    <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">目标分类</label>
                     <Input
                       list="data-expense-category-suggestions"
                       value={ruleCategory}
                       onChange={(event) => setRuleCategory(event.target.value)}
                       placeholder="例如：房租"
-                      className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                      className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <div className="mt-3 sm:mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                   <div>
-                    <label className="text-xs font-semibold text-[#64748b] mb-1 block">统一备注</label>
+                    <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">统一备注</label>
                     <Input
                       value={ruleDescription}
                       onChange={(event) => setRuleDescription(event.target.value)}
                       placeholder="例如：每月房租"
-                      className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                      className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                     />
                   </div>
 
-                  <label className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-4 text-sm text-[#64748b]">
+                  <label className="inline-flex h-9 sm:h-10 items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-3 sm:px-4 text-[10px] sm:text-xs text-[#64748b]">
                     <input
                       type="checkbox"
                       checked={applyRuleToHistory}
                       onChange={(event) => setApplyRuleToHistory(event.target.checked)}
                       className="rounded border-[#cbd5e1]"
                     />
-                    回填历史交易
+                    回填历史
                   </label>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-dashed border-[#e2e8f0] bg-white p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-5 rounded-2xl border border-dashed border-[#e2e8f0] bg-white p-3 sm:p-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-[#1e293b]">选择交易对方</p>
-                      <p className="mt-1 text-xs text-[#64748b]">支持按关键词搜索，适合房东、物业、固定收款方这类长期重复对象。</p>
+                      <p className="text-xs sm:text-sm font-semibold text-[#1e293b]">选择交易对方</p>
+                      <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-[#64748b]">支持按关键词搜索，适合房东、物业这类长期重复对象。</p>
                     </div>
-                    <div className="text-sm text-[#64748b]">
+                    <div className="text-xs sm:text-sm text-[#64748b]">
                       已选 <span className="font-semibold text-[#1e293b]">{selectedRuleMerchants.length}</span> 个
                     </div>
                   </div>
 
-                  <div className="relative mt-4">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+                  <div className="relative mt-3 sm:mt-4">
+                    <Search className="pointer-events-none absolute left-2.5 sm:left-3 top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-y-1/2 text-[#94a3b8]" />
                     <Input
                       value={merchantKeyword}
                       onChange={(event) => setMerchantKeyword(event.target.value)}
-                      placeholder="搜索交易对方，例如：房东、链家、自如"
-                      className="pl-9 h-10 rounded-xl border-[#e2e8f0]"
+                      placeholder="搜索交易对方"
+                      className="pl-8 sm:pl-9 h-9 sm:h-10 rounded-xl border-[#e2e8f0] text-sm"
                     />
                   </div>
 
                   {selectedRuleMerchants.length > 0 ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 sm:mt-4 flex flex-wrap gap-1.5 sm:gap-2">
                       {selectedRuleMerchants.map((merchant) => (
                         <button
                           key={merchant}
                           type="button"
                           onClick={() => toggleRuleMerchant(merchant)}
-                          className="rounded-full bg-[#1e293b] px-3 py-1 text-xs font-medium text-white transition hover:bg-[#334155]"
+                          className="rounded-full bg-[#1e293b] px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-white transition hover:bg-[#334155]"
                         >
                           {merchant}
                         </button>
@@ -881,17 +881,17 @@ export default function DataPage() {
                     </div>
                   ) : null}
 
-                  <div className="mt-4 max-h-80 overflow-y-auto rounded-2xl border border-[#e2e8f0] bg-white">
+                  <div className="mt-3 sm:mt-4 max-h-60 sm:max-h-80 overflow-y-auto rounded-xl sm:rounded-2xl border border-[#e2e8f0] bg-white">
                     {merchantCandidatesLoading ? (
-                      <div className="flex items-center justify-center gap-2 px-4 py-10 text-sm text-[#64748b]">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      <div className="flex items-center justify-center gap-2 px-3 sm:px-4 py-8 sm:py-10 text-xs sm:text-sm text-[#64748b]">
+                        <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                         正在整理交易对方列表
                       </div>
                     ) : merchantCandidates.length === 0 ? (
-                      <div className="px-4 py-10 text-center">
-                        <Search className="h-8 w-8 mx-auto text-[#cbd5e1]" />
-                        <p className="mt-2 text-sm font-medium text-[#64748b]">没有找到匹配的交易对方</p>
-                        <p className="mt-1 text-xs text-[#94a3b8]">先导入或补录交易，或者换一个关键词再试。</p>
+                      <div className="px-3 sm:px-4 py-8 sm:py-10 text-center">
+                        <Search className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-[#cbd5e1]" />
+                        <p className="mt-2 text-xs sm:text-sm font-medium text-[#64748b]">没有找到匹配的交易对方</p>
+                        <p className="mt-1 text-[10px] sm:text-xs text-[#94a3b8]">先导入或补录交易，或者换关键词再试。</p>
                       </div>
                     ) : (
                       <div className="divide-y divide-[#f1f5f9]">
@@ -903,7 +903,7 @@ export default function DataPage() {
                             <label
                               key={candidate.merchant}
                               className={cn(
-                                "flex cursor-pointer items-start gap-3 px-4 py-3 transition",
+                                "flex cursor-pointer items-start gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 transition",
                                 selected ? "bg-[#D8E6FC]/50" : "hover:bg-[#f8fafc]"
                               )}
                             >
@@ -911,20 +911,20 @@ export default function DataPage() {
                                 type="checkbox"
                                 checked={selected}
                                 onChange={() => toggleRuleMerchant(candidate.merchant)}
-                                className="mt-1 rounded border-[#cbd5e1]"
+                                className="mt-0.5 rounded border-[#cbd5e1]"
                               />
                               <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="truncate text-sm font-medium text-[#1e293b]">{candidate.merchant}</span>
+                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                  <span className="truncate text-xs sm:text-sm font-medium text-[#1e293b]">{candidate.merchant}</span>
                                   {existingRule ? (
-                                    <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-medium text-[#92400E]">
+                                    <span className="rounded-full bg-[#FEF3C7] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[11px] font-medium text-[#92400E]">
                                       已有规则 · {existingRule.category}
                                     </span>
                                   ) : null}
                                 </div>
-                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#64748b]">
+                                <div className="mt-0.5 sm:mt-1 flex flex-wrap gap-x-2 sm:gap-x-3 gap-y-1 text-[10px] sm:text-xs text-[#64748b]">
                                   <span>出现 {candidate.count} 次</span>
-                                  <span>最近交易 {formatDateTime(candidate.latestDate)}</span>
+                                  <span>最近 {formatDateTime(candidate.latestDate)}</span>
                                 </div>
                               </div>
                             </label>
@@ -935,35 +935,35 @@ export default function DataPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex justify-end">
+                <div className="mt-4 sm:mt-5 flex justify-end">
                   <Button
                     type="button"
                     onClick={() => void handleCreateMerchantRule()}
                     disabled={ruleActionLoading || selectedRuleMerchants.length === 0 || !ruleCategory.trim()}
-                    className="h-11 rounded-2xl sm:min-w-40 bg-[#2B6AF2] hover:bg-[#2563EB]"
+                    className="h-10 sm:h-11 rounded-2xl w-full sm:w-auto sm:min-w-40 bg-[#2B6AF2] hover:bg-[#2563EB] text-sm"
                   >
                     {ruleActionLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                         保存中...
                       </>
                     ) : (
                       <>
-                        <Wand2 className="mr-2 h-4 w-4" />
-                        保存自动归类规则
+                        <Wand2 className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        保存归类规则
                       </>
                     )}
                   </Button>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
-                <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-3 sm:p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
                     <p className="text-sm font-semibold text-[#1e293b]">当前规则</p>
-                    <p className="mt-1 text-xs text-[#64748b]">一个交易对方只保留一条生效规则，重新保存会直接覆盖。</p>
+                    <p className="mt-1 text-xs text-[#64748b]">一个交易对方只保留一条生效规则</p>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#64748b] shadow-sm">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#64748b] shadow-sm w-fit">
                     {merchantRules.length} 条
                   </span>
                 </div>
@@ -982,28 +982,28 @@ export default function DataPage() {
                     </div>
                   ) : (
                     merchantRules.map((rule) => (
-                      <div key={rule.id} className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm">
+                      <div key={rule.id} className="rounded-2xl border border-[#e2e8f0] bg-white p-3 sm:p-4 shadow-sm">
                         <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="truncate text-sm font-semibold text-[#1e293b]">{rule.name || rule.category}</span>
-                              <span className="rounded-full bg-[#D8E6FC] px-2 py-0.5 text-[11px] font-medium text-[#1E40AF]">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                              <span className="truncate text-xs sm:text-sm font-semibold text-[#1e293b]">{rule.name || rule.category}</span>
+                              <span className="rounded-full bg-[#D8E6FC] px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#1E40AF]">
                                 {rule.category}
                               </span>
                             </div>
-                            <p className="mt-2 truncate text-sm text-[#64748b]">{rule.merchant}</p>
-                            {rule.description ? <p className="mt-1 text-xs text-[#94a3b8]">备注：{rule.description}</p> : null}
-                            <p className="mt-2 text-xs text-[#94a3b8]">更新于 {formatDateTime(rule.updatedAt)}</p>
+                            <p className="mt-1.5 sm:mt-2 truncate text-xs sm:text-sm text-[#64748b]">{rule.merchant}</p>
+                            {rule.description ? <p className="mt-1 text-[10px] sm:text-xs text-[#94a3b8]">备注：{rule.description}</p> : null}
+                            <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[#94a3b8]">更新于 {formatDateTime(rule.updatedAt)}</p>
                           </div>
 
                           <button
                             type="button"
                             onClick={() => void handleDeleteMerchantRule(rule)}
                             disabled={ruleActionLoading}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#e2e8f0] text-[#94a3b8] transition hover:border-[#FECACA] hover:text-[#DC2626] disabled:opacity-50"
+                            className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-[#e2e8f0] text-[#94a3b8] transition hover:border-[#FECACA] hover:text-[#DC2626] disabled:opacity-50 shrink-0"
                             aria-label={`删除规则 ${rule.merchant}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </button>
                         </div>
                       </div>
