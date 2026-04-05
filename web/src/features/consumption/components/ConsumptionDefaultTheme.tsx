@@ -24,6 +24,7 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
+  Sankey,
   Scatter,
   ScatterChart,
   Tooltip,
@@ -627,6 +628,53 @@ function CalendarHeatGrid({ calendar }: { calendar: ConsumptionData["calendar"] 
   );
 }
 
+function SankeyNode({
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  index = 0,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  index?: number;
+  payload?: { name?: string };
+}) {
+  const fill = CHART_COLORS[index % CHART_COLORS.length];
+  const label = payload?.name ?? "";
+  const placeLabelLeft = x > 180;
+
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={6}
+        fill={fill}
+        fillOpacity={0.92}
+        stroke="#ffffff"
+        strokeWidth={1.5}
+      />
+      <text
+        x={placeLabelLeft ? x - 8 : x + width + 8}
+        y={y + height / 2}
+        textAnchor={placeLabelLeft ? "end" : "start"}
+        dominantBaseline="middle"
+        fill="#475569"
+        fontSize={11}
+        fontWeight={600}
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
 const chartAxisProps = {
   axisLine: false,
   tickLine: false,
@@ -982,6 +1030,25 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
   }, [data.sankey.links, data.sankey.nodes]);
+
+  const sankeyChartData = useMemo(
+    () => ({
+      nodes: data.sankey.nodes.map((node) => ({ name: node.name })),
+      links: data.sankey.links
+        .map((link) => ({
+          source: link.source,
+          target: link.target,
+          value: Math.round(toNumber(link.value)),
+        }))
+        .filter(
+          (link) =>
+            link.value > 0 &&
+            data.sankey.nodes[link.source] !== undefined &&
+            data.sankey.nodes[link.target] !== undefined,
+        ),
+    }),
+    [data.sankey.links, data.sankey.nodes],
+  );
 
   const availableExpenseCategories = useMemo(
     () =>
@@ -2045,24 +2112,21 @@ const ConsumptionDefaultThemeView = memo(function ConsumptionDefaultThemeView({
               <div className="h-[240px] sm:h-[320px]">
                 {sankeyFlowData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={sankeyFlowData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                      <XAxis type="number" {...yAxisProps} />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-                        width={130}
+                    <Sankey
+                      data={sankeyChartData}
+                      dataKey="value"
+                      node={SankeyNode}
+                      nodeWidth={14}
+                      nodePadding={22}
+                      linkCurvature={0.48}
+                      margin={{ top: 12, right: 60, bottom: 12, left: 60 }}
+                      link={{ stroke: "#2B6AF2", strokeOpacity: 0.18 }}
+                    >
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={(value: number) => formatCurrency(value)}
                       />
-                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => formatCurrency(value)} />
-                      <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={16}>
-                        {sankeyFlowData.map((entry) => (
-                          <Cell key={entry.name} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
+                    </Sankey>
                   </ResponsiveContainer>
                 ) : (
                   <ChartEmpty text="暂无资金流向" />

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.100 - 2026-04-05
+
+### Changed
+
+- **消费页恢复分析图表，继续保持 Dashboard 工作台风格**:
+  - 更新 `web/src/features/consumption/components/ConsumptionDefaultTheme.tsx`，在保留默认主题工作台结构和卡片语言的前提下，把“资金流向”区块恢复为真实流向图，不再降级成摘要条形图。
+  - 保持此前已经补回的商户排行、热区、结构洞察、重复商户、预算偏差、备注洞察、堆叠趋势、热力日历、散点图和直方图等分析模块，修正“对齐主题 = 删图表”的偏差。
+  - 扩展 `web/src/features/consumption/components/ConsumptionLoadingShell.tsx`，让加载态与恢复后的分析区块密度一致，而不是停留在删减后的 4 + 3 + 3 骨架。
+
+### Docs
+
+- **补充主题对齐的保图表约定并同步版本记录**:
+  - 更新 `docs/主题开发框架文档.md`，新增“主题对齐默认不能主动删除原页面关键图表密度，除非用户明确要求裁剪”的规则。
+  - 更新 `docs/开发进度.md`，新增 V2.3.100 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.20`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/features/consumption/components/ConsumptionDefaultTheme.tsx src/features/consumption/components/ConsumptionLoadingShell.tsx`
+- `git diff --check -- web/src/features/consumption/components/ConsumptionDefaultTheme.tsx web/src/features/consumption/components/ConsumptionLoadingShell.tsx`
+- `npm.cmd --prefix web run typecheck` blocked by pre-existing errors in `web/src/app/(dashboard)/connections/page.tsx`
+
 ## 2.3.99 - 2026-04-05
 
 ### Changed

@@ -42,6 +42,41 @@ export function ConsumptionLoadingShell() {
         <LoadingWorkspaceChartCard chart="donut" className="lg:col-span-4" />
         <LoadingWorkspaceTableCard className="lg:col-span-4" headerMetaWidthClassName="w-24" />
       </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1.95fr)_minmax(320px,1fr)]">
+        <LoadingWorkspaceTableCard columns={2} rows={5} headerMetaWidthClassName="w-20" />
+        <LoadingWorkspaceChartCard chart="horizontal-bars" headerAction="dots" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-2">
+        <LoadingWorkspaceChartCard chart="donut" headerAction="dots" />
+        <LoadingWorkspaceChartCard chart="horizontal-bars" headerAction="dots" />
+        <LoadingWorkspaceChartCard chart="bars" headerAction="dots" />
+        <LoadingWorkspaceChartCard chart="bars" headerAction="dots" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <LoadingWorkspaceChartCard chart="bars" headerAction="dots" />
+        <LoadingWorkspaceTableCard columns={3} rows={4} headerMetaWidthClassName="w-12" />
+      </div>
+
+      <LoadingWorkspaceChartCard chart="stack" headerAction="pill" />
+
+      <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.96fr)]">
+        <LoadingWorkspaceChartCard chart="area" headerAction="dots" />
+        <LoadingWorkspaceChartCard chart="donut" headerAction="dots" />
+      </div>
+
+      <LoadingWorkspaceChartCard
+        chart="horizontal-bars"
+        headerAction="dots"
+        bodyHeightClassName="h-[220px] sm:h-[280px] md:h-[320px]"
+      />
+
+      <div className="grid grid-cols-1 gap-2 sm:gap-4 xl:grid-cols-2">
+        <LoadingWorkspaceChartCard chart="area" headerAction="dots" />
+        <LoadingWorkspaceChartCard chart="bars" headerAction="dots" />
+      </div>
     </LoadingPageShell>
   );
 }
