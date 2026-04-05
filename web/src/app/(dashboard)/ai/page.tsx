@@ -432,7 +432,22 @@ export default function AIPage() {
         <ThemeMetricCard label="模型总数" value={`${models.length} 个`} detail="全部模型" tone="blue" icon={Brain} className="p-3 sm:p-4" hideDetailOnMobile />
         <ThemeMetricCard label="已配置" value={`${configuredModels.length} 个`} detail="可用模型" tone="green" icon={CheckCircle2} className="p-3 sm:p-4" hideDetailOnMobile />
         <ThemeMetricCard label="未配置" value={`${unconfiguredModels.length} 个`} detail="待配置" tone="slate" icon={Key} className="p-3 sm:p-4" hideDetailOnMobile />
-      <ThemeSurface className="flex h-full p-4 sm:p-6">
+        <ThemeSurface className="hidden md:flex h-full p-4 sm:p-6">
+          <ThemeSectionHeader
+            eyebrow="功能说明"
+            title="AI 智能记账"
+            description="配置视觉或文本模型后，可在消费页使用 AI 拍照记账与智能分析。"
+            action={
+              <Button onClick={openCreate} className="rounded-2xl bg-[var(--theme-body-text)] hover:opacity-90">
+                <Plus className="mr-2 h-4 w-4" />
+                添加模型
+              </Button>
+            }
+          />
+        </ThemeSurface>
+      </div>
+
+      <ThemeSurface className="flex md:hidden p-4">
         <ThemeSectionHeader
           eyebrow="功能说明"
           title="AI 智能记账"
@@ -445,7 +460,6 @@ export default function AIPage() {
           }
         />
       </ThemeSurface>
-      </div>
 
       {pageNotice ? <ThemeNotice tone={pageNotice.tone} title={pageNotice.title} description={pageNotice.description} /> : null}
 
