@@ -10,7 +10,7 @@ import {
 } from "@/features/dashboard/data-loader";
 import { useTheme } from "@/components/shared/theme-provider";
 import { getDashboardEntryFileName, getDashboardThemeComponent } from "@/themes/dashboard-registry";
-import { getDashboardRoutePath } from "@/themes/dashboard-routes";
+import { getDashboardRoutePath, isDashboardRoutePath } from "@/themes/dashboard-routes";
 import type { DashboardData } from "@/types";
 
 type DateRangeState = {
@@ -200,7 +200,12 @@ export function DashboardPageShell() {
   );
 
   useEffect(() => {
-    if (pathname !== dashboardRoutePath) {
+    const needsDashboardAliasCorrection =
+      pathname !== "/" &&
+      pathname !== dashboardRoutePath &&
+      isDashboardRoutePath(pathname);
+
+    if (needsDashboardAliasCorrection) {
       router.replace(dashboardRoutePath);
     }
   }, [dashboardRoutePath, pathname, router]);

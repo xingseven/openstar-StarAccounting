@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.90 - 2026-04-05
+
+### Changed
+
+- **修复默认主题总览页侧边栏跳转被 Dashboard 路由同步抢占**:
+  - 更新 `web/src/features/dashboard/components/DashboardPageShell.tsx`，收窄总览页内部 `router.replace` 的触发条件。
+  - 现在只在访问到“与当前主题不一致”的 Dashboard 文件名别名路由时才自动纠正，不再在根路径 `/` 挂载后立刻跳到 `/<Dashboard文件名>`。
+  - 避免默认主题侧边栏点击与总览页路由同步逻辑竞争，减少首击偶发无响应和页面切换延迟。
+
+### Docs
+
+- **主题路由约定与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充根入口 `/` 与 Dashboard 文件名别名路由的最新行为说明。
+  - 更新 `docs/开发进度.md`，新增 V2.3.90 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.10`。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- web/src/features/dashboard/components/DashboardPageShell.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.89 - 2026-04-05
 
 ### Changed
