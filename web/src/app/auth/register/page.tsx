@@ -6,6 +6,7 @@ import { KeyRound, Mail, User, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { setAccessToken } from "@/lib/auth";
+import { setAuthUser } from "@/components/shared/AuthGate";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, password, name }),
       });
       setAccessToken(data.accessToken);
+      setAuthUser(data.user);
       router.replace("/");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "注册失败");

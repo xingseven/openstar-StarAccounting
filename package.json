@@ -7,7 +7,7 @@
     "dev:web": "cd web && next dev -H 0.0.0.0 -p 3000",
     "dev:server": "cd src/server && npm run dev",
     "dev:legacy": "concurrently -n backend,web -c blue,green \"npm run dev:server\" \"npm run dev:web\"",
-    "build": "cd web && next build",
+    "build": "cd web && npm run build",
     "start": "cd web && next start",
     "lint": "cd web && eslint",
     "typecheck": "cd web && tsc --noEmit",

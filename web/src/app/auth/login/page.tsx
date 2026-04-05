@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ArrowRight, KeyRound, LockKeyhole, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { setAccessToken } from "@/lib/auth";
+import { setAuthUser } from "@/components/shared/AuthGate";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -259,6 +260,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
 
+  useEffect(() => {
+    router.prefetch(next);
+  }, [next, router]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -280,6 +285,7 @@ function LoginForm() {
         body: JSON.stringify({ email: actualEmail, password: actualPassword }),
       });
       setAccessToken(data.accessToken);
+      setAuthUser(data.user);
       router.replace(next);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "登录失败，请稍后再试");

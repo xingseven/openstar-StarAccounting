@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.3.81 - 2026-04-05
+
+### Changed
+
+- **旧前端目录正式删除并迁入有效差异**:
+  - 在 `web/src/components/shared/AuthGate.tsx` 中补回 `setAuthUser`，支持登录/注册成功后直接注入用户缓存。
+  - 在 `web/src/app/auth/login/page.tsx` 中恢复 `setAuthUser(data.user)` 与 `router.prefetch(next)`。
+  - 在 `web/src/app/auth/register/page.tsx` 中恢复 `setAuthUser(data.user)`。
+  - 将 `web/package.json` 的构建脚本切换为 `next build --webpack`，规避 Next.js 16 Turbopack 在 `/_global-error` 预渲染阶段的构建异常。
+  - 将根目录 `package.json` 的 `build` 改为委托执行 `cd web && npm run build`，统一构建入口。
+  - 删除根目录旧前端源码目录 `src/app`、`src/components`、`src/features`、`src/lib`、`src/themes`、`src/types`。
+  - 删除根目录旧前端配置 `components.json`、`next.config.ts`、`tsconfig.json`、`next-env.d.ts` 和 `public/`。
+
+### Docs
+
+- **收口文档完成态同步**:
+  - 更新 `README.md`，明确仓库已不再保留旧前端源码与旧前端构建配置。
+  - 更新 `docs/前端目录收口开发文档.md`，文档小版本升级到 `v1.0.1`，记录实际迁入的差异与已删除目录。
+  - 更新 `docs/开发进度.md`，新增 V2.3.81 进度记录。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `npm.cmd --prefix web run build -- --webpack`
+- `npm.cmd run build`
+- `git diff --check -- README.md CHANGELOG.md docs/开发进度.md docs/前端目录收口开发文档.md web/src/app/auth/login/page.tsx web/src/app/auth/register/page.tsx web/src/components/shared/AuthGate.tsx Dockerfile package.json web/package.json`
+
 ## 2.3.80 - 2026-04-05
 
 ### Changed

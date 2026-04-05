@@ -16,6 +16,10 @@ type User = {
 let cachedUser: User | null = null;
 let authCheckPromise: Promise<User> | null = null;
 
+export function setAuthUser(user: User) {
+  cachedUser = user;
+}
+
 async function validateAuth(): Promise<User> {
   // 如果已有缓存的用户，直接返回
   if (cachedUser) {

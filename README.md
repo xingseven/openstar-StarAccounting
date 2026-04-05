@@ -4,7 +4,6 @@
 
 - `web/`: 当前唯一生效的 Next.js 前端工程。
 - `src/server/`: 当前唯一生效的后端服务、Prisma 和部署脚本。
-- `src/` 中除 `server/` 以外的目录：历史前端副本，保留用于迁移比对，不作为默认启动入口。
 - `docs/`: 开发、发布和迁移文档。
 
 ## 当前启动方式
@@ -36,10 +35,11 @@ npm run test:e2e
 - 前端业务代码统一维护在 `web/src/`。
 - 后端代码统一维护在 `src/server/src/`。
 - UI 组件脚手架、主题开发和页面改造，默认都以 `web/` 为目标目录。
-- 根目录遗留前端暂不直接删除，删除前请先核对 `src/` 与 `web/src/` 的分叉文件。
+- 仓库根目录已不再保留旧前端源码与旧前端构建配置。
 
-## 目录收口说明
+## 收口结果
 
-- CI、Playwright、Docker Compose 和非 Docker 部署脚本已经统一指向 `web/` 前端与 `src/server/` 后端。
-- 根目录 `Dockerfile` 现在也按 `web/` 前端构建，避免误打包旧前端入口。
-- 旧前端清理清单与迁移步骤见 `docs/前端目录收口开发文档.md`。
+- 历史前端目录 `src/app`、`src/components`、`src/features`、`src/lib`、`src/themes`、`src/types` 已移除。
+- 根目录旧前端配置 `components.json`、`next.config.ts`、`tsconfig.json`、`next-env.d.ts` 和 `public/` 已移除。
+- CI、Playwright、Docker Compose、非 Docker 部署脚本和根目录 Dockerfile 已统一指向 `web/` 前端与 `src/server/` 后端。
+- 目录收口过程与核对结果见 `docs/前端目录收口开发文档.md`。
