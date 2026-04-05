@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.91 - 2026-04-05
+
+### Changed
+
+- **修复默认主题总览页筛选浮层开关导致图表重复重绘**:
+  - 更新 `web/src/features/dashboard/components/themes/DefaultDashboard.tsx`，将右下角筛选浮层的开关状态从 Dashboard 图表主体中拆出。
+  - 默认主题主体改为记忆化视图组件，打开或关闭筛选浮层时不再带着整页 Recharts 图表一起重新渲染。
+  - 清理默认主题内已失效的旧 Popover 遗留状态与未使用接线，收口当前唯一生效的共享悬浮筛选器入口。
+
+### Docs
+
+- **筛选器渲染约定与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充总览页纯 UI 浮层开关状态的隔离约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.91 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.11`。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- web/src/features/dashboard/components/themes/DefaultDashboard.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.90 - 2026-04-05
 
 ### Changed

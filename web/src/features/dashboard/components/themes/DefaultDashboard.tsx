@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { CalendarDays, Check, ChevronDown, MoreVertical } from "lucide-react";
 import {
   Area,
@@ -22,7 +22,6 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { DelayedRender } from "@/components/shared/DelayedRender";
 import { DashboardLoadingShell } from "./DashboardLoadingShell";
 import { getThemeModuleStyle } from "@/components/shared/theme-primitives";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FloatingFilter } from "@/components/shared/FloatingFilter";
 import type { DashboardData } from "@/types";
 
@@ -56,7 +55,7 @@ const CHART_COLORS = ["#2B6AF2", "#4CC98F", "#92C0F2", "#F5A623", "#A56BFA"];
 function buildSixMonthTrend(currentIncome: number, currentExpense: number, lastIncome: number, lastExpense: number) {
   const currentMonthIdx = new Date().getMonth();
   const result = [];
-  
+
   // Use last month's real data if available, otherwise fallback to slightly less than current
   const actualLastIncome = lastIncome || currentIncome * 0.9;
   const actualLastExpense = lastExpense || currentExpense * 0.9;
@@ -64,7 +63,7 @@ function buildSixMonthTrend(currentIncome: number, currentExpense: number, lastI
   for (let i = 5; i >= 0; i--) {
     let m = currentMonthIdx - i;
     if (m < 0) m += 12;
-    
+
     let inc = currentIncome;
     let exp = currentExpense;
 
@@ -94,7 +93,7 @@ function buildSixMonthTrend(currentIncome: number, currentExpense: number, lastI
 // Build daily curve from actual recent transactions (or pad to 30 days)
 function buildDailyExpenseTrend(transactions: DashboardData["recentTransactions"], monthExpense: number) {
   const days = new Array(30).fill(0);
-  
+
   // Try to use real transactions
   const expenseTxs = transactions.filter(t => t.type === "EXPENSE");
   expenseTxs.forEach(t => {
@@ -122,7 +121,7 @@ function buildDailyExpenseTrend(transactions: DashboardData["recentTransactions"
 }
 
 /* ────────── 主组件 ────────── */
-export function DashboardDefaultTheme({
+const DashboardDefaultThemeView = memo(function DashboardDefaultThemeView({
   data,
   loading,
   refreshing,
@@ -137,8 +136,6 @@ export function DashboardDefaultTheme({
   searchQuery,
   onSearchQueryChange,
 }: DashboardViewProps) {
-  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const isSkeletonVisible = loading;
 
   const periodLabel = useMemo(() => {
@@ -165,81 +162,96 @@ export function DashboardDefaultTheme({
     return "本月";
   }, [customPeriod, dateFilter]);
 
-  const currentYear = new Date().getFullYear();
-  const yearOptions = useMemo(() => {
-    const years = [];
-    for (let y = currentYear; y >= currentYear - 5; y--) {
-      years.push(y);
-    }
-    return years;
-  }, [currentYear]);
-
-  const monthOptions = Array.from({ length: 12 }, (_, i) => ({
-    value: String(i + 1).padStart(2, "0"),
-    label: String(i + 1).padStart(2, "0"),
-  }));
-
-  const handleDateFilterChange = (filter: "month" | "all" | "custom") => {
-    onDateFilterChange?.(filter);
-    if (filter !== "custom") setDatePopoverOpen(false);
-  };
-
-  const handleCustomPeriodConfirm = () => setDatePopoverOpen(false);
-
   /* ────────── Dynamic Data Processing ────────── */
   const topCategories = useMemo(() => {
-    const map = new Map<string, number>();
+    const categoryMap = new Map<string, number>();
+    const categoryTrendMap = new Map<string, Map<string, number>>();
+
+    // 统计每个分类的总金额和每日趋势
     data.recentTransactions.filter(t => t.type === "EXPENSE").forEach(t => {
       const cat = t.category || "未分类";
-      map.set(cat, (map.get(cat) || 0) + Number(t.amount));
+      const date = new Date(t.date).toISOString().split('T')[0];
+      const amount = Number(t.amount);
+
+      // 累计总额
+      categoryMap.set(cat, (categoryMap.get(cat) || 0) + amount);
+
+      // 累计每日数据
+      if (!categoryTrendMap.has(cat)) {
+        categoryTrendMap.set(cat, new Map<string, number>());
+      }
+      const trendMap = categoryTrendMap.get(cat)!;
+      trendMap.set(date, (trendMap.get(date) || 0) + amount);
     });
-    
-    const sorted = Array.from(map.entries())
+
+    // 按总额排序取前 3
+    return Array.from(categoryMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, value], i) => {
+        const trendMap = categoryTrendMap.get(name)!;
+        const trendData = Array.from(trendMap.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .slice(-7)
+          .map(([date, amount]) => ({
+            date,
+            value: amount,
+          }));
+
+        return {
+          name,
+          value,
+          color: CHART_COLORS[i % CHART_COLORS.length],
+          trendData,
+        };
+      });
+  }, [data.recentTransactions, data.monthExpense]);
+
+  // 按商户分组的统计数据（用于支出构成环形图）
+  const topMerchants = useMemo(() => {
+    const merchantMap = new Map<string, number>();
+
+    data.recentTransactions.filter(t => t.type === "EXPENSE").forEach(t => {
+      const merchant = t.merchant || t.platform || "未知商户";
+      merchantMap.set(merchant, (merchantMap.get(merchant) || 0) + Number(t.amount));
+    });
+
+    return Array.from(merchantMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
       .map(([name, value], i) => ({
         name,
         value,
-        color: CHART_COLORS[i % CHART_COLORS.length]
+        color: CHART_COLORS[i % CHART_COLORS.length],
       }));
-      
-    // Fallback if no transactions
-    if (sorted.length === 0 && data.monthExpense > 0) {
-      return [
-        { name: "日常消费", value: data.monthExpense * 0.6, color: CHART_COLORS[0] },
-        { name: "固定账单", value: data.monthExpense * 0.3, color: CHART_COLORS[1] },
-        { name: "其他", value: data.monthExpense * 0.1, color: CHART_COLORS[2] },
-      ];
-    }
-    return sorted;
-  }, [data.recentTransactions, data.monthExpense]);
+  }, [data.recentTransactions]);
 
   const totalExpenseForPercent = topCategories.reduce((acc, curr) => acc + curr.value, 0);
-  const mainCategoryPercent = totalExpenseForPercent > 0 
-    ? Math.round((topCategories[0]?.value / totalExpenseForPercent) * 100) 
+  const mainCategoryPercent = totalExpenseForPercent > 0
+    ? Math.round((topCategories[0]?.value / totalExpenseForPercent) * 100)
     : 0;
 
-  const sixMonthData = useMemo(() => 
+  const sixMonthData = useMemo(() =>
     buildSixMonthTrend(data.monthIncome, data.monthExpense, data.lastMonthIncome, data.lastMonthExpense),
     [data.monthIncome, data.monthExpense, data.lastMonthIncome, data.lastMonthExpense]
   );
 
-  const dailyExpenseData = useMemo(() => 
+  const dailyExpenseData = useMemo(() =>
     buildDailyExpenseTrend(data.recentTransactions, data.monthExpense),
     [data.recentTransactions, data.monthExpense]
   );
 
   const dailyIncomeExpenseData = useMemo(() => {
     const days = new Map<string, { income: number; expense: number }>();
-    
+
     data.recentTransactions.forEach(t => {
       const date = new Date(t.date);
       const dayKey = `${date.getMonth() + 1}/${date.getDate()}`;
-      
+
       if (!days.has(dayKey)) {
         days.set(dayKey, { income: 0, expense: 0 });
       }
-      
+
       const dayData = days.get(dayKey)!;
       if (t.type === "INCOME") {
         dayData.income += Number(t.amount);
@@ -247,7 +259,7 @@ export function DashboardDefaultTheme({
         dayData.expense += Number(t.amount);
       }
     });
-    
+
     const result = Array.from(days.entries())
       .sort((a, b) => {
         const [aM, aD] = a[0].split('/').map(Number);
@@ -260,13 +272,13 @@ export function DashboardDefaultTheme({
         income: Math.round(val.income),
         expense: Math.round(val.expense),
       }));
-    
+
     if (result.length === 0) {
       return [
         { name: "本月", income: data.monthIncome, expense: data.monthExpense },
       ];
     }
-    
+
     return result;
   }, [data.recentTransactions, data.monthIncome, data.monthExpense]);
 
@@ -293,7 +305,7 @@ export function DashboardDefaultTheme({
         const cat = t.category || "未分类";
         map.set(cat, (map.get(cat) || 0) + Number(t.amount));
       });
-    
+
     return Array.from(map.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
@@ -304,8 +316,8 @@ export function DashboardDefaultTheme({
       }));
   }, [data.recentTransactions]);
 
-  const primaryBudget = data.budgetAlerts && data.budgetAlerts.length > 0 
-    ? data.budgetAlerts[0] 
+  const primaryBudget = data.budgetAlerts && data.budgetAlerts.length > 0
+    ? data.budgetAlerts[0]
     : null;
 
   if (isSkeletonVisible) {
@@ -316,7 +328,7 @@ export function DashboardDefaultTheme({
   const Card = ({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[24px] bg-white p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)]",
+        "relative overflow-hidden rounded-[20px] sm:rounded-[24px] bg-white p-3 sm:p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)]",
         className,
       )}
       style={style}
@@ -326,8 +338,8 @@ export function DashboardDefaultTheme({
   );
 
   const CardHeader = ({ title, action }: { title: string; action?: React.ReactNode }) => (
-    <div className="mb-6 flex items-center justify-between gap-2">
-      <h3 className="text-[15px] font-bold text-[#1e293b]">{title}</h3>
+    <div className="mb-3 sm:mb-6 flex items-center justify-between gap-2">
+      <h3 className="text-[13px] sm:text-[15px] font-bold text-[#1e293b]">{title}</h3>
       {action}
     </div>
   );
@@ -366,106 +378,121 @@ export function DashboardDefaultTheme({
 
   return (
     <div
-      className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5"
+      className="mx-auto max-w-[1680px] space-y-4 pb-2 sm:space-y-5 px-0.5 sm:px-4"
       style={{
         ...getThemeModuleStyle("dashboard"),
-        padding: "16px",
       }}
     >
       {/* ═══════ ROW 1: 4 Cards ═══════ */}
       <DelayedRender delay={0}>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-[1fr_1fr_1.3fr_1.3fr]">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-[1fr_1fr_1.3fr_1.3fr]">
           {/* Blue Hero Card: Total Assets */}
-          <Card className="bg-[#2B6AF2] text-white p-6 pb-8">
+          <Card className="bg-[#2B6AF2] text-white p-3 sm:p-6 pb-4 sm:pb-8">
             <div className="flex items-start justify-between">
-              <p className="text-[15px] font-semibold text-white/90">总资产</p>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4 stroke-[3]" />
+              <p className="text-[13px] sm:text-[15px] font-semibold text-white/90">总资产</p>
+              <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-white/20">
+                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[3]" />
               </div>
             </div>
-            <p className="mt-4 text-[32px] font-bold tracking-tight font-numbers leading-none">
-              {formatCurrency(data.totalAssets, { compact: true, withSymbol: false })}
+            <p className="mt-2 sm:mt-4 text-[24px] sm:text-[32px] font-bold tracking-tight font-numbers leading-none">
+              {formatCurrency(data.totalAssets, { withSymbol: false })}
             </p>
           </Card>
 
-          {/* Green Hero Card: Month Income */}
-          <Card className="bg-[#4CC98F] text-white p-6 pb-8">
+          {/* Green Hero Card: Month Expense */}
+          <Card className="bg-[#4CC98F] text-white p-3 sm:p-6 pb-4 sm:pb-8">
             <div className="flex items-start justify-between">
-              <p className="text-[15px] font-semibold text-white/90">月收入</p>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-4 w-4 stroke-[3]" />
+              <div>
+                <p className="text-[13px] sm:text-[15px] font-semibold text-white/90">月消费</p>
+                <p className="text-[10px] sm:text-[12px] font-medium text-white mt-0.5">
+                  收入 {formatCurrency(data.monthIncome, { withSymbol: false })} · 支出 {formatCurrency(data.monthExpense, { withSymbol: false })}
+                </p>
+              </div>
+              <div className="flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-white/20">
+                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 stroke-[3]" />
               </div>
             </div>
-            <p className="mt-4 text-[32px] font-bold tracking-tight font-numbers leading-none">
-              {formatCurrency(data.monthIncome, { compact: true, withSymbol: false })}
-            </p>
+            <div className="mt-2 sm:mt-4 flex items-baseline gap-2">
+              <p className="text-[24px] sm:text-[32px] font-bold tracking-tight font-numbers leading-none">
+                {formatCurrency(data.monthExpense, { withSymbol: false })}
+              </p>
+              {data.lastMonthExpense && data.lastMonthExpense > 0 && (
+                <span className={`text-[10px] sm:text-xs font-semibold ${data.monthExpense < data.lastMonthExpense ? 'text-white/90' : 'text-white/70'}`}>
+                  {data.monthExpense < data.lastMonthExpense ? '↓' : '↑'} {Math.abs(Math.round(((data.monthExpense - data.lastMonthExpense) / data.lastMonthExpense) * 100))}%
+                </span>
+              )}
+            </div>
           </Card>
 
           {/* White Card: Budget Progress */}
-          <Card className="p-6">
+          <Card className="p-3 sm:p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-[15px] font-bold text-[#1e293b]">预算执行</h3>
+              <h3 className="text-[13px] sm:text-[15px] font-bold text-[#1e293b]">预算执行</h3>
               <ActionDots />
             </div>
-            <div className="mt-5 space-y-2">
-              <p className="text-xs font-semibold text-[#64748b]">
+            <div className="mt-3 sm:mt-5 space-y-2">
+              <p className="text-[10px] sm:text-xs font-semibold text-[#64748b]">
                 {primaryBudget ? primaryBudget.category : "总预算控制"}
               </p>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#f1f5f9]">
-                <div 
+              <div className="h-2 sm:h-2.5 w-full overflow-hidden rounded-full bg-[#f1f5f9]">
+                <div
                   className={cn(
                     "h-full rounded-full",
                     primaryBudget && primaryBudget.percent > 90 ? "bg-red-500" : "bg-[#4CC98F]"
-                  )} 
-                  style={{ width: `${Math.min(100, Math.max(5, primaryBudget ? primaryBudget.percent : 0))}%` }} 
+                  )}
+                  style={{ width: `${Math.min(100, Math.max(5, primaryBudget ? primaryBudget.percent : 0))}%` }}
                 />
               </div>
               <div className="flex items-center justify-between pt-1">
-                <p className="text-[11px] font-semibold text-[#64748b]">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-[#64748b]">
                   {primaryBudget ? `已用 ${formatCurrency(Number(primaryBudget.used), { compact: true })} / ${formatCurrency(Number(primaryBudget.amount), { compact: true })}` : "暂无预算上限"}
                 </p>
-                <p className="text-[11px] font-bold text-[#0f172a] font-numbers">
+                <p className="text-[10px] sm:text-[11px] font-bold text-[#0f172a] font-numbers">
                   {primaryBudget ? `${primaryBudget.percent.toFixed(0)}%` : "0%"}
                 </p>
               </div>
             </div>
           </Card>
 
-          {/* Light Blue Card: Top Categories (Replacing arbitrary lines with real category metrics) */}
-          <Card className="bg-[#D8E6FC] p-6">
+          {/* Light Blue Card: Top Categories with Trend Lines */}
+          <Card className="bg-[#D8E6FC] p-3 sm:p-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-[15px] font-bold text-[#1e293b]">消费排行</h3>
+              <h3 className="text-[13px] sm:text-[15px] font-bold text-[#1e293b]">消费排行</h3>
               <ActionDots />
             </div>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="flex-1 space-y-2.5">
-                {topCategories.map((cat, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: cat.color }} />
-                    <span className="text-xs font-semibold text-[#475569] truncate max-w-[100px]">
+            <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
+              {topCategories.map((cat, i) => (
+                <div key={i} className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-2 w-[80px] sm:w-[100px]">
+                    <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-sm flex-shrink-0" style={{ backgroundColor: cat.color }} />
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#475569] truncate">
                       {cat.name}
                     </span>
                   </div>
-                ))}
-                {topCategories.length === 0 && (
-                  <span className="text-xs font-semibold text-[#475569]">本月暂无消费</span>
-                )}
-              </div>
-              
-              {dailyExpenseData.length > 0 && (
-                <div className="w-[140px] h-[60px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dailyExpenseData.slice(-7)}>
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#4CC98F" 
-                        strokeWidth={2}
-                        dot={{ fill: "#4CC98F", strokeWidth: 2, r: 2 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="flex-1 h-[30px] sm:h-[40px]">
+                    {cat.trendData && cat.trendData.length > 0 && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={cat.trendData}>
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke={cat.color}
+                            strokeWidth={1.5}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="w-[60px] sm:w-[70px] text-right">
+                    <p className="text-[10px] sm:text-xs font-bold text-[#1e293b] font-numbers">
+                      {formatCurrency(cat.value, { withSymbol: false })}
+                    </p>
+                  </div>
                 </div>
+              ))}
+              {topCategories.length === 0 && (
+                <span className="text-[10px] sm:text-xs font-semibold text-[#475569]">本月暂无消费</span>
               )}
             </div>
           </Card>
@@ -474,11 +501,11 @@ export function DashboardDefaultTheme({
 
       {/* ═══════ ROW 2: 3 Chart Cards ═══════ */}
       <DelayedRender delay={30}>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-3">
           {/* Chart 1: Income vs Expense Trend (Blue/Green Area) */}
           <Card>
             <CardHeader title="收支趋势" action={<FilterBadge />} />
-            <div className="h-[180px] sm:h-[220px]">
+            <div className="h-[140px] sm:h-[180px] md:h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={dailyIncomeExpenseData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                   <defs>
@@ -495,8 +522,8 @@ export function DashboardDefaultTheme({
                   <XAxis dataKey="name" {...chartAxisProps} />
                   <YAxis {...yAxisProps} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }} />
-                  <Area type="monotone" dataKey="expense" name="支出" stroke="#4CC98F" strokeWidth={2.5} fill="url(#colorBlueGreen1)" />
-                  <Area type="monotone" dataKey="income" name="收入" stroke="#2B6AF2" strokeWidth={2.5} fill="url(#colorBlueGreen2)" />
+                  <Area type="monotone" dataKey="expense" name="支出" stroke="#4CC98F" strokeWidth={2} fill="url(#colorBlueGreen1)" />
+                  <Area type="monotone" dataKey="income" name="收入" stroke="#2B6AF2" strokeWidth={2} fill="url(#colorBlueGreen2)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -505,15 +532,15 @@ export function DashboardDefaultTheme({
           {/* Chart 2: Income vs Expense Bar (Blue/Green Bar) */}
           <Card>
             <CardHeader title="月度对比" action={<FilterBadge />} />
-            <div className="h-[180px] sm:h-[220px]">
+            <div className="h-[140px] sm:h-[180px] md:h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthComparisonData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }} barGap={6} barCategoryGap="30%">
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" {...chartAxisProps} />
                   <YAxis {...yAxisProps} />
                   <Tooltip cursor={{ fill: "#f8fafc" }} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }} />
-                  <Bar dataKey="expense" name="支出" fill="#4CC98F" radius={[8, 8, 0, 0]} barSize={24} />
-                  <Bar dataKey="income" name="收入" fill="#2B6AF2" radius={[8, 8, 0, 0]} barSize={24} />
+                  <Bar dataKey="expense" name="支出" fill="#4CC98F" radius={[6, 6, 0, 0]} barSize={20} />
+                  <Bar dataKey="income" name="收入" fill="#2B6AF2" radius={[6, 6, 0, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -522,14 +549,14 @@ export function DashboardDefaultTheme({
           {/* Chart 3: Top Categories History (Multi-color Bar) */}
           <Card>
             <CardHeader title="分类走势" action={<FilterBadge />} />
-            <div className="h-[180px] sm:h-[220px]">
+            <div className="h-[140px] sm:h-[180px] md:h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryBreakdownData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }} barGap={0} barCategoryGap="20%" layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                   <XAxis type="number" {...yAxisProps} />
-                  <YAxis type="category" dataKey="name" {...chartAxisProps} width={60} />
+                  <YAxis type="category" dataKey="name" {...chartAxisProps} width={50} />
                   <Tooltip cursor={{ fill: "#f8fafc" }} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }} />
-                  <Bar dataKey="value" name="支出" radius={[0, 8, 8, 0]} barSize={20}>
+                  <Bar dataKey="value" name="支出" radius={[0, 6, 6, 0]} barSize={16}>
                     {categoryBreakdownData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -566,46 +593,70 @@ export function DashboardDefaultTheme({
             </div>
           </Card>
 
-          {/* Chart 2: Category Break Down (Donut) */}
+          {/* Chart 2: Top Merchants (Donut) */}
           <Card className="lg:col-span-4">
             <CardHeader title="支出构成" action={<FilterBadge />} />
-            <div className="relative flex items-center justify-center h-[180px] sm:h-[220px]">
-              <div className="absolute inset-0 m-auto flex flex-col items-center justify-center">
-                <span className="text-[32px] font-bold text-[#0f172a] font-numbers">
-                  {mainCategoryPercent > 0 ? `${mainCategoryPercent}%` : "0%"}
-                </span>
-                {topCategories.length > 0 && (
-                  <span className="text-[10px] font-semibold text-[#64748b] -mt-1 truncate max-w-[80px] text-center">
-                    {topCategories[0].name}
-                  </span>
+            <div className="flex h-[180px] sm:h-[220px]">
+              <div className="relative w-1/2 flex items-center justify-center">
+                <div className="absolute inset-0 m-auto flex flex-col items-center justify-center gap-1">
+                  {topMerchants.length > 0 ? topMerchants.map((merchant, i) => {
+                    const total = topMerchants.reduce((a, c) => a + c.value, 0);
+                    const percent = Math.round((merchant.value / total) * 100);
+                    return (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: merchant.color }} />
+                        <span className="text-[11px] font-semibold text-[#64748b]">
+                          {percent}%
+                        </span>
+                      </div>
+                    );
+                  }) : (
+                    <span className="text-xs font-medium text-[#64748b]">暂无数据</span>
+                  )}
+                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <Pie
+                      data={topMerchants.length > 0 ? topMerchants : [{ name: "暂无数据", value: 1, color: "#f1f5f9" }]}
+                      innerRadius="65%"
+                      outerRadius="90%"
+                      paddingAngle={6}
+                      dataKey="value"
+                      stroke="none"
+                      cornerRadius={8}
+                    >
+                      {(topMerchants.length > 0 ? topMerchants : [{ name: "暂无数据", value: 1, color: "#f1f5f9" }]).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(v: number) => formatCurrency(v)}
+                      contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              {/* 图例 */}
+              <div className="w-1/2 flex flex-col justify-center gap-2.5 pl-4">
+                {topMerchants.length > 0 ? topMerchants.map((merchant, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: merchant.color }} />
+                    <span className="text-[11px] font-medium text-[#475569] truncate flex-1">
+                      {merchant.name}
+                    </span>
+                    <span className="text-[11px] font-semibold text-[#0f172a] font-numbers shrink-0">
+                      {formatCurrency(merchant.value, { withSymbol: false, compact: true })}
+                    </span>
+                  </div>
+                )) : (
+                  <span className="text-[11px] font-medium text-[#64748b]">暂无数据</span>
                 )}
               </div>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                  <Pie
-                    data={topCategories.length > 0 ? topCategories : [{ name: "暂无数据", value: 1, color: "#f1f5f9" }]}
-                    innerRadius="65%"
-                    outerRadius="90%"
-                    paddingAngle={6}
-                    dataKey="value"
-                    stroke="none"
-                    cornerRadius={8}
-                  >
-                    {(topCategories.length > 0 ? topCategories : [{ name: "暂无数据", value: 1, color: "#f1f5f9" }]).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(v: number) => formatCurrency(v)}
-                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }} 
-                  />
-                </PieChart>
-              </ResponsiveContainer>
             </div>
           </Card>
 
           {/* Chart 3: Recent Transactions Table */}
-          <Card className="lg:col-span-4 p-0" style={{ boxShadow: "none", border: "1px solid rgba(0,0,0,0.06)" }}>
+          <Card className="lg:col-span-4 p-0">
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <h3 className="text-sm font-semibold" style={{ color: "var(--theme-body-text)" }}>近期收支</h3>
@@ -619,71 +670,81 @@ export function DashboardDefaultTheme({
                 <p className="mt-1 text-xs text-slate-400">录入一笔账单后，这里会显示最近的消费明细。</p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-slate-200 mx-4 mb-4">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">类型</th>
-                      <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">分类</th>
-                      <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">商户</th>
-                      <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">时间</th>
-                      <th className="px-3 py-2 text-right text-[11px] font-semibold text-slate-500">金额</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.recentTransactions.slice(0, 5).map((transaction, index) => {
-                      const isIncome = transaction.type === "INCOME";
-                      const date = new Date(transaction.date);
-                      const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
-                      const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+              <table className="w-full px-4 pb-4">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">类型</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">分类</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">商户</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500">时间</th>
+                    <th className="px-3 py-2 text-right text-[11px] font-semibold text-slate-500">金额</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.recentTransactions.slice(0, 5).map((transaction, index) => {
+                    const isIncome = transaction.type === "INCOME";
+                    const date = new Date(transaction.date);
+                    const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
+                    const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 
-                      return (
-                        <tr 
-                          key={transaction.id}
-                          className="border-t border-slate-100 hover:bg-slate-50/30"
-                        >
-                          <td className="px-3 py-2">
-                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600"}`}>
-                              {isIncome ? "收入" : "支出"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-xs font-medium text-slate-700">
-                            {transaction.category || "未分类"}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-slate-500">
-                            {transaction.merchant || transaction.platform || "-"}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-slate-500">
-                            {dateStr} {timeStr}
-                          </td>
-                          <td className={`px-3 py-2 text-right text-xs font-semibold ${isIncome ? "text-blue-600" : "text-red-600"}`}>
-                            {isIncome ? "+" : "-"}{formatCurrency(Number(transaction.amount), { withSymbol: false })}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    return (
+                      <tr
+                        key={transaction.id}
+                        className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/30"
+                      >
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${isIncome ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-600"}`}>
+                            {isIncome ? "收入" : "支出"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs font-medium text-slate-700">
+                          {transaction.category || "未分类"}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-slate-500">
+                          {transaction.merchant || transaction.platform || "-"}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-slate-500">
+                          {dateStr} {timeStr}
+                        </td>
+                        <td className={`px-3 py-2 text-right text-xs font-semibold ${isIncome ? "text-blue-600" : "text-red-600"}`}>
+                          {isIncome ? "+" : "-"}{formatCurrency(Number(transaction.amount), { withSymbol: false })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </Card>
         </div>
       </DelayedRender>
 
       {/* 悬浮筛选器 */}
+    </div>
+  );
+});
+
+DashboardDefaultThemeView.displayName = "DashboardDefaultThemeView";
+
+export function DashboardDefaultTheme(props: DashboardViewProps) {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  return (
+    <>
+      <DashboardDefaultThemeView {...props} />
       <FloatingFilter
         isOpen={isFilterOpen}
         onOpenChange={setIsFilterOpen}
-        transactionCount={data.recentTransactions.length}
-        dateFilter={dateFilter}
-        onDateFilterChange={onDateFilterChange}
-        customPeriod={customPeriod}
-        onCustomPeriodChange={onCustomPeriodChange}
-        platform={platform}
-        onPlatformChange={onPlatformChange}
-        searchQuery={searchQuery}
-        onSearchQueryChange={onSearchQueryChange}
+        transactionCount={props.data.recentTransactions.length}
+        dateFilter={props.dateFilter}
+        onDateFilterChange={props.onDateFilterChange}
+        customPeriod={props.customPeriod}
+        onCustomPeriodChange={props.onCustomPeriodChange}
+        platform={props.platform}
+        onPlatformChange={props.onPlatformChange}
+        searchQuery={props.searchQuery}
+        onSearchQueryChange={props.onSearchQueryChange}
       />
-    </div>
+    </>
   );
 }
