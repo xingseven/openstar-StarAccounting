@@ -11,10 +11,10 @@ export default function ThemesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   return (
-    <div className="mx-auto max-w-[1680px] py-3 sm:py-6 lg:py-8 px-3 sm:px-0 overflow-x-hidden">
+    <div className="mx-auto max-w-[1680px] py-3 sm:py-6 lg:py-8 w-full">
 
       {/* ── 页面标题 ── */}
-      <div className="mb-4 sm:mb-8 px-1">
+      <div className="mb-4 sm:mb-8 px-4 sm:px-0">
         <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
           <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: "var(--theme-muted-text)" }} />
           <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase" style={{ color: "var(--theme-muted-text)" }}>
@@ -30,7 +30,7 @@ export default function ThemesPage() {
       </div>
 
       {/* ── 主题卡片网格 ── */}
-      <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-2 px-1">
+      <div className="grid grid-cols-1 gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-2 px-4 sm:px-0">
         {themes.map((theme) => {
           const isActive = theme.id === themeId;
           const themeManifest = getThemeManifest(theme.id);
@@ -93,7 +93,7 @@ export default function ThemesPage() {
 
               {/* 主卡片 */}
               <div
-                className="relative overflow-hidden rounded-[18px] sm:rounded-[24px] transition-transform duration-200 group-hover:scale-[1.01] group-active:scale-[0.99]"
+                className="relative overflow-hidden rounded-[18px] sm:rounded-[24px] transition-transform duration-200 group-hover:scale-[1.01] group-active:scale-[0.99] w-full"
                 style={{
                   minHeight: "260px",
                   background: isNova
