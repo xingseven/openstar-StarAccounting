@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { Bell, ChevronDown, LogOut, Search, Settings2, User as UserIcon } from "lucide-react";
 import { clearAccessToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "@/components/shared/navigation";
+import { NAV_ITEMS, resolveNavigationHref } from "@/components/shared/navigation";
 import { useUser } from "@/components/shared/UserContext";
 import { useTheme } from "@/components/shared/theme-provider";
 import { getThemeManifest } from "@/themes/theme-manifest";
@@ -23,7 +23,6 @@ export function Header() {
   const usesSoftTransparentChip = themeManifest.sidebar.variant === "white-grid";
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [hasInlineContent, setHasInlineContent] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inlineSlotRef = useRef<HTMLDivElement>(null);
 
@@ -39,20 +38,6 @@ export function Header() {
 
     window.addEventListener("pointerdown", handlePointerDown);
     return () => window.removeEventListener("pointerdown", handlePointerDown);
-  }, []);
-
-  useEffect(() => {
-    const slot = inlineSlotRef.current;
-    if (!slot) return;
-
-    const sync = () => {
-      setHasInlineContent(slot.childElementCount > 0);
-    };
-
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(slot, { childList: true, subtree: true });
-    return () => observer.disconnect();
   }, []);
 
   function logout() {
@@ -72,11 +57,17 @@ export function Header() {
       [item.label, item.caption].some((field) => field.toLowerCase().includes(keyword))
     );
 
-    if (!target || target.href === pathname) {
+    if (!target) {
       return;
     }
 
-    router.push(target.href);
+    const targetHref = resolveNavigationHref(target.href, themeId);
+
+    if (targetHref === pathname) {
+      return;
+    }
+
+    router.push(targetHref);
     setSearchValue("");
   }
 

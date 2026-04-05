@@ -3,15 +3,24 @@
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Moon, Sun, Settings, HelpCircle } from "lucide-react";
+import { ChevronDown, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "@/components/shared/navigation";
+import { NAV_ITEMS, isNavigationItemActive, resolveNavigationHref } from "@/components/shared/navigation";
 import { useTheme } from "@/components/shared/theme-provider";
 import { getThemeManifest, type SidebarVariantId } from "@/themes/theme-manifest";
+import type { ThemeId } from "@/themes/registry";
+
+function getResolvedNavState(itemHref: string, pathname: string, themeId: ThemeId) {
+  return {
+    href: resolveNavigationHref(itemHref, themeId),
+    isActive: isNavigationItemActive(itemHref, pathname),
+  };
+}
 
 /* ────────── Default Theme Sidebar Content ────────── */
 export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const primaryItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
   const secondaryItems = NAV_ITEMS.slice(Math.max(NAV_ITEMS.length - 2, 0));
 
@@ -38,13 +47,13 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 overflow-y-auto px-1 pb-2">
         <div className="space-y-1.5">
           {primaryItems.map((item) => {
-            const isActive = pathname === item.href;
+            const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
             const Icon = item.icon;
 
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
@@ -85,13 +94,13 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {secondaryItems.length > 0 ? (
           <div className="mt-8 space-y-1.5 border-t pt-6" style={{ borderColor: "var(--theme-sidebar-border)" }}>
             {secondaryItems.map((item) => {
-              const isActive = pathname === item.href;
+              const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
               const Icon = item.icon;
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={href}
                   onClick={onNavigate}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
@@ -137,6 +146,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 /* ────────── Analytics Theme Sidebar Content ────────── */
 export function AnalyticsSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   
   // Splitting items by semantic meaning to match the "GENERAL" and "SUPPORT" sections in design
   const generalItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
@@ -161,13 +171,13 @@ export function AnalyticsSidebarContent({ onNavigate }: { onNavigate?: () => voi
           <h4 className="mb-4 px-2 text-[11px] font-bold tracking-wider text-[#94a3b8]">GENERAL</h4>
           <div className="space-y-1.5">
             {generalItems.map((item) => {
-              const isActive = pathname === item.href;
+              const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
               const Icon = item.icon;
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={href}
                   onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-4 rounded-[20px] px-4 py-3.5 transition-all",
@@ -191,13 +201,13 @@ export function AnalyticsSidebarContent({ onNavigate }: { onNavigate?: () => voi
           <h4 className="mb-4 px-2 text-[11px] font-bold tracking-wider text-[#94a3b8]">SUPPORT</h4>
           <div className="space-y-1.5">
             {supportItems.map((item) => {
-              const isActive = pathname === item.href;
+              const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
               const Icon = item.icon;
 
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={href}
                   onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-4 rounded-[20px] px-4 py-3.5 transition-all",
@@ -235,6 +245,7 @@ export function AnalyticsSidebarContent({ onNavigate }: { onNavigate?: () => voi
 /* ────────── Orange-Purple Theme Sidebar Content ────────── */
 export function OrangePurpleSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const primaryItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
   const bottomItems  = NAV_ITEMS.slice(Math.max(NAV_ITEMS.length - 2, 0));
 
@@ -250,12 +261,12 @@ export function OrangePurpleSidebarContent({ onNavigate }: { onNavigate?: () => 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto space-y-1 scrollbar-none">
         {primaryItems.map((item) => {
-          const isActive = pathname === item.href;
+          const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onNavigate}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -280,12 +291,12 @@ export function OrangePurpleSidebarContent({ onNavigate }: { onNavigate?: () => 
       {bottomItems.length > 0 && (
         <div className="mt-4 space-y-1 border-t border-[#f0f1f7] pt-4">
           {bottomItems.map((item) => {
-            const isActive = pathname === item.href;
+            const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 onClick={onNavigate}
                 className={cn(
                   "group relative flex items-center gap-3 rounded-[14px] px-3 py-3 text-[13px] font-semibold transition-all",
@@ -311,6 +322,7 @@ export function OrangePurpleSidebarContent({ onNavigate }: { onNavigate?: () => 
 /* ────────── Dusty Blue Theme Sidebar Content ────────── */
 export function DustyBlueSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const primaryItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
   const bottomItems  = NAV_ITEMS.slice(Math.max(NAV_ITEMS.length - 2, 0));
 
@@ -326,12 +338,12 @@ export function DustyBlueSidebarContent({ onNavigate }: { onNavigate?: () => voi
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto space-y-2 scrollbar-none">
         {primaryItems.map((item) => {
-          const isActive = pathname === item.href;
+          const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onNavigate}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -352,12 +364,12 @@ export function DustyBlueSidebarContent({ onNavigate }: { onNavigate?: () => voi
       {bottomItems.length > 0 && (
         <div className="mt-4 space-y-2 border-t border-[#E4E9F0] pt-4">
           {bottomItems.map((item) => {
-            const isActive = pathname === item.href;
+            const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 onClick={onNavigate}
                 className={cn(
                   "group relative flex items-center justify-center mx-auto h-12 w-12 rounded-[16px] transition-all",
@@ -380,6 +392,7 @@ export function DustyBlueSidebarContent({ onNavigate }: { onNavigate?: () => voi
 /* ────────── Vibrant Theme Sidebar Content ────────── */
 export function VibrantSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const primaryItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
   const bottomItems  = NAV_ITEMS.slice(Math.max(NAV_ITEMS.length - 2, 0));
 
@@ -395,12 +408,12 @@ export function VibrantSidebarContent({ onNavigate }: { onNavigate?: () => void 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto space-y-2 scrollbar-none">
         {primaryItems.map((item) => {
-          const isActive = pathname === item.href;
+          const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onNavigate}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -421,12 +434,12 @@ export function VibrantSidebarContent({ onNavigate }: { onNavigate?: () => void 
       {bottomItems.length > 0 && (
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
           {bottomItems.map((item) => {
-            const isActive = pathname === item.href;
+            const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 onClick={onNavigate}
                 className={cn(
                   "group relative flex items-center justify-center mx-auto h-[52px] w-[52px] rounded-[18px] transition-all duration-300",
@@ -449,6 +462,7 @@ export function VibrantSidebarContent({ onNavigate }: { onNavigate?: () => void 
 /* ────────── Charming Purple Theme Sidebar Content ────────── */
 export function CharmingPurpleSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const primaryItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
   const bottomItems  = NAV_ITEMS.slice(Math.max(NAV_ITEMS.length - 2, 0));
 
@@ -464,12 +478,12 @@ export function CharmingPurpleSidebarContent({ onNavigate }: { onNavigate?: () =
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto space-y-3 scrollbar-none mt-4">
         {primaryItems.map((item) => {
-          const isActive = pathname === item.href;
+          const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onNavigate}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -490,12 +504,12 @@ export function CharmingPurpleSidebarContent({ onNavigate }: { onNavigate?: () =
       {bottomItems.length > 0 && (
         <div className="mt-4 space-y-3 pt-4">
           {bottomItems.map((item) => {
-            const isActive = pathname === item.href;
+            const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 onClick={onNavigate}
                 className={cn(
                   "group relative flex items-center gap-4 rounded-full px-4 py-3 text-[14px] font-bold transition-all",
@@ -518,6 +532,7 @@ export function CharmingPurpleSidebarContent({ onNavigate }: { onNavigate?: () =
 /* ────────── White Grid Theme Sidebar Content ────────── */
 export function WhiteGridSidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const primaryItems = NAV_ITEMS.slice(0, Math.max(NAV_ITEMS.length - 2, 0));
   const bottomItems  = NAV_ITEMS.slice(Math.max(NAV_ITEMS.length - 2, 0));
 
@@ -531,12 +546,12 @@ export function WhiteGridSidebarContent({ onNavigate }: { onNavigate?: () => voi
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto space-y-1.5 scrollbar-none">
         {primaryItems.map((item) => {
-          const isActive = pathname === item.href;
+          const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               onClick={onNavigate}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -557,12 +572,12 @@ export function WhiteGridSidebarContent({ onNavigate }: { onNavigate?: () => voi
       {bottomItems.length > 0 && (
         <div className="mt-4 space-y-1.5 pt-4">
           {bottomItems.map((item) => {
-            const isActive = pathname === item.href;
+            const { href, isActive } = getResolvedNavState(item.href, pathname, themeId);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 onClick={onNavigate}
                 className={cn(
                   "group relative flex items-center gap-3 rounded-full px-4 py-2.5 text-[13px] font-bold transition-all",

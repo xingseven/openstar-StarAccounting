@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS } from "@/components/shared/navigation";
+import { NAV_ITEMS, isNavigationItemActive, resolveNavigationHref } from "@/components/shared/navigation";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/shared/theme-provider";
 import { getThemeManifest } from "@/themes/theme-manifest";
@@ -23,13 +23,14 @@ export function MobileBottomNav() {
     >
       <nav className="flex w-full items-center overflow-x-auto no-scrollbar gap-2 px-3 pt-2 pb-2">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          const href = resolveNavigationHref(item.href, themeId);
+          const isActive = isNavigationItemActive(item.href, pathname);
           const Icon = item.icon;
 
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "group flex shrink-0 min-w-[64px] flex-col items-center justify-center gap-1 rounded-xl p-1 transition-all duration-200 active:scale-95",

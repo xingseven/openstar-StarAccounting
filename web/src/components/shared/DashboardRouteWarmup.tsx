@@ -7,7 +7,9 @@ import { preloadConsumptionData } from "@/features/consumption/data-loader";
 import { preloadDashboardData } from "@/features/dashboard/data-loader";
 import { preloadLoansData } from "@/features/loans/data-loader";
 import { preloadSavingsData } from "@/features/savings/data-loader";
-import { NAV_ITEMS } from "@/components/shared/navigation";
+import { NAV_ITEMS, resolveNavigationHref } from "@/components/shared/navigation";
+import { useTheme } from "@/components/shared/theme-provider";
+import { isDashboardRoutePath } from "@/themes/dashboard-routes";
 
 type IdleCallbackHandle = {
   type: "idle" | "timeout";
@@ -86,9 +88,11 @@ function cancelScheduledTask(handle?: IdleCallbackHandle) {
   window.clearTimeout(handle.id);
 }
 
-function getPrefetchPlan(pathname: string) {
-  const allRoutes = NAV_ITEMS.map((item) => item.href);
-  const primaryRoutes = PRIMARY_ROUTE_ORDER.filter((href) => href !== pathname);
+function getPrefetchPlan(pathname: string, themeId: ReturnType<typeof useTheme>["themeId"]) {
+  const allRoutes = NAV_ITEMS.map((item) => resolveNavigationHref(item.href, themeId));
+  const primaryRoutes = PRIMARY_ROUTE_ORDER
+    .map((href) => resolveNavigationHref(href, themeId))
+    .filter((href, index, routes) => href !== pathname && routes.indexOf(href) === index);
   const secondaryRoutes = allRoutes.filter((href) => href !== pathname && !primaryRoutes.includes(href));
   return { primaryRoutes, secondaryRoutes };
 }
@@ -104,6 +108,7 @@ function getNetworkProfile() {
 export function DashboardRouteWarmup() {
   const router = useRouter();
   const pathname = usePathname();
+  const { themeId } = useTheme();
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
@@ -111,7 +116,7 @@ export function DashboardRouteWarmup() {
     hasStartedRef.current = true;
 
     const { saveData, effectiveType } = getNetworkProfile();
-    const { primaryRoutes, secondaryRoutes } = getPrefetchPlan(pathname);
+    const { primaryRoutes, secondaryRoutes } = getPrefetchPlan(pathname, themeId);
     const allowSecondaryRoutes = !saveData && !["slow-2g", "2g", "3g"].includes(effectiveType);
     const queue = allowSecondaryRoutes ? [...primaryRoutes, ...secondaryRoutes] : primaryRoutes;
 
@@ -128,7 +133,8 @@ export function DashboardRouteWarmup() {
       index += 1;
 
       router.prefetch(href);
-      ROUTE_DATA_PRELOADERS[href]?.();
+      const preloader = isDashboardRoutePath(href) ? preloadDashboardData : ROUTE_DATA_PRELOADERS[href];
+      preloader?.();
 
       const isPrimaryRoute = index < primaryRoutes.length;
       nextTask = scheduleWhenIdle(warmNextRoute, isPrimaryRoute ? 350 : 900);
@@ -140,7 +146,7 @@ export function DashboardRouteWarmup() {
       cancelled = true;
       cancelScheduledTask(nextTask);
     };
-  }, [pathname, router]);
+  }, [pathname, router, themeId]);
 
   return null;
 }

@@ -10,6 +10,7 @@ import { VibrantLoadingShell } from "@/features/dashboard/components/themes/Vibr
 import { CharmingPurpleLoadingShell } from "@/features/dashboard/components/themes/CharmingPurpleLoadingShell";
 import { WhiteGridLoadingShell } from "@/features/dashboard/components/themes/WhiteGridLoadingShell";
 import { getThemeManifest, type DashboardVariantId } from "@/themes/theme-manifest";
+import { getDashboardEntryFileNameForTheme } from "@/themes/dashboard-routes";
 
 export type DashboardThemeProps = {
   data: DashboardData;
@@ -70,20 +71,10 @@ const DASHBOARD_COMPONENTS: Record<DashboardVariantId, DashboardThemeComponent> 
   ),
 };
 
-const DASHBOARD_ENTRY_FILES: Record<DashboardVariantId, string> = {
-  default: "DefaultDashboard.tsx",
-  analytics: "AnalyticsDashboard.tsx",
-  "orange-purple": "OrangePurpleDashboard.tsx",
-  "dusty-blue": "DustyBlueDashboard.tsx",
-  vibrant: "VibrantDashboard.tsx",
-  "charming-purple": "CharmingPurpleDashboard.tsx",
-  "white-grid": "WhiteGridDashboard.tsx",
-};
-
 export function getDashboardThemeComponent(themeId: ThemeId) {
   return DASHBOARD_COMPONENTS[getThemeManifest(themeId).dashboardVariant];
 }
 
 export function getDashboardEntryFileName(themeId: ThemeId) {
-  return DASHBOARD_ENTRY_FILES[getThemeManifest(themeId).dashboardVariant];
+  return getDashboardEntryFileNameForTheme(themeId);
 }

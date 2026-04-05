@@ -12,6 +12,8 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import type { ThemeId } from "@/themes/registry";
+import { getDashboardRoutePath, isDashboardRoutePath } from "@/themes/dashboard-routes";
 
 export type NavigationItem = {
   href: string;
@@ -57,7 +59,19 @@ export const PAGE_META: Record<string, PageMeta> = {
   "/about": { title: "关于项目", subtitle: "查看产品说明、版本信息和能力边界。" },
 };
 
+export function resolveNavigationHref(href: string, themeId: ThemeId) {
+  return href === "/" ? getDashboardRoutePath(themeId) : href;
+}
+
+export function isNavigationItemActive(href: string, pathname: string) {
+  return href === "/" ? isDashboardRoutePath(pathname) : pathname === href;
+}
+
 export function getPageMeta(pathname: string): PageMeta {
+  if (isDashboardRoutePath(pathname)) {
+    return PAGE_META["/"];
+  }
+
   return PAGE_META[pathname] ?? {
     title: "财务面板",
     subtitle: "用更清晰的视图组织你的资金状态。",

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3.79 - 2026-04-05
+
+### Changed
+
+- **总览页正式改为 Dashboard 文件名路由**:
+  - 新增 `web/src/app/(dashboard)/[dashboardEntry]/page.tsx`，使总览页可直接通过 `/<Dashboard文件名>` 访问，例如 `/DefaultDashboard`。
+  - `web/src/app/(dashboard)/page.tsx` 改为根入口页，加载后会按当前主题自动跳转到对应的 Dashboard 文件名路由。
+  - 侧边栏、移动端底部导航、页内搜索和路由预热同步适配新的总览路由，不再依赖页面提示条。
+
+### Docs
+
+- **主题开发文档同步更新**:
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.5`。
+  - 补充说明总览页现已直接使用 `/<Dashboard文件名>` 路由，`/` 只作为自动跳转入口。
+
+### Verified
+
+- `npm.cmd run typecheck`
+
 ## 2.3.78 - 2026-04-05
 
 ### Changed
