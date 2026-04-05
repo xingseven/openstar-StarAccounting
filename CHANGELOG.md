@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.80 - 2026-04-05
+
+### Changed
+
+- **前端目录收口与旧入口说明补齐**:
+  - 重写根目录 `README.md`，明确 `web/` 为当前唯一生效的前端目录，`src/server/` 为当前唯一生效的后端目录。
+  - 修正根目录 `Dockerfile`，从仓库根构建时直接打包 `web/` 前端，避免继续复制旧根目录前端产物路径。
+  - 新增 `docs/前端目录收口开发文档.md`，固化 `src` 与 `web/src` 的重叠统计、27 个分叉文件和后续删除顺序。
+
+### Docs
+
+- **目录迁移文档建档**:
+  - 新建 `docs/前端目录收口开发文档.md`，文档大版本为 `v1.0`，小版本为 `v1.0.0`。
+  - 同步更新 `docs/开发进度.md`，新增 V2.3.80 进度记录。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- README.md Dockerfile CHANGELOG.md docs/开发进度.md docs/前端目录收口开发文档.md`
+- 全仓 `git diff --check` 仍存在与本轮无关的 trailing whitespace，集中在 `src/features/dashboard/components/themes/DefaultDashboard.tsx` 与 `报错.txt`
+
 ## 2.3.79 - 2026-04-05
 
 ### Changed

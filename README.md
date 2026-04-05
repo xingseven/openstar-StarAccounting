@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenStar StarAccounting
 
-## Getting Started
+## 仓库结构
 
-First, run the development server:
+- `web/`: 当前唯一生效的 Next.js 前端工程。
+- `src/server/`: 当前唯一生效的后端服务、Prisma 和部署脚本。
+- `src/` 中除 `server/` 以外的目录：历史前端副本，保留用于迁移比对，不作为默认启动入口。
+- `docs/`: 开发、发布和迁移文档。
+
+## 当前启动方式
+
+在仓库根目录执行：
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+它会同时启动：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 前端：`web/`
+- 后端：`src/server/`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+常用命令：
 
-## Learn More
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run typecheck
+npm run test:e2e
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 开发约定
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 前端业务代码统一维护在 `web/src/`。
+- 后端代码统一维护在 `src/server/src/`。
+- UI 组件脚手架、主题开发和页面改造，默认都以 `web/` 为目标目录。
+- 根目录遗留前端暂不直接删除，删除前请先核对 `src/` 与 `web/src/` 的分叉文件。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 目录收口说明
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- CI、Playwright、Docker Compose 和非 Docker 部署脚本已经统一指向 `web/` 前端与 `src/server/` 后端。
+- 根目录 `Dockerfile` 现在也按 `web/` 前端构建，避免误打包旧前端入口。
+- 旧前端清理清单与迁移步骤见 `docs/前端目录收口开发文档.md`。
