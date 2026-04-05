@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.104 - 2026-04-05
+
+### Changed
+
+- **默认总览主题骨架继续对齐真实模块尺寸**:
+  - 更新 `web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx`，将首行四张卡从通用工作台骨架改成更贴近 `web/src/features/dashboard/components/themes/DefaultDashboard.tsx` 的专用镜像块。
+  - 两张高亮卡补齐真实页面的大数字高度、顶部图标尺寸和底部留白；预算执行卡补齐单条进度条与左右信息；消费排行卡改成“分类标签 + 微趋势线 + 右侧金额”三段式骨架。
+  - 第三行的“支出构成”和“近期收支”改成页面级专用骨架，对齐真实页面的左右分栏、表头密度和行高节奏，不再直接套通用 donut/table 占位。
+
+### Docs
+
+- **骨架镜像规则与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充“共享骨架已接入后，如尺寸和真实模块仍不一致，允许页面级 LoadingShell 保留更细粒度专用镜像块”的约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.104 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.25`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/features/dashboard/components/themes/DashboardLoadingShell.tsx`
+- `git diff --check -- web/src/features/dashboard/components/themes/DashboardLoadingShell.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+- `npm.cmd run typecheck`
+
 ## 2.3.103 - 2026-04-05
 
 ### Changed
