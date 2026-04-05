@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, Banknote, Check, CheckCircle, ChevronDown, Database, FileText, Loader2, MoreVertical, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
+import { AlertCircle, Banknote, CheckCircle, Database, FileText, Loader2, Search, Tag, Trash2, Upload, Wand2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
@@ -125,19 +125,6 @@ const Card = ({ children, className, style }: { children: React.ReactNode; class
   >
     {children}
   </div>
-);
-
-const CardHeader = ({ title, action }: { title: string; action?: React.ReactNode }) => (
-  <div className="mb-3 sm:mb-6 flex items-center justify-between gap-2">
-    <h3 className="text-[13px] sm:text-[13px] font-bold text-[#1e293b]">{title}</h3>
-    {action}
-  </div>
-);
-
-const ActionDots = () => (
-  <button className="flex h-6 w-6 items-center justify-center rounded-full text-[#94a3b8] transition hover:bg-slate-100">
-    <MoreVertical className="h-4 w-4" />
-  </button>
 );
 
 export default function DataPage() {
@@ -543,107 +530,61 @@ export default function DataPage() {
       </datalist>
 
       <DelayedRender delay={0}>
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-[1fr_1fr_1.3fr_1.3fr]">
-          <Card className="bg-[#2B6AF2] text-white p-3 sm:p-3 pb-4 sm:pb-4">
-            <div className="flex items-start justify-between">
-              <p className="text-[13px] sm:text-[13px] font-semibold text-white/90">总记录数</p>
-              <div className="flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white/20">
-                <FileText className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[3]" />
+        <div className="grid gap-3 xl:grid-cols-12">
+          <Card className="p-4 xl:col-span-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2B6AF2]/10">
+                <FileText className="h-5 w-5 text-[#2B6AF2]" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#64748b]">总记录数</p>
+                <p className="text-xl font-bold text-[#1e293b] font-numbers">{total}</p>
               </div>
             </div>
-            <p className="mt-2 sm:mt-2 text-[28px] sm:text-[64px] font-bold tracking-tight font-numbers leading-none">
-              {total}
-            </p>
-            <p className="text-[10px] sm:text-xs font-medium text-white mt-1 sm:mt-6">
-              系统交易总量
-            </p>
+            <p className="mt-3 text-xs text-[#94a3b8]">系统交易总量</p>
           </Card>
 
-          <Card className="bg-[#4CC98F] text-white p-3 sm:p-3 pb-4 sm:pb-4">
-            <div className="flex items-start justify-between">
-              <p className="text-[13px] sm:text-[13px] font-semibold text-white/90">归类规则</p>
-              <div className="flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white/20">
-                <Tag className="h-3.5 w-3.5 sm:h-3 sm:w-3 stroke-[3]" />
+          <Card className="p-4 sm:p-6 xl:col-span-9">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4CC98F]/10">
+                <Upload className="h-4 w-4 text-[#4CC98F]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">账单导入</p>
+                <h3 className="text-sm font-bold text-[#1e293b]">导入微信 / 支付宝账单</h3>
               </div>
             </div>
-            <p className="mt-2 sm:mt-2 text-[28px] sm:text-[64px] font-bold tracking-tight font-numbers leading-none">
-              {merchantRules.length}
-            </p>
-            <p className="text-[10px] sm:text-xs font-medium text-white mt-1 sm:mt-6">
-              自动归类规则数
-            </p>
-          </Card>
+            <p className="text-xs text-[#64748b] mb-4">上传 CSV 或 XLSX 文件，系统会自动识别并入库。</p>
 
-          <Card className="p-3 sm:p-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] sm:text-[13px] font-bold text-[#1e293b]">账单导入</h3>
-              <ActionDots />
-            </div>
-            <div className="mt-3 sm:mt-3 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => handleImport("wechat")}
                 disabled={importLoading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#4CC98F] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3EB97F] disabled:opacity-50"
               >
-                {importLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
-                微信
+                {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                导入微信账单
               </button>
               <button
                 onClick={() => handleImport("alipay")}
                 disabled={importLoading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#2B6AF2] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2563EB] disabled:opacity-50"
               >
-                {importLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                支付宝
+                {importLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                导入支付宝账单
               </button>
             </div>
+
+            <input ref={fileInputRef} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFileChange} />
+
             {importResult ? (
-              <div className="mt-3 text-[10px] sm:text-xs text-[#64748b]">
-                成功 {importResult.insertedCount} | 重复 {importResult.duplicateCount} | 无效 {importResult.invalidCount}
+              <div className="mt-4 rounded-xl bg-[#f8fafc] p-3 text-sm text-[#64748b]">
+                总行数：{importResult.totalRows} | 成功：{importResult.insertedCount} | 重复：{importResult.duplicateCount} | 无效：{importResult.invalidCount}
+                {importResult.linkedLoanCount || importResult.syncedLoanCount
+                  ? ` | 关联贷款：${importResult.linkedLoanCount ?? 0} | 同步余额：${importResult.syncedLoanCount ?? 0}`
+                  : ""}
               </div>
             ) : null}
-          </Card>
-
-          <Card className="bg-[#D8E6FC] p-3 sm:p-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] sm:text-[13px] font-bold text-[#1e293b]">手动补录</h3>
-              <ActionDots />
-            </div>
-            <div className="mt-3 sm:mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setManualEntryMode("income");
-                  setManualTransactionForm(getDefaultManualForm("income"));
-                }}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                  manualEntryMode === "income"
-                    ? "bg-[#2B6AF2] text-white"
-                    : "bg-white/70 text-[#475569] hover:bg-white"
-                )}
-              >
-                录入收入
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setManualEntryMode("expense");
-                  setManualTransactionForm(getDefaultManualForm("expense"));
-                }}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                  manualEntryMode === "expense"
-                    ? "bg-[#4CC98F] text-white"
-                    : "bg-white/70 text-[#475569] hover:bg-white"
-                )}
-              >
-                录入支出
-              </button>
-            </div>
-            <p className="mt-3 text-[10px] sm:text-xs text-[#475569]">
-              {manualEntryMode === "income" ? "工资、奖金等银行卡收入" : "云闪付、现金等无法导出的消费"}
-            </p>
           </Card>
         </div>
       </DelayedRender>
@@ -671,13 +612,68 @@ export default function DataPage() {
       ) : null}
 
       <DelayedRender delay={60}>
-        <div className="grid grid-cols-1 gap-2 sm:gap-4 lg:grid-cols-12">
-          <Card className="lg:col-span-4 p-3 sm:p-4">
-            <CardHeader title={manualEntryMode === "income" ? "手动录入收入" : "手动录入支出"} />
-            <form onSubmit={handleManualTransactionSubmit} className="space-y-3">
+        <div className="grid gap-4 xl:grid-cols-12 xl:items-start">
+          <Card className="p-4 sm:p-6 xl:col-span-3">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2B6AF2]/10">
+                <Banknote className="h-4 w-4 text-[#2B6AF2]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">手动补录</p>
+                <h3 className="text-sm font-bold text-[#1e293b]">手动录入收支</h3>
+              </div>
+            </div>
+            <p className="text-xs text-[#64748b] mb-4">工资、奖金这类银行卡收入，以及云闪付、现金等无法导出的消费，都可以在这里直接补录。</p>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setManualEntryMode("income");
+                  setManualTransactionForm(getDefaultManualForm("income"));
+                }}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition",
+                  manualEntryMode === "income"
+                    ? "bg-[#2B6AF2] text-white"
+                    : "bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]"
+                )}
+              >
+                录入收入
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setManualEntryMode("expense");
+                  setManualTransactionForm(getDefaultManualForm("expense"));
+                }}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition",
+                  manualEntryMode === "expense"
+                    ? "bg-[#EF4444] text-white"
+                    : "bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]"
+                )}
+              >
+                录入支出
+              </button>
+            </div>
+
+            <form onSubmit={handleManualTransactionSubmit} className="space-y-4">
+              <div className={cn(
+                "rounded-xl p-3",
+                manualEntryMode === "income" ? "bg-[#EFF6FF]" : "bg-[#FEF2F2]"
+              )}>
+                <p className="text-xs font-semibold text-[#475569] mb-1">推荐场景</p>
+                <p className="text-xs text-[#64748b]">
+                  {manualEntryMode === "income"
+                    ? "适合记录工资、奖金、报销或其他打到银行卡里的收入，后续统计会自动计入收入侧。"
+                    : "适合补录云闪付、银行卡、现金等无法批量导出的消费，保持账目收支完整。"}
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
                     {manualEntryMode === "income" ? "收入金额" : "支出金额"}
                   </label>
                   <Input
@@ -688,11 +684,11 @@ export default function DataPage() {
                     value={manualTransactionForm.amount}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, amount: event.target.value }))}
                     placeholder="例如：12000"
-                    className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
                     {manualEntryMode === "income" ? "入账时间" : "消费时间"}
                   </label>
                   <Input
@@ -700,21 +696,21 @@ export default function DataPage() {
                     type="datetime-local"
                     value={manualTransactionForm.date}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, date: event.target.value }))}
-                    className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
                     {manualEntryMode === "income" ? "收入分类" : "支出分类"}
                   </label>
                   <select
                     required
                     value={manualTransactionForm.category}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, category: event.target.value }))}
-                    className="h-9 sm:h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
+                    className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
                   >
                     {manualCategoryOptions.map((item) => (
                       <option key={item} value={item}>
@@ -724,14 +720,14 @@ export default function DataPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
                     {manualEntryMode === "income" ? "入账平台" : "支付平台"}
                   </label>
                   <select
                     required
                     value={manualTransactionForm.platform}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, platform: event.target.value }))}
-                    className="h-9 sm:h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
+                    className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
                   >
                     {MANUAL_TRANSACTION_PLATFORMS.map((item) => (
                       <option key={item} value={item}>
@@ -744,25 +740,23 @@ export default function DataPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
                     {manualEntryMode === "income" ? "来源 / 发放方" : "商户 / 收款方"}
                   </label>
                   <Input
                     value={manualTransactionForm.merchant}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, merchant: event.target.value }))}
-                    placeholder={manualEntryMode === "income" ? "例如：公司工资" : "例如：超市"}
-                    className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    placeholder={manualEntryMode === "income" ? "例如：公司工资" : "例如：超市 / 房租"}
+                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">
-                    备注
-                  </label>
+                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">备注</label>
                   <Input
                     value={manualTransactionForm.description}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, description: event.target.value }))}
                     placeholder="补充说明"
-                    className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
                   />
                 </div>
               </div>
@@ -771,10 +765,10 @@ export default function DataPage() {
                 type="submit"
                 disabled={manualTransactionLoading}
                 className={cn(
-                  "w-full h-10 sm:h-11 rounded-2xl font-medium",
+                  "w-full h-11 rounded-2xl font-medium",
                   manualEntryMode === "income"
                     ? "bg-[#2B6AF2] hover:bg-[#2563EB]"
-                    : "bg-[#4CC98F] hover:bg-[#3EB97F]"
+                    : "bg-[#EF4444] hover:bg-[#DC2626]"
                 )}
               >
                 {manualTransactionLoading ? (
@@ -792,149 +786,170 @@ export default function DataPage() {
             </form>
           </Card>
 
-          <Card className="lg:col-span-8 p-3 sm:p-4">
-            <CardHeader title="自动归类规则" action={<span className="text-xs font-semibold text-[#64748b]">{merchantRules.length} 条规则</span>} />
-            <div className="grid gap-3 lg:grid-cols-2">
-              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
-                <div className="grid gap-3">
-                  <div className="grid grid-cols-2 gap-3">
+          <Card className="p-4 sm:p-6 xl:col-span-9">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#A855F7]/10">
+                <Wand2 className="h-4 w-4 text-[#A855F7]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">自动归类</p>
+                <h3 className="text-sm font-bold text-[#1e293b]">按交易对方建立固定支出规则</h3>
+              </div>
+            </div>
+            <p className="text-xs text-[#64748b] mb-4">从已出现过的交易对方里搜索并勾选，绑定到一个分类后，后续导入和手动补录会自动套用。</p>
+
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
+              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-[#64748b] mb-1 block">规则名称</label>
+                    <Input
+                      value={ruleName}
+                      onChange={(event) => setRuleName(event.target.value)}
+                      placeholder="例如：房租 / 物业费 / 固定订阅"
+                      className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-[#64748b] mb-1 block">目标分类</label>
+                    <Input
+                      list="data-expense-category-suggestions"
+                      value={ruleCategory}
+                      onChange={(event) => setRuleCategory(event.target.value)}
+                      placeholder="例如：房租"
+                      className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                  <div>
+                    <label className="text-xs font-semibold text-[#64748b] mb-1 block">统一备注</label>
+                    <Input
+                      value={ruleDescription}
+                      onChange={(event) => setRuleDescription(event.target.value)}
+                      placeholder="例如：每月房租"
+                      className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    />
+                  </div>
+
+                  <label className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-4 text-sm text-[#64748b]">
+                    <input
+                      type="checkbox"
+                      checked={applyRuleToHistory}
+                      onChange={(event) => setApplyRuleToHistory(event.target.checked)}
+                      className="rounded border-[#cbd5e1]"
+                    />
+                    回填历史交易
+                  </label>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-dashed border-[#e2e8f0] bg-white p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">规则名称</label>
-                      <Input
-                        value={ruleName}
-                        onChange={(event) => setRuleName(event.target.value)}
-                        placeholder="例如：房租"
-                        className="h-9 rounded-xl border-[#e2e8f0] bg-white text-sm"
-                      />
+                      <p className="text-sm font-semibold text-[#1e293b]">选择交易对方</p>
+                      <p className="mt-1 text-xs text-[#64748b]">支持按关键词搜索，适合房东、物业、固定收款方这类长期重复对象。</p>
                     </div>
-                    <div>
-                      <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">目标分类</label>
-                      <Input
-                        list="data-expense-category-suggestions"
-                        value={ruleCategory}
-                        onChange={(event) => setRuleCategory(event.target.value)}
-                        placeholder="例如：房租"
-                        className="h-9 rounded-xl border-[#e2e8f0] bg-white text-sm"
-                      />
+                    <div className="text-sm text-[#64748b]">
+                      已选 <span className="font-semibold text-[#1e293b]">{selectedRuleMerchants.length}</span> 个
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">统一备注</label>
-                      <Input
-                        value={ruleDescription}
-                        onChange={(event) => setRuleDescription(event.target.value)}
-                        placeholder="可选"
-                        className="h-9 rounded-xl border-[#e2e8f0] bg-white text-sm"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <label className="inline-flex h-9 items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-3 text-xs text-[#64748b]">
-                        <input
-                          type="checkbox"
-                          checked={applyRuleToHistory}
-                          onChange={(event) => setApplyRuleToHistory(event.target.checked)}
-                          className="rounded border-[#cbd5e1]"
-                        />
-                        回填历史交易
-                      </label>
-                    </div>
+                  <div className="relative mt-4">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+                    <Input
+                      value={merchantKeyword}
+                      onChange={(event) => setMerchantKeyword(event.target.value)}
+                      placeholder="搜索交易对方，例如：房东、链家、自如"
+                      className="pl-9 h-10 rounded-xl border-[#e2e8f0]"
+                    />
                   </div>
 
-                  <div className="rounded-2xl border border-dashed border-[#e2e8f0] bg-white p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-[#1e293b]">选择交易对方</p>
-                      <span className="text-xs text-[#64748b]">已选 {selectedRuleMerchants.length} 个</span>
+                  {selectedRuleMerchants.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedRuleMerchants.map((merchant) => (
+                        <button
+                          key={merchant}
+                          type="button"
+                          onClick={() => toggleRuleMerchant(merchant)}
+                          className="rounded-full bg-[#1e293b] px-3 py-1 text-xs font-medium text-white transition hover:bg-[#334155]"
+                        >
+                          {merchant}
+                        </button>
+                      ))}
                     </div>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94a3b8]" />
-                      <Input
-                        value={merchantKeyword}
-                        onChange={(event) => setMerchantKeyword(event.target.value)}
-                        placeholder="搜索交易对方"
-                        className="h-8 pl-8 text-xs rounded-xl border-[#e2e8f0]"
-                      />
-                    </div>
-                    {selectedRuleMerchants.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {selectedRuleMerchants.map((merchant) => (
-                          <button
-                            key={merchant}
-                            type="button"
-                            onClick={() => toggleRuleMerchant(merchant)}
-                            className="rounded-full bg-[#1e293b] px-2 py-0.5 text-[10px] font-medium text-white transition hover:bg-[#334155]"
-                          >
-                            {merchant}
-                          </button>
-                        ))}
+                  ) : null}
+
+                  <div className="mt-4 max-h-80 overflow-y-auto rounded-2xl border border-[#e2e8f0] bg-white">
+                    {merchantCandidatesLoading ? (
+                      <div className="flex items-center justify-center gap-2 px-4 py-10 text-sm text-[#64748b]">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        正在整理交易对方列表
                       </div>
-                    ) : null}
-                    <div className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-white">
-                      {merchantCandidatesLoading ? (
-                        <div className="flex items-center justify-center gap-2 px-3 py-4 text-xs text-[#64748b]">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          加载中...
-                        </div>
-                      ) : merchantCandidates.length === 0 ? (
-                        <div className="px-3 py-4 text-center text-xs text-[#94a3b8]">
-                          没有找到匹配的交易对方
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-[#f1f5f9]">
-                          {merchantCandidates.slice(0, 8).map((candidate) => {
-                            const existingRule = existingMerchantRuleMap.get(candidate.merchant);
-                            const selected = selectedRuleMerchantSet.has(candidate.merchant);
+                    ) : merchantCandidates.length === 0 ? (
+                      <div className="px-4 py-10 text-center">
+                        <Search className="h-8 w-8 mx-auto text-[#cbd5e1]" />
+                        <p className="mt-2 text-sm font-medium text-[#64748b]">没有找到匹配的交易对方</p>
+                        <p className="mt-1 text-xs text-[#94a3b8]">先导入或补录交易，或者换一个关键词再试。</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-[#f1f5f9]">
+                        {merchantCandidates.map((candidate) => {
+                          const existingRule = existingMerchantRuleMap.get(candidate.merchant);
+                          const selected = selectedRuleMerchantSet.has(candidate.merchant);
 
-                            return (
-                              <label
-                                key={candidate.merchant}
-                                className={cn(
-                                  "flex cursor-pointer items-start gap-2 px-3 py-2 transition",
-                                  selected ? "bg-[#D8E6FC]/50" : "hover:bg-[#f8fafc]"
-                                )}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selected}
-                                  onChange={() => toggleRuleMerchant(candidate.merchant)}
-                                  className="mt-0.5 rounded border-[#cbd5e1]"
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    <span className="truncate text-xs font-medium text-[#1e293b]">{candidate.merchant}</span>
-                                    {existingRule ? (
-                                      <span className="rounded-full bg-[#FEF3C7] px-1.5 py-0.5 text-[9px] font-medium text-[#92400E]">
-                                        {existingRule.category}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                  <div className="mt-0.5 text-[10px] text-[#94a3b8]">
-                                    出现 {candidate.count} 次
-                                  </div>
+                          return (
+                            <label
+                              key={candidate.merchant}
+                              className={cn(
+                                "flex cursor-pointer items-start gap-3 px-4 py-3 transition",
+                                selected ? "bg-[#D8E6FC]/50" : "hover:bg-[#f8fafc]"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleRuleMerchant(candidate.merchant)}
+                                className="mt-1 rounded border-[#cbd5e1]"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="truncate text-sm font-medium text-[#1e293b]">{candidate.merchant}</span>
+                                  {existingRule ? (
+                                    <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-medium text-[#92400E]">
+                                      已有规则 · {existingRule.category}
+                                    </span>
+                                  ) : null}
                                 </div>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#64748b]">
+                                  <span>出现 {candidate.count} 次</span>
+                                  <span>最近交易 {formatDateTime(candidate.latestDate)}</span>
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
+                </div>
 
+                <div className="mt-5 flex justify-end">
                   <Button
                     type="button"
                     onClick={() => void handleCreateMerchantRule()}
                     disabled={ruleActionLoading || selectedRuleMerchants.length === 0 || !ruleCategory.trim()}
-                    className="w-full h-9 rounded-xl bg-[#2B6AF2] hover:bg-[#2563EB] text-xs font-medium"
+                    className="h-11 rounded-2xl sm:min-w-40 bg-[#2B6AF2] hover:bg-[#2563EB]"
                   >
                     {ruleActionLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         保存中...
                       </>
                     ) : (
                       <>
-                        <Wand2 className="mr-2 h-3 w-3" />
+                        <Wand2 className="mr-2 h-4 w-4" />
                         保存自动归类规则
                       </>
                     )}
@@ -942,40 +957,53 @@ export default function DataPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-3">
-                <p className="text-xs font-semibold text-[#1e293b] mb-3">当前规则</p>
-                <div className="space-y-2 max-h-[340px] overflow-y-auto">
+              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[#1e293b]">当前规则</p>
+                    <p className="mt-1 text-xs text-[#64748b]">一个交易对方只保留一条生效规则，重新保存会直接覆盖。</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#64748b] shadow-sm">
+                    {merchantRules.length} 条
+                  </span>
+                </div>
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
                   {merchantRulesLoading ? (
-                    <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-4 text-xs text-[#64748b]">
-                      <Loader2 className="h-3 w-3 animate-spin" />
+                    <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-6 text-sm text-[#64748b] shadow-sm">
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       正在加载规则
                     </div>
                   ) : merchantRules.length === 0 ? (
-                    <div className="text-center py-4 text-xs text-[#94a3b8]">
-                      还没有自动归类规则
+                    <div className="text-center py-6">
+                      <Tag className="h-8 w-8 mx-auto text-[#cbd5e1]" />
+                      <p className="mt-2 text-sm font-medium text-[#64748b]">还没有自动归类规则</p>
+                      <p className="mt-1 text-xs text-[#94a3b8]">选中交易对方并保存后，这里会展示已建立的规则。</p>
                     </div>
                   ) : (
                     merchantRules.map((rule) => (
-                      <div key={rule.id} className="rounded-xl border border-[#e2e8f0] bg-white p-2.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="truncate text-xs font-semibold text-[#1e293b]">{rule.name || rule.category}</span>
-                              <span className="rounded-full bg-[#D8E6FC] px-1.5 py-0.5 text-[9px] font-medium text-[#1E40AF]">
+                      <div key={rule.id} className="rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="truncate text-sm font-semibold text-[#1e293b]">{rule.name || rule.category}</span>
+                              <span className="rounded-full bg-[#D8E6FC] px-2 py-0.5 text-[11px] font-medium text-[#1E40AF]">
                                 {rule.category}
                               </span>
                             </div>
-                            <p className="mt-1 truncate text-[10px] text-[#64748b]">{rule.merchant}</p>
-                            {rule.description ? <p className="mt-0.5 text-[10px] text-[#94a3b8]">备注：{rule.description}</p> : null}
+                            <p className="mt-2 truncate text-sm text-[#64748b]">{rule.merchant}</p>
+                            {rule.description ? <p className="mt-1 text-xs text-[#94a3b8]">备注：{rule.description}</p> : null}
+                            <p className="mt-2 text-xs text-[#94a3b8]">更新于 {formatDateTime(rule.updatedAt)}</p>
                           </div>
+
                           <button
                             type="button"
                             onClick={() => void handleDeleteMerchantRule(rule)}
                             disabled={ruleActionLoading}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#e2e8f0] text-[#94a3b8] transition hover:border-[#FECACA] hover:text-[#DC2626] disabled:opacity-50"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#e2e8f0] text-[#94a3b8] transition hover:border-[#FECACA] hover:text-[#DC2626] disabled:opacity-50"
                             aria-label={`删除规则 ${rule.merchant}`}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
@@ -989,11 +1017,47 @@ export default function DataPage() {
       </DelayedRender>
 
       <DelayedRender delay={90}>
-        <Card className="p-3 sm:p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <p className="text-sm text-[#64748b]">
-              {total === 0 ? "暂无记录" : `共 ${total} 条记录，当前显示 ${startItem}-${endItem} 条`}
-            </p>
+        <Card className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-sm font-medium text-[#475569]">
+              已选择 <span className="text-[#2B6AF2]">{selectedIds.size}</span> 条记录
+            </span>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                list="data-all-category-suggestions"
+                placeholder="新分类名称"
+                value={newCategory}
+                onChange={(event) => setNewCategory(event.target.value)}
+                className="h-10 rounded-xl border border-[#e2e8f0] px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
+              />
+              <button
+                onClick={handleBatchUpdateCategory}
+                disabled={actionLoading || selectedIds.size === 0 || !newCategory}
+                className="flex items-center gap-2 rounded-xl bg-[#2B6AF2] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#2563EB] disabled:opacity-50"
+              >
+                <Tag className="h-4 w-4" />
+                批量改分类
+              </button>
+            </div>
+
+            <button
+              onClick={handleBatchDelete}
+              disabled={actionLoading || selectedIds.size === 0}
+              className="flex items-center gap-2 rounded-xl bg-[#EF4444] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#DC2626] disabled:opacity-50"
+            >
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              批量删除
+            </button>
+          </div>
+        </Card>
+      </DelayedRender>
+
+      <DelayedRender delay={120}>
+        <Card className="p-0 overflow-hidden">
+          <div className="flex flex-col gap-2 border-b border-[#f1f5f9] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[#64748b]">{total === 0 ? "暂无记录" : `共 ${total} 条记录，当前显示 ${startItem}-${endItem} 条`}</p>
             {tableLoading ? (
               <div className="inline-flex items-center gap-2 text-sm text-[#2B6AF2]">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1002,45 +1066,9 @@ export default function DataPage() {
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-3 border-t border-[#f1f5f9]">
-            <span className="text-sm font-medium text-[#475569]">
-              已选择 <span className="text-[#2B6AF2]">{selectedIds.size}</span> 条记录
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                type="text"
-                list="data-all-category-suggestions"
-                placeholder="新分类名称"
-                value={newCategory}
-                onChange={(event) => setNewCategory(event.target.value)}
-                className="h-9 rounded-xl border border-[#e2e8f0] px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
-              />
-              <button
-                onClick={handleBatchUpdateCategory}
-                disabled={actionLoading || selectedIds.size === 0 || !newCategory}
-                className="flex items-center gap-2 rounded-xl bg-[#2B6AF2] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2563EB] disabled:opacity-50"
-              >
-                <Tag className="h-4 w-4" />
-                批量改分类
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                disabled={actionLoading || selectedIds.size === 0}
-                className="flex items-center gap-2 rounded-xl bg-[#EF4444] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#DC2626] disabled:opacity-50"
-              >
-                {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                批量删除
-              </button>
-            </div>
-          </div>
-        </Card>
-      </DelayedRender>
-
-      <DelayedRender delay={120}>
-        <Card className="p-0 overflow-hidden">
           <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
-              <div className="grid grid-cols-[44px_minmax(180px,1.3fr)_140px_80px_100px_100px_100px] items-center gap-3 border-b border-[#f1f5f9] bg-[#f8fafc] px-4 py-3 text-xs font-semibold text-[#64748b]">
+            <div className="min-w-[1060px]">
+              <div className="grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-[#f1f5f9] bg-[#f8fafc] px-4 py-2.5 text-xs font-semibold text-[#64748b]">
                 <input type="checkbox" checked={allSelectedOnPage} onChange={toggleSelectAll} className="rounded border-[#cbd5e1]" />
                 <span>商户 / 备注</span>
                 <span>时间</span>
@@ -1066,7 +1094,7 @@ export default function DataPage() {
                       <div
                         key={transaction.id}
                         className={cn(
-                          "grid grid-cols-[44px_minmax(180px,1.3fr)_140px_80px_100px_100px_100px] items-center gap-3 border-b border-[#f1f5f9] px-4 py-3 transition",
+                          "grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-[#f1f5f9] px-4 py-3 transition",
                           selectedIds.has(transaction.id) ? "bg-[#D8E6FC]/30" : "hover:bg-[#f8fafc]"
                         )}
                       >
@@ -1086,7 +1114,7 @@ export default function DataPage() {
                           </p>
                         </div>
 
-                        <span className="text-xs text-[#64748b]">{formatDateTime(transaction.date)}</span>
+                        <span className="text-sm text-[#64748b]">{formatDateTime(transaction.date)}</span>
 
                         <span
                           className={cn(
@@ -1105,7 +1133,7 @@ export default function DataPage() {
                           {transaction.category}
                         </span>
 
-                        <span className="text-xs text-[#64748b]">{transaction.platform}</span>
+                        <span className="text-sm text-[#64748b]">{transaction.platform}</span>
 
                         <div className={cn("text-right text-sm font-semibold", isExpense ? "text-[#DC2626]" : "text-[#1e293b]")}>
                           {isExpense ? "-" : "+"}
@@ -1125,18 +1153,10 @@ export default function DataPage() {
                 共 {total} 条记录，第 {currentPage} 页
               </p>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-xl border border-[#e2e8f0] px-4 py-1.5 text-sm font-medium text-[#475569] transition hover:bg-[#f8fafc] disabled:opacity-50"
-                >
+                <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="rounded-xl border border-[#e2e8f0] px-3 py-1.5 text-sm font-medium text-[#475569] transition hover:bg-[#f8fafc] disabled:opacity-50">
                   上一页
                 </button>
-                <button
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-xl border border-[#e2e8f0] px-4 py-1.5 text-sm font-medium text-[#475569] transition hover:bg-[#f8fafc] disabled:opacity-50"
-                >
+                <button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="rounded-xl border border-[#e2e8f0] px-3 py-1.5 text-sm font-medium text-[#475569] transition hover:bg-[#f8fafc] disabled:opacity-50">
                   下一页
                 </button>
               </div>
@@ -1144,8 +1164,6 @@ export default function DataPage() {
           ) : null}
         </Card>
       </DelayedRender>
-
-      <input ref={fileInputRef} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFileChange} />
     </div>
   );
 }
