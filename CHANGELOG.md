@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.3.77 - 2026-04-05
+
+### Changed
+
+- **总览页改为页面可见显示当前 Dashboard 文件名**:
+  - `web/src/app/(dashboard)/page.tsx` 新增开发态右下角 `Dashboard Source` 浮层，直接显示当前主题命中的总览文件名。
+  - 浮层同时显示当前 `themeId`，方便确认“当前主题 -> 实际总览文件”的映射关系。
+
+### Docs
+
+- **主题开发文档同步更新**:
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.3`。
+  - 补充说明当前总览文件名现在会在开发环境中直接显示在页面右下角。
+
+### Verified
+
+- `npm.cmd run typecheck`
+
 ## 2.3.76 - 2026-04-05
 
 ### Changed

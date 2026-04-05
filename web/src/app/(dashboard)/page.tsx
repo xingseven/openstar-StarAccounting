@@ -102,6 +102,7 @@ export default function DashboardPage() {
   const { themeId } = useTheme();
   const dashboardEntryFileName = getDashboardEntryFileName(themeId);
   const DashboardTheme = getDashboardThemeComponent(themeId);
+  const shouldShowDashboardEntryHint = process.env.NODE_ENV !== "production";
 
   useEffect(() => {
     async function loadData() {
@@ -136,6 +137,19 @@ export default function DashboardPage() {
       className="relative"
       data-dashboard-entry-file={dashboardEntryFileName}
     >
+      {shouldShowDashboardEntryHint ? (
+        <div className="pointer-events-none fixed bottom-4 right-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200/80 bg-white/92 px-4 py-3 text-xs text-slate-700 shadow-[0_20px_45px_rgba(15,23,42,0.14)] backdrop-blur md:bottom-6 md:right-6">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+            Dashboard Source
+          </div>
+          <div className="mt-1 font-semibold text-slate-900">
+            {dashboardEntryFileName}
+          </div>
+          <div className="mt-1 text-[11px] text-slate-500">
+            当前主题：{themeId}
+          </div>
+        </div>
+      ) : null}
       <DashboardTheme data={data} loading={loading} />
     </div>
   );
