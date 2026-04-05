@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.3.95 - 2026-04-05
+
+### Changed
+
+- **资产页默认主题对齐 DefaultDashboard 蓝绿卡片工作台**:
+  - 重做 `web/src/features/assets/components/themes/DefaultAssets.tsx`，将资产页调整为与 `DefaultDashboard.tsx` 一致的蓝/绿强调卡、白卡分析区和重点列表层级。
+  - 资产页现在统一展示资产净值、可动用资产、结构总览、重点持仓、账户类型、币种分布、管理面板、关注账户与资产账户列表。
+  - 同步更新 `web/src/features/assets/components/themes/AssetsLoadingShell.tsx`，让骨架屏跟随新的模块布局和卡片层级。
+
+### Docs
+
+- **版本记录与主题规则同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充“功能页明确要求跟随既有主题文件时，应优先复用该主题卡片语言和模块组织”的约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.95 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.15`。
+
+### Verified
+
+- `npm.cmd --prefix web run lint -- src/features/assets/components/themes/DefaultAssets.tsx src/features/assets/components/themes/AssetsLoadingShell.tsx`
+- `git diff --check -- web/src/features/assets/components/themes/DefaultAssets.tsx web/src/features/assets/components/themes/AssetsLoadingShell.tsx`
+- `npm.cmd --prefix web run typecheck` blocked by pre-existing syntax error in `web/src/features/savings/components/themes/DefaultSavings.tsx`
+
 ## 2.3.94 - 2026-04-05
 
 ### Changed
