@@ -11,26 +11,26 @@ export default function ThemesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   return (
-    <div className="mx-auto max-w-[1680px] py-4 sm:py-6 lg:py-8">
+    <div className="mx-auto max-w-[1680px] py-3 sm:py-6 lg:py-8 px-2 sm:px-0">
 
       {/* ── 页面标题 ── */}
-      <div className="mb-8 px-1">
-        <div className="flex items-center gap-2.5 mb-1">
-          <Palette className="h-4 w-4" style={{ color: "var(--theme-muted-text)" }} />
-          <span className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--theme-muted-text)" }}>
+      <div className="mb-4 sm:mb-8">
+        <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
+          <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: "var(--theme-muted-text)" }} />
+          <span className="text-[10px] sm:text-xs font-medium tracking-widest uppercase" style={{ color: "var(--theme-muted-text)" }}>
             Appearance
           </span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: "var(--theme-body-text)" }}>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight lg:text-3xl" style={{ color: "var(--theme-body-text)" }}>
           选择你的主题
         </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--theme-muted-text)" }}>
+        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm" style={{ color: "var(--theme-muted-text)" }}>
           切换后立即全局生效，包括导航、卡片、图表配色。
         </p>
       </div>
 
       {/* ── 主题卡片网格 ── */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-6 sm:grid-cols-2 lg:grid-cols-2">
         {themes.map((theme) => {
           const isActive = theme.id === themeId;
           const themeManifest = getThemeManifest(theme.id);
@@ -60,7 +60,7 @@ export default function ThemesPage() {
               {/* 选中时的外发光圈（在卡片外层，不裁切） */}
               {isActive && (
                 <div
-                  className="pointer-events-none absolute -inset-[3px] rounded-[26px]"
+                  className="pointer-events-none absolute -inset-[2px] sm:-inset-[3px] rounded-[20px] sm:rounded-[26px]"
                   style={{
                     background: `${accent}22`,
                     boxShadow: `0 0 0 2px ${accent}`,
@@ -70,7 +70,7 @@ export default function ThemesPage() {
 
               {/* 文件名称复制按钮 */}
               <div 
-                className={`absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full px-2 py-1.5 backdrop-blur-md transition-all active:scale-95 ${
+                className={`absolute right-2 sm:right-4 top-2 sm:top-4 z-10 flex items-center gap-1 sm:gap-1.5 rounded-full px-1.5 sm:px-2 py-1 sm:py-1.5 backdrop-blur-md transition-all active:scale-95 ${
                   copiedId === theme.id 
                     ? "bg-green-500/80 text-white" 
                     : "bg-black/20 text-white hover:bg-black/40"
@@ -80,22 +80,22 @@ export default function ThemesPage() {
               >
                 {copiedId === theme.id ? (
                   <>
-                    <Check className="h-3.5 w-3.5" />
-                    <span className="text-[10px] font-bold">已复制</span>
+                    <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span className="text-[9px] sm:text-[10px] font-bold">已复制</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span className="hidden text-[10px] font-bold group-hover:inline">复制文件名</span>
+                    <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <span className="hidden text-[9px] sm:text-[10px] font-bold group-hover:inline">复制</span>
                   </>
                 )}
               </div>
 
               {/* 主卡片 */}
               <div
-                className="relative overflow-hidden rounded-[24px] transition-transform duration-200 group-hover:scale-[1.01] group-active:scale-[0.99]"
+                className="relative overflow-hidden rounded-[18px] sm:rounded-[24px] transition-transform duration-200 group-hover:scale-[1.01] group-active:scale-[0.99]"
                 style={{
-                  minHeight: "320px",
+                  minHeight: "260px",
                   background: isNova
                     ? theme.preview.shell
                     : isDark
@@ -117,7 +117,7 @@ export default function ThemesPage() {
               >
                 {/* ── 顶部 accent 色条 ── */}
                 <div
-                  className="h-1 w-full transition-opacity duration-300"
+                  className="h-0.5 sm:h-1 w-full transition-opacity duration-300"
                   style={{
                     background: `linear-gradient(90deg, ${accent} 0%, ${accent}66 100%)`,
                     opacity: isActive ? 1 : 0,
@@ -125,9 +125,9 @@ export default function ThemesPage() {
                 />
 
                 {/* ── 预览区：如果是图片则显示图片，否则显示模拟 UI ── */}
-                <div className="p-4 pb-0">
+                <div className="p-2.5 sm:p-4 pb-0">
                   <div
-                    className="relative overflow-hidden rounded-[16px]"
+                    className="relative overflow-hidden rounded-[12px] sm:rounded-[16px]"
                     style={{
                       aspectRatio: "21/9",
                       background: isNova
@@ -160,7 +160,7 @@ export default function ThemesPage() {
                       <div className="h-full w-full opacity-60">
                         {/* 模拟顶栏 */}
                         <div
-                          className="flex items-center gap-1.5 px-2.5 py-[5px]"
+                          className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-[4px] sm:py-[5px]"
                           style={{
                             background: isNova
                               ? "rgba(5,11,26,0.72)"
@@ -172,41 +172,41 @@ export default function ThemesPage() {
                             borderBottom: `1px solid ${isNova ? "rgba(255,255,255,0.06)" : isFrost ? "rgba(255,255,255,0.6)" : isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)"}`,
                           }}
                         >
-                          <div className="flex gap-1">
+                          <div className="flex gap-0.5 sm:gap-1">
                             {["#ff5f56","#ffbd2e","#27c93f"].map((c) => (
-                              <div key={c} className="h-1.5 w-1.5 rounded-full" style={{ background: c, opacity: 0.7 }} />
+                              <div key={c} className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full" style={{ background: c, opacity: 0.7 }} />
                             ))}
                           </div>
                           <div className="flex-1" />
                           <div
-                            className="h-1 w-12 rounded-full"
+                            className="h-0.5 sm:h-1 w-8 sm:w-12 rounded-full"
                             style={{ background: isNova ? "rgba(255,255,255,0.08)" : isDark ? "#1e293b" : "#e2e8f0" }}
                           />
                         </div>
 
                         {/* 主体：侧栏 + 内容 */}
-                        <div className="flex h-[calc(100%-22px)]">
+                        <div className="flex h-[calc(100%-18px)] sm:h-[calc(100%-22px)]">
                           <div
-                            className="flex w-[20%] flex-col gap-[5px] px-1.5 py-2"
+                            className="flex w-[18%] sm:w-[20%] flex-col gap-[4px] sm:gap-[5px] px-1 sm:px-1.5 py-1.5 sm:py-2"
                             style={{
                               background: isNova ? "rgba(5,11,26,0.85)" : isDark ? "rgba(8,15,30,0.9)" : isFrost ? "rgba(255,255,255,0.55)" : "rgba(248,250,252,0.85)",
                               borderRight: `1px solid ${isNova ? "rgba(255,255,255,0.06)" : isFrost ? "rgba(255,255,255,0.5)" : isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)"}`,
                             }}
                           >
-                            <div className="flex items-center gap-1 rounded-[5px] px-1 py-0.5" style={{ background: `${accent}22` }}>
-                              <div className="h-1 w-1 rounded-full" style={{ background: accent }} />
-                              <div className="h-1 flex-1 rounded-full" style={{ background: accent, opacity: 0.7 }} />
+                            <div className="flex items-center gap-0.5 sm:gap-1 rounded-[4px] sm:rounded-[5px] px-0.5 sm:px-1 py-0.5" style={{ background: `${accent}22` }}>
+                              <div className="h-0.5 sm:h-1 w-0.5 sm:w-1 rounded-full" style={{ background: accent }} />
+                              <div className="h-0.5 sm:h-1 flex-1 rounded-full" style={{ background: accent, opacity: 0.7 }} />
                             </div>
                           </div>
-                          <div className="flex flex-1 flex-col gap-1.5 p-1.5">
-                            <div className="grid grid-cols-3 gap-1">
+                          <div className="flex flex-1 flex-col gap-1 sm:gap-1.5 p-1 sm:p-1.5">
+                            <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
                                 {[0, 1, 2].map((i) => (
-                                    <div key={i} className="h-8 rounded-[6px]" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.05)" }} />
+                                    <div key={i} className="h-6 sm:h-8 rounded-[4px] sm:rounded-[6px]" style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.05)" }} />
                                 ))}
                             </div>
-                            <div className="flex flex-1 items-end gap-[2px] rounded-[8px] bg-black/10 px-1.5 pb-1 pt-1.5">
+                            <div className="flex flex-1 items-end gap-[1px] sm:gap-[2px] rounded-[6px] sm:rounded-[8px] bg-black/10 px-1 sm:px-1.5 pb-0.5 sm:pb-1 pt-1 sm:pt-1.5">
                               {bars.map((h, i) => (
-                                <div key={i} className="flex-1 rounded-t-[2px]" style={{ height: `${h}%`, background: i === 7 ? accent : `${accent}30` }} />
+                                <div key={i} className="flex-1 rounded-t-[1px] sm:rounded-t-[2px]" style={{ height: `${h}%`, background: i === 7 ? accent : `${accent}30` }} />
                               ))}
                             </div>
                           </div>
@@ -217,23 +217,23 @@ export default function ThemesPage() {
                 </div>
 
                 {/* ── 底部信息区 ── */}
-                <div className="p-4 pt-3.5">
-                  <div className="mb-3 flex h-[4px] overflow-hidden rounded-full gap-px">
+                <div className="p-2.5 sm:p-4 pt-2 sm:pt-3.5">
+                  <div className="mb-2 sm:mb-3 flex h-[3px] sm:h-[4px] overflow-hidden rounded-full gap-px">
                     <div className="flex-[3]" style={{ background: accent }} />
                     <div className="flex-1" style={{ background: isDark ? "#1e293b" : "#e2e8f0" }} />
                     <div className="flex-1" style={{ background: theme.preview.darkPanel }} />
                   </div>
 
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-2 sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <h3
-                        className="text-base font-bold tracking-tight"
+                        className="text-sm sm:text-base font-bold tracking-tight"
                         style={{ color: isNova ? "#f0f4ff" : isDark ? "#f1f5f9" : isFrost ? "#1a3550" : "var(--theme-body-text)" }}
                       >
                         {theme.name}
                       </h3>
                       <p
-                        className="truncate text-xs mt-1"
+                        className="truncate text-[10px] sm:text-xs mt-0.5 sm:mt-1"
                         style={{ color: isNova ? "#6e84a8" : isDark ? "#475569" : isFrost ? "#6a8faa" : "var(--theme-muted-text)" }}
                       >
                         {theme.description}
@@ -242,14 +242,14 @@ export default function ThemesPage() {
 
                     {isActive ? (
                       <span
-                        className="shrink-0 rounded-full px-3 py-1 text-[11px] font-bold"
+                        className="shrink-0 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold"
                         style={{ background: `${accent}20`, color: accent, border: `1px solid ${accent}40` }}
                       >
                         使用中
                       </span>
                     ) : (
                       <span
-                        className="shrink-0 rounded-full px-3 py-1 text-[11px] font-medium opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+                        className="shrink-0 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-medium opacity-0 transition-opacity duration-150 group-hover:opacity-100"
                         style={{
                           background: isNova ? "rgba(255,255,255,0.1)" : isDark ? "#1e293b" : "rgba(148,163,184,0.15)",
                           color: isNova ? "#a8b8d8" : isDark ? "#94a3b8" : "var(--theme-muted-text)",
