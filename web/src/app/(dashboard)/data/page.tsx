@@ -118,7 +118,9 @@ function formatDateTime(value: string) {
 const Card = ({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
   <div
     className={cn(
-      "relative overflow-hidden rounded-[20px] sm:rounded-[24px] bg-white p-3 sm:p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)]",
+      "relative overflow-hidden rounded-[20px] sm:rounded-[24px] p-3 sm:p-5 sm:p-6",
+      "bg-[var(--theme-surface-bg)] border border-[var(--theme-surface-border)]",
+      "shadow-[var(--theme-surface-shadow)]",
       className,
     )}
     style={style}
@@ -533,28 +535,28 @@ export default function DataPage() {
         <div className="grid gap-3 xl:grid-cols-12">
           <Card className="p-4 xl:col-span-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2B6AF2]/10">
-                <FileText className="h-5 w-5 text-[#2B6AF2]" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--module-accent-soft)]">
+                <FileText className="h-5 w-5 text-[var(--module-accent-text)]" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#64748b]">总记录数</p>
-                <p className="text-xl font-bold text-[#1e293b] font-numbers">{total}</p>
+                <p className="text-xs font-semibold text-[var(--theme-muted-text)]">总记录数</p>
+                <p className="text-xl font-bold text-[var(--theme-body-text)] font-numbers">{total}</p>
               </div>
             </div>
-            <p className="mt-3 text-xs text-[#94a3b8]">系统交易总量</p>
+            <p className="mt-3 text-xs text-[var(--theme-hint-text)]">系统交易总量</p>
           </Card>
 
           <Card className="p-4 sm:p-6 xl:col-span-9">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4CC98F]/10">
-                <Upload className="h-4 w-4 text-[#4CC98F]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--module-accent-soft)]">
+                <Upload className="h-4 w-4 text-[var(--module-accent-text)]" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">账单导入</p>
-                <h3 className="text-sm font-bold text-[#1e293b]">导入微信 / 支付宝账单</h3>
+                <p className="text-[10px] font-semibold text-[var(--theme-muted-text)] uppercase tracking-wide">账单导入</p>
+                <h3 className="text-sm font-bold text-[var(--theme-body-text)]">导入微信 / 支付宝账单</h3>
               </div>
             </div>
-            <p className="text-xs text-[#64748b] mb-4">上传 CSV 或 XLSX 文件，系统会自动识别并入库。</p>
+            <p className="text-xs text-[var(--theme-muted-text)] mb-4">上传 CSV 或 XLSX 文件，系统会自动识别并入库。</p>
 
             <div className="flex flex-wrap gap-3">
               <button
@@ -578,7 +580,7 @@ export default function DataPage() {
             <input ref={fileInputRef} type="file" accept=".csv,.xlsx" className="hidden" onChange={handleFileChange} />
 
             {importResult ? (
-              <div className="mt-4 rounded-xl bg-[#f8fafc] p-3 text-sm text-[#64748b]">
+              <div className="mt-4 rounded-xl bg-[var(--theme-dialog-section-bg)] p-3 text-sm text-[var(--theme-muted-text)]">
                 总行数：{importResult.totalRows} | 成功：{importResult.insertedCount} | 重复：{importResult.duplicateCount} | 无效：{importResult.invalidCount}
                 {importResult.linkedLoanCount || importResult.syncedLoanCount
                   ? ` | 关联贷款：${importResult.linkedLoanCount ?? 0} | 同步余额：${importResult.syncedLoanCount ?? 0}`
@@ -591,7 +593,7 @@ export default function DataPage() {
 
       {message ? (
         <DelayedRender delay={30}>
-          <Card className="bg-[#ECFDF5] border border-[#A7F3D0] p-3 sm:p-4">
+          <Card className="bg-[#ECFDF5] border-[#A7F3D0] p-3 sm:p-4">
             <div className="flex items-center gap-3 text-sm">
               <CheckCircle className="h-5 w-5 shrink-0 text-[#059669]" />
               <span className="text-[#065F46]">{message}</span>
@@ -602,7 +604,7 @@ export default function DataPage() {
 
       {error ? (
         <DelayedRender delay={30}>
-          <Card className="bg-[#FEF2F2] border border-[#FECACA] p-3 sm:p-4">
+          <Card className="bg-[#FEF2F2] border-[#FECACA] p-3 sm:p-4">
             <div className="flex items-center gap-3 text-sm">
               <AlertCircle className="h-5 w-5 shrink-0 text-[#DC2626]" />
               <span className="text-[#991B1B]">{error}</span>
@@ -615,15 +617,15 @@ export default function DataPage() {
         <div className="grid gap-4 xl:grid-cols-12 xl:items-start">
           <Card className="p-4 sm:p-6 xl:col-span-3">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2B6AF2]/10">
-                <Banknote className="h-4 w-4 text-[#2B6AF2]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--module-accent-soft)]">
+                <Banknote className="h-4 w-4 text-[var(--module-accent-text)]" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">手动补录</p>
-                <h3 className="text-sm font-bold text-[#1e293b]">手动录入收支</h3>
+                <p className="text-[10px] font-semibold text-[var(--theme-muted-text)] uppercase tracking-wide">手动补录</p>
+                <h3 className="text-sm font-bold text-[var(--theme-body-text)]">手动录入收支</h3>
               </div>
             </div>
-            <p className="text-xs text-[#64748b] mb-4">工资、奖金这类银行卡收入，以及云闪付、现金等无法导出的消费，都可以在这里直接补录。</p>
+            <p className="text-xs text-[var(--theme-muted-text)] mb-4">工资、奖金这类银行卡收入，以及云闪付、现金等无法导出的消费，都可以在这里直接补录。</p>
 
             <div className="flex flex-wrap gap-2 mb-4">
               <button
@@ -636,7 +638,7 @@ export default function DataPage() {
                   "rounded-full px-4 py-2 text-sm font-medium transition",
                   manualEntryMode === "income"
                     ? "bg-[#2B6AF2] text-white"
-                    : "bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]"
+                    : "bg-[var(--theme-input-bg)] text-[var(--theme-muted-text)] hover:bg-[var(--theme-dialog-section-bg)]"
                 )}
               >
                 录入收入
@@ -651,7 +653,7 @@ export default function DataPage() {
                   "rounded-full px-4 py-2 text-sm font-medium transition",
                   manualEntryMode === "expense"
                     ? "bg-[#EF4444] text-white"
-                    : "bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]"
+                    : "bg-[var(--theme-input-bg)] text-[var(--theme-muted-text)] hover:bg-[var(--theme-dialog-section-bg)]"
                 )}
               >
                 录入支出
@@ -663,8 +665,8 @@ export default function DataPage() {
                 "rounded-xl p-3",
                 manualEntryMode === "income" ? "bg-[#EFF6FF]" : "bg-[#FEF2F2]"
               )}>
-                <p className="text-xs font-semibold text-[#475569] mb-1">推荐场景</p>
-                <p className="text-xs text-[#64748b]">
+                <p className="text-xs font-semibold text-[var(--theme-label-text)] mb-1">推荐场景</p>
+                <p className="text-xs text-[var(--theme-muted-text)]">
                   {manualEntryMode === "income"
                     ? "适合记录工资、奖金、报销或其他打到银行卡里的收入，后续统计会自动计入收入侧。"
                     : "适合补录云闪付、银行卡、现金等无法批量导出的消费，保持账目收支完整。"}
@@ -673,7 +675,7 @@ export default function DataPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">
                     {manualEntryMode === "income" ? "收入金额" : "支出金额"}
                   </label>
                   <Input
@@ -684,11 +686,11 @@ export default function DataPage() {
                     value={manualTransactionForm.amount}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, amount: event.target.value }))}
                     placeholder="例如：12000"
-                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">
                     {manualEntryMode === "income" ? "入账时间" : "消费时间"}
                   </label>
                   <Input
@@ -696,21 +698,21 @@ export default function DataPage() {
                     type="datetime-local"
                     value={manualTransactionForm.date}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, date: event.target.value }))}
-                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">
                     {manualEntryMode === "income" ? "收入分类" : "支出分类"}
                   </label>
                   <select
                     required
                     value={manualTransactionForm.category}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, category: event.target.value }))}
-                    className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
+                    className="h-10 w-full rounded-xl border border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] px-3 text-sm text-[var(--theme-body-text)] outline-none focus:border-[var(--module-accent-strong)] focus:ring-2 focus:ring-[var(--module-accent-ring)]"
                   >
                     {manualCategoryOptions.map((item) => (
                       <option key={item} value={item}>
@@ -720,14 +722,14 @@ export default function DataPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">
                     {manualEntryMode === "income" ? "入账平台" : "支付平台"}
                   </label>
                   <select
                     required
                     value={manualTransactionForm.platform}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, platform: event.target.value }))}
-                    className="h-10 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
+                    className="h-10 w-full rounded-xl border border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] px-3 text-sm text-[var(--theme-body-text)] outline-none focus:border-[var(--module-accent-strong)] focus:ring-2 focus:ring-[var(--module-accent-ring)]"
                   >
                     {MANUAL_TRANSACTION_PLATFORMS.map((item) => (
                       <option key={item} value={item}>
@@ -740,23 +742,23 @@ export default function DataPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">
+                  <label className="text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">
                     {manualEntryMode === "income" ? "来源 / 发放方" : "商户 / 收款方"}
                   </label>
                   <Input
                     value={manualTransactionForm.merchant}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, merchant: event.target.value }))}
                     placeholder={manualEntryMode === "income" ? "例如：公司工资" : "例如：超市 / 房租"}
-                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[#64748b] mb-1 block">备注</label>
+                  <label className="text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">备注</label>
                   <Input
                     value={manualTransactionForm.description}
                     onChange={(event) => setManualTransactionForm((current) => ({ ...current, description: event.target.value }))}
                     placeholder="补充说明"
-                    className="h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                    className="h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                   />
                 </div>
               </div>
@@ -788,81 +790,81 @@ export default function DataPage() {
 
           <Card className="p-4 sm:p-6 xl:col-span-9">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#A855F7]/10">
-                <Wand2 className="h-4 w-4 text-[#A855F7]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--module-accent-soft)]">
+                <Wand2 className="h-4 w-4 text-[var(--module-accent-text)]" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-[#64748b] uppercase tracking-wide">自动归类</p>
-                <h3 className="text-sm font-bold text-[#1e293b]">按交易对方建立固定支出规则</h3>
+                <p className="text-[10px] font-semibold text-[var(--theme-muted-text)] uppercase tracking-wide">自动归类</p>
+                <h3 className="text-sm font-bold text-[var(--theme-body-text)]">按交易对方建立固定支出规则</h3>
               </div>
             </div>
-            <p className="text-xs text-[#64748b] mb-4">从已出现过的交易对方里搜索并勾选，绑定到一个分类后，后续导入和手动补录会自动套用。</p>
+            <p className="text-xs text-[var(--theme-muted-text)] mb-4">从已出现过的交易对方里搜索并勾选，绑定到一个分类后，后续导入和手动补录会自动套用。</p>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-3 sm:p-4">
+              <div className="rounded-2xl border border-[var(--theme-surface-border)] bg-[var(--theme-dialog-section-bg)] p-3 sm:p-4">
                 <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">规则名称</label>
+                    <label className="text-[10px] sm:text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">规则名称</label>
                     <Input
                       value={ruleName}
                       onChange={(event) => setRuleName(event.target.value)}
                       placeholder="例如：房租"
-                      className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                      className="h-9 sm:h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">目标分类</label>
+                    <label className="text-[10px] sm:text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">目标分类</label>
                     <Input
                       list="data-expense-category-suggestions"
                       value={ruleCategory}
                       onChange={(event) => setRuleCategory(event.target.value)}
                       placeholder="例如：房租"
-                      className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                      className="h-9 sm:h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="mt-3 sm:mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                   <div>
-                    <label className="text-[10px] sm:text-xs font-semibold text-[#64748b] mb-1 block">统一备注</label>
+                    <label className="text-[10px] sm:text-xs font-semibold text-[var(--theme-label-text)] mb-1 block">统一备注</label>
                     <Input
                       value={ruleDescription}
                       onChange={(event) => setRuleDescription(event.target.value)}
                       placeholder="例如：每月房租"
-                      className="h-9 sm:h-10 rounded-xl border-[#e2e8f0] bg-white text-sm"
+                      className="h-9 sm:h-10 rounded-xl border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] text-[var(--theme-body-text)] text-sm"
                     />
                   </div>
 
-                  <label className="inline-flex h-9 sm:h-10 items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-3 sm:px-4 text-[10px] sm:text-xs text-[#64748b]">
+                  <label className="inline-flex h-9 sm:h-10 items-center gap-2 rounded-xl border border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] px-3 sm:px-4 text-[10px] sm:text-xs text-[var(--theme-muted-text)]">
                     <input
                       type="checkbox"
                       checked={applyRuleToHistory}
                       onChange={(event) => setApplyRuleToHistory(event.target.checked)}
-                      className="rounded border-[#cbd5e1]"
+                      className="rounded border-[var(--theme-input-border)]"
                     />
                     回填历史
                   </label>
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-dashed border-[#e2e8f0] bg-white p-3 sm:p-4">
+                <div className="mt-5 rounded-2xl border border-dashed border-[var(--theme-input-border)] bg-[var(--theme-input-bg)] p-3 sm:p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-xs sm:text-sm font-semibold text-[#1e293b]">选择交易对方</p>
-                      <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-[#64748b]">支持按关键词搜索，适合房东、物业这类长期重复对象。</p>
+                      <p className="text-xs sm:text-sm font-semibold text-[var(--theme-body-text)]">选择交易对方</p>
+                      <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-[var(--theme-muted-text)]">支持按关键词搜索，适合房东、物业这类长期重复对象。</p>
                     </div>
-                    <div className="text-xs sm:text-sm text-[#64748b]">
-                      已选 <span className="font-semibold text-[#1e293b]">{selectedRuleMerchants.length}</span> 个
+                    <div className="text-xs sm:text-sm text-[var(--theme-muted-text)]">
+                      已选 <span className="font-semibold text-[var(--theme-body-text)]">{selectedRuleMerchants.length}</span> 个
                     </div>
                   </div>
 
                   <div className="relative mt-3 sm:mt-4">
-                    <Search className="pointer-events-none absolute left-2.5 sm:left-3 top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-y-1/2 text-[#94a3b8]" />
+                    <Search className="pointer-events-none absolute left-2.5 sm:left-3 top-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 -translate-y-1/2 text-[var(--theme-hint-text)]" />
                     <Input
                       value={merchantKeyword}
                       onChange={(event) => setMerchantKeyword(event.target.value)}
                       placeholder="搜索交易对方"
-                      className="pl-8 sm:pl-9 h-9 sm:h-10 rounded-xl border-[#e2e8f0] text-sm"
+                      className="pl-8 sm:pl-9 h-9 sm:h-10 rounded-xl border-[var(--theme-input-border)] text-sm"
                     />
                   </div>
 
@@ -873,7 +875,7 @@ export default function DataPage() {
                           key={merchant}
                           type="button"
                           onClick={() => toggleRuleMerchant(merchant)}
-                          className="rounded-full bg-[#1e293b] px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-white transition hover:bg-[#334155]"
+                          className="rounded-full bg-[var(--theme-body-text)] px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-white transition hover:opacity-80"
                         >
                           {merchant}
                         </button>
@@ -881,20 +883,20 @@ export default function DataPage() {
                     </div>
                   ) : null}
 
-                  <div className="mt-3 sm:mt-4 max-h-60 sm:max-h-80 overflow-y-auto rounded-xl sm:rounded-2xl border border-[#e2e8f0] bg-white">
+                  <div className="mt-3 sm:mt-4 max-h-60 sm:max-h-80 overflow-y-auto rounded-xl sm:rounded-2xl border border-[var(--theme-input-border)] bg-[var(--theme-input-bg)]">
                     {merchantCandidatesLoading ? (
-                      <div className="flex items-center justify-center gap-2 px-3 sm:px-4 py-8 sm:py-10 text-xs sm:text-sm text-[#64748b]">
+                      <div className="flex items-center justify-center gap-2 px-3 sm:px-4 py-8 sm:py-10 text-xs sm:text-sm text-[var(--theme-muted-text)]">
                         <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                         正在整理交易对方列表
                       </div>
                     ) : merchantCandidates.length === 0 ? (
                       <div className="px-3 sm:px-4 py-8 sm:py-10 text-center">
-                        <Search className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-[#cbd5e1]" />
-                        <p className="mt-2 text-xs sm:text-sm font-medium text-[#64748b]">没有找到匹配的交易对方</p>
-                        <p className="mt-1 text-[10px] sm:text-xs text-[#94a3b8]">先导入或补录交易，或者换关键词再试。</p>
+                        <Search className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-[var(--theme-hint-text)]" />
+                        <p className="mt-2 text-xs sm:text-sm font-medium text-[var(--theme-muted-text)]">没有找到匹配的交易对方</p>
+                        <p className="mt-1 text-[10px] sm:text-xs text-[var(--theme-hint-text)]">先导入或补录交易，或者换关键词再试。</p>
                       </div>
                     ) : (
-                      <div className="divide-y divide-[#f1f5f9]">
+                      <div className="divide-y divide-[var(--theme-surface-border)]">
                         {merchantCandidates.map((candidate) => {
                           const existingRule = existingMerchantRuleMap.get(candidate.merchant);
                           const selected = selectedRuleMerchantSet.has(candidate.merchant);
@@ -904,25 +906,25 @@ export default function DataPage() {
                               key={candidate.merchant}
                               className={cn(
                                 "flex cursor-pointer items-start gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 transition",
-                                selected ? "bg-[#D8E6FC]/50" : "hover:bg-[#f8fafc]"
+                                selected ? "bg-[var(--module-accent-soft)]" : "hover:bg-[var(--theme-dialog-section-bg)]"
                               )}
                             >
                               <input
                                 type="checkbox"
                                 checked={selected}
                                 onChange={() => toggleRuleMerchant(candidate.merchant)}
-                                className="mt-0.5 rounded border-[#cbd5e1]"
+                                className="mt-0.5 rounded border-[var(--theme-input-border)]"
                               />
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                  <span className="truncate text-xs sm:text-sm font-medium text-[#1e293b]">{candidate.merchant}</span>
+                                  <span className="truncate text-xs sm:text-sm font-medium text-[var(--theme-body-text)]">{candidate.merchant}</span>
                                   {existingRule ? (
                                     <span className="rounded-full bg-[#FEF3C7] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[11px] font-medium text-[#92400E]">
                                       已有规则 · {existingRule.category}
                                     </span>
                                   ) : null}
                                 </div>
-                                <div className="mt-0.5 sm:mt-1 flex flex-wrap gap-x-2 sm:gap-x-3 gap-y-1 text-[10px] sm:text-xs text-[#64748b]">
+                                <div className="mt-0.5 sm:mt-1 flex flex-wrap gap-x-2 sm:gap-x-3 gap-y-1 text-[10px] sm:text-xs text-[var(--theme-muted-text)]">
                                   <span>出现 {candidate.count} 次</span>
                                   <span>最近 {formatDateTime(candidate.latestDate)}</span>
                                 </div>
@@ -957,50 +959,50 @@ export default function DataPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-3 sm:p-4">
+              <div className="rounded-2xl border border-[var(--theme-surface-border)] bg-[var(--theme-dialog-section-bg)] p-3 sm:p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
-                    <p className="text-sm font-semibold text-[#1e293b]">当前规则</p>
-                    <p className="mt-1 text-xs text-[#64748b]">一个交易对方只保留一条生效规则</p>
+                    <p className="text-sm font-semibold text-[var(--theme-body-text)]">当前规则</p>
+                    <p className="mt-1 text-xs text-[var(--theme-muted-text)]">一个交易对方只保留一条生效规则</p>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#64748b] shadow-sm w-fit">
+                  <span className="rounded-full bg-[var(--theme-input-bg)] px-3 py-1 text-xs font-medium text-[var(--theme-muted-text)] shadow-sm w-fit">
                     {merchantRules.length} 条
                   </span>
                 </div>
 
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
                   {merchantRulesLoading ? (
-                    <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-6 text-sm text-[#64748b] shadow-sm">
+                    <div className="flex items-center gap-2 rounded-2xl bg-[var(--theme-input-bg)] px-4 py-6 text-sm text-[var(--theme-muted-text)] shadow-sm">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       正在加载规则
                     </div>
                   ) : merchantRules.length === 0 ? (
                     <div className="text-center py-6">
-                      <Tag className="h-8 w-8 mx-auto text-[#cbd5e1]" />
-                      <p className="mt-2 text-sm font-medium text-[#64748b]">还没有自动归类规则</p>
-                      <p className="mt-1 text-xs text-[#94a3b8]">选中交易对方并保存后，这里会展示已建立的规则。</p>
+                      <Tag className="h-8 w-8 mx-auto text-[var(--theme-hint-text)]" />
+                      <p className="mt-2 text-sm font-medium text-[var(--theme-muted-text)]">还没有自动归类规则</p>
+                      <p className="mt-1 text-xs text-[var(--theme-hint-text)]">选中交易对方并保存后，这里会展示已建立的规则。</p>
                     </div>
                   ) : (
                     merchantRules.map((rule) => (
-                      <div key={rule.id} className="rounded-2xl border border-[#e2e8f0] bg-white p-3 sm:p-4 shadow-sm">
+                      <div key={rule.id} className="rounded-2xl border border-[var(--theme-surface-border)] bg-[var(--theme-input-bg)] p-3 sm:p-4 shadow-sm">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                              <span className="truncate text-xs sm:text-sm font-semibold text-[#1e293b]">{rule.name || rule.category}</span>
+                              <span className="truncate text-xs sm:text-sm font-semibold text-[var(--theme-body-text)]">{rule.name || rule.category}</span>
                               <span className="rounded-full bg-[#D8E6FC] px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-[#1E40AF]">
                                 {rule.category}
                               </span>
                             </div>
-                            <p className="mt-1.5 sm:mt-2 truncate text-xs sm:text-sm text-[#64748b]">{rule.merchant}</p>
-                            {rule.description ? <p className="mt-1 text-[10px] sm:text-xs text-[#94a3b8]">备注：{rule.description}</p> : null}
-                            <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[#94a3b8]">更新于 {formatDateTime(rule.updatedAt)}</p>
+                            <p className="mt-1.5 sm:mt-2 truncate text-xs sm:text-sm text-[var(--theme-muted-text)]">{rule.merchant}</p>
+                            {rule.description ? <p className="mt-1 text-[10px] sm:text-xs text-[var(--theme-hint-text)]">备注：{rule.description}</p> : null}
+                            <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--theme-hint-text)]">更新于 {formatDateTime(rule.updatedAt)}</p>
                           </div>
 
                           <button
                             type="button"
                             onClick={() => void handleDeleteMerchantRule(rule)}
                             disabled={ruleActionLoading}
-                            className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-[#e2e8f0] text-[#94a3b8] transition hover:border-[#FECACA] hover:text-[#DC2626] disabled:opacity-50 shrink-0"
+                            className="inline-flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full border border-[var(--theme-input-border)] text-[var(--theme-hint-text)] transition hover:border-[#FECACA] hover:text-[#DC2626] disabled:opacity-50 shrink-0"
                             aria-label={`删除规则 ${rule.merchant}`}
                           >
                             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -1019,8 +1021,8 @@ export default function DataPage() {
       <DelayedRender delay={90}>
         <Card className="p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm font-medium text-[#475569]">
-              已选择 <span className="text-[#2B6AF2]">{selectedIds.size}</span> 条记录
+            <span className="text-sm font-medium text-[var(--theme-label-text)]">
+              已选择 <span className="text-[var(--module-accent-strong)]">{selectedIds.size}</span> 条记录
             </span>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -1030,7 +1032,7 @@ export default function DataPage() {
                 placeholder="新分类名称"
                 value={newCategory}
                 onChange={(event) => setNewCategory(event.target.value)}
-                className="h-10 rounded-xl border border-[#e2e8f0] px-3 text-sm outline-none focus:border-[#2B6AF2] focus:ring-2 focus:ring-[#2B6AF2]/20"
+                className="h-10 rounded-xl border border-[var(--theme-input-border)] px-3 text-sm text-[var(--theme-body-text)] outline-none focus:border-[var(--module-accent-strong)] focus:ring-2 focus:ring-[var(--module-accent-ring)]"
               />
               <button
                 onClick={handleBatchUpdateCategory}
@@ -1056,10 +1058,10 @@ export default function DataPage() {
 
       <DelayedRender delay={120}>
         <Card className="p-0 overflow-hidden">
-          <div className="flex flex-col gap-2 border-b border-[#f1f5f9] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[#64748b]">{total === 0 ? "暂无记录" : `共 ${total} 条记录，当前显示 ${startItem}-${endItem} 条`}</p>
+          <div className="flex flex-col gap-2 border-b border-[var(--theme-surface-border)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[var(--theme-muted-text)]">{total === 0 ? "暂无记录" : `共 ${total} 条记录，当前显示 ${startItem}-${endItem} 条`}</p>
             {tableLoading ? (
-              <div className="inline-flex items-center gap-2 text-sm text-[#2B6AF2]">
+              <div className="inline-flex items-center gap-2 text-sm text-[var(--module-accent-strong)]">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 正在加载分页数据
               </div>
@@ -1068,8 +1070,8 @@ export default function DataPage() {
 
           <div className="overflow-x-auto">
             <div className="min-w-[1060px]">
-              <div className="grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-[#f1f5f9] bg-[#f8fafc] px-4 py-2.5 text-xs font-semibold text-[#64748b]">
-                <input type="checkbox" checked={allSelectedOnPage} onChange={toggleSelectAll} className="rounded border-[#cbd5e1]" />
+              <div className="grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-[var(--theme-surface-border)] bg-[var(--theme-dialog-section-bg)] px-4 py-2.5 text-xs font-semibold text-[var(--theme-muted-text)]">
+                <input type="checkbox" checked={allSelectedOnPage} onChange={toggleSelectAll} className="rounded border-[var(--theme-input-border)]" />
                 <span>商户 / 备注</span>
                 <span>时间</span>
                 <span>类型</span>
@@ -1080,9 +1082,9 @@ export default function DataPage() {
 
               {transactions.length === 0 ? (
                 <div className="px-4 py-10 text-center">
-                  <Database className="h-8 w-8 mx-auto text-[#cbd5e1]" />
-                  <p className="mt-2 text-sm font-medium text-[#64748b]">暂无数据</p>
-                  <p className="mt-1 text-xs text-[#94a3b8]">导入账单后，这里会显示交易记录。</p>
+                  <Database className="h-8 w-8 mx-auto text-[var(--theme-hint-text)]" />
+                  <p className="mt-2 text-sm font-medium text-[var(--theme-muted-text)]">暂无数据</p>
+                  <p className="mt-1 text-xs text-[var(--theme-hint-text)]">导入账单后，这里会显示交易记录。</p>
                 </div>
               ) : (
                 <div>
@@ -1094,27 +1096,27 @@ export default function DataPage() {
                       <div
                         key={transaction.id}
                         className={cn(
-                          "grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-[#f1f5f9] px-4 py-3 transition",
-                          selectedIds.has(transaction.id) ? "bg-[#D8E6FC]/30" : "hover:bg-[#f8fafc]"
+                          "grid grid-cols-[44px_minmax(260px,1.3fr)_170px_96px_140px_120px_120px] items-center gap-3 border-b border-[var(--theme-surface-border)] px-4 py-3 transition",
+                          selectedIds.has(transaction.id) ? "bg-[var(--module-accent-soft)]" : "hover:bg-[var(--theme-dialog-section-bg)]"
                         )}
                       >
                         <input
                           type="checkbox"
                           checked={selectedIds.has(transaction.id)}
                           onChange={() => toggleSelect(transaction.id)}
-                          className="rounded border-[#cbd5e1]"
+                          className="rounded border-[var(--theme-input-border)]"
                         />
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#1e293b]">
+                          <p className="truncate text-sm font-semibold text-[var(--theme-body-text)]">
                             {transaction.merchant || "-"}
                           </p>
-                          <p className="mt-0.5 truncate text-xs text-[#94a3b8]">
+                          <p className="mt-0.5 truncate text-xs text-[var(--theme-hint-text)]">
                             {transaction.description || "无备注"}
                           </p>
                         </div>
 
-                        <span className="text-sm text-[#64748b]">{formatDateTime(transaction.date)}</span>
+                        <span className="text-sm text-[var(--theme-muted-text)]">{formatDateTime(transaction.date)}</span>
 
                         <span
                           className={cn(
@@ -1123,19 +1125,19 @@ export default function DataPage() {
                               ? "bg-[#FEE2E2] text-[#DC2626]"
                               : isIncome
                                 ? "bg-[#D1FAE5] text-[#059669]"
-                                : "bg-[#f1f5f9] text-[#64748b]"
+                                : "bg-[var(--theme-dialog-section-bg)] text-[var(--theme-muted-text)]"
                           )}
                         >
                           {isExpense ? "支出" : isIncome ? "收入" : transaction.type}
                         </span>
 
-                        <span className="inline-flex w-fit rounded-full bg-[#f1f5f9] px-2 py-0.5 text-xs font-medium text-[#475569]">
+                        <span className="inline-flex w-fit rounded-full bg-[var(--theme-dialog-section-bg)] px-2 py-0.5 text-xs font-medium text-[var(--theme-label-text)]">
                           {transaction.category}
                         </span>
 
-                        <span className="text-sm text-[#64748b]">{transaction.platform}</span>
+                        <span className="text-sm text-[var(--theme-muted-text)]">{transaction.platform}</span>
 
-                        <div className={cn("text-right text-sm font-semibold", isExpense ? "text-[#DC2626]" : "text-[#1e293b]")}>
+                        <div className={cn("text-right text-sm font-semibold", isExpense ? "text-[#DC2626]" : "text-[var(--theme-body-text)]")}>
                           {isExpense ? "-" : "+"}
                           {transaction.amount}
                         </div>
@@ -1148,15 +1150,15 @@ export default function DataPage() {
           </div>
 
           {totalPages > 1 ? (
-            <div className="flex items-center justify-between border-t border-[#f1f5f9] p-4">
-              <p className="text-sm text-[#64748b]">
+            <div className="flex items-center justify-between border-t border-[var(--theme-surface-border)] p-4">
+              <p className="text-sm text-[var(--theme-muted-text)]">
                 共 {total} 条记录，第 {currentPage} 页
               </p>
               <div className="flex gap-2">
-                <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="rounded-xl border border-[#e2e8f0] px-3 py-1.5 text-sm font-medium text-[#475569] transition hover:bg-[#f8fafc] disabled:opacity-50">
+                <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="rounded-xl border border-[var(--theme-input-border)] px-3 py-1.5 text-sm font-medium text-[var(--theme-muted-text)] transition hover:bg-[var(--theme-dialog-section-bg)] disabled:opacity-50">
                   上一页
                 </button>
-                <button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="rounded-xl border border-[#e2e8f0] px-3 py-1.5 text-sm font-medium text-[#475569] transition hover:bg-[#f8fafc] disabled:opacity-50">
+                <button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="rounded-xl border border-[var(--theme-input-border)] px-3 py-1.5 text-sm font-medium text-[var(--theme-muted-text)] transition hover:bg-[var(--theme-dialog-section-bg)] disabled:opacity-50">
                   下一页
                 </button>
               </div>
