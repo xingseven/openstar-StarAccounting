@@ -138,14 +138,14 @@ export default function DashboardPage() {
       data-dashboard-entry-file={dashboardEntryFileName}
     >
       {shouldShowDashboardEntryHint ? (
-        <div className="pointer-events-none fixed bottom-4 right-4 z-[70] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200/80 bg-white/92 px-4 py-3 text-xs text-slate-700 shadow-[0_20px_45px_rgba(15,23,42,0.14)] backdrop-blur md:bottom-6 md:right-6">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+        <div className="mb-3 flex max-w-full items-center gap-2 overflow-x-auto rounded-2xl border border-slate-200/80 bg-slate-50/92 px-3 py-2 text-xs text-slate-700 shadow-[0_10px_25px_rgba(15,23,42,0.06)] backdrop-blur">
+          <div className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
             Dashboard Source
           </div>
-          <div className="mt-1 font-semibold text-slate-900">
+          <div className="shrink-0 rounded-xl bg-white px-2 py-1 font-mono font-semibold text-slate-900">
             {dashboardEntryFileName}
           </div>
-          <div className="mt-1 text-[11px] text-slate-500">
+          <div className="shrink-0 text-[11px] text-slate-500">
             当前主题：{themeId}
           </div>
         </div>
