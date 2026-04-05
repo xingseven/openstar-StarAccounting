@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.3.92 - 2026-04-05
+
+### Changed
+
+- **统一移动端筛选面板的自定义年月切换样式**:
+  - 更新 `web/src/components/shared/FloatingFilter.tsx`，移动端 `CustomPeriodPicker` 改为直接复用 `YearStepper` 与 `MonthStepper`。
+  - 自定义时间不再使用“年份输入框 + 月份下拉选择”，手机端也改成与桌面端一致的左右按钮步进切换。
+  - 保留现有平台筛选下拉与搜索输入，仅收口年月切换交互。
+
+### Docs
+
+- **共享筛选器交互约定与版本记录同步**:
+  - 更新 `docs/主题开发框架文档.md`，补充移动端共享筛选器应优先复用年月步进器的约定。
+  - 更新 `docs/开发进度.md`，新增 V2.3.92 记录。
+  - `docs/主题开发框架文档.md` 小版本升级到 `v2.1.12`。
+
+### Verified
+
+- `npm.cmd --prefix web run typecheck`
+- `git diff --check -- web/src/components/shared/FloatingFilter.tsx docs/主题开发框架文档.md docs/开发进度.md CHANGELOG.md`
+
 ## 2.3.91 - 2026-04-05
 
 ### Changed

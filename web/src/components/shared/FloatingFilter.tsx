@@ -305,6 +305,8 @@ function CustomPeriodPicker({
   variant?: "mobile" | "desktop";
 }) {
   const isDesktop = variant === "desktop";
+  const resolvedYear = customPeriod.year || String(new Date().getFullYear());
+  const resolvedMonth = customPeriod.month || String(new Date().getMonth() + 1).padStart(2, "0");
 
   return (
     <div className={cn("space-y-3", isDesktop && "space-y-2.5 rounded-xl border border-slate-200 bg-white p-3")}>
@@ -338,52 +340,27 @@ function CustomPeriodPicker({
         </button>
       </div>
 
-      {isDesktop ? (
-        <div className={cn("grid gap-3", customPeriod.mode === "month" ? "grid-cols-[minmax(0,1fr)_112px]" : "grid-cols-1")}>
-          <YearStepper
-            year={customPeriod.year || String(new Date().getFullYear())}
-            onYearChange={(value) => onCustomPeriodChange?.(resolveCustomPeriod(customPeriod, { year: value }))}
+      <div
+        className={cn(
+          "grid gap-3",
+          customPeriod.mode === "month"
+            ? isDesktop
+              ? "grid-cols-[minmax(0,1fr)_124px]"
+              : "grid-cols-2"
+            : "grid-cols-1",
+        )}
+      >
+        <YearStepper
+          year={resolvedYear}
+          onYearChange={(value) => onCustomPeriodChange?.(resolveCustomPeriod(customPeriod, { year: value }))}
+        />
+        {customPeriod.mode === "month" ? (
+          <MonthStepper
+            month={resolvedMonth}
+            onMonthChange={(value) => onCustomPeriodChange?.(resolveCustomPeriod(customPeriod, { mode: "month", month: value }))}
           />
-          {customPeriod.mode === "month" && (
-            <MonthStepper
-              month={customPeriod.month || "01"}
-              onMonthChange={(value) => onCustomPeriodChange?.(resolveCustomPeriod(customPeriod, { mode: "month", month: value }))}
-            />
-          )}
-        </div>
-      ) : (
-        <div className={cn("grid gap-3", customPeriod.mode === "month" ? "grid-cols-2" : "grid-cols-1")}>
-          <Input
-            type="number"
-            min="2000"
-            max="2099"
-            value={customPeriod.year}
-            onChange={(event) => onCustomPeriodChange?.(resolveCustomPeriod(customPeriod, { year: event.target.value }))}
-            placeholder="年份"
-            className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900"
-          />
-          {customPeriod.mode === "month" ? (
-            <Select
-              value={customPeriod.month}
-              onValueChange={(value) => onCustomPeriodChange?.(resolveCustomPeriod(customPeriod, { mode: "month", month: value }))}
-            >
-              <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 shadow-none">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }).map((_, index) => {
-                  const value = String(index + 1).padStart(2, "0");
-                  return (
-                    <SelectItem key={value} value={value}>
-                      {value} 月
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          ) : null}
-        </div>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 }
